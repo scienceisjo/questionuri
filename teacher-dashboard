@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌳 해누리 질문 과수원 — 교사 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F4F7F0;--surface:#fff;--surface2:#FAFCF8;
+  --pr:#3D8B4F;--pl:#5CB86E;--pd:#1E5C2D;
+  --ac:#F5A623;--ar:#E85D5D;--blue:#4A90D9;
+  --tx:#2A3C2B;--t2:#5A6E5C;--t3:#8EA090;
+  --bd:#E2EBD8;--bd2:#D0DCCA;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(36,97,47,.04);
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{height:100%}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);min-height:100%;line-height:1.6}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select{font-family:inherit;outline:none}
+::selection{background:rgba(93,184,110,.25)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── AUTH ─── */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#D4EDC9 0%,#E8F3DE 40%,#FFFDE7 100%)}
+.auth-box{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-radius:20px;padding:36px 30px;max-width:360px;width:100%;box-shadow:0 16px 48px rgba(36,97,47,.1);text-align:center}
+.auth-box h1{font-size:20px;font-weight:800;color:var(--pd);margin:8px 0 4px}
+.auth-box p{font-size:11px;color:var(--t3);margin-bottom:20px}
+.auth-box .fl{display:block;text-align:left;font-size:11px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.auth-box input{width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:10px;font-size:13px;background:var(--surface2);margin-bottom:10px}
+.auth-box input:focus{border-color:var(--pl);box-shadow:0 0 0 3px rgba(93,184,110,.08)}
+.auth-box .bm{width:100%;padding:12px;border-radius:11px;background:linear-gradient(135deg,var(--pl),var(--pr));color:#fff;font-size:14px;font-weight:700;margin-top:4px}
+.auth-box .bm:disabled{background:#ccc}
+.auth-err{color:var(--ar);font-size:11px;margin-bottom:6px;display:none}
+.auth-err.show{display:block}
+
+/* ─── LAYOUT ─── */
+.dashboard{display:none}
+.dashboard.on{display:block}
+.topbar{background:var(--surface);border-bottom:1px solid var(--bd);padding:0 24px;position:sticky;top:0;z-index:10}
+.topbar-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px}
+.topbar-logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:var(--pd)}
+.topbar-r{display:flex;align-items:center;gap:10px}
+.topbar-r .info{font-size:11px;color:var(--t2)}
+.btn-logout{background:rgba(232,93,93,.08);color:var(--ar);padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600}
+.btn-refresh{background:rgba(93,184,110,.08);color:var(--pr);padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.btn-refresh.loading .ico{animation:spin 1s linear infinite}
+
+.container{max-width:1200px;margin:0 auto;padding:20px 24px 40px}
+
+/* ─── FILTER BAR ─── */
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center}
+.filter-bar label{font-size:11px;font-weight:700;color:var(--t2)}
+.filter-bar select{padding:6px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:12px;background:var(--surface);color:var(--tx)}
+.filter-bar select:focus{border-color:var(--pl)}
+.filter-bar .search{padding:6px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:12px;background:var(--surface);width:180px}
+
+/* ─── SUMMARY CARDS ─── */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.scard{background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--sh);border:1px solid var(--bd);animation:fadeUp .4s ease both}
+.scard:nth-child(2){animation-delay:.05s}.scard:nth-child(3){animation-delay:.1s}.scard:nth-child(4){animation-delay:.15s}.scard:nth-child(5){animation-delay:.2s}
+.scard-icon{font-size:22px;margin-bottom:4px}
+.scard-val{font-size:24px;font-weight:800;color:var(--pd);line-height:1.2}
+.scard-lbl{font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.3px}
+
+/* ─── SECTION ─── */
+.section{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);margin-bottom:16px;overflow:hidden;animation:fadeUp .45s ease both}
+.section-hdr{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.section-hdr h2{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.section-hdr .badge{background:rgba(93,184,110,.1);color:var(--pr);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.section-body{padding:0}
+
+/* ─── TABLE ─── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{background:var(--surface2)}
+th{padding:10px 14px;text-align:left;font-weight:700;color:var(--t2);font-size:10px;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;border-bottom:1px solid var(--bd);cursor:pointer;user-select:none}
+th:hover{color:var(--pr)}
+th .arrow{font-size:9px;margin-left:2px;opacity:.4}
+th.sorted .arrow{opacity:1;color:var(--pr)}
+td{padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.03);white-space:nowrap}
+tr:hover td{background:rgba(93,184,110,.02)}
+.resolved-bar{display:inline-flex;align-items:center;gap:6px}
+.bar-bg{width:60px;height:6px;background:var(--bd);border-radius:3px;overflow:hidden}
+.bar-fg{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--pl),var(--ac))}
+.pct{font-size:10px;color:var(--t3);font-weight:600;min-width:30px}
+.tag-chip{background:rgba(93,184,110,.1);color:var(--pr);padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600;margin-right:3px}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
+.dot-active{background:#5CB86E}.dot-old{background:#E85D5D}.dot-inactive{background:#ccc}
+.empty-row{text-align:center;padding:30px;color:var(--t3);font-size:12px}
+
+/* ─── TAGS CHART ─── */
+.tags-grid{display:flex;flex-wrap:wrap;gap:6px;padding:16px 18px}
+.tag-bar{display:flex;align-items:center;gap:6px;background:var(--surface2);border-radius:8px;padding:6px 12px;min-width:120px}
+.tag-bar-name{font-size:11px;font-weight:600;color:var(--tx);min-width:60px}
+.tag-bar-track{flex:1;height:8px;background:var(--bd);border-radius:4px;overflow:hidden;min-width:40px}
+.tag-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.tag-bar-count{font-size:10px;font-weight:700;color:var(--t2);min-width:20px;text-align:right}
+
+/* ─── EXPORT BTN ─── */
+.btn-export{background:rgba(74,144,217,.08);color:var(--blue);padding:5px 12px;border-radius:7px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .container{padding:14px 12px 30px}
+  .summary{grid-template-columns:repeat(2,1fr)}
+  .filter-bar .search{width:100%}
+  .topbar{padding:0 12px}
+}
+@media(max-width:480px){
+  .summary{grid-template-columns:1fr 1fr}
+  .scard{padding:12px}
+  .scard-val{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-box">
+    <div style="font-size:40px">🌳</div>
+    <h1>교사 대시보드</h1>
+    <p>Supabase 계정으로 로그인하세요</p>
+    <label class="fl">이메일</label>
+    <input id="authEmail" type="email" placeholder="teacher@school.com">
+    <label class="fl">비밀번호</label>
+    <input id="authPw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')teacherLogin()">
+    <div class="auth-err" id="authErr"></div>
+    <button class="bm" id="authBtn" onclick="teacherLogin()">로그인</button>
+    <p style="font-size:9px;color:var(--t3);margin-top:14px;line-height:1.6">
+      ※ Supabase Dashboard > Authentication > Users 에서<br>
+      교사용 이메일 계정을 먼저 생성해주세요.<br>
+      <a href="#" onclick="event.preventDefault();showServiceKeyMode()" style="color:var(--pr)">또는 Service Role Key로 접속 →</a>
+    </p>
+    <div id="skMode" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)">
+      <label class="fl">Supabase URL</label>
+      <input id="skUrl" placeholder="https://xxx.supabase.co">
+      <label class="fl">Service Role Key</label>
+      <input id="skKey" type="password" placeholder="eyJ...">
+      <button class="bm" onclick="serviceKeyLogin()" style="background:linear-gradient(135deg,var(--ac),#E09400)">Service Key로 접속</button>
+      <p style="font-size:9px;color:var(--ar);margin-top:6px">⚠️ Service Key는 관리자 전용입니다. 절대 학생에게 노출하지 마세요.</p>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="topbar"><div class="topbar-in">
+    <div class="topbar-logo">🌳 해누리 과수원 · 교사 대시보드</div>
+    <div class="topbar-r">
+      <span class="info" id="lastUpdate"></span>
+      <button class="btn-refresh" id="refreshBtn" onclick="loadAll()"><span class="ico">🔄</span> 새로고침</button>
+      <button class="btn-logout" onclick="teacherLogout()">로그아웃</button>
+    </div>
+  </div></div>
+
+  <div class="container">
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <label>📋 필터:</label>
+      <select id="fGrade" onchange="applyFilters()"><option value="">전체 학년</option></select>
+      <select id="fClass" onchange="applyFilters()"><option value="">전체 반</option></select>
+      <select id="fSubject" onchange="applyFilters()"><option value="">전체 과목</option></select>
+      <input class="search" id="fSearch" placeholder="🔍 이름 검색..." oninput="applyFilters()">
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary" id="summary"></div>
+
+    <!-- STUDENT TABLE -->
+    <div class="section">
+      <div class="section-hdr">
+        <h2>👩‍🎓 학생별 현황 <span class="badge" id="studentCount">0명</span></h2>
+        <button class="btn-export" onclick="exportCSV('students')">📥 CSV 다운로드</button>
+      </div>
+      <div class="section-body"><div class="tbl-wrap">
+        <table id="studentTable">
+          <thead><tr>
+            <th onclick="sortTable('grade')">학년 <span class="arrow">▼</span></th>
+            <th onclick="sortTable('class_no')">반 <span class="arrow">▼</span></th>
+            <th onclick="sortTable('number')">번호 <span class="arrow">▼</span></th>
+            <th onclick="sortTable('name')">이름 <span class="arrow">▼</span></th>
+            <th onclick="sortTable('total')">질문 수 <span class="arrow">▼</span></th>
+            <th onclick="sortTable('resolved')">해결 <span class="arrow">▼</span></th>
+            <th>해결률</th>
+            <th onclick="sortTable('streak')">연속일 <span class="arrow">▼</span></th>
+            <th onclick="sortTable('last_active')">마지막 접속 <span class="arrow">▼</span></th>
+          </tr></thead>
+          <tbody id="studentBody"></tbody>
+        </table>
+      </div></div>
+    </div>
+
+    <!-- RECENT QUESTIONS -->
+    <div class="section">
+      <div class="section-hdr">
+        <h2>❓ 최근 질문 <span class="badge" id="questionCount">0개</span></h2>
+        <button class="btn-export" onclick="exportCSV('questions')">📥 CSV 다운로드</button>
+      </div>
+      <div class="section-body"><div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>학생</th>
+            <th>과목</th>
+            <th>질문</th>
+            <th>태그</th>
+            <th>상태</th>
+            <th>날짜</th>
+          </tr></thead>
+          <tbody id="questionBody"></tbody>
+        </table>
+      </div></div>
+    </div>
+
+    <!-- TAGS -->
+    <div class="section">
+      <div class="section-hdr"><h2>🏷️ 태그 분포</h2></div>
+      <div class="section-body"><div class="tags-grid" id="tagsGrid"></div></div>
+    </div>
+
+    <!-- SUBJECT STATS -->
+    <div class="section">
+      <div class="section-hdr"><h2>📚 과목별 통계</h2></div>
+      <div class="section-body"><div class="tbl-wrap">
+        <table>
+          <thead><tr><th>과목</th><th>질문 수</th><th>해결</th><th>해결률</th></tr></thead>
+          <tbody id="subjectBody"></tbody>
+        </table>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// ⚙️ SUPABASE — index.html 과 같은 값 입력
+// =========================================================================
+const SUPABASE_URL  = 'https://kpnfxcvnzashdpwnlrev.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_ClHzrxo-l5vL6ojO-zg8GA_PqsxYYUx';
+
+let sb = null;  // 로그인 방식에 따라 동적 생성
+let isServiceKey = false;
+
+// raw data
+let allProfiles = [];
+let allQuestions = [];
+let allSubjects = [];
+
+// filtered & computed
+let filteredStudents = [];
+let filteredQuestions = [];
+let sortCol = 'grade';
+let sortDir = 'asc';
+
+// =========================================================================
+// UTIL
+// =========================================================================
+function $(id){ return document.getElementById(id); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.floor((new Date(b)-new Date(a))/864e5); }
+
+// =========================================================================
+// AUTH
+// =========================================================================
+function showServiceKeyMode(){
+  $('skMode').style.display='block';
+}
+
+async function teacherLogin(){
+  const email = $('authEmail').value.trim();
+  const pw = $('authPw').value;
+  const err = $('authErr');
+  if(!email||!pw){ err.textContent='이메일과 비밀번호를 입력하세요'; err.classList.add('show'); return; }
+
+  $('authBtn').disabled=true;
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password:pw });
+  $('authBtn').disabled=false;
+
+  if(error){
+    err.textContent='로그인 실패: '+error.message;
+    err.classList.add('show'); return;
+  }
+
+  // service_role 이 아닌 일반 유저 → RLS 에 의해 본인 데이터만 보임
+  // 교사 계정은 RLS bypass 가 필요하므로 service key 모드를 안내
+  // 하지만 일단 진행은 시켜본다 (교사가 학생 계정이 아닌 별도 계정이면 profiles 가 없을 수 있음)
+  isServiceKey = false;
+  showDashboard();
+}
+
+function serviceKeyLogin(){
+  const url = $('skUrl').value.trim();
+  const key = $('skKey').value.trim();
+  const err = $('authErr');
+
+  if(!url||!key){ err.textContent='URL과 Key를 모두 입력하세요'; err.classList.add('show'); return; }
+
+  sb = window.supabase.createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+  isServiceKey = true;
+  showDashboard();
+}
+
+function showDashboard(){
+  $('authWrap').style.display='none';
+  $('dashboard').classList.add('on');
+  loadAll();
+}
+
+function teacherLogout(){
+  if(!confirm('로그아웃 하시겠어요?')) return;
+  if(sb && !isServiceKey) sb.auth.signOut();
+  sb = null;
+  $('dashboard').classList.remove('on');
+  $('authWrap').style.display='flex';
+}
+
+// =========================================================================
+// DATA LOADING
+// =========================================================================
+async function loadAll(){
+  const btn = $('refreshBtn');
+  btn.classList.add('loading');
+
+  try{
+    // profiles — service_role key 면 전체 조회 가능
+    const { data: profiles, error: pe } = await sb.from('profiles').select('*').order('grade').order('class_no').order('number');
+    if(pe) throw pe;
+    allProfiles = profiles || [];
+
+    // questions
+    const { data: questions, error: qe } = await sb.from('questions').select('*').order('created_at',{ascending:false}).limit(2000);
+    if(qe) throw qe;
+    allQuestions = questions || [];
+
+    // subjects
+    const { data: subjects, error: se } = await sb.from('subjects').select('*').is('user_id',null).order('sort_order');
+    if(se) throw se;
+    allSubjects = subjects || [];
+
+    populateFilters();
+    applyFilters();
+    $('lastUpdate').textContent = '마지막 갱신: ' + new Date().toLocaleTimeString('ko-KR');
+  } catch(e){
+    alert('데이터 로드 실패: ' + (e.message||e) + '\n\nService Role Key 를 사용 중인지 확인하세요.');
+  }
+
+  btn.classList.remove('loading');
+}
+
+// =========================================================================
+// FILTERS
+// =========================================================================
+function populateFilters(){
+  const grades = [...new Set(allProfiles.map(p=>p.grade))].sort((a,b)=>a-b);
+  const classes = [...new Set(allProfiles.map(p=>p.class_no))].sort((a,b)=>a-b);
+  const subs = allSubjects;
+
+  const fG = $('fGrade');
+  fG.innerHTML = '<option value="">전체 학년</option>';
+  grades.forEach(g=>{ fG.innerHTML += `<option value="${g}">${g}학년</option>`; });
+
+  const fC = $('fClass');
+  fC.innerHTML = '<option value="">전체 반</option>';
+  classes.forEach(c=>{ fC.innerHTML += `<option value="${c}">${c}반</option>`; });
+
+  const fS = $('fSubject');
+  fS.innerHTML = '<option value="">전체 과목</option>';
+  subs.forEach(s=>{ fS.innerHTML += `<option value="${s.id}">${s.icon} ${s.label}</option>`; });
+}
+
+function applyFilters(){
+  const gF = $('fGrade').value;
+  const cF = $('fClass').value;
+  const sF = $('fSubject').value;
+  const nameF = $('fSearch').value.trim().toLowerCase();
+
+  // filter profiles
+  let ps = [...allProfiles];
+  if(gF) ps = ps.filter(p=>p.grade==gF);
+  if(cF) ps = ps.filter(p=>p.class_no==cF);
+  if(nameF) ps = ps.filter(p=>p.name.toLowerCase().includes(nameF));
+
+  const userIds = new Set(ps.map(p=>p.id));
+
+  // filter questions
+  let qs = allQuestions.filter(q=>userIds.has(q.user_id));
+  if(sF) qs = qs.filter(q=>q.subject_id===sF);
+
+  // compute student stats
+  const qByUser = {};
+  qs.forEach(q=>{
+    if(!qByUser[q.user_id]) qByUser[q.user_id]={total:0,resolved:0};
+    qByUser[q.user_id].total++;
+    if(q.resolved) qByUser[q.user_id].resolved++;
+  });
+
+  filteredStudents = ps.map(p=>{
+    const s = qByUser[p.id] || {total:0,resolved:0};
+    return { ...p, total:s.total, resolved:s.resolved, pct: s.total?Math.round(100*s.resolved/s.total):0 };
+  });
+
+  filteredQuestions = qs;
+
+  renderSummary();
+  sortAndRenderStudents();
+  renderQuestions();
+  renderTags();
+  renderSubjects();
+}
+
+// =========================================================================
+// SUMMARY CARDS
+// =========================================================================
+function renderSummary(){
+  const totalStudents = filteredStudents.length;
+  const totalQs = filteredQuestions.length;
+  const totalResolved = filteredQuestions.filter(q=>q.resolved).length;
+  const activeToday = filteredStudents.filter(s=>s.last_active===today()).length;
+  const avgQ = totalStudents ? (totalQs/totalStudents).toFixed(1) : '0';
+
+  $('summary').innerHTML = `
+    <div class="scard"><div class="scard-icon">👩‍🎓</div><div class="scard-val">${totalStudents}</div><div class="scard-lbl">등록 학생</div></div>
+    <div class="scard"><div class="scard-icon">❓</div><div class="scard-val">${totalQs}</div><div class="scard-lbl">총 질문</div></div>
+    <div class="scard"><div class="scard-icon">🍎</div><div class="scard-val">${totalResolved}</div><div class="scard-lbl">해결 완료</div></div>
+    <div class="scard"><div class="scard-icon">📊</div><div class="scard-val">${avgQ}</div><div class="scard-lbl">1인당 평균</div></div>
+    <div class="scard"><div class="scard-icon">🟢</div><div class="scard-val">${activeToday}</div><div class="scard-lbl">오늘 활동</div></div>
+  `;
+}
+
+// =========================================================================
+// STUDENT TABLE
+// =========================================================================
+function sortTable(col){
+  if(sortCol===col) sortDir = sortDir==='asc'?'desc':'asc';
+  else { sortCol=col; sortDir='asc'; }
+
+  // update header arrows
+  document.querySelectorAll('#studentTable th').forEach(th=>{
+    th.classList.remove('sorted');
+    const arrow = th.querySelector('.arrow');
+    if(arrow) arrow.textContent='▼';
+  });
+
+  sortAndRenderStudents();
+}
+
+function sortAndRenderStudents(){
+  const sorted = [...filteredStudents].sort((a,b)=>{
+    let va=a[sortCol], vb=b[sortCol];
+    if(va==null) va='';
+    if(vb==null) vb='';
+    if(typeof va==='string') va=va.toLowerCase();
+    if(typeof vb==='string') vb=vb.toLowerCase();
+    if(va<vb) return sortDir==='asc'?-1:1;
+    if(va>vb) return sortDir==='asc'?1:-1;
+    return 0;
+  });
+
+  $('studentCount').textContent = sorted.length+'명';
+
+  const body = $('studentBody');
+  if(!sorted.length){
+    body.innerHTML='<tr><td colspan="9" class="empty-row">조건에 맞는 학생이 없습니다</td></tr>';
+    return;
+  }
+
+  body.innerHTML = sorted.map(s=>{
+    const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
+    const dotClass = lastDays===0?'dot-active':lastDays<=7?'dot-active':lastDays<=30?'dot-old':'dot-inactive';
+    const lastStr = s.last_active||'—';
+    const streak = s.streak_days||0;
+
+    return `<tr>
+      <td>${s.grade}</td>
+      <td>${s.class_no}</td>
+      <td>${s.number}</td>
+      <td><strong>${esc(s.name)}</strong></td>
+      <td>${s.total}</td>
+      <td>${s.resolved}</td>
+      <td><div class="resolved-bar"><div class="bar-bg"><div class="bar-fg" style="width:${s.pct}%"></div></div><span class="pct">${s.pct}%</span></div></td>
+      <td>${streak>0?'🔥'+streak:'—'}</td>
+      <td><span class="status-dot ${dotClass}"></span>${lastStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =========================================================================
+// QUESTIONS TABLE
+// =========================================================================
+function renderQuestions(){
+  const qs = filteredQuestions.slice(0,200); // 최근 200개
+  $('questionCount').textContent = filteredQuestions.length+'개';
+
+  const profMap = {};
+  allProfiles.forEach(p=>{ profMap[p.id]=p; });
+
+  const subMap = {};
+  allSubjects.forEach(s=>{ subMap[s.id]=s; });
+
+  const body = $('questionBody');
+  if(!qs.length){
+    body.innerHTML='<tr><td colspan="6" class="empty-row">질문이 없습니다</td></tr>';
+    return;
+  }
+
+  body.innerHTML = qs.map(q=>{
+    const p = profMap[q.user_id];
+    const s = subMap[q.subject_id];
+    const name = p ? `${p.grade}-${p.class_no} ${esc(p.name)}` : '?';
+    const sub = s ? s.icon+' '+s.label : q.subject_id;
+    const tags = (q.tags||[]).map(t=>`<span class="tag-chip">${esc(t)}</span>`).join('');
+    const status = q.resolved
+      ? '<span style="color:var(--pr);font-weight:600">✅ 해결</span>'
+      : '<span style="color:var(--ac);font-weight:600">⏳ 미해결</span>';
+
+    return `<tr>
+      <td>${name}</td>
+      <td>${sub}</td>
+      <td style="white-space:normal;max-width:300px;word-break:break-word">${esc(q.text)}</td>
+      <td>${tags||'—'}</td>
+      <td>${status}</td>
+      <td>${q.question_date||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =========================================================================
+// TAGS
+// =========================================================================
+function renderTags(){
+  const tagCount = {};
+  filteredQuestions.forEach(q=>{
+    (q.tags||[]).forEach(t=>{
+      tagCount[t] = (tagCount[t]||0) + 1;
+    });
+  });
+
+  const sorted = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]);
+  const max = sorted.length ? sorted[0][1] : 1;
+  const colors = ['#5CB86E','#4CAF50','#F5A623','#E85D5D','#4A90D9','#9C27B0','#FF9800','#00BCD4'];
+
+  const grid = $('tagsGrid');
+  if(!sorted.length){
+    grid.innerHTML='<div style="padding:10px;color:var(--t3);font-size:12px">태그가 없습니다</div>';
+    return;
+  }
+
+  grid.innerHTML = sorted.slice(0,20).map((entry,i)=>{
+    const [tag,cnt] = entry;
+    const pct = Math.round(100*cnt/max);
+    const color = colors[i%colors.length];
+    return `<div class="tag-bar">
+      <span class="tag-bar-name">${esc(tag)}</span>
+      <div class="tag-bar-track"><div class="tag-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="tag-bar-count">${cnt}</span>
+    </div>`;
+  }).join('');
+}
+
+// =========================================================================
+// SUBJECTS
+// =========================================================================
+function renderSubjects(){
+  const subStats = {};
+  filteredQuestions.forEach(q=>{
+    if(!subStats[q.subject_id]) subStats[q.subject_id]={total:0,resolved:0};
+    subStats[q.subject_id].total++;
+    if(q.resolved) subStats[q.subject_id].resolved++;
+  });
+
+  const subMap = {};
+  allSubjects.forEach(s=>{ subMap[s.id]=s; });
+
+  const rows = Object.entries(subStats)
+    .sort((a,b)=>b[1].total-a[1].total)
+    .map(([id,st])=>{
+      const s = subMap[id];
+      const label = s ? s.icon+' '+s.label : id;
+      const pct = st.total ? Math.round(100*st.resolved/st.total) : 0;
+      return `<tr>
+        <td><strong>${label}</strong></td>
+        <td>${st.total}</td>
+        <td>${st.resolved}</td>
+        <td><div class="resolved-bar"><div class="bar-bg"><div class="bar-fg" style="width:${pct}%"></div></div><span class="pct">${pct}%</span></div></td>
+      </tr>`;
+    });
+
+  $('subjectBody').innerHTML = rows.length
+    ? rows.join('')
+    : '<tr><td colspan="4" class="empty-row">데이터 없음</td></tr>';
+}
+
+// =========================================================================
+// CSV EXPORT
+// =========================================================================
+function exportCSV(type){
+  let csv = '';
+  if(type==='students'){
+    csv = '학년,반,번호,이름,질문수,해결수,해결률,연속일,마지막접속\n';
+    filteredStudents.forEach(s=>{
+      csv += `${s.grade},${s.class_no},${s.number},${s.name},${s.total},${s.resolved},${s.pct}%,${s.streak_days||0},${s.last_active||''}\n`;
+    });
+  } else {
+    const profMap = {};
+    allProfiles.forEach(p=>{ profMap[p.id]=p; });
+    csv = '학년,반,번호,이름,과목,질문,태그,해결,날짜\n';
+    filteredQuestions.forEach(q=>{
+      const p = profMap[q.user_id]||{};
+      const tags = (q.tags||[]).join(' ');
+      const text = q.text.replace(/"/g,'""');
+      csv += `${p.grade||''},${p.class_no||''},${p.number||''},${p.name||''},${q.subject_id},"${text}","${tags}",${q.resolved?'Y':'N'},${q.question_date||''}\n`;
+    });
+  }
+
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `haenuri_${type}_${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esc(s){
+  const d=document.createElement('div');
+  d.textContent=s||'';
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
