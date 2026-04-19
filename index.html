@@ -329,6 +329,36 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .forest-lv{font-size:var(--fs-xxs);color:var(--tl)}
 .forest-me-bdg{display:inline-block;background:var(--pr);color:#fff;font-size:9px;padding:1px 6px;border-radius:7px;font-weight:700;margin-top:2px}
 
+/* Friend Question Viewer Modal */
+.fv-box{max-width:min(560px,94vw)!important;max-height:85vh!important;overflow:hidden!important;display:flex;flex-direction:column;padding:0!important;position:relative}
+.fv-x{position:absolute;top:10px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.06);color:var(--tl);font-size:18px;font-weight:700;z-index:2;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fv-x:hover{background:rgba(0,0,0,.12);color:var(--tx)}
+.fv-hdr{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-3) var(--sp-3) var(--sp-2);background:linear-gradient(135deg,rgba(93,184,110,.12),rgba(245,166,35,.06));border-radius:clamp(14px,3vw,18px) clamp(14px,3vw,18px) 0 0}
+.fv-ic{font-size:var(--em-lg);width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.fv-nm{font-size:var(--fs-lg);font-weight:800;color:var(--pd);font-family:'Gaegu',cursive}
+.fv-sub{font-size:var(--fs-xxs);color:var(--tl);margin-top:2px}
+.fv-hint{background:rgba(33,150,243,.08);color:#1976D2;padding:var(--sp-2) var(--sp-3);font-size:var(--fs-xxs);text-align:center;border-top:1px solid rgba(33,150,243,.12);border-bottom:1px solid rgba(33,150,243,.12)}
+.fv-list{flex:1;overflow-y:auto;padding:var(--sp-2) var(--sp-3) var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-2)}
+.fv-list::-webkit-scrollbar{width:6px}.fv-list::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+.fv-q{background:#fff;border:1.5px solid var(--bd);border-radius:clamp(10px,2.2vw,14px);padding:var(--sp-2) var(--sp-3);transition:all .2s}
+.fv-q:hover{border-color:var(--pl);box-shadow:0 3px 10px rgba(36,97,47,.06)}
+.fv-q.resolved{background:linear-gradient(135deg,rgba(93,184,110,.06),#fff)}
+.fv-q-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-1);margin-bottom:4px}
+.fv-q-txt{flex:1;font-size:var(--fs-sm);font-weight:600;color:var(--tx);line-height:1.4}
+.fv-q-fr{font-size:18px;flex-shrink:0}
+.fv-q-meta{display:flex;gap:var(--sp-1);font-size:var(--fs-xxs);color:var(--tl);flex-wrap:wrap;margin-bottom:6px}
+.fv-q-meta span{display:inline-flex;align-items:center;gap:2px}
+.fv-q-meta .anon-bdg{background:rgba(158,158,158,.15);color:#616161;padding:1px 6px;border-radius:6px;font-weight:600}
+.fv-q-act{display:flex;gap:6px;margin-top:6px}
+.fv-w-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 12px;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border:1.5px solid #90CAF9;color:#1565C0;border-radius:clamp(8px,1.8vw,10px);font-size:var(--fs-xs);font-weight:700;cursor:pointer;transition:all .2s}
+.fv-w-btn:hover:not(:disabled){background:linear-gradient(135deg,#BBDEFB,#90CAF9);transform:translateY(-1px);box-shadow:0 3px 8px rgba(33,150,243,.3)}
+.fv-w-btn:disabled{background:rgba(0,0,0,.04);color:var(--tl);border-color:var(--bd);cursor:not-allowed;opacity:.65}
+.fv-w-btn .wc-bdg{background:#fff;color:#1976D2;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700}
+.fv-gate{background:linear-gradient(135deg,#FFF8E1,#FFECB3);border:1.5px dashed #FFB300;color:#E65100;padding:var(--sp-3);border-radius:clamp(10px,2.2vw,14px);text-align:center;font-size:var(--fs-xs);font-weight:600;margin:var(--sp-2) 0}
+.fv-gate b{color:#BF360C}
+.fv-empty{text-align:center;padding:var(--sp-4);color:var(--tl);font-size:var(--fs-xs)}
+.fv-empty .em{font-size:var(--em-lg);margin-bottom:var(--sp-1)}
+
 /* Achievements */
 .ach-area{max-width:min(500px,100%);margin:0 auto}
 .ach-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(140px,45%),1fr));gap:var(--sp-1)}
@@ -615,6 +645,22 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
   </div>
 </div>
 
+<!-- 친구 질문 보기 (물주기) 모달 -->
+<div class="mdl" id="mFrView" onclick="closeFrView()">
+  <div class="as-box mdl-box fv-box" onclick="event.stopPropagation()">
+    <button class="fv-x" onclick="closeFrView()">✕</button>
+    <div class="fv-hdr">
+      <div class="fv-ic" id="fvIc">🌳</div>
+      <div>
+        <div class="fv-nm" id="fvNm">친구</div>
+        <div class="fv-sub" id="fvSub"></div>
+      </div>
+    </div>
+    <div class="fv-hint" id="fvHint">💧 궁금한 질문에 물을 주면, 친구의 나무가 더 잘 자라요!</div>
+    <div class="fv-list" id="fvList"></div>
+  </div>
+</div>
+
 <!-- 옛날 질문 팝업 -->
 <div class="oqp" id="oqp">
   <button class="oqp-x" onclick="closeOQ()">✕</button>
@@ -695,6 +741,7 @@ const S = {
   seeds:0,
   unlocked:['default'],
   activeTree:'default',
+  frView:null,
 };
 
 const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','🍐','🌸','⭐','💎','🌰','🌻'];
@@ -901,7 +948,7 @@ async function doLogin(){
 async function doLogout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
   await sb.auth.signOut();
-  Object.assign(S,{user:null,profile:null,name:'',grade:'',cls:'',num:'',questions:{},subjects:[],stickers:[],activeSub:'integrated',seeds:0,unlocked:['default'],activeTree:'default'});
+  Object.assign(S,{user:null,profile:null,name:'',grade:'',cls:'',num:'',questions:{},subjects:[],stickers:[],activeSub:'integrated',seeds:0,unlocked:['default'],activeTree:'default',frView:null});
   goTo('welcome');
 }
 
@@ -1066,8 +1113,18 @@ function renderStats(){
 }
 
 // ============================================================================
-// TREE SVG
+// TREE SVG — 종별 디자인 시스템
 // ============================================================================
+// 각 나무 종류가 가진 색/형태 팔레트. default/pine/cherry/maple/palm/baobab
+const TREE_STYLES = {
+  default: {trunk:['#5C3D1E','#8B6F47','#A58154','#5C3D1E'], crown:['#5DB86E','#4A9F5C','#3D8549'], accent:'#6ABF7A', label:'🌳 오크'},
+  pine:    {trunk:['#4A2F18','#6B4A2E','#7A5738','#4A2F18'], crown:['#2E7D32','#1B5E20','#0F3D13'], accent:'#4CAF50', label:'🌲 소나무'},
+  cherry:  {trunk:['#3E2A1A','#5C4029','#6B4E32','#3E2A1A'], crown:['#F8BBD0','#F48FB1','#EC86A9'], accent:'#FFCDD2', label:'🌸 벚나무'},
+  maple:   {trunk:['#4A2F18','#7A4E28','#8C5C36','#4A2F18'], crown:['#E65100','#F57C00','#D84315'], accent:'#FFB74D', label:'🍁 단풍나무'},
+  palm:    {trunk:['#6D4C2C','#9B7A4E','#B89060','#6D4C2C'], crown:['#558B2F','#33691E','#689F38'], accent:'#8BC34A', label:'🌴 야자수'},
+  baobab:  {trunk:['#6B4226','#9B7040','#B8885A','#6B4226'], crown:['#5D8B3E','#4A7530','#6B9E49'], accent:'#8BC34A', label:'🌴 바오밥'},
+};
+
 function mkTree(interactive, overrideQs){
   const qs = overrideQs || (S.questions[S.activeSub]||[]);
   const t=qs.length, r=qs.filter(q=>q.resolved).length;
@@ -1075,155 +1132,430 @@ function mkTree(interactive, overrideQs){
   const sc=SEASON_COLORS[S.season];
   const W=400,H=420;
   const groundY=370;
+  const species = (S.activeTree && TREE_STYLES[S.activeTree]) ? S.activeTree : 'default';
+  const ts = TREE_STYLES[species];
 
   // 꼬리질문으로 뻗어나간 가지 수
   const branchTotal = qs.reduce((s,q)=>s+(q.branches?.length||0),0);
   // 물 받은 질문들 (성장 가속 효과 시각화)
   const wateredTotal = qs.reduce((s,q)=>s+(q.water_count||0),0);
 
+  // 겨울에는 벚나무/단풍나무/오크는 잎 색이 희미해짐. 소나무/야자수/바오밥은 상록/건조지대
+  const useSeasonCrown = (species==='default'||species==='cherry'||species==='maple');
+  const crownPal = useSeasonCrown ? [sc.leafColors[0], sc.leafColors[1]||sc.leafColors[0], sc.leafColors[2]||sc.leafColors[0]] : ts.crown;
+
+  // 벚나무·단풍나무는 스타일 색이 더 중요 -> 봄/가을 강제
+  const finalCrown = (species==='cherry') ? ts.crown
+                   : (species==='maple')  ? ts.crown
+                   : crownPal;
+
   let sky=`<defs>
     <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sc.sky[0]}"/><stop offset="50%" stop-color="${sc.sky[1]}"/><stop offset="100%" stop-color="${sc.sky[2]}"/></linearGradient>
-    <linearGradient id="trG" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#5C3D1E"/><stop offset="40%" stop-color="#7B5E3E"/><stop offset="70%" stop-color="#8B6F47"/><stop offset="100%" stop-color="#5C3D1E"/></linearGradient>
-    <radialGradient id="crG" cx="45%" cy="38%"><stop offset="0%" stop-color="${sc.leafColors[0]}"/><stop offset="50%" stop-color="${sc.leafColors[1]||sc.leafColors[0]}"/><stop offset="100%" stop-color="${sc.leafColors[2]||sc.leafColors[0]}"/></radialGradient>
+    <linearGradient id="trG" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${ts.trunk[0]}"/><stop offset="40%" stop-color="${ts.trunk[1]}"/><stop offset="70%" stop-color="${ts.trunk[2]}"/><stop offset="100%" stop-color="${ts.trunk[3]}"/></linearGradient>
+    <radialGradient id="crG" cx="40%" cy="35%"><stop offset="0%" stop-color="${finalCrown[0]}"/><stop offset="55%" stop-color="${finalCrown[1]||finalCrown[0]}"/><stop offset="100%" stop-color="${finalCrown[2]||finalCrown[0]}"/></radialGradient>
+    <radialGradient id="sunG" cx="50%" cy="50%"><stop offset="0%" stop-color="rgba(255,255,180,.35)"/><stop offset="100%" stop-color="rgba(255,255,180,0)"/></radialGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dx="0" dy="2"/><feComponentTransfer><feFuncA type="linear" slope=".35"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>`;
   sky+=`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#skyG)" rx="12"/>`;
+  // 햇살
+  sky+=`<circle cx="320" cy="70" r="60" fill="url(#sunG)"/>`;
+  sky+=`<circle cx="320" cy="70" r="18" fill="#FFF9C4" opacity=".5"/>`;
 
-  let ground=`<ellipse cx="200" cy="${groundY+8}" rx="180" ry="28" fill="${sc.ground}" opacity=".25"/>`;
+  // 구름
+  const clouds = `
+    <g opacity=".55">
+      <ellipse cx="80" cy="55" rx="28" ry="10" fill="#fff"/>
+      <ellipse cx="95" cy="50" rx="20" ry="9" fill="#fff"/>
+    </g>
+    <g opacity=".4">
+      <ellipse cx="240" cy="90" rx="24" ry="9" fill="#fff"/>
+      <ellipse cx="258" cy="85" rx="18" ry="7" fill="#fff"/>
+    </g>`;
+
+  let ground=`
+    <ellipse cx="200" cy="${groundY+12}" rx="190" ry="32" fill="${sc.ground}" opacity=".35"/>
+    <ellipse cx="200" cy="${groundY+6}" rx="160" ry="16" fill="${sc.ground}" opacity=".25"/>
+    <path d="M10,${groundY+2} Q100,${groundY-6} 200,${groundY} T390,${groundY+4}" stroke="${sc.grass}" stroke-width="1.5" fill="none" opacity=".6"/>`;
+
   let grass='';
-  for(let i=0;i<20;i++){
-    const gx=60+i*15+Math.sin(i*2)*8;const gh=5+Math.random()*6;
-    grass+=`<path d="M${gx},${groundY+5} Q${gx-2},${groundY+5-gh} ${gx+3},${groundY+5}" stroke="${sc.grass}" stroke-width="1.8" fill="none" opacity=".5"/>`;
+  for(let i=0;i<26;i++){
+    const gx=30+i*14+Math.sin(i*1.7)*9;
+    const gh=4+((i*7)%9);
+    const hue = 90 + ((i*13)%40);
+    grass+=`<path d="M${gx},${groundY+6} Q${gx-2},${groundY+6-gh} ${gx+3},${groundY+6}" stroke="${sc.grass}" stroke-width="1.8" fill="none" opacity=".55"/>`;
+    if(i%3===0) grass+=`<circle cx="${gx+1}" cy="${groundY+6-gh}" r="1" fill="hsl(${hue},55%,70%)" opacity=".6"/>`;
   }
 
   let particles='';
-  if(S.season==='winter'){for(let i=0;i<8;i++) particles+=`<text x="${50+i*45}" y="${30+i*40}" font-size="10" opacity="${.2+Math.random()*.3}" style="animation:snowFall ${8+i*2}s linear infinite;animation-delay:${i*1.5}s">${sc.particles}</text>`;}
-  else if(S.season==='autumn'){for(let i=0;i<6;i++) particles+=`<text x="${40+i*55}" y="${20+i*30}" font-size="9" opacity="${.2+Math.random()*.3}" style="animation:leafFall ${10+i*3}s linear infinite;animation-delay:${i*2}s">${sc.particles}</text>`;}
-  else if(S.season==='spring'){for(let i=0;i<5;i++) particles+=`<text x="${60+i*65}" y="${50+i*50}" font-size="8" opacity="${.15+Math.random()*.2}">${sc.particles}</text>`;}
+  if(S.season==='winter'){for(let i=0;i<10;i++) particles+=`<text x="${30+i*38}" y="${20+i*35}" font-size="11" opacity="${.25+((i*13)%30)/100}" style="animation:snowFall ${8+i*2}s linear infinite;animation-delay:${i*1.3}s">${sc.particles}</text>`;}
+  else if(S.season==='autumn'){for(let i=0;i<7;i++) particles+=`<text x="${40+i*50}" y="${20+i*30}" font-size="10" opacity="${.3+((i*17)%20)/100}" style="animation:leafFall ${10+i*3}s linear infinite;animation-delay:${i*2}s">${sc.particles}</text>`;}
+  else if(S.season==='spring'){for(let i=0;i<6;i++) particles+=`<text x="${50+i*56}" y="${40+i*45}" font-size="9" opacity="${.25+((i*11)%25)/100}">${sc.particles}</text>`;}
 
-  let tree='';
-  const swayClass=lv<=2?'style="animation:swaySmall 4s ease-in-out infinite;transform-origin:200px '+groundY+'px"':'style="animation:sway 5s ease-in-out infinite;transform-origin:200px '+groundY+'px"';
+  // 벚나무는 봄이 아니어도 꽃잎이 날림
+  if(species==='cherry'){
+    for(let i=0;i<7;i++) particles+=`<text x="${35+i*52}" y="${25+i*30}" font-size="10" opacity=".5" style="animation:leafFall ${9+i*2}s linear infinite;animation-delay:${i*1.6}s">🌸</text>`;
+  }
 
   // 물방울 이펙트 (물 받은 만큼)
   if(wateredTotal>0 && interactive){
     for(let i=0;i<Math.min(wateredTotal,5);i++){
-      particles+=`<text x="${80+i*55}" y="${100+i*15}" font-size="10" opacity=".4" style="animation:waterDrop 3s linear infinite;animation-delay:${i*.6}s">💧</text>`;
+      particles+=`<text x="${80+i*55}" y="${100+i*15}" font-size="10" opacity=".45" style="animation:waterDrop 3s linear infinite;animation-delay:${i*.6}s">💧</text>`;
     }
   }
 
+  let tree='';
+  const swayClass=lv<=2?'style="animation:swaySmall 4s ease-in-out infinite;transform-origin:200px '+groundY+'px"':'style="animation:sway 5s ease-in-out infinite;transform-origin:200px '+groundY+'px"';
+
+  // 레벨 1: 씨앗·새싹 (종별 동일 - 너무 작아서 구분 의미 적음)
   if(lv===1){
     tree+=`<g ${swayClass}>`;
-    tree+=`<ellipse cx="200" cy="${groundY+3}" rx="25" ry="8" fill="#8D6E63" opacity=".5"/>`;
-    tree+=`<path d="M200,${groundY} Q199,${groundY-25} 200,${groundY-45}" stroke="#6B8B3A" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-    tree+=`<ellipse cx="193" cy="${groundY-35}" rx="10" ry="5" fill="${sc.leafColors[0]}" transform="rotate(-30 193 ${groundY-35})" opacity=".85"/>`;
-    tree+=`<ellipse cx="207" cy="${groundY-40}" rx="9" ry="4.5" fill="${sc.leafColors[1]||sc.leafColors[0]}" transform="rotate(25 207 ${groundY-40})" opacity=".85"/>`;
+    // 씨앗 봉우리 흙무덤
+    tree+=`<ellipse cx="200" cy="${groundY+4}" rx="28" ry="9" fill="#6D4C2C" opacity=".6"/>`;
+    tree+=`<ellipse cx="200" cy="${groundY+2}" rx="22" ry="6" fill="#8D6E63" opacity=".7"/>`;
+    // 새싹 줄기
+    tree+=`<path d="M200,${groundY} Q198,${groundY-22} 200,${groundY-45}" stroke="#6B8B3A" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+    tree+=`<path d="M200,${groundY-5} Q202,${groundY-20} 200,${groundY-42}" stroke="#8BC34A" stroke-width="1" fill="none" opacity=".6"/>`;
+    // 떡잎 2장
+    tree+=`<ellipse cx="192" cy="${groundY-32}" rx="11" ry="5.5" fill="${finalCrown[0]}" transform="rotate(-35 192 ${groundY-32})" opacity=".9"/>`;
+    tree+=`<ellipse cx="208" cy="${groundY-38}" rx="10" ry="5" fill="${finalCrown[1]||finalCrown[0]}" transform="rotate(30 208 ${groundY-38})" opacity=".9"/>`;
+    // 반짝이
+    tree+=`<circle cx="189" cy="${groundY-34}" r="1.2" fill="#fff" opacity=".8"/>`;
+    tree+=`<circle cx="210" cy="${groundY-39}" r="1" fill="#fff" opacity=".7"/>`;
     tree+=`</g>`;
-    tree+=`<text x="200" y="${groundY+24}" text-anchor="middle" fill="#5C3D1E" font-size="10" font-weight="bold" font-family="'Gaegu',cursive">🌱 씨앗</text>`;
+    tree+=`<text x="200" y="${groundY+26}" text-anchor="middle" fill="#5C3D1E" font-size="11" font-weight="bold" font-family="'Gaegu',cursive">🌱 씨앗</text>`;
+    return `<svg viewBox="0 0 ${W} ${H}" class="tree-svg" xmlns="http://www.w3.org/2000/svg"${interactive?' id="tSvg" onclick="plStk(event)"':''}>${sky}${clouds}${ground}${grass}${particles}${tree}</svg>`;
   }
-  else if(lv===2){
-    tree+=`<g ${swayClass}>`;
-    tree+=`<path d="M198,${groundY} Q196,${groundY-40} 199,${groundY-70}" stroke="url(#trG)" stroke-width="5" fill="none" stroke-linecap="round"/>`;
-    tree+=`<path d="M199,${groundY-50} Q185,${groundY-58} 178,${groundY-62}" stroke="#7B5E3E" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-    tree+=`<path d="M199,${groundY-60} Q213,${groundY-68} 220,${groundY-72}" stroke="#7B5E3E" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-    const lcs=[[178,groundY-65,16],[220,groundY-75,14],[199,groundY-78,18]];
-    lcs.forEach((c,i)=>{tree+=`<ellipse cx="${c[0]}" cy="${c[1]}" rx="${c[2]}" ry="${c[2]*.75}" fill="${sc.leafColors[i%sc.leafColors.length]}" opacity=".8"/>`;});
-    tree+=fruitsSVG(qs, [{x:178,y:groundY-65,r:16*.4},{x:220,y:groundY-75,r:14*.4},{x:199,y:groundY-78,r:18*.4}]);
-    // 꼬리가지
-    tree+=branchesSVG(branchTotal, 199, groundY-70, lv);
-    tree+=`</g>`;
-    tree+=`<text x="200" y="${groundY+24}" text-anchor="middle" fill="#5C3D1E" font-size="10" font-weight="bold" font-family="'Gaegu',cursive">🌿 묘목</text>`;
+
+  // 레벨 2~10: 종별 분기
+  let trunkH, crR, cY;
+  if(lv===2){ trunkH=70; crR=28; }
+  else if(lv<=4){ trunkH=80+lv*10; crR=35+lv*8; }
+  else if(lv<=7){ trunkH=100+lv*8; crR=55+lv*7; }
+  else { trunkH=140+lv; crR=95+lv*3; }
+  cY = groundY - trunkH - crR*.35;
+
+  tree+=`<g ${swayClass}>`;
+
+  if(species==='pine'){
+    tree += buildPine(groundY, trunkH, crR, cY, ts, lv, sc);
+  } else if(species==='palm'){
+    tree += buildPalm(groundY, trunkH, crR, cY, ts, lv);
+  } else if(species==='baobab'){
+    tree += buildBaobab(groundY, trunkH, crR, cY, ts, lv, sc);
+  } else if(species==='cherry'){
+    tree += buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, finalCrown, 'cherry');
+  } else if(species==='maple'){
+    tree += buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, finalCrown, 'maple');
+  } else {
+    tree += buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, finalCrown, 'default');
   }
-  else if(lv<=4){
-    const trH=80+lv*10;const crR=35+lv*8;
-    tree+=`<g ${swayClass}>`;
-    tree+=`<path d="M194,${groundY} Q190,${groundY-trH*.5} 196,${groundY-trH} L204,${groundY-trH} Q210,${groundY-trH*.5} 206,${groundY}" fill="url(#trG)"/>`;
-    tree+=`<path d="M198,${groundY-trH*.2} Q200,${groundY-trH*.4} 199,${groundY-trH*.6}" stroke="#4A3218" stroke-width=".7" fill="none" opacity=".3"/>`;
-    tree+=`<path d="M197,${groundY-trH*.6} Q170,${groundY-trH*.75} 158,${groundY-trH*.85}" stroke="#6B4E2E" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
-    tree+=`<path d="M203,${groundY-trH*.55} Q230,${groundY-trH*.7} 242,${groundY-trH*.8}" stroke="#6B4E2E" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-    const cY=groundY-trH-crR*.4;
-    tree+=`<ellipse cx="200" cy="${cY}" rx="${crR}" ry="${crR*.8}" fill="url(#crG)" opacity=".85"/>`;
-    tree+=`<ellipse cx="${200-crR*.35}" cy="${cY+5}" rx="${crR*.45}" ry="${crR*.38}" fill="${sc.leafColors[1]||sc.leafColors[0]}" opacity=".6"/>`;
-    tree+=`<ellipse cx="${200+crR*.35}" cy="${cY+3}" rx="${crR*.4}" ry="${crR*.35}" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".55"/>`;
-    tree+=`<ellipse cx="${200-crR*.15}" cy="${cY-crR*.15}" rx="${crR*.25}" ry="${crR*.18}" fill="rgba(255,255,255,.08)"/>`;
-    tree+=fruitsSVG(qs,[{x:200,y:cY,r:crR*.45},{x:200-crR*.35,y:cY+5,r:crR*.3},{x:200+crR*.35,y:cY+3,r:crR*.28}]);
-    tree+=branchesSVG(branchTotal, 200, cY, lv);
-    tree+=anonLeavesSVG(qs, 200, cY, crR);
-    tree+=companionSVG(200, cY, crR);
-    tree+=stickersSVG(interactive);
-    tree+=`</g>`;
-    tree+=`<text x="200" y="${groundY+24}" text-anchor="middle" fill="#5C3D1E" font-size="10" font-weight="bold" font-family="'Gaegu',cursive">🌲 어린 나무 Lv.${lv}</text>`;
-  }
-  else if(lv<=7){
-    const trH=100+lv*8;const crR=55+lv*7;
-    tree+=`<g ${swayClass}>`;
-    tree+=`<path d="M192,${groundY+2} Q165,${groundY+14} 140,${groundY+10}" stroke="#5C3D1E" stroke-width="3" fill="none" opacity=".4"/>`;
-    tree+=`<path d="M208,${groundY+2} Q235,${groundY+16} 260,${groundY+8}" stroke="#5C3D1E" stroke-width="2.5" fill="none" opacity=".35"/>`;
-    tree+=`<path d="M188,${groundY+2} Q178,${groundY-trH*.4} 190,${groundY-trH} L210,${groundY-trH} Q222,${groundY-trH*.4} 212,${groundY+2}" fill="url(#trG)"/>`;
-    tree+=`<path d="M195,${groundY-trH*.6} Q160,${groundY-trH*.78} 135,${groundY-trH*.9}" stroke="#6B4E2E" stroke-width="5" fill="none" stroke-linecap="round"/>`;
-    tree+=`<path d="M205,${groundY-trH*.55} Q240,${groundY-trH*.72} 265,${groundY-trH*.85}" stroke="#6B4E2E" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
-    tree+=`<path d="M198,${groundY-trH*.75} Q180,${groundY-trH*.9} 168,${groundY-trH}" stroke="#7B5E3E" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-    const cY=groundY-trH-crR*.35;
-    tree+=`<ellipse cx="200" cy="${cY+8}" rx="${crR*1.08}" ry="${crR*.85}" fill="#2D7A3A" opacity=".35"/>`;
-    tree+=`<ellipse cx="200" cy="${cY}" rx="${crR}" ry="${crR*.82}" fill="url(#crG)" opacity=".9"/>`;
-    tree+=`<ellipse cx="${200-crR*.38}" cy="${cY+8}" rx="${crR*.5}" ry="${crR*.42}" fill="${sc.leafColors[1]||sc.leafColors[0]}" opacity=".6"/>`;
-    tree+=`<ellipse cx="${200+crR*.38}" cy="${cY+5}" rx="${crR*.46}" ry="${crR*.4}" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".55"/>`;
-    tree+=`<ellipse cx="${200}" cy="${cY-crR*.28}" rx="${crR*.42}" ry="${crR*.35}" fill="${sc.leafColors[3]||sc.leafColors[0]}" opacity=".5"/>`;
-    for(let i=0;i<lv*2;i++){
-      const a=(i/(lv*2))*Math.PI*2+.5,rd=crR*.6+(i%4)*4,x=200+Math.cos(a)*rd,y=cY+Math.sin(a)*rd*.6,sz=2.5+(i%3)*1.2;
-      tree+=`<ellipse cx="${x}" cy="${y}" rx="${sz}" ry="${sz*.65}" fill="hsl(${sc.leafHues[i%sc.leafHues.length]},50%,58%)" opacity=".4" transform="rotate(${i*30} ${x} ${y})"/>`;
-    }
-    tree+=fruitsSVG(qs,[{x:200,y:cY,r:crR*.45},{x:200-crR*.38,y:cY+8,r:crR*.3},{x:200+crR*.38,y:cY+5,r:crR*.28},{x:200,y:cY-crR*.25,r:crR*.2}]);
-    tree+=branchesSVG(branchTotal, 200, cY, lv);
-    tree+=anonLeavesSVG(qs, 200, cY, crR);
-    tree+=companionSVG(200, cY, crR);
-    tree+=stickersSVG(interactive);
-    tree+=`</g>`;
-    tree+=`<text x="200" y="${groundY+24}" text-anchor="middle" fill="#5C3D1E" font-size="10" font-weight="bold" font-family="'Gaegu',cursive">🌳 큰 나무 Lv.${lv}</text>`;
-  }
-  else{
-    const trH=140;const crR=110;
-    tree+=`<g ${swayClass}>`;
-    for(let i=0;i<4;i++){
-      const ang=[-45,-20,20,45][i],len=[65,50,55,60][i];
-      const rx=200+Math.sin(ang*Math.PI/180)*len,ry=groundY+5+Math.abs(Math.cos(ang*Math.PI/180))*12;
-      tree+=`<path d="M${200+[-6,-2,2,6][i]},${groundY+2} Q${(200+rx)/2},${ry+4} ${rx},${ry}" stroke="#5C3D1E" stroke-width="${3.5-i*.3}" fill="none" opacity="${.45-i*.05}"/>`;
-    }
-    tree+=`<path d="M182,${groundY+3} Q168,${groundY-50} 184,${groundY-trH} L216,${groundY-trH} Q232,${groundY-50} 218,${groundY+3}" fill="url(#trG)"/>`;
-    const brData=[[195,-.6,150,-.78,120,-.92,5.5],[205,-.55,250,-.72,280,-.88,5],[198,-.75,168,-.9,148,-1,3.5],[202,-.7,235,-.88,258,-.98,3.2],[200,-.82,200,-1,200,-1.1,3]];
-    brData.forEach(b=>{tree+=`<path d="M${b[0]},${groundY+trH*b[1]} Q${b[2]},${groundY+trH*b[3]} ${b[4]},${groundY+trH*b[5]}" stroke="#6B4E2E" stroke-width="${b[6]}" fill="none" stroke-linecap="round"/>`;});
-    const cY=groundY-trH-crR*.3;
-    tree+=`<ellipse cx="200" cy="${cY+10}" rx="${crR*1.1}" ry="${crR*.88}" fill="#1B5E20" opacity=".3"/>`;
-    tree+=`<ellipse cx="200" cy="${cY}" rx="${crR}" ry="${crR*.82}" fill="url(#crG)" opacity=".88"/>`;
-    const blobs=[[-.4,8,.48,.42],[.4,5,.44,.38],[0,-.28,.44,.36],[-.25,-.15,.35,.28],[.28,-.18,.32,.26]];
-    blobs.forEach((b,i)=>{tree+=`<ellipse cx="${200+crR*b[0]}" cy="${cY+crR*b[1]/10}" rx="${crR*b[2]}" ry="${crR*b[3]}" fill="${sc.leafColors[i%sc.leafColors.length]}" opacity="${.55-i*.04}"/>`;});
-    tree+=`<ellipse cx="${200-crR*.12}" cy="${cY-crR*.08}" rx="${crR*.22}" ry="${crR*.16}" fill="rgba(255,255,255,.06)"/>`;
-    for(let i=0;i<25;i++){
-      const a=(i/25)*Math.PI*2+.3,rd=crR*.55+(i%5)*5,x=200+Math.cos(a)*rd,y=cY+Math.sin(a)*rd*.55,sz=2.5+(i%4);
-      tree+=`<ellipse cx="${x}" cy="${y}" rx="${sz}" ry="${sz*.6}" fill="hsl(${sc.leafHues[i%sc.leafHues.length]},48%,55%)" opacity=".35" transform="rotate(${i*25} ${x} ${y})"/>`;
-    }
-    tree+=fruitsSVG(qs,[{x:200,y:cY,r:crR*.4},{x:200-crR*.38,y:cY+8,r:crR*.28},{x:200+crR*.38,y:cY+5,r:crR*.26},{x:200,y:cY-crR*.25,r:crR*.2},{x:200-crR*.2,y:cY+crR*.2,r:crR*.18}]);
-    tree+=branchesSVG(branchTotal, 200, cY, lv);
-    tree+=anonLeavesSVG(qs, 200, cY, crR);
-    tree+=companionSVG(200, cY, crR);
-    tree+=stickersSVG(interactive);
-    tree+=`</g>`;
-    tree+=`<text x="200" y="${groundY+24}" text-anchor="middle" fill="#5C3D1E" font-size="10" font-weight="bold" font-family="'Gaegu',cursive">🏆 거대한 나무 Lv.${lv}</text>`;
-  }
-  return `<svg viewBox="0 0 ${W} ${H}" class="tree-svg" xmlns="http://www.w3.org/2000/svg"${interactive?' id="tSvg" onclick="plStk(event)"':''}>${sky}${ground}${grass}${particles}${tree}</svg>`;
+
+  // 공통 오버레이: 열매, 꼬리가지, 익명잎, 동반자, 스티커
+  // 소나무는 원형 crown이 없고 삼각이므로 열매 영역을 중앙으로
+  const fruitCenter = (species==='pine') ? {cx:200, cy:groundY-trunkH*.5, r:crR*.55}
+                    : (species==='palm') ? {cx:200, cy:cY+5, r:crR*.5}
+                    : {cx:200, cy:cY, r:crR*.75};
+  tree += fruitsSVG(qs, fruitCenter);
+  tree += branchesSVG(branchTotal, species==='pine'?200:200, species==='pine'?groundY-trunkH*.6:cY, lv);
+  tree += anonLeavesSVG(qs, 200, species==='pine'?groundY-trunkH*.6:cY, crR);
+  tree += companionSVG(200, species==='pine'?groundY-trunkH*.7:cY, crR);
+  tree += stickersSVG(interactive);
+  tree += `</g>`;
+
+  const stageLabel = lv===2?'🌿 묘목' : lv<=4?ts.label+' Lv.'+lv : lv<=7?'🌳 '+ts.label.replace(/^\S+\s/,'')+' Lv.'+lv : '🏆 거대한 '+ts.label.replace(/^\S+\s/,'')+' Lv.'+lv;
+  tree += `<text x="200" y="${groundY+26}" text-anchor="middle" fill="#5C3D1E" font-size="11" font-weight="bold" font-family="'Gaegu',cursive">${stageLabel}</text>`;
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="tree-svg" xmlns="http://www.w3.org/2000/svg"${interactive?' id="tSvg" onclick="plStk(event)"':''}>${sky}${clouds}${ground}${grass}${particles}${tree}</svg>`;
 }
 
-// 질문별 열매 모양 적용
-function fruitsSVG(qs, zones){
-  const resolvedQs = qs.filter(q=>q.resolved);
-  const n=Math.min(resolvedQs.length,18);
+// --------------------------------------------------------------------
+// 기본형/벚/단풍 - 둥근 crown
+// --------------------------------------------------------------------
+function buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, crown, variant){
   let s='';
-  for(let i=0;i<n;i++){
-    const q=resolvedQs[i];
+  // 뿌리
+  s+=`<path d="M188,${groundY+2} Q165,${groundY+14} 138,${groundY+10}" stroke="${ts.trunk[0]}" stroke-width="3.5" fill="none" opacity=".5"/>`;
+  s+=`<path d="M212,${groundY+2} Q238,${groundY+15} 262,${groundY+9}" stroke="${ts.trunk[0]}" stroke-width="3.2" fill="none" opacity=".45"/>`;
+  // 몸통 (왼쪽 볼록 + 오른쪽 볼록)
+  const tTop=groundY-trunkH;
+  const tw = lv<=4 ? 6 : lv<=7 ? 9 : 14;
+  s+=`<path d="M${200-tw},${groundY+2} Q${196-tw},${groundY-trunkH*.5} ${200-tw*.7},${tTop} L${200+tw*.7},${tTop} Q${204+tw},${groundY-trunkH*.5} ${200+tw},${groundY+2} Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
+  // 나무껍질 질감
+  s+=`<path d="M${200-tw*.4},${groundY-trunkH*.15} Q${200},${groundY-trunkH*.4} ${199},${groundY-trunkH*.65}" stroke="${ts.trunk[0]}" stroke-width=".8" fill="none" opacity=".35"/>`;
+  s+=`<path d="M${200+tw*.3},${groundY-trunkH*.25} Q${201},${groundY-trunkH*.5} ${202},${groundY-trunkH*.7}" stroke="${ts.trunk[0]}" stroke-width=".6" fill="none" opacity=".3"/>`;
+  // 좌우 주 가지
+  s+=`<path d="M${200-tw*.7},${groundY-trunkH*.6} Q${160},${groundY-trunkH*.78} ${135},${groundY-trunkH*.92}" stroke="${ts.trunk[1]}" stroke-width="${3+lv*.3}" fill="none" stroke-linecap="round"/>`;
+  s+=`<path d="M${200+tw*.7},${groundY-trunkH*.55} Q${240},${groundY-trunkH*.72} ${268},${groundY-trunkH*.88}" stroke="${ts.trunk[1]}" stroke-width="${3+lv*.3}" fill="none" stroke-linecap="round"/>`;
+  if(lv>=5) s+=`<path d="M200,${groundY-trunkH*.75} Q180,${groundY-trunkH*.9} 170,${groundY-trunkH}" stroke="${ts.trunk[1]}" stroke-width="${2+lv*.2}" fill="none" stroke-linecap="round"/>`;
+  if(lv>=7) s+=`<path d="M200,${groundY-trunkH*.8} Q225,${groundY-trunkH*.95} 238,${groundY-trunkH}" stroke="${ts.trunk[1]}" stroke-width="${2+lv*.2}" fill="none" stroke-linecap="round"/>`;
+
+  // 그림자
+  s+=`<ellipse cx="200" cy="${cY+crR*.25}" rx="${crR*1.05}" ry="${crR*.85}" fill="${crown[2]||crown[0]}" opacity=".32"/>`;
+  // 메인 crown
+  s+=`<ellipse cx="200" cy="${cY}" rx="${crR}" ry="${crR*.82}" fill="url(#crG)" opacity=".92"/>`;
+  // 볼륨 ellipse들 (좌·우·위)
+  s+=`<ellipse cx="${200-crR*.4}" cy="${cY+crR*.15}" rx="${crR*.48}" ry="${crR*.4}" fill="${crown[1]||crown[0]}" opacity=".65"/>`;
+  s+=`<ellipse cx="${200+crR*.4}" cy="${cY+crR*.12}" rx="${crR*.46}" ry="${crR*.38}" fill="${crown[2]||crown[1]||crown[0]}" opacity=".6"/>`;
+  s+=`<ellipse cx="200" cy="${cY-crR*.3}" rx="${crR*.55}" ry="${crR*.4}" fill="${crown[0]}" opacity=".65"/>`;
+  // 하이라이트
+  s+=`<ellipse cx="${200-crR*.25}" cy="${cY-crR*.2}" rx="${crR*.28}" ry="${crR*.18}" fill="rgba(255,255,255,.22)"/>`;
+  s+=`<ellipse cx="${200-crR*.1}" cy="${cY-crR*.35}" rx="${crR*.15}" ry="${crR*.08}" fill="rgba(255,255,255,.35)"/>`;
+
+  // 개별 잎사귀 (더 자연스럽게)
+  const leafCount = Math.min(lv*4, 30);
+  for(let i=0;i<leafCount;i++){
+    const a=(i/leafCount)*Math.PI*2 + (i*.37);
+    const rd=crR*(.35+((i*7)%40)/100);
+    const x=200+Math.cos(a)*rd;
+    const y=cY+Math.sin(a)*rd*.62;
+    const sz=2.5+((i*3)%4);
+    const col = crown[i%crown.length];
+    s+=`<ellipse cx="${x}" cy="${y}" rx="${sz}" ry="${sz*.7}" fill="${col}" opacity=".5" transform="rotate(${(i*37)%180} ${x} ${y})"/>`;
+  }
+
+  // 벚꽃/단풍 특화 - 꽃/잎 모양
+  if(variant==='cherry'){
+    for(let i=0;i<Math.min(lv*3,22);i++){
+      const a=(i/22)*Math.PI*2+i*.3;
+      const rd=crR*(.4+((i*5)%50)/100);
+      const x=200+Math.cos(a)*rd;
+      const y=cY+Math.sin(a)*rd*.6;
+      s+=`<g transform="translate(${x},${y})">
+        <circle cx="0" cy="0" r="2.8" fill="#FCE4EC"/>
+        <circle cx="-1.5" cy="-1" r="1.4" fill="#F8BBD0"/>
+        <circle cx="1.5" cy="-1" r="1.4" fill="#F8BBD0"/>
+        <circle cx="1.8" cy="1" r="1.4" fill="#F8BBD0"/>
+        <circle cx="-1.8" cy="1" r="1.4" fill="#F8BBD0"/>
+        <circle cx="0" cy="-1.8" r="1.4" fill="#F8BBD0"/>
+        <circle cx="0" cy="0" r=".8" fill="#FFD54F"/>
+      </g>`;
+    }
+  }
+  if(variant==='maple'){
+    for(let i=0;i<Math.min(lv*2,18);i++){
+      const a=(i/18)*Math.PI*2+i*.4;
+      const rd=crR*(.45+((i*7)%40)/100);
+      const x=200+Math.cos(a)*rd;
+      const y=cY+Math.sin(a)*rd*.6;
+      const col = ['#E65100','#F57C00','#D84315','#FF6F00'][i%4];
+      // 단풍잎 (간단한 별모양 path)
+      s+=`<g transform="translate(${x},${y}) rotate(${(i*31)%360})">
+        <path d="M0,-5 L2,-2 L5,-3 L3,0 L5,3 L2,2 L0,5 L-2,2 L-5,3 L-3,0 L-5,-3 L-2,-2 Z" fill="${col}" opacity=".85"/>
+      </g>`;
+    }
+  }
+
+  return s;
+}
+
+// --------------------------------------------------------------------
+// 소나무 (삼각 - 단층 -> 다층)
+// --------------------------------------------------------------------
+function buildPine(groundY, trunkH, crR, cY, ts, lv, sc){
+  let s='';
+  // 뿌리
+  s+=`<path d="M192,${groundY+2} Q170,${groundY+12} 148,${groundY+8}" stroke="${ts.trunk[0]}" stroke-width="2.8" fill="none" opacity=".5"/>`;
+  s+=`<path d="M208,${groundY+2} Q230,${groundY+12} 252,${groundY+8}" stroke="${ts.trunk[0]}" stroke-width="2.6" fill="none" opacity=".45"/>`;
+  // 곧은 몸통 (원형 기둥)
+  const tw = lv<=4 ? 5 : lv<=7 ? 7 : 10;
+  const tTop = groundY-trunkH+5;
+  s+=`<path d="M${200-tw},${groundY+2} L${200-tw*.6},${tTop} L${200+tw*.6},${tTop} L${200+tw},${groundY+2} Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
+  // 세로선
+  s+=`<line x1="200" y1="${groundY-5}" x2="200" y2="${tTop}" stroke="${ts.trunk[0]}" stroke-width=".7" opacity=".3"/>`;
+  s+=`<line x1="${200-tw*.5}" y1="${groundY-5}" x2="${200-tw*.3}" y2="${tTop}" stroke="${ts.trunk[0]}" stroke-width=".5" opacity=".25"/>`;
+
+  // 삼각층: lv에 따라 층 수 증가
+  const layers = lv<=4?2 : lv<=7?3 : 4;
+  const topY = groundY-trunkH-20;
+  const bottomY = groundY-15;
+  const layerH = (bottomY-topY)/layers;
+  for(let i=0;i<layers;i++){
+    const y1 = topY + i*layerH; // 꼭대기
+    const y2 = y1 + layerH*1.05; // 밑변
+    const halfW = (crR*.55) * (0.45 + i*0.28);
+    // 그림자
+    s+=`<path d="M${200-halfW-2},${y2+2} L200,${y1-3} L${200+halfW+2},${y2+2} Z" fill="${ts.crown[2]}" opacity=".35"/>`;
+    // 메인
+    s+=`<path d="M${200-halfW},${y2} L200,${y1} L${200+halfW},${y2} Z" fill="${ts.crown[0]}" opacity=".95"/>`;
+    // 볼륨
+    s+=`<path d="M${200-halfW*.75},${y2-2} L200,${y1+2} L${200-halfW*.15},${y2-2} Z" fill="${ts.crown[1]}" opacity=".7"/>`;
+    // 바늘잎 텍스처 (짧은 선)
+    const needles = 8 + i*2;
+    for(let k=0;k<needles;k++){
+      const tt = k/needles;
+      const lx = 200 - halfW + tt*halfW*2;
+      const ly = y2 - tt*(y2-y1)*.8 * (tt<.5? 1 : (1-tt)*2);
+      const ang = Math.atan2(y1-y2, (k<needles/2?-halfW:halfW)) * 180/Math.PI;
+      s+=`<line x1="${lx}" y1="${ly}" x2="${lx+Math.cos(ang*Math.PI/180)*3}" y2="${ly+Math.sin(ang*Math.PI/180)*3}" stroke="${ts.crown[2]}" stroke-width=".8" opacity=".55"/>`;
+    }
+  }
+  // 꼭대기 뾰족한 리프
+  s+=`<path d="M${200-3},${topY-5} L200,${topY-18} L${200+3},${topY-5} Z" fill="${ts.crown[0]}"/>`;
+  // 솔방울 (lv7+)
+  if(lv>=6){
+    for(let k=0;k<Math.min(lv-5, 4);k++){
+      const px = 200 + (k%2?15:-15) + (k*3);
+      const py = topY + 30 + k*25;
+      s+=`<ellipse cx="${px}" cy="${py}" rx="2.5" ry="4" fill="#6D4C2C"/>`;
+      s+=`<ellipse cx="${px}" cy="${py-1}" rx="1.5" ry="1.5" fill="#8B6F47"/>`;
+    }
+  }
+
+  return s;
+}
+
+// --------------------------------------------------------------------
+// 야자수 (길고 휘어진 기둥 + 긴 잎)
+// --------------------------------------------------------------------
+function buildPalm(groundY, trunkH, crR, cY, ts, lv){
+  let s='';
+  // 뿌리
+  s+=`<path d="M190,${groundY+2} Q170,${groundY+10} 152,${groundY+6}" stroke="${ts.trunk[0]}" stroke-width="2.5" fill="none" opacity=".5"/>`;
+  s+=`<path d="M210,${groundY+2} Q230,${groundY+11} 248,${groundY+7}" stroke="${ts.trunk[0]}" stroke-width="2.3" fill="none" opacity=".45"/>`;
+  // 휘어진 몸통 (S커브)
+  const tw = lv<=4 ? 5 : lv<=7 ? 7 : 9;
+  const midY = groundY-trunkH*.5;
+  const topX = 200 + (lv<=4?8:12);
+  const topY = groundY-trunkH+5;
+  s+=`<path d="M${200-tw},${groundY+2} Q${195-tw*.5},${midY} ${topX-tw*.6},${topY} L${topX+tw*.6},${topY} Q${205+tw*.5},${midY} ${200+tw},${groundY+2} Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
+  // 링무늬
+  const rings = Math.min(lv+2, 7);
+  for(let k=0;k<rings;k++){
+    const tt = (k+1)/(rings+1);
+    const ringY = groundY - trunkH*tt;
+    const ringX = 200 + tt*(topX-200);
+    const rw = tw*(1-tt*.15);
+    s+=`<ellipse cx="${ringX}" cy="${ringY}" rx="${rw*1.1}" ry="${rw*.35}" fill="none" stroke="${ts.trunk[0]}" stroke-width=".9" opacity=".45"/>`;
+  }
+
+  // 잎 - 길쭉한 아치형 (수 늘어남)
+  const fronds = lv<=4 ? 5 : lv<=7 ? 7 : 9;
+  const fcx = topX;
+  const fcy = topY;
+  for(let i=0;i<fronds;i++){
+    const a = (i/fronds)*Math.PI - Math.PI/2 + (i%2?-.1:.1);
+    const len = crR*1.1 + (i%3)*5;
+    const endX = fcx + Math.cos(a)*len;
+    const endY = fcy + Math.sin(a)*len*.55;
+    const midMX = fcx + Math.cos(a)*len*.5 + (i%2?-3:3);
+    const midMY = fcy + Math.sin(a)*len*.3 - 12;
+    // 잎 줄기
+    s+=`<path d="M${fcx},${fcy} Q${midMX},${midMY} ${endX},${endY}" stroke="${ts.crown[1]}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>`;
+    // 잎 가장자리 (얇은 삼각)
+    s+=`<path d="M${fcx},${fcy} Q${midMX+3},${midMY-4} ${endX+3},${endY+2} Q${midMX-2},${midMY+5} ${fcx-1},${fcy+2} Z" fill="${ts.crown[0]}" opacity=".8"/>`;
+    // 잎맥 라인들
+    for(let k=0;k<5;k++){
+      const tt = (k+1)/6;
+      const bx = fcx + (midMX-fcx)*tt + (endX-midMX)*tt*tt*.5;
+      const by = fcy + (midMY-fcy)*tt + (endY-midMY)*tt*tt*.5;
+      const sideAng = a + Math.PI/2;
+      const sideLen = 5 - k*.5;
+      s+=`<line x1="${bx}" y1="${by}" x2="${bx+Math.cos(sideAng)*sideLen}" y2="${by+Math.sin(sideAng)*sideLen}" stroke="${ts.crown[2]}" stroke-width="1" opacity=".7"/>`;
+      s+=`<line x1="${bx}" y1="${by}" x2="${bx-Math.cos(sideAng)*sideLen}" y2="${by-Math.sin(sideAng)*sideLen}" stroke="${ts.crown[2]}" stroke-width="1" opacity=".7"/>`;
+    }
+  }
+  // 중심 볼 (코코넛 클러스터)
+  if(lv>=5){
+    s+=`<circle cx="${fcx}" cy="${fcy}" r="5" fill="${ts.trunk[1]}" opacity=".8"/>`;
+    for(let k=0;k<Math.min(lv-3,4);k++){
+      s+=`<circle cx="${fcx+(k%2?-4:4)}" cy="${fcy+k*2}" r="3" fill="#6D4C2C"/>`;
+    }
+  }
+  return s;
+}
+
+// --------------------------------------------------------------------
+// 바오밥 (거대한 몸통, 가지는 위에서 뻗어나감)
+// --------------------------------------------------------------------
+function buildBaobab(groundY, trunkH, crR, cY, ts, lv, sc){
+  let s='';
+  // 뿌리 (큼직함)
+  s+=`<path d="M178,${groundY+2} Q145,${groundY+18} 105,${groundY+12}" stroke="${ts.trunk[0]}" stroke-width="5" fill="none" opacity=".55"/>`;
+  s+=`<path d="M222,${groundY+2} Q255,${groundY+18} 295,${groundY+12}" stroke="${ts.trunk[0]}" stroke-width="4.5" fill="none" opacity=".5"/>`;
+  s+=`<path d="M195,${groundY+2} Q180,${groundY+8} 165,${groundY+14}" stroke="${ts.trunk[0]}" stroke-width="3" fill="none" opacity=".45"/>`;
+  s+=`<path d="M205,${groundY+2} Q220,${groundY+8} 235,${groundY+14}" stroke="${ts.trunk[0]}" stroke-width="3" fill="none" opacity=".45"/>`;
+  // 두꺼운 병 모양 몸통
+  const tw = lv<=4 ? 18 : lv<=7 ? 26 : 36;
+  const tTop = groundY-trunkH+5;
+  const topW = tw*.55;
+  s+=`<path d="M${200-tw},${groundY+3} Q${195-tw*.6},${groundY-trunkH*.3} ${200-tw*.85},${groundY-trunkH*.6} Q${200-topW-2},${tTop+8} ${200-topW},${tTop} L${200+topW},${tTop} Q${200+topW+2},${tTop+8} ${200+tw*.85},${groundY-trunkH*.6} Q${205+tw*.6},${groundY-trunkH*.3} ${200+tw},${groundY+3} Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
+  // 몸통 텍스처
+  s+=`<path d="M${200-tw*.4},${groundY-trunkH*.2} Q${200},${groundY-trunkH*.35} ${198},${groundY-trunkH*.55}" stroke="${ts.trunk[0]}" stroke-width="1" fill="none" opacity=".35"/>`;
+  s+=`<path d="M${200+tw*.3},${groundY-trunkH*.25} Q${200+tw*.15},${groundY-trunkH*.45} ${202},${groundY-trunkH*.6}" stroke="${ts.trunk[0]}" stroke-width=".8" fill="none" opacity=".3"/>`;
+  s+=`<ellipse cx="${200-tw*.25}" cy="${groundY-trunkH*.3}" rx="${tw*.08}" ry="3" fill="${ts.trunk[0]}" opacity=".25"/>`;
+  // 위에서 뻗어나가는 가지들 (바오밥 특유의 '뒤집힌 뿌리' 실루엣)
+  const branches = lv<=4 ? 4 : lv<=7 ? 6 : 8;
+  for(let i=0;i<branches;i++){
+    const a = (i/branches)*Math.PI - Math.PI/2 + (i%2?-.15:.15);
+    const len = 35 + lv*3 + (i%3)*5;
+    const ex = 200 + Math.cos(a)*len;
+    const ey = tTop - 5 + Math.sin(a)*len*.7;
+    const mx = 200 + Math.cos(a)*len*.4 + (i%2?4:-4);
+    const my = tTop - 2 + Math.sin(a)*len*.3 - 4;
+    s+=`<path d="M200,${tTop} Q${mx},${my} ${ex},${ey}" stroke="${ts.trunk[1]}" stroke-width="${3+lv*.2}" fill="none" stroke-linecap="round"/>`;
+    // 잎 덩어리 (끝)
+    s+=`<ellipse cx="${ex}" cy="${ey}" rx="${14+lv*.7}" ry="${10+lv*.5}" fill="${ts.crown[0]}" opacity=".85"/>`;
+    s+=`<ellipse cx="${ex-3}" cy="${ey-2}" rx="${8}" ry="6" fill="${ts.crown[1]}" opacity=".65"/>`;
+    s+=`<ellipse cx="${ex-2}" cy="${ey-3}" rx="3" ry="2" fill="rgba(255,255,255,.3)"/>`;
+    // 작은 잎들
+    for(let k=0;k<4;k++){
+      const aa = k*Math.PI/2 + .3;
+      const rd = 8 + (k%2)*3;
+      s+=`<ellipse cx="${ex+Math.cos(aa)*rd}" cy="${ey+Math.sin(aa)*rd*.7}" rx="3" ry="2" fill="${ts.crown[2]||ts.crown[0]}" opacity=".6"/>`;
+    }
+  }
+  // 중앙 잎 덩어리 (머리 위)
+  s+=`<ellipse cx="200" cy="${tTop-10}" rx="${crR*.5}" ry="${crR*.3}" fill="${ts.crown[0]}" opacity=".75"/>`;
+  s+=`<ellipse cx="200" cy="${tTop-12}" rx="${crR*.35}" ry="${crR*.2}" fill="${ts.crown[1]}" opacity=".6"/>`;
+  return s;
+}
+
+// 질문별 열매 적용 — crown 영역(cx,cy,r) 전체에 나선형으로 분포
+// zones 형식(구버전)이나 {cx,cy,r} 형식(신버전) 둘 다 받음 - 호환성
+function fruitsSVG(qs, center){
+  const resolvedQs = qs.filter(q=>q.resolved);
+  const n = resolvedQs.length;
+  if(!n) return '';
+
+  // 구버전 zones 배열 호환
+  let cx, cy, cr;
+  if(Array.isArray(center)){
+    // 구버전: 중심 평균
+    const avg = center.reduce((a,z)=>({x:a.x+z.x, y:a.y+z.y, r:a.r+z.r}), {x:0,y:0,r:0});
+    cx = avg.x/center.length;
+    cy = avg.y/center.length;
+    cr = (avg.r/center.length)*3; // zone 반지름을 crown 반지름으로 확장
+  } else {
+    cx = center.cx; cy = center.cy; cr = center.r;
+  }
+
+  let s='';
+  // 열매를 crown 안에 나선형으로 배치
+  // 최대 개수 상한을 크게 두되, 크기 자동 조절
+  const cap = Math.min(n, 40);
+  // 열매 크기: 많아지면 작아짐 (최소 11px)
+  const sz = Math.max(11, Math.min(18, Math.round(20 - cap/4)));
+  const half = sz/2;
+
+  // 황금각 (Vogel 나선) 배치: 자연스럽고 겹치지 않음
+  const goldenAng = Math.PI * (3 - Math.sqrt(5));
+  // radius step: 열매들이 crown 안에 고르게 퍼지도록
+  for(let i=0; i<cap; i++){
+    const q = resolvedQs[i];
     const fruit = q.fruit || S.fruit;
-    const z=zones[i%zones.length];
-    const a=(i/Math.max(n,1))*Math.PI*2+i*.3;
-    const x=z.x+Math.cos(a)*z.r;
-    const y=z.y+Math.sin(a)*z.r*.7;
-    s+=`<g class="fruit-bob" style="animation-delay:${(i*.3).toFixed(1)}s"><foreignObject x="${x-10}" y="${y-10}" width="20" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:16px;text-align:center;line-height:20px">${esc(fruit)}</div></foreignObject></g>`;
+    // 나선형 분포: t는 0→1로 증가, sqrt로 반지름 분포를 균등하게
+    const t = i/Math.max(cap-1, 1);
+    const rd = cr * Math.sqrt(t) * 0.85; // 0.85로 crown 경계 살짝 안쪽
+    const a = i * goldenAng + .3;
+    const x = cx + Math.cos(a) * rd;
+    const y = cy + Math.sin(a) * rd * 0.75; // y축은 약간 눌러서 crown 타원 모양 따라감
+
+    s += `<g class="fruit-bob" style="animation-delay:${(i*.15).toFixed(2)}s">
+      <ellipse cx="${x+1}" cy="${y+half+1}" rx="${half*.6}" ry="${half*.25}" fill="rgba(0,0,0,.18)"/>
+      <foreignObject x="${x-half}" y="${y-half}" width="${sz}" height="${sz}">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:${sz-2}px;text-align:center;line-height:${sz}px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))">${esc(fruit)}</div>
+      </foreignObject>
+    </g>`;
   }
   return s;
 }
@@ -1457,7 +1789,6 @@ function renderQs(){
     } else {
       const tagHtml=(q.tags||[]).map(t=>`<span class="qc-tag">${esc(t)}</span>`).join('');
       const frEmoji=q.fruit||S.fruit;
-      const watered=(q.watered_by||[]).includes(S.user?.id);
       const expanded=S.expandedBranches.has(q.id);
       const brCount=(q.branches||[]).length;
 
@@ -1474,7 +1805,6 @@ function renderQs(){
         </div>
         <div class="qc-a">
           <button class="qb qb-f" onclick="openFy(${q.id})" title="AI 힌트">🧚</button>
-          <button class="qb qb-w${watered?' dn':''}" onclick="waterQ(event,${q.id})" title="나도 궁금해!">💧${q.water_count?`<span class="wc">${q.water_count}</span>`:''}</button>
           <button class="qb qb-br" onclick="openBM(${q.id})" title="꼬리질문">🌿</button>
           <button class="qb qb-e" onclick="openFrPick(${q.id})" title="열매 모양">🍎</button>
           <button class="qb qb-e" onclick="S.editId=${q.id};renderQs()" title="수정">✏️</button>
@@ -1590,33 +1920,145 @@ async function delQ(id){
 }
 
 // ============================================================================
-// 💧 물 주기 (나도 궁금해!)
+// 💧 물 주기 (나도 궁금해!) — 우리반 친구의 질문에만 가능
 // ============================================================================
-async function waterQ(ev, id){
-  const q=(S.questions[S.activeSub]||[]).find(x=>x.id===id);
-  if(!q) return;
+// 물을 주려면 자신도 질문을 1개 이상 작성한 상태여야 함
+function canWaterQuestions(){
+  return totalQs(S) > 0;
+}
+
+// ev = 클릭 이벤트, qid = 대상 질문 id, ownerId = 질문 주인의 user_id
+async function waterQ(ev, qid, ownerId){
+  if(!S.user){toast('로그인이 필요해요');return;}
+  if(ownerId && ownerId===S.user.id){
+    toast('자기 질문에는 물을 줄 수 없어요 🙂');
+    return;
+  }
+  if(!canWaterQuestions()){
+    toast('먼저 나의 질문을 1개 이상 심어야 해요! 🌱');
+    return;
+  }
+
+  // S.frView.questions 에서 찾음 (친구 질문)
+  const q = S.frView?.questions?.find(x=>x.id===qid);
+  if(!q){toast('질문을 찾을 수 없어요');return;}
+
   const watered=(q.watered_by||[]).includes(S.user.id);
   if(watered){toast('이미 물을 줬어요 💧');return;}
 
   // 애니메이션
-  const r=ev.currentTarget.getBoundingClientRect();
-  waterAnim(r.left+r.width/2, r.top);
+  try{
+    const r=ev.currentTarget.getBoundingClientRect();
+    waterAnim(r.left+r.width/2, r.top);
+  }catch(_){}
 
   const newBy=[...(q.watered_by||[]), S.user.id];
   const newCnt=(q.water_count||0)+1;
 
+  // ownerId 조건 없이 업데이트 (RLS로 수정 가능하도록 정책 필요)
   const {error}=await sb.from('questions')
     .update({water_count:newCnt, watered_by:newBy})
-    .eq('id',id);
+    .eq('id',qid);
   if(error){
-    // RLS나 권한 문제로 실패할 수 있음 - 로컬만 반영
-    console.warn('water update failed, local only:', error);
+    console.warn('water update failed:', error);
+    toast('물주기를 저장하지 못했어요 😢');
+    return;
   }
-  q.water_count=newCnt;q.watered_by=newBy;
+  q.water_count=newCnt; q.watered_by=newBy;
 
   // 물 주는 사람에게 도토리 +1
   await addSeeds(1, '💧 물 주기 +1 🌰');
-  renderQs();renderTree();
+  // 모달 내 버튼 갱신
+  renderFrViewList();
+}
+
+// ============================================================================
+// 🌳 친구 나무 열기 — 우리반의 숲에서 클릭하면 해당 친구의 질문 목록 표시
+// ============================================================================
+async function openFrView(profile){
+  if(!profile) return;
+  S.frView = {profile, questions:null};
+  $('fvIc').textContent = (TREE_STYLES[profile.active_tree]?.label?.match(/^\S+/)?.[0]) || '🌳';
+  $('fvNm').textContent = `${profile.number}번 ${profile.name||'친구'}의 나무`;
+  $('fvSub').textContent = `${profile.grade}학년 ${profile.class_no}반`;
+  $('fvList').innerHTML = '<div class="fv-empty"><div class="em">💧</div><div>질문 목록을 불러오는 중...</div></div>';
+  $('mFrView').classList.add('show');
+
+  try{
+    const {data, error} = await sb.from('questions')
+      .select('*')
+      .eq('user_id', profile.id)
+      .order('created_at', {ascending:false});
+    if(error) throw error;
+    S.frView.questions = (data||[]).map(q=>({
+      id:q.id, text:q.text, resolved:q.resolved, date:q.question_date,
+      fruit:q.fruit_emoji||null,
+      is_anonymous:q.is_anonymous||false,
+      water_count:q.water_count||0,
+      watered_by:q.watered_by||[],
+    }));
+    renderFrViewList();
+  }catch(err){
+    console.error('openFrView error:', err);
+    $('fvList').innerHTML = `<div class="fv-empty"><div class="em">⚠️</div><div>질문을 불러올 수 없어요<br><span style="font-size:var(--fs-xxs);color:var(--tl)">${esc(err.message||'')}</span></div></div>`;
+  }
+}
+
+function closeFrView(){
+  $('mFrView').classList.remove('show');
+  S.frView = null;
+  // 숲 통계 갱신
+  if($('tp-forest')?.classList.contains('on')) renderForest();
+}
+
+function renderFrViewList(){
+  const el=$('fvList');
+  if(!el || !S.frView) return;
+  const qs = S.frView.questions||[];
+  const isMe = S.frView.profile.id === S.user?.id;
+
+  // 자기 나무면 안내
+  if(isMe){
+    el.innerHTML = `<div class="fv-gate">🌱 여기는 <b>나의 나무</b>예요! 친구 나무에서 물을 줘보세요.</div>`;
+    return;
+  }
+
+  // 물주기 자격 확인
+  const gateHtml = canWaterQuestions()
+    ? ''
+    : `<div class="fv-gate">💡 먼저 <b>나의 질문을 1개 이상</b> 심어야 친구에게 물을 줄 수 있어요!</div>`;
+
+  if(!qs.length){
+    el.innerHTML = gateHtml + `<div class="fv-empty"><div class="em">🌱</div><div>아직 질문이 없어요</div></div>`;
+    return;
+  }
+
+  let html = gateHtml;
+  qs.forEach(q=>{
+    const watered = (q.watered_by||[]).includes(S.user?.id);
+    const fruit = q.fruit || '🍎';
+    const disabled = watered || !canWaterQuestions();
+    html += `
+      <div class="fv-q${q.resolved?' resolved':''}">
+        <div class="fv-q-hdr">
+          <div class="fv-q-txt">${esc(q.text)}</div>
+          ${q.resolved?`<div class="fv-q-fr">${fruit}</div>`:''}
+        </div>
+        <div class="fv-q-meta">
+          <span>📅 ${q.date||''}</span>
+          ${q.resolved?`<span style="color:var(--pr);font-weight:700">✓ 해결</span>`:''}
+          ${q.is_anonymous?`<span class="anon-bdg">🕊️ 익명</span>`:''}
+          ${q.water_count?`<span>💧 ${q.water_count}명</span>`:''}
+        </div>
+        <div class="fv-q-act">
+          <button class="fv-w-btn" onclick="waterQ(event,${q.id},'${esc(S.frView.profile.id)}')" ${disabled?'disabled':''}>
+            ${watered?'💧 이미 물을 줬어요':'💧 나도 궁금해!'}
+            ${q.water_count?`<span class="wc-bdg">${q.water_count}</span>`:''}
+          </button>
+        </div>
+      </div>`;
+  });
+  el.innerHTML = html;
 }
 
 // ============================================================================
@@ -1773,29 +2215,32 @@ async function renderForest(){
     // 여기선 공개 집계(여기서는 '통합' 과목 기준 total)로 단순화
     const ids=classmates.map(c=>c.id);
     const {data:counts}=await sb.from('questions')
-      .select('user_id,resolved')
+      .select('user_id,resolved,water_count')
       .in('user_id',ids);
 
     const byUser={};
     (counts||[]).forEach(q=>{
-      if(!byUser[q.user_id]) byUser[q.user_id]={t:0,r:0};
+      if(!byUser[q.user_id]) byUser[q.user_id]={t:0,r:0,w:0};
       byUser[q.user_id].t++;
       if(q.resolved) byUser[q.user_id].r++;
+      byUser[q.user_id].w += (q.water_count||0);
     });
 
     // 숲 통계
     const totalTrees=classmates.length;
     const totalQ=(counts||[]).length;
     const totalR=(counts||[]).filter(q=>q.resolved).length;
+    const totalW=(counts||[]).reduce((s,q)=>s+(q.water_count||0),0);
     stats.innerHTML=`
       <div class="forest-stat"><span>🌳</span>나무 <b>${totalTrees}</b></div>
       <div class="forest-stat"><span>❓</span>질문 <b>${totalQ}</b></div>
       <div class="forest-stat"><span>🍎</span>열매 <b>${totalR}</b></div>
+      <div class="forest-stat"><span>💧</span>물주기 <b>${totalW}</b></div>
     `;
 
     grid.innerHTML='';
     classmates.forEach(c=>{
-      const data=byUser[c.id]||{t:0,r:0};
+      const data=byUser[c.id]||{t:0,r:0,w:0};
       const lv=Math.min(Math.floor(data.t/2)+1,10);
       const isMe=c.id===S.user.id;
 
@@ -1806,9 +2251,10 @@ async function renderForest(){
       d.innerHTML=`
         <div class="forest-mini">${miniTree(c,data,lv)}</div>
         <div class="forest-nm">${c.number}번 ${esc(c.name||'친구')}${isMe?' (나)':''}</div>
-        <div class="forest-lv">Lv.${lv} · 🍎${data.r}</div>
-        ${isMe?'<div class="forest-me-bdg">나의 나무</div>':''}
+        <div class="forest-lv">Lv.${lv} · 🍎${data.r}${data.w?` · 💧${data.w}`:''}</div>
+        ${isMe?'<div class="forest-me-bdg">나의 나무</div>':`<div style="font-size:var(--fs-xxs);color:var(--pr);margin-top:2px;font-weight:600">💧 물 주러 가기</div>`}
       `;
+      d.onclick=()=>openFrView(c);
       grid.appendChild(d);
     });
   }catch(err){
@@ -1817,45 +2263,124 @@ async function renderForest(){
   }
 }
 
-// 우리 반의 숲에서 보여줄 미니 나무 (간단 SVG)
+// 우리 반의 숲에서 보여줄 미니 나무 (간단 SVG, 종 반영)
 function miniTree(prof, data, lv){
   const season=prof.season||'spring';
   const sc=SEASON_COLORS[season];
   const fruit=prof.fruit_emoji||'🍎';
+  const species = prof.active_tree && TREE_STYLES[prof.active_tree] ? prof.active_tree : 'default';
+  const ts = TREE_STYLES[species];
   const W=120,H=130,groundY=115;
+  const cx=60;
+
   let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  s+=`<rect x="0" y="0" width="${W}" height="${H}" fill="${sc.sky[1]}" opacity=".4" rx="8"/>`;
-  s+=`<ellipse cx="60" cy="${groundY+3}" rx="50" ry="6" fill="${sc.ground}" opacity=".35"/>`;
+  s+=`<defs><linearGradient id="mSky-${prof.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sc.sky[0]}"/><stop offset="100%" stop-color="${sc.sky[2]}"/></linearGradient></defs>`;
+  s+=`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#mSky-${prof.id})" opacity=".55" rx="8"/>`;
+  s+=`<ellipse cx="${cx}" cy="${groundY+3}" rx="52" ry="6" fill="${sc.ground}" opacity=".4"/>`;
+
   if(lv===1){
-    s+=`<path d="M60,${groundY} Q59,${groundY-15} 60,${groundY-25}" stroke="#6B8B3A" stroke-width="2" fill="none"/>`;
-    s+=`<ellipse cx="56" cy="${groundY-22}" rx="5" ry="3" fill="${sc.leafColors[0]}"/>`;
-    s+=`<ellipse cx="64" cy="${groundY-25}" rx="5" ry="3" fill="${sc.leafColors[1]||sc.leafColors[0]}"/>`;
-  } else if(lv<=3){
-    s+=`<rect x="57" y="${groundY-40}" width="6" height="40" fill="#8B6F47"/>`;
-    s+=`<ellipse cx="60" cy="${groundY-45}" rx="20" ry="16" fill="${sc.leafColors[0]}" opacity=".9"/>`;
-    s+=`<ellipse cx="52" cy="${groundY-42}" rx="12" ry="10" fill="${sc.leafColors[1]||sc.leafColors[0]}" opacity=".7"/>`;
-    s+=`<ellipse cx="68" cy="${groundY-42}" rx="12" ry="10" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".7"/>`;
-  } else if(lv<=6){
-    s+=`<rect x="55" y="${groundY-55}" width="10" height="55" fill="#8B6F47"/>`;
-    s+=`<ellipse cx="60" cy="${groundY-58}" rx="30" ry="22" fill="${sc.leafColors[0]}" opacity=".9"/>`;
-    s+=`<ellipse cx="48" cy="${groundY-55}" rx="16" ry="13" fill="${sc.leafColors[1]||sc.leafColors[0]}" opacity=".7"/>`;
-    s+=`<ellipse cx="72" cy="${groundY-55}" rx="16" ry="13" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".7"/>`;
+    s+=`<ellipse cx="${cx}" cy="${groundY+1}" rx="8" ry="2.5" fill="#8D6E63"/>`;
+    s+=`<path d="M${cx},${groundY-2} Q${cx-1},${groundY-12} ${cx},${groundY-22}" stroke="#6B8B3A" stroke-width="2" fill="none"/>`;
+    s+=`<ellipse cx="${cx-4}" cy="${groundY-18}" rx="5" ry="3" fill="${sc.leafColors[0]}"/>`;
+    s+=`<ellipse cx="${cx+4}" cy="${groundY-22}" rx="5" ry="3" fill="${sc.leafColors[1]||sc.leafColors[0]}"/>`;
+    s+=`</svg>`;
+    return s;
+  }
+
+  // 레벨별 크기
+  let trunkH, crR, crY;
+  if(lv<=3){ trunkH=30; crR=18; }
+  else if(lv<=6){ trunkH=45; crR=24; }
+  else { trunkH=58; crR=30; }
+  crY = groundY - trunkH - crR*.3;
+
+  // 종별 렌더
+  if(species==='pine'){
+    // 몸통 얇게
+    s+=`<path d="M${cx-2},${groundY} L${cx-1.2},${groundY-trunkH} L${cx+1.2},${groundY-trunkH} L${cx+2},${groundY} Z" fill="${ts.trunk[1]}"/>`;
+    const layers = lv<=3?2:lv<=6?3:4;
+    const topY = groundY-trunkH-8;
+    const layerH = (groundY-5-topY)/layers;
+    for(let i=0;i<layers;i++){
+      const y1 = topY+i*layerH;
+      const y2 = y1+layerH*1.1;
+      const hw = (crR*.55)*(0.5+i*0.28);
+      s+=`<path d="M${cx-hw},${y2} L${cx},${y1} L${cx+hw},${y2} Z" fill="${ts.crown[0]}" opacity=".95"/>`;
+      s+=`<path d="M${cx-hw*.7},${y2-1} L${cx},${y1+1} L${cx-hw*.15},${y2-1} Z" fill="${ts.crown[1]}" opacity=".7"/>`;
+    }
+  } else if(species==='palm'){
+    const topY = groundY-trunkH;
+    const topX = cx+4;
+    s+=`<path d="M${cx-2},${groundY} Q${cx-1},${groundY-trunkH*.5} ${topX-2},${topY} L${topX+2},${topY} Q${cx+1},${groundY-trunkH*.5} ${cx+2},${groundY} Z" fill="${ts.trunk[1]}"/>`;
+    // 잎 5장
+    for(let i=0;i<5;i++){
+      const a = (i/4)*Math.PI - Math.PI/2 + (i%2?-.1:.1);
+      const len = crR*1.0 + (i%2)*3;
+      const ex = topX + Math.cos(a)*len;
+      const ey = topY + Math.sin(a)*len*.55;
+      s+=`<path d="M${topX},${topY} Q${(topX+ex)/2+2},${(topY+ey)/2-5} ${ex},${ey}" stroke="${ts.crown[0]}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/>`;
+    }
+  } else if(species==='baobab'){
+    // 두꺼운 몸통
+    s+=`<path d="M${cx-9},${groundY} Q${cx-11},${groundY-trunkH*.5} ${cx-6},${groundY-trunkH} L${cx+6},${groundY-trunkH} Q${cx+11},${groundY-trunkH*.5} ${cx+9},${groundY} Z" fill="${ts.trunk[1]}"/>`;
+    // 위로 뻗은 작은 가지 + 잎 덩어리
+    const topY = groundY-trunkH;
+    for(let i=0;i<4;i++){
+      const a = (i/3)*Math.PI - Math.PI/2 + (i%2?-.2:.2);
+      const len = 14;
+      const ex = cx + Math.cos(a)*len;
+      const ey = topY + Math.sin(a)*len*.8 - 2;
+      s+=`<path d="M${cx},${topY} Q${(cx+ex)/2},${(topY+ey)/2} ${ex},${ey}" stroke="${ts.trunk[1]}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      s+=`<ellipse cx="${ex}" cy="${ey}" rx="7" ry="5" fill="${ts.crown[0]}" opacity=".9"/>`;
+    }
+  } else if(species==='cherry'){
+    // 몸통
+    s+=`<path d="M${cx-3},${groundY} Q${cx-4},${groundY-trunkH*.5} ${cx-2},${groundY-trunkH} L${cx+2},${groundY-trunkH} Q${cx+4},${groundY-trunkH*.5} ${cx+3},${groundY} Z" fill="${ts.trunk[1]}"/>`;
+    // 분홍 crown
+    s+=`<ellipse cx="${cx}" cy="${crY+2}" rx="${crR*1.05}" ry="${crR*.85}" fill="${ts.crown[2]}" opacity=".5"/>`;
+    s+=`<ellipse cx="${cx}" cy="${crY}" rx="${crR}" ry="${crR*.8}" fill="${ts.crown[0]}" opacity=".95"/>`;
+    s+=`<ellipse cx="${cx-crR*.4}" cy="${crY+crR*.15}" rx="${crR*.5}" ry="${crR*.4}" fill="${ts.crown[1]}" opacity=".7"/>`;
+    s+=`<ellipse cx="${cx+crR*.4}" cy="${crY+crR*.1}" rx="${crR*.5}" ry="${crR*.4}" fill="${ts.crown[1]}" opacity=".7"/>`;
+    // 작은 꽃잎
+    for(let i=0;i<5;i++){
+      const a=(i/5)*Math.PI*2;
+      s+=`<circle cx="${cx+Math.cos(a)*crR*.5}" cy="${crY+Math.sin(a)*crR*.4}" r="1.5" fill="#FCE4EC"/>`;
+    }
+  } else if(species==='maple'){
+    s+=`<path d="M${cx-3},${groundY} Q${cx-4},${groundY-trunkH*.5} ${cx-2},${groundY-trunkH} L${cx+2},${groundY-trunkH} Q${cx+4},${groundY-trunkH*.5} ${cx+3},${groundY} Z" fill="${ts.trunk[1]}"/>`;
+    s+=`<ellipse cx="${cx}" cy="${crY}" rx="${crR}" ry="${crR*.82}" fill="${ts.crown[0]}" opacity=".95"/>`;
+    s+=`<ellipse cx="${cx-crR*.4}" cy="${crY+crR*.15}" rx="${crR*.5}" ry="${crR*.4}" fill="${ts.crown[1]}" opacity=".7"/>`;
+    s+=`<ellipse cx="${cx+crR*.4}" cy="${crY+crR*.1}" rx="${crR*.5}" ry="${crR*.4}" fill="${ts.crown[2]}" opacity=".7"/>`;
   } else {
-    s+=`<rect x="53" y="${groundY-68}" width="14" height="68" fill="#8B6F47"/>`;
-    s+=`<ellipse cx="60" cy="${groundY-72}" rx="40" ry="28" fill="${sc.leafColors[0]}" opacity=".9"/>`;
-    s+=`<ellipse cx="44" cy="${groundY-68}" rx="20" ry="16" fill="${sc.leafColors[1]||sc.leafColors[0]}" opacity=".7"/>`;
-    s+=`<ellipse cx="76" cy="${groundY-68}" rx="20" ry="16" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".7"/>`;
+    // 기본 둥근 나무
+    s+=`<path d="M${cx-3},${groundY} Q${cx-4},${groundY-trunkH*.5} ${cx-2},${groundY-trunkH} L${cx+2},${groundY-trunkH} Q${cx+4},${groundY-trunkH*.5} ${cx+3},${groundY} Z" fill="${ts.trunk[1]}"/>`;
+    s+=`<ellipse cx="${cx}" cy="${crY+3}" rx="${crR*1.05}" ry="${crR*.85}" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".4"/>`;
+    s+=`<ellipse cx="${cx}" cy="${crY}" rx="${crR}" ry="${crR*.8}" fill="${sc.leafColors[0]}" opacity=".95"/>`;
+    s+=`<ellipse cx="${cx-crR*.35}" cy="${crY+crR*.15}" rx="${crR*.45}" ry="${crR*.35}" fill="${sc.leafColors[1]||sc.leafColors[0]}" opacity=".7"/>`;
+    s+=`<ellipse cx="${cx+crR*.35}" cy="${crY+crR*.12}" rx="${crR*.42}" ry="${crR*.35}" fill="${sc.leafColors[2]||sc.leafColors[0]}" opacity=".7"/>`;
   }
-  // 열매
-  const nF=Math.min(data.r,6);
+
+  // 열매 (나선 분포)
+  const nF=Math.min(data.r,12);
+  const fruitCy = species==='pine' ? groundY-trunkH*.6 : species==='palm' ? groundY-trunkH+5 : crY;
+  const fruitR  = species==='pine' ? crR*.35 : crR*.65;
+  const goldenAng = Math.PI * (3 - Math.sqrt(5));
   for(let i=0;i<nF;i++){
-    const a=(i/Math.max(nF,1))*Math.PI*2+.3;
-    const cy = lv===1?groundY-22: lv<=3?groundY-45 : lv<=6?groundY-58: groundY-72;
-    const rd= lv===1?6: lv<=3?14:lv<=6?20:25;
-    const x=60+Math.cos(a)*rd;
-    const y=cy+Math.sin(a)*rd*.6;
-    s+=`<text x="${x}" y="${y+3}" text-anchor="middle" font-size="10">${esc(fruit)}</text>`;
+    const t = i/Math.max(nF-1,1);
+    const rd = fruitR * Math.sqrt(t) * 0.9;
+    const a = i*goldenAng + .3;
+    const x = cx + Math.cos(a)*rd;
+    const y = fruitCy + Math.sin(a)*rd*.75;
+    s+=`<text x="${x}" y="${y+3}" text-anchor="middle" font-size="9">${esc(fruit)}</text>`;
   }
+
+  // 동반자
+  if(prof.active_companion){
+    const compMap={bird:'🐦',squirrel:'🐿️',butterfly:'🦋',owl:'🦉',swing:'🪢',beehive:'🍯'};
+    const em=compMap[prof.active_companion];
+    if(em) s+=`<text x="${cx+crR*.7}" y="${(crY||groundY-trunkH*.6)+2}" text-anchor="middle" font-size="10">${em}</text>`;
+  }
+
   s+=`</svg>`;
   return s;
 }
