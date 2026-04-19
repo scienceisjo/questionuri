@@ -410,6 +410,55 @@ body.print-report-mode .dd-overlay{display:none !important}
   .dd-stat:nth-last-child(-n+2){border-bottom:none}
 }
 
+/* ═══ VIEW MODE TABS ═══ */
+.view-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1.5px solid var(--rule);padding-bottom:0}
+.vm-tab{padding:10px 18px;background:transparent;color:var(--ink3);font-family:'Fraunces',Georgia,serif;font-size:13.5px;font-weight:700;letter-spacing:-.005em;border:none;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.vm-tab:hover{color:var(--pr)}
+.vm-tab.on{color:var(--pd);border-bottom-color:var(--ac);background:linear-gradient(180deg,transparent,rgba(217,119,6,.04))}
+.view-body{animation:fadeIn .3s ease}
+
+/* ═══ SUBJECTS DETAIL VIEW ═══ */
+.subj-row{display:grid;grid-template-columns:200px 1fr auto;gap:18px;padding:16px 0;border-bottom:1px solid var(--rule2);align-items:center}
+.subj-row:last-child{border-bottom:none}
+.subj-head{display:flex;align-items:center;gap:10px}
+.subj-ic{font-size:28px;line-height:1;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:3px;border:1px solid var(--rule)}
+.subj-nm{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.subj-nm-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);font-weight:600;letter-spacing:.06em;margin-top:2px}
+.subj-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:0;border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--surface2)}
+.subj-stat{padding:10px 12px;border-right:1px solid var(--rule2);text-align:center}
+.subj-stat:last-child{border-right:none}
+.subj-stat-v{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:800;color:var(--pd);line-height:1;font-variant-numeric:tabular-nums}
+.subj-stat-l{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+.subj-bar{width:160px;height:8px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-top:6px}
+.subj-bar-fg{height:100%;background:linear-gradient(90deg,#5CB86E,#D97706)}
+.subj-ratio{text-align:right}
+.subj-pct{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:800;color:var(--pd);line-height:1;font-variant-numeric:tabular-nums}
+.subj-pct-l{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink3);font-weight:700;letter-spacing:.08em;margin-top:3px}
+
+/* ═══ STUDENTS CARD VIEW ═══ */
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.stu-card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:14px;cursor:pointer;transition:all .15s;position:relative}
+.stu-card:hover{border-color:var(--pr);transform:translateY(-2px);box-shadow:0 6px 20px rgba(45,106,62,.1)}
+.stu-card.alert-yes{border-left:3px solid var(--ac)}
+.stu-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.stu-card-avatar{width:44px;height:44px;background:linear-gradient(135deg,rgba(92,184,110,.2),rgba(217,119,6,.15));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stu-card-nm{font-family:'Fraunces',Georgia,serif;font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
+.stu-card-ref{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-top:2px}
+.stu-card-alert-icon{position:absolute;top:10px;right:12px;font-size:15px}
+.stu-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule2);border-radius:2px;overflow:hidden;margin-bottom:10px}
+.stu-card-stat{padding:8px 10px;border-right:1px solid var(--rule2);border-bottom:1px solid var(--rule2);background:var(--surface2);text-align:center}
+.stu-card-stat:nth-child(2n){border-right:none}
+.stu-card-stat:nth-last-child(-n+2){border-bottom:none}
+.stu-card-stat-v{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:800;color:var(--pd);line-height:1;font-variant-numeric:tabular-nums}
+.stu-card-stat-v .em{font-size:10px;color:var(--ink3);font-weight:500;margin-left:2px}
+.stu-card-stat-l{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--ink3);font-weight:700;letter-spacing:.08em;margin-top:2px;text-transform:uppercase}
+.stu-card-progress{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink3)}
+.stu-card-progress-bar{flex:1;height:5px;background:var(--bg2);border-radius:2px;overflow:hidden}
+.stu-card-progress-fg{height:100%;background:linear-gradient(90deg,#5CB86E,#D97706)}
+.stu-card-progress-pct{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--ink2);min-width:30px;text-align:right}
+.stu-card-meta{display:flex;gap:8px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.03em;flex-wrap:wrap}
+.stu-card-meta span{padding:2px 6px;background:var(--surface2);border-radius:2px}
+
 /* ═══ RESPONSIVE ═══ */
 @media(max-width:900px){
   .container{padding:20px 16px 40px}
@@ -479,9 +528,34 @@ body.print-report-mode .dd-overlay{display:none !important}
       <select id="fGrade" onchange="applyFilters()"><option value="">전체 학년</option></select>
       <select id="fClass" onchange="applyFilters()"><option value="">전체 반</option></select>
       <select id="fSubject" onchange="applyFilters()"><option value="">전체 과목</option></select>
-      <input class="search" id="fSearch" placeholder="🔍  학생 이름 검색..." oninput="applyFilters()">
+      <select id="fPeriod" onchange="applyFilters()">
+        <option value="">전체 기간</option>
+        <option value="7">최근 7일</option>
+        <option value="14">최근 14일</option>
+        <option value="30">최근 30일</option>
+        <option value="90">최근 90일</option>
+      </select>
+      <select id="fStatus" onchange="applyFilters()">
+        <option value="">해결 여부 전체</option>
+        <option value="resolved">해결만</option>
+        <option value="open">미해결만</option>
+      </select>
+      <select id="fAnon" onchange="applyFilters()">
+        <option value="">익명 여부 전체</option>
+        <option value="anon">익명만</option>
+        <option value="named">실명만</option>
+      </select>
+      <input class="search" id="fSearch" placeholder="🔍  이름·질문 검색..." oninput="applyFilters()">
+      <button class="btn-export" onclick="clearFilters()" style="color:var(--ink3);background:rgba(0,0,0,.04)">↺ 초기화</button>
       <span style="flex:1"></span>
       <span class="lbl" id="filterStats" style="color:var(--pr)"></span>
+    </div>
+
+    <!-- VIEW MODE TABS -->
+    <div class="view-tabs">
+      <button class="vm-tab on" data-view="default" onclick="switchView('default')">📊 종합 현황</button>
+      <button class="vm-tab" data-view="subjects" onclick="switchView('subjects')">📚 과목별 보기</button>
+      <button class="vm-tab" data-view="students" onclick="switchView('students')">👩‍🎓 학생별 보기</button>
     </div>
 
     <!-- ALERTS (주목 학생) -->
@@ -492,6 +566,9 @@ body.print-report-mode .dd-overlay{display:none !important}
       </div>
       <div class="alerts-list" id="alertsList"></div>
     </div>
+
+    <!-- ═════════ VIEW: 종합 현황 (기본) ═════════ -->
+    <div class="view-body" id="viewDefault">
 
     <!-- SUMMARY -->
     <div class="summary" id="summary"></div>
@@ -685,6 +762,38 @@ body.print-report-mode .dd-overlay{display:none !important}
         </div></div>
       </div>
     </div>
+    </div><!-- /viewDefault -->
+
+    <!-- ═════════ VIEW: 과목별 보기 ═════════ -->
+    <div class="view-body" id="viewSubjects" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>📚 과목별 상세 분석</h2>
+          <span class="sub">Per-Subject Deep Dive · 각 과목의 질문·참여·학생을 상세히</span>
+        </div>
+        <div class="section-body pad" id="subjectsViewBody"></div>
+      </div>
+    </div>
+
+    <!-- ═════════ VIEW: 학생별 보기 ═════════ -->
+    <div class="view-body" id="viewStudents" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>👩‍🎓 학생별 카드 뷰</h2>
+          <span class="sub">Per-Student Card View · 학생 카드를 클릭하면 상세 드릴다운</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <select id="sortStudents" onchange="renderStudentsView()" style="padding:5px 10px;border:1.5px solid var(--rule);border-radius:3px;font-size:11px;background:var(--surface2);font-family:var(--mono)">
+              <option value="grade">학년·반·번호</option>
+              <option value="total_desc">질문 많은 순</option>
+              <option value="pct_desc">해결률 높은 순</option>
+              <option value="waters_desc">공감 많은 순</option>
+              <option value="last_active_desc">최근 접속 순</option>
+            </select>
+          </div>
+        </div>
+        <div class="section-body pad" id="studentsViewBody"></div>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -833,7 +942,8 @@ async function loadAll(){
     const [pRes, qRes, sRes, bRes] = await Promise.all([
       sb.from('profiles').select('*').order('grade').order('class_no').order('number'),
       sb.from('questions').select('*').order('created_at',{ascending:false}).limit(3000),
-      sb.from('subjects').select('*').is('user_id',null).order('sort_order'),
+      // 학생이 개인적으로 추가한 과목도 포함해서 모두 가져옴
+      sb.from('subjects').select('*').order('sort_order'),
       sb.from('branches').select('*').order('created_at',{ascending:false}).limit(3000)
     ]);
 
@@ -843,15 +953,24 @@ async function loadAll(){
 
     allProfiles  = pRes.data || [];
     allQuestions = qRes.data || [];
-    allSubjects  = sRes.data || [];
-    allBranches  = (bRes && !bRes.error) ? (bRes.data || []) : [];
+    // 중복 id 제거 (여러 학생이 같은 id의 공용 과목을 가질 수 있음)
+    const subjMap = {};
+    (sRes.data || []).forEach(s => { if(!subjMap[s.id]) subjMap[s.id] = s; });
+    allSubjects = Object.values(subjMap);
+    allBranches = (bRes && !bRes.error) ? (bRes.data || []) : [];
+
+    // 빈 데이터 경고
+    if(!allProfiles.length){
+      console.warn('No profiles loaded. Possible causes: RLS blocking access, or no students registered yet.');
+    }
 
     populateFilters();
     applyFilters();
     const now = new Date();
-    $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q`;
+    $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목`;
   }catch(e){
-    alert('데이터 로드 실패: '+(e.message||e)+'\n\nService Role Key 인지 확인하세요.');
+    console.error('loadAll error:', e);
+    alert('데이터 로드 실패: '+(e.message||e)+'\n\nService Role Key 인지 확인하세요.\n\nRLS 정책이 profiles/questions 테이블을 막고 있을 수 있습니다.');
   }
   btn.classList.remove('loading');
   hideLoader();
@@ -861,82 +980,363 @@ async function loadAll(){
 // FILTERS
 // ═══════════════════════════════════════════════════════════════════
 function populateFilters(){
-  const grades = [...new Set(allProfiles.map(p=>p.grade).filter(x=>x!=null))].sort((a,b)=>a-b);
-  const classes = [...new Set(allProfiles.map(p=>p.class_no).filter(x=>x!=null))].sort((a,b)=>a-b);
-  const fG=$('fGrade'); fG.innerHTML='<option value="">전체 학년</option>';
-  grades.forEach(g=>fG.innerHTML+=`<option value="${g}">${g}학년</option>`);
-  const fC=$('fClass'); fC.innerHTML='<option value="">전체 반</option>';
-  classes.forEach(c=>fC.innerHTML+=`<option value="${c}">${c}반</option>`);
-  const fS=$('fSubject'); fS.innerHTML='<option value="">전체 과목</option>';
-  allSubjects.forEach(s=>fS.innerHTML+=`<option value="${s.id}">${s.icon||''} ${s.label}</option>`);
+  // grade/class_no 값을 숫자로 정규화 (문자열로 저장돼 있을 수 있음)
+  const grades = [...new Set(allProfiles.map(p => p.grade).filter(x => x != null && x !== '').map(Number).filter(x=>!isNaN(x)))].sort((a,b)=>a-b);
+  const classes = [...new Set(allProfiles.map(p => p.class_no).filter(x => x != null && x !== '').map(Number).filter(x=>!isNaN(x)))].sort((a,b)=>a-b);
+
+  const fG = $('fGrade');
+  fG.innerHTML = '<option value="">전체 학년</option>';
+  if(grades.length){
+    grades.forEach(g => fG.innerHTML += `<option value="${g}">${g}학년</option>`);
+  } else {
+    fG.innerHTML += '<option value="" disabled>(학년 정보 없음)</option>';
+  }
+
+  const fC = $('fClass');
+  fC.innerHTML = '<option value="">전체 반</option>';
+  if(classes.length){
+    classes.forEach(c => fC.innerHTML += `<option value="${c}">${c}반</option>`);
+  } else {
+    fC.innerHTML += '<option value="" disabled>(반 정보 없음)</option>';
+  }
+
+  const fS = $('fSubject');
+  fS.innerHTML = '<option value="">전체 과목</option>';
+  if(allSubjects.length){
+    const seen = new Set();
+    allSubjects
+      .filter(s => s.label && !seen.has(s.label) && seen.add(s.label))
+      .sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99))
+      .forEach(s => fS.innerHTML += `<option value="${s.id}">${s.icon || '📚'} ${s.label}</option>`);
+  } else {
+    fS.innerHTML += '<option value="" disabled>(과목 정보 없음)</option>';
+  }
+
+  console.log(`[populateFilters] grades=${grades.length}, classes=${classes.length}, subjects=${allSubjects.length}`);
 }
 
 function applyFilters(){
-  const gF=$('fGrade').value, cF=$('fClass').value, sF=$('fSubject').value;
-  const nameF=$('fSearch').value.trim().toLowerCase();
+  const gF = $('fGrade').value;
+  const cF = $('fClass').value;
+  const sF = $('fSubject').value;
+  const pF = $('fPeriod')?.value || '';        // 기간 (일)
+  const stF = $('fStatus')?.value || '';       // resolved / open / ''
+  const anF = $('fAnon')?.value || '';         // anon / named / ''
+  const searchRaw = $('fSearch').value.trim().toLowerCase();
 
-  let ps=[...allProfiles];
-  if(gF) ps=ps.filter(p=>p.grade==gF);
-  if(cF) ps=ps.filter(p=>p.class_no==cF);
-  if(nameF) ps=ps.filter(p=>(p.name||'').toLowerCase().includes(nameF));
+  // 학생 필터
+  let ps = [...allProfiles];
+  if(gF) ps = ps.filter(p => String(p.grade) === String(gF));
+  if(cF) ps = ps.filter(p => String(p.class_no) === String(cF));
+  // 이름 검색은 학생에도 적용, 질문에도 적용 (검색어를 질문에 넣은 경우 대응)
+  if(searchRaw){
+    ps = ps.filter(p => (p.name||'').toLowerCase().includes(searchRaw));
+  }
 
-  const userIds=new Set(ps.map(p=>p.id));
-  let qs=allQuestions.filter(q=>userIds.has(q.user_id));
-  if(sF) qs=qs.filter(q=>q.subject_id===sF);
+  const userIds = new Set(ps.map(p => p.id));
+  let qs = allQuestions.filter(q => userIds.has(q.user_id));
+
+  // 과목 필터
+  if(sF) qs = qs.filter(q => q.subject_id === sF);
+
+  // 기간 필터
+  if(pF){
+    const days = Number(pF);
+    const cutoff = new Date();
+    cutoff.setHours(0,0,0,0);
+    cutoff.setDate(cutoff.getDate() - days + 1);
+    const cutoffStr = dayStr(cutoff);
+    qs = qs.filter(q => {
+      const d = (q.created_at || '').slice(0,10);
+      return d >= cutoffStr;
+    });
+  }
+
+  // 해결 상태 필터
+  if(stF === 'resolved') qs = qs.filter(q => q.resolved);
+  else if(stF === 'open') qs = qs.filter(q => !q.resolved);
+
+  // 익명 여부 필터
+  if(anF === 'anon') qs = qs.filter(q => q.is_anonymous);
+  else if(anF === 'named') qs = qs.filter(q => !q.is_anonymous);
+
+  // 이름 검색어가 질문 텍스트에도 매칭될 경우 이름 필터로 거른 게 너무 좁을 수 있으니
+  // 원본 학생을 되돌리고 질문 텍스트 검색 결과만 별도 유지
+  if(searchRaw && qs.length === 0 && ps.length === 0){
+    // 질문 텍스트 검색 fallback
+    const qMatch = allQuestions.filter(q => (q.text||'').toLowerCase().includes(searchRaw));
+    const qUserIds = new Set(qMatch.map(q => q.user_id));
+    ps = allProfiles.filter(p => qUserIds.has(p.id));
+    if(gF) ps = ps.filter(p => String(p.grade) === String(gF));
+    if(cF) ps = ps.filter(p => String(p.class_no) === String(cF));
+    qs = qMatch.filter(q => ps.some(p => p.id === q.user_id));
+  }
 
   // 학생별 통계
-  const stats={};
-  qs.forEach(q=>{
-    if(!stats[q.user_id]) stats[q.user_id]={total:0,resolved:0,waters_got:0,anon:0};
+  const stats = {};
+  qs.forEach(q => {
+    if(!stats[q.user_id]) stats[q.user_id] = {total:0, resolved:0, waters_got:0, anon:0};
     stats[q.user_id].total++;
     if(q.resolved) stats[q.user_id].resolved++;
     stats[q.user_id].waters_got += (q.water_count||0);
     if(q.is_anonymous) stats[q.user_id].anon++;
   });
 
-  // 꼬리질문 수 (이 학생이 작성한)
-  const branchesByAuthor={};
-  allBranches.forEach(b=>{
+  // 꼬리질문 수
+  const branchesByAuthor = {};
+  allBranches.forEach(b => {
     branchesByAuthor[b.author_id] = (branchesByAuthor[b.author_id]||0) + 1;
   });
 
-  // 물준 횟수 = watered_by 안에 내 id가 들어간 질문 수
-  const watersGiven={};
-  allQuestions.forEach(q=>{
-    (q.watered_by||[]).forEach(uid=>{
+  // 물 준 수
+  const watersGiven = {};
+  allQuestions.forEach(q => {
+    (q.watered_by||[]).forEach(uid => {
       watersGiven[uid] = (watersGiven[uid]||0) + 1;
     });
   });
 
-  filteredStudents = ps.map(p=>{
-    const s=stats[p.id]||{total:0,resolved:0,waters_got:0,anon:0};
+  filteredStudents = ps.map(p => {
+    const s = stats[p.id] || {total:0, resolved:0, waters_got:0, anon:0};
     return {
       ...p,
-      total:s.total, resolved:s.resolved,
+      total: s.total, resolved: s.resolved,
       pct: s.total ? Math.round(100*s.resolved/s.total) : 0,
       branches: branchesByAuthor[p.id] || 0,
       waters_got: s.waters_got,
       waters_given: watersGiven[p.id] || 0,
       anon: s.anon,
-      streak: p.streak_days||0,
+      streak: p.streak_days || 0,
     };
   });
   filteredQuestions = qs;
 
   $('filterStats').textContent = `학생 ${ps.length} · 질문 ${qs.length} · 해결 ${qs.filter(q=>q.resolved).length}`;
 
-  renderSummary();
-  renderAlerts();
-  renderTimeChart();
-  renderHeatmap();
-  renderTopLists();
-  renderWordcloud();
-  renderCategories();
-  renderForest();
-  sortAndRenderStudents();
-  renderQuestions();
-  renderTags();
-  renderSubjects();
+  // 뷰 모드에 따라 다른 렌더링 경로
+  const activeView = currentView || 'default';
+  if(activeView === 'default'){
+    renderSummary();
+    renderAlerts();
+    renderTimeChart();
+    renderHeatmap();
+    renderTopLists();
+    renderWordcloud();
+    renderCategories();
+    renderForest();
+    sortAndRenderStudents();
+    renderQuestions();
+    renderTags();
+    renderSubjects();
+  } else if(activeView === 'subjects'){
+    renderSummary();
+    renderAlerts();
+    renderSubjectsView();
+  } else if(activeView === 'students'){
+    renderSummary();
+    renderAlerts();
+    renderStudentsView();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🔄 VIEW SWITCHER
+// ═══════════════════════════════════════════════════════════════════
+let currentView = 'default';
+
+function switchView(view){
+  currentView = view;
+  // 탭 활성화
+  document.querySelectorAll('.vm-tab').forEach(t => t.classList.toggle('on', t.dataset.view === view));
+  // 뷰 컨테이너 토글
+  $('viewDefault').style.display = view === 'default' ? '' : 'none';
+  $('viewSubjects').style.display = view === 'subjects' ? '' : 'none';
+  $('viewStudents').style.display = view === 'students' ? '' : 'none';
+  // 알림 섹션은 모든 뷰에서 표시
+  applyFilters();
+}
+
+function clearFilters(){
+  $('fGrade').value = '';
+  $('fClass').value = '';
+  $('fSubject').value = '';
+  $('fPeriod').value = '';
+  $('fStatus').value = '';
+  $('fAnon').value = '';
+  $('fSearch').value = '';
+  applyFilters();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 📚 SUBJECTS DETAIL VIEW
+// ═══════════════════════════════════════════════════════════════════
+function renderSubjectsView(){
+  const body = $('subjectsViewBody');
+  if(!filteredStudents.length){
+    body.innerHTML = '<div class="empty-row" style="padding:40px">해당 조건의 학생이 없어요</div>';
+    return;
+  }
+
+  // 필터된 질문을 과목별로 집계
+  const subjMap = {};
+  allSubjects.forEach(s => subjMap[s.id] = s);
+
+  const bySubj = {};
+  filteredQuestions.forEach(q => {
+    const sid = q.subject_id || 'unknown';
+    if(!bySubj[sid]){
+      bySubj[sid] = {
+        id: sid,
+        subject: subjMap[sid],
+        total: 0, resolved: 0, waters: 0, anon: 0,
+        students: new Set(),
+        branchCnt: 0,
+      };
+    }
+    const rec = bySubj[sid];
+    rec.total++;
+    if(q.resolved) rec.resolved++;
+    rec.waters += (q.water_count||0);
+    if(q.is_anonymous) rec.anon++;
+    rec.students.add(q.user_id);
+  });
+
+  // 꼬리질문은 allBranches에서 해당 질문의 subject_id로 매핑
+  const qToSubj = {};
+  filteredQuestions.forEach(q => qToSubj[q.id] = q.subject_id);
+  allBranches.forEach(b => {
+    const sid = qToSubj[b.question_id];
+    if(sid && bySubj[sid]) bySubj[sid].branchCnt++;
+  });
+
+  const rows = Object.values(bySubj)
+    .sort((a, b) => b.total - a.total);
+
+  if(!rows.length){
+    body.innerHTML = '<div class="empty-row" style="padding:40px">해당 조건의 질문이 없어요</div>';
+    return;
+  }
+
+  body.innerHTML = rows.map(r => {
+    const s = r.subject;
+    const icon = s?.icon || '📚';
+    const label = s?.label || '(알 수 없음)';
+    const studentCount = r.students.size;
+    const pct = r.total ? Math.round(100*r.resolved/r.total) : 0;
+    const anonPct = r.total ? Math.round(100*r.anon/r.total) : 0;
+
+    return `
+      <div class="subj-row" onclick="filterBySubject('${r.id}')" style="cursor:pointer">
+        <div class="subj-head">
+          <div class="subj-ic">${icon}</div>
+          <div>
+            <div class="subj-nm">${esc(label)}</div>
+            <div class="subj-nm-sub">${studentCount}명 참여 · ${r.id}</div>
+          </div>
+        </div>
+        <div>
+          <div class="subj-stats">
+            <div class="subj-stat"><div class="subj-stat-v">${r.total}</div><div class="subj-stat-l">질문</div></div>
+            <div class="subj-stat"><div class="subj-stat-v">${r.resolved}</div><div class="subj-stat-l">해결</div></div>
+            <div class="subj-stat"><div class="subj-stat-v">${r.waters}</div><div class="subj-stat-l">공감 💧</div></div>
+            <div class="subj-stat"><div class="subj-stat-v">${r.branchCnt}</div><div class="subj-stat-l">꼬리 🌿</div></div>
+            <div class="subj-stat"><div class="subj-stat-v">${r.anon}</div><div class="subj-stat-l">익명 ${anonPct}%</div></div>
+          </div>
+          <div class="subj-bar"><div class="subj-bar-fg" style="width:${pct}%"></div></div>
+        </div>
+        <div class="subj-ratio">
+          <div class="subj-pct">${pct}<span style="font-size:14px">%</span></div>
+          <div class="subj-pct-l">해결률</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterBySubject(sid){
+  $('fSubject').value = sid;
+  switchView('default');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 👩‍🎓 STUDENTS CARD VIEW
+// ═══════════════════════════════════════════════════════════════════
+function renderStudentsView(){
+  const body = $('studentsViewBody');
+  if(!filteredStudents.length){
+    body.innerHTML = '<div class="empty-row" style="padding:40px">해당 조건의 학생이 없어요</div>';
+    return;
+  }
+
+  // 정렬
+  const sortMode = $('sortStudents')?.value || 'grade';
+  const sorted = [...filteredStudents].sort((a, b) => {
+    switch(sortMode){
+      case 'total_desc': return (b.total||0) - (a.total||0);
+      case 'pct_desc': return (b.pct||0) - (a.pct||0);
+      case 'waters_desc': return (b.waters_got||0) - (a.waters_got||0);
+      case 'last_active_desc': {
+        const da = a.last_active || '0000-00-00';
+        const db = b.last_active || '0000-00-00';
+        return db.localeCompare(da);
+      }
+      default: {
+        const g = (Number(a.grade)||0) - (Number(b.grade)||0);
+        if(g !== 0) return g;
+        const c = (Number(a.class_no)||0) - (Number(b.class_no)||0);
+        if(c !== 0) return c;
+        return (Number(a.number)||0) - (Number(b.number)||0);
+      }
+    }
+  });
+
+  body.innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-bottom:14px;letter-spacing:.04em">
+      ${sorted.length}명 표시 중 · 카드 클릭 시 전체 드릴다운 열림
+    </div>
+    <div class="students-grid">
+      ${sorted.map(s => {
+        const alerts = computeStudentAlerts ? computeStudentAlerts(s) : [];
+        const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
+        const lastTxt = s.last_active ? (lastDays === 0 ? '오늘' : `${lastDays}일 전`) : '기록 없음';
+        const alertIcon = alerts.length
+          ? (alerts.some(f => f.severity === 'high') ? '🚨'
+             : alerts.some(f => f.type === 'inactive') ? '💤'
+             : alerts.some(f => f.type === 'allanon') ? '🕊️'
+             : '⚠️')
+          : '';
+        return `
+          <div class="stu-card ${alerts.length ? 'alert-yes' : ''}" onclick="openDrilldown('${s.id}')">
+            ${alertIcon ? `<div class="stu-card-alert-icon">${alertIcon}</div>` : ''}
+            <div class="stu-card-hdr">
+              <div class="stu-card-avatar">👤</div>
+              <div style="min-width:0;flex:1">
+                <div class="stu-card-nm">${esc(s.name||'?')}</div>
+                <div class="stu-card-ref">${s.grade}학년 ${s.class_no}반 ${s.number}번</div>
+              </div>
+            </div>
+            <div class="stu-card-stats">
+              <div class="stu-card-stat"><div class="stu-card-stat-v">${s.total}<span class="em">개</span></div><div class="stu-card-stat-l">질문</div></div>
+              <div class="stu-card-stat"><div class="stu-card-stat-v">${s.resolved}<span class="em">/${s.pct}%</span></div><div class="stu-card-stat-l">해결</div></div>
+              <div class="stu-card-stat"><div class="stu-card-stat-v">${s.waters_got||0}<span class="em">💧</span></div><div class="stu-card-stat-l">공감</div></div>
+              <div class="stu-card-stat"><div class="stu-card-stat-v">${s.branches||0}<span class="em">🌿</span></div><div class="stu-card-stat-l">꼬리</div></div>
+            </div>
+            <div class="stu-card-progress">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--ink3)">해결률</span>
+              <div class="stu-card-progress-bar"><div class="stu-card-progress-fg" style="width:${s.pct}%"></div></div>
+              <span class="stu-card-progress-pct">${s.pct}%</span>
+            </div>
+            <div class="stu-card-meta">
+              <span>🔥 ${s.streak||0}일</span>
+              <span>📅 ${lastTxt}</span>
+              ${s.anon ? `<span>🕊 익명 ${s.anon}</span>` : ''}
+              ${s.waters_given ? `<span>💧 준 ${s.waters_given}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════════════════════════════════════
