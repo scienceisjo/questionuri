@@ -751,6 +751,7 @@ body.print-report-mode .dd-overlay{display:none !important}
               <th>💧</th>
               <th>🌿</th>
               <th>상태</th>
+              <th>⭐</th>
               <th>날짜</th>
             </tr></thead>
             <tbody id="questionBody"></tbody>
@@ -1988,6 +1989,7 @@ function renderQuestions(){
     const status = q.resolved
       ? '<span style="color:var(--pr);font-weight:700;font-family:var(--mono);font-size:10.5px">✓ RESOLVED</span>'
       : '<span style="color:var(--ac);font-weight:700;font-family:var(--mono);font-size:10.5px">◯ OPEN</span>';
+    const starred = q.starred;
     return `<tr>
       <td>${name}</td>
       <td>${sub}</td>
@@ -1996,9 +1998,26 @@ function renderQuestions(){
       <td style="color:var(--blue);font-weight:600">${q.water_count?'💧'+q.water_count:'—'}</td>
       <td style="color:var(--pr);font-weight:600">${brByQ[q.id]?'🌿'+brByQ[q.id]:'—'}</td>
       <td>${status}</td>
+      <td><button onclick="toggleStar(${q.id})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:2px 4px;transition:transform .15s" title="${starred?'⭐ 해제':'⭐ 명예의 전당에 올리기'}">${starred?'⭐':'☆'}</button></td>
       <td>${q.question_date||''}</td>
     </tr>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ⭐ 명예의 전당 — 교사가 질문에 별 토글
+// ═══════════════════════════════════════════════════════════════════
+async function toggleStar(qid){
+  const q = allQuestions.find(x => x.id === qid);
+  if(!q) return;
+  const next = !q.starred;
+  const {error} = await sb.from('questions').update({starred: next}).eq('id', qid);
+  if(error){
+    alert('⭐ 저장 실패: ' + error.message);
+    return;
+  }
+  q.starred = next;
+  renderQuestions();
 }
 
 // ═══════════════════════════════════════════════════════════════════
