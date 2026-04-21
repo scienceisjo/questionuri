@@ -177,6 +177,37 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .st{padding:clamp(5px,1vw,8px) clamp(10px,2.2vw,16px);border-radius:9px;background:transparent;color:var(--tl);font-weight:500;font-size:var(--fs-xs);display:flex;align-items:center;gap:4px;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .2s}.st.on{font-weight:700}
 .st-add{padding:clamp(4px,1vw,7px) clamp(9px,2vw,14px);border-radius:9px;background:rgba(93,184,110,.06);color:var(--pr);font-weight:700;font-size:var(--fs-lg);margin-left:2px}.st-add:hover{background:rgba(93,184,110,.14)}
 
+/* 과목 탭 삭제 버튼 */
+.st{position:relative}
+.st-del{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:rgba(232,93,93,.85);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;z-index:2;opacity:0;transition:opacity .15s}
+.st.on:hover .st-del{opacity:1}
+.st-del:hover{background:var(--ar);transform:scale(1.15)}
+
+/* 과목 프리셋 그리드 */
+.sub-preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:5px;margin-bottom:var(--sp-1);max-height:200px;overflow-y:auto}
+.sub-pre{display:flex;align-items:center;gap:5px;padding:7px 9px;background:rgba(93,184,110,.04);border:1.5px solid rgba(93,184,110,.15);border-radius:10px;font-size:12px;font-weight:600;color:var(--tx);cursor:pointer;transition:all .15s;position:relative}
+.sub-pre:hover:not(:disabled):not(.done){border-color:var(--pr);background:rgba(93,184,110,.1);transform:translateY(-1px)}
+.sub-pre.on{background:linear-gradient(135deg,rgba(93,184,110,.22),rgba(217,119,6,.12));border-color:var(--pr);color:var(--pd);box-shadow:0 2px 8px rgba(93,184,110,.2)}
+.sub-pre.done{opacity:.45;cursor:not-allowed}
+.sub-pre-ic{font-size:16px;line-height:1;flex-shrink:0}
+.sub-pre-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-pre-ck{font-size:10px;color:var(--pr);flex-shrink:0;font-weight:700}
+
+/* 명예의 전당 */
+.hall-area{max-width:600px;margin:0 auto}
+.hall-sec{margin-bottom:var(--sp-3)}
+.hall-sec-ttl{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:700;color:var(--pd);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--bd)}
+.hall-sec-ttl span{font-size:16px}
+.hall-card{background:linear-gradient(135deg,rgba(245,200,80,.08),rgba(93,184,110,.06));border:1.5px solid rgba(245,166,35,.2);border-radius:12px;padding:12px 14px;margin-bottom:8px;position:relative;transition:all .18s}
+.hall-card:hover{border-color:rgba(245,166,35,.4);box-shadow:0 3px 12px rgba(245,166,35,.1)}
+.hall-rank{position:absolute;top:-6px;left:-6px;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#E09400);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(245,166,35,.4)}
+.hall-q-text{font-size:var(--fs-sm);font-weight:600;color:var(--tx);margin-bottom:6px;line-height:1.5;padding-left:22px}
+.hall-q-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:var(--fs-xxs);color:var(--tl);padding-left:22px}
+.hall-q-meta span{display:flex;align-items:center;gap:3px}
+.hall-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:linear-gradient(135deg,rgba(245,166,35,.2),rgba(245,200,80,.15));border:1px solid rgba(245,166,35,.3);border-radius:10px;font-size:10px;font-weight:700;color:#8C5B00}
+.hall-empty{text-align:center;padding:20px;color:var(--tl);font-size:var(--fs-xs)}
+.hall-star{position:absolute;top:8px;right:10px;font-size:14px}
+
 .tab-nav{background:#fff;border-bottom:1px solid var(--bd);flex-shrink:0;display:flex;justify-content:center}
 .tab-nav-in{display:flex;max-width:min(640px,100%);width:100%}
 .tn{flex:1;padding:clamp(6px,1.4vw,10px) 0;text-align:center;font-size:var(--fs-xxs);font-weight:600;color:var(--tl);background:transparent;border-bottom:2.5px solid transparent;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -651,6 +682,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
     <button class="tn" data-tab="questions" onclick="swTab('questions')"><span>❓</span>질문</button>
     <button class="tn" data-tab="forest" onclick="swTab('forest')"><span>🌲</span>우리반 숲</button>
     <button class="tn" data-tab="shop" onclick="swTab('shop')"><span>🌰</span>상점</button>
+    <button class="tn" data-tab="hall" onclick="swTab('hall')"><span>🏅</span>명예의 전당</button>
     <button class="tn" data-tab="deco" onclick="swTab('deco')"><span>🎨</span>꾸미기</button>
     <button class="tn" data-tab="ach" onclick="swTab('ach')"><span>🏆</span>업적</button>
   </div></div>
@@ -752,6 +784,17 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
     </div></div></div>
 
     <!-- 업적 탭 -->
+    <!-- 🏅 명예의 전당 탭 -->
+    <div class="tp" id="tp-hall"><div class="tp-inner"><div class="hall-area">
+      <div class="cs">
+        <h4>🏅 질문 명예의 전당</h4>
+        <p style="font-size:var(--fs-xxs);color:var(--tl);margin-bottom:var(--sp-2);line-height:1.5">💧 공감이 많은 질문과 ⭐ 선생님이 뽑은 질문이 명예의 전당에 올라요</p>
+        <div id="hallContent" style="min-height:80px">
+          <div style="text-align:center;color:var(--tl);padding:var(--sp-4)">로딩 중...</div>
+        </div>
+      </div>
+    </div></div></div>
+
     <div class="tp" id="tp-ach"><div class="tp-inner"><div class="ach-area">
       <h3 style="font-size:var(--fs-lg);font-weight:700;color:var(--pd);margin-bottom:2px">🏆 업적</h3>
       <p style="font-size:var(--fs-xxs);color:var(--tl);margin-bottom:var(--sp-3)">지금까지 달성한 업적</p>
@@ -776,13 +819,27 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 
 <!-- 과목 추가 모달 -->
 <div class="mdl" id="mAS" onclick="closeAS()">
-  <div class="as-box mdl-box" onclick="event.stopPropagation()">
-    <h3 style="font-size:var(--fs-md);font-weight:700;color:var(--pd);margin-bottom:var(--sp-2)">📚 새 과목 추가</h3>
-    <label class="fl">과목 이름</label>
-    <input class="fi" id="nSubNm" placeholder="예: 수학" style="margin-bottom:var(--sp-1)">
+  <div class="as-box mdl-box" onclick="event.stopPropagation()" style="max-width:460px">
+    <h3 style="font-size:var(--fs-md);font-weight:700;color:var(--pd);margin-bottom:var(--sp-1)">📚 과목 추가</h3>
+    <p style="font-size:var(--fs-xxs);color:var(--tl);margin-bottom:var(--sp-2)">목록에서 고르거나, 직접 입력할 수 있어요</p>
+
+    <!-- 공용 과목 드롭다운 -->
+    <label class="fl">과목 선택</label>
+    <div class="sub-preset-grid" id="subPresetGrid"></div>
+
+    <!-- 구분선 -->
+    <div class="or-line" style="margin:var(--sp-2) 0">또는 직접 입력</div>
+
+    <!-- 직접 입력 -->
+    <label class="fl">과목 이름 직접 입력</label>
+    <input class="fi" id="nSubNm" placeholder="예: 과학탐구, 자율활동…" style="margin-bottom:var(--sp-1)" oninput="clearPresetSel()">
     <label class="fl">아이콘</label>
     <div class="emg" id="emG"></div>
-    <button class="bm" onclick="confirmAS()" style="font-size:var(--fs-sm)">추가</button>
+
+    <div style="display:flex;gap:6px;margin-top:var(--sp-2)">
+      <button class="bm" onclick="closeAS()" style="background:rgba(0,0,0,.04);color:var(--tx);box-shadow:none">취소</button>
+      <button class="bm" onclick="confirmAS()" style="font-size:var(--fs-sm)">추가</button>
+    </div>
   </div>
 </div>
 
@@ -1039,6 +1096,8 @@ const ACHS=[
   {l:'가지 치기',i:'🌿',d:'꼬리질문 5개 달기',check:s=>totalBranches(s)>=5},
   {l:'따뜻한 마음',i:'💧',d:'친구에게 10번 물주기',check:s=>(s.profile?.seeds||0)>=5 || waterGiven(s)>=10},
   {l:'용기있는 질문',i:'🕊️',d:'익명 질문 3개',check:s=>anonQs(s)>=3},
+  {l:'명예의 전당',i:'🏅',d:'💧 공감 5회 이상 받은 질문 보유',check:s=>allQs(s).some(q=>(q.water_count||0)>=5)},
+  {l:'질문 스타',i:'⭐',d:'⭐ 교사 뽑은 질문 보유',check:s=>allQs(s).some(q=>q.starred)},
 ];
 const TAG_PRESETS = ['#수업','#실험','#숙제','#호기심','#어려움','#시험','#일상','#관찰'];
 
@@ -1343,6 +1402,7 @@ async function bootstrapUser(){
       fruit_x: q.fruit_x!=null ? Number(q.fruit_x) : null,
       fruit_y: q.fruit_y!=null ? Number(q.fruit_y) : null,
       tree_id: tid,
+      starred: q.starred||false,
       branches:[],
     });
     qIds.push(q.id);
@@ -1399,6 +1459,7 @@ function swTab(t){
   if(t==='questions'){renderTagPresets();renderFruitPicker();renderAnonTog();renderTreePicker();}
   if(t==='forest') renderForest();
   if(t==='shop') renderShop();
+  if(t==='hall') renderHallOfFame();
 }
 
 function render(){
@@ -1441,6 +1502,15 @@ function renderSubTabs(){
       b.style.color=s.color||'#3D8B4F';
       b.style.background=(s.color||'#3D8B4F')+'14';
       b.style.borderBottomColor=s.color||'#3D8B4F';
+      // 삭제 버튼 (활성 탭에만)
+      if(S.subjects.length>1){
+        const x=document.createElement('span');
+        x.className='st-del';
+        x.textContent='×';
+        x.title='과목 삭제';
+        x.onclick=(ev)=>{ev.stopPropagation();delSubject(s.id);};
+        b.appendChild(x);
+      }
     }
     b.onclick=async ()=>{
       S.activeSub=s.id;S.editId=null;S.filterTag=null;
@@ -3550,6 +3620,102 @@ function closeFy(){$('mFy').classList.remove('show');}
 // ============================================================================
 // 업적
 // ============================================================================
+// ============================================================================
+// 🏅 질문 명예의 전당
+// ============================================================================
+async function renderHallOfFame(){
+  const el = $('hallContent');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--tl);padding:20px">로딩 중...</div>';
+
+  const subId = S.activeSub;
+  const sub = S.subjects.find(s => s.id === subId);
+  const subLabel = sub ? `${sub.icon} ${sub.label}` : '전체';
+
+  // 같은 반 전체 질문 가져오기 (이미 우리반 숲에서 쓰는 로직)
+  let classQs = [];
+  try{
+    const {data:qs} = await sb.from('questions').select('*, profiles(name, grade, class_no)')
+      .eq('subject_id', subId)
+      .order('water_count', {ascending:false})
+      .limit(200);
+    classQs = qs || [];
+  }catch(e){
+    // profiles join 실패 시 fallback
+    const {data:qs} = await sb.from('questions').select('*')
+      .eq('subject_id', subId)
+      .order('water_count', {ascending:false})
+      .limit(200);
+    classQs = qs || [];
+  }
+
+  // 1️⃣ 💧 공감 TOP (water_count 상위)
+  const waterTop = classQs
+    .filter(q => (q.water_count||0) >= 2)
+    .sort((a,b) => (b.water_count||0) - (a.water_count||0))
+    .slice(0, 5);
+
+  // 2️⃣ ⭐ 교사 뽑은 질문 (starred = true)
+  const starredQs = classQs
+    .filter(q => q.starred)
+    .sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0))
+    .slice(0, 5);
+
+  let html = `<div style="font-size:var(--fs-xxs);color:var(--tl);margin-bottom:var(--sp-2);text-align:center">${subLabel} 과목 명예의 전당</div>`;
+
+  // 💧 공감 TOP
+  html += `<div class="hall-sec">
+    <div class="hall-sec-ttl"><span>💧</span> 공감이 많은 질문 TOP 5</div>`;
+  if(waterTop.length){
+    waterTop.forEach((q,i) => {
+      const authorName = q.profiles?.name || (q.is_anonymous ? '익명' : '친구');
+      const isMe = q.user_id === S.user?.id;
+      html += `
+        <div class="hall-card">
+          <div class="hall-rank">${i+1}</div>
+          <div class="hall-q-text">${esc(q.text||'')}</div>
+          <div class="hall-q-meta">
+            <span>💧 ${q.water_count||0}명 공감</span>
+            <span>👤 ${q.is_anonymous ? '익명' : esc(authorName)}${isMe ? ' (나!)' : ''}</span>
+            <span>📅 ${(q.question_date||q.created_at||'').slice(0,10)}</span>
+            ${q.resolved ? '<span>🍎 해결</span>' : ''}
+          </div>
+          ${(q.water_count||0) >= 5 ? '<div class="hall-badge" style="margin-top:6px;margin-left:22px">🏅 명예의 전당 인증</div>' : ''}
+        </div>`;
+    });
+  } else {
+    html += '<div class="hall-empty">아직 공감 2회 이상인 질문이 없어요 💧</div>';
+  }
+  html += '</div>';
+
+  // ⭐ 교사 뽑은 질문
+  html += `<div class="hall-sec">
+    <div class="hall-sec-ttl"><span>⭐</span> 선생님이 뽑은 질문</div>`;
+  if(starredQs.length){
+    starredQs.forEach((q,i) => {
+      const authorName = q.profiles?.name || (q.is_anonymous ? '익명' : '친구');
+      const isMe = q.user_id === S.user?.id;
+      html += `
+        <div class="hall-card">
+          <div class="hall-star">⭐</div>
+          <div class="hall-rank" style="background:linear-gradient(135deg,#F5C53F,#E0A800)">${i+1}</div>
+          <div class="hall-q-text">${esc(q.text||'')}</div>
+          <div class="hall-q-meta">
+            <span>👤 ${q.is_anonymous ? '익명' : esc(authorName)}${isMe ? ' (나!)' : ''}</span>
+            <span>📅 ${(q.question_date||q.created_at||'').slice(0,10)}</span>
+            <span>💧 ${q.water_count||0}명</span>
+          </div>
+          <div class="hall-badge" style="margin-top:6px;margin-left:22px">⭐ 선생님 추천 인증</div>
+        </div>`;
+    });
+  } else {
+    html += '<div class="hall-empty">아직 선생님이 뽑은 질문이 없어요 ⭐<br><span style="font-size:11px;color:var(--tl)">선생님이 대시보드에서 좋은 질문에 ⭐ 표시하면 여기 올라와요</span></div>';
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
 function renderAch(){
   const g=$('achG');if(!g) return;
   g.innerHTML='';
@@ -3566,8 +3732,50 @@ function renderAch(){
 // ============================================================================
 // 과목 추가
 // ============================================================================
+// 공용 과목 프리셋 목록 (중학교 기본 교과)
+const SUBJECT_PRESETS = [
+  {id:'science',      icon:'🔬', label:'과학',      color:'#4CAF50'},
+  {id:'math',         icon:'📐', label:'수학',      color:'#2196F3'},
+  {id:'korean',       icon:'📖', label:'국어',      color:'#FF9800'},
+  {id:'english',      icon:'🌐', label:'영어',      color:'#9C27B0'},
+  {id:'social',       icon:'🗺️', label:'사회',      color:'#795548'},
+  {id:'history',      icon:'📜', label:'역사',      color:'#607D8B'},
+  {id:'tech',         icon:'💻', label:'기술·가정', color:'#00BCD4'},
+  {id:'info',         icon:'🤖', label:'정보',      color:'#3F51B5'},
+  {id:'music',        icon:'🎵', label:'음악',      color:'#E91E63'},
+  {id:'art',          icon:'🎨', label:'미술',      color:'#FF5722'},
+  {id:'pe',           icon:'🏃', label:'체육',      color:'#4DB6AC'},
+  {id:'moral',        icon:'💡', label:'도덕',      color:'#8BC34A'},
+  {id:'integrated',   icon:'🔭', label:'통합과학',  color:'#009688'},
+  {id:'free',         icon:'🌿', label:'자유학기',  color:'#66BB6A'},
+];
+
 function openAS(){
-  $('nSubNm').value='';S.newSubIcon='📖';
+  $('nSubNm').value='';
+  S.newSubIcon='📖';
+  S.presetSel = null;  // 선택된 프리셋 ID
+
+  // 프리셋 그리드 렌더
+  const grid = $('subPresetGrid');
+  grid.innerHTML = '';
+  const alreadyAdded = new Set(S.subjects.map(s => s.id));
+  SUBJECT_PRESETS.forEach(p => {
+    const already = alreadyAdded.has(p.id);
+    const b = document.createElement('button');
+    b.className = 'sub-pre' + (already ? ' done' : '');
+    b.disabled = already;
+    b.innerHTML = `<span class="sub-pre-ic">${p.icon}</span><span class="sub-pre-nm">${p.label}</span>${already ? '<span class="sub-pre-ck">✓</span>' : ''}`;
+    b.onclick = () => {
+      if(already) return;
+      S.presetSel = p;
+      $('nSubNm').value = '';  // 직접입력 초기화
+      grid.querySelectorAll('.sub-pre').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    };
+    grid.appendChild(b);
+  });
+
+  // 아이콘 그리드
   const g=$('emG');g.innerHTML='';
   EMOJIS.forEach(em=>{
     const b=document.createElement('button');
@@ -3576,17 +3784,44 @@ function openAS(){
     b.onclick=()=>{S.newSubIcon=em;document.querySelectorAll('.emo').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
     g.appendChild(b);
   });
+
   $('mAS').classList.add('show');
 }
+
+function clearPresetSel(){
+  S.presetSel = null;
+  document.querySelectorAll('.sub-pre').forEach(x => x.classList.remove('on'));
+}
+
 function closeAS(){$('mAS').classList.remove('show');}
+
 async function confirmAS(){
-  const nm=$('nSubNm').value.trim();
-  if(!nm){shk(document.querySelector('.as-box'));return;}
-  const id='c_'+Date.now();
-  const color=['#00BCD4','#795548','#607D8B','#FF5722','#3F51B5'][S.subjects.length%5];
-  const {error}=await sb.from('subjects').insert({id,user_id:S.user.id,label:nm,icon:S.newSubIcon,color,sort_order:S.subjects.length+1});
+  let id, nm, icon, color;
+
+  if(S.presetSel){
+    // 프리셋 선택
+    const p = S.presetSel;
+    id = p.id;
+    nm = p.label;
+    icon = p.icon;
+    color = p.color;
+    // 이미 추가된 과목인지 확인
+    if(S.subjects.find(s => s.id === id)){
+      toast('이미 추가된 과목이에요');
+      return;
+    }
+  } else {
+    // 직접 입력
+    nm = ($('nSubNm').value || '').trim();
+    if(!nm){shk(document.querySelector('.as-box'));return;}
+    id = 'c_'+Date.now();
+    icon = S.newSubIcon;
+    color = ['#00BCD4','#795548','#607D8B','#FF5722','#3F51B5'][S.subjects.length%5];
+  }
+
+  const {error}=await sb.from('subjects').insert({id, user_id:S.user.id, label:nm, icon, color, sort_order:S.subjects.length+1});
   if(error){alert('과목 추가 실패: '+error.message);return;}
-  S.subjects.push({id,user_id:S.user.id,label:nm,icon:S.newSubIcon,color,sort_order:S.subjects.length+1});
+  S.subjects.push({id, user_id:S.user.id, label:nm, icon, color, sort_order:S.subjects.length+1});
   S.activeSub=id;
   await sb.from('profiles').update({active_sub:id}).eq('id',S.user.id);
 
@@ -3600,14 +3835,54 @@ async function confirmAS(){
     S.activeTreeId[id] = newT.id;
     S.questions[id][newT.id] = [];
   } else {
-    // 로컬 fallback
     const localId = 'local_'+id;
     S.trees[id] = [{id:localId, name:'나의 첫 나무', icon:'🌳', sort_order:1, subject_id:id, _local:true}];
     S.activeTreeId[id] = localId;
     S.questions[id][localId] = [];
   }
 
-  closeAS();render();
+  closeAS();
+  toast(`📚 "${icon} ${nm}" 과목이 추가됐어요!`);
+  render();
+}
+
+// ============================================================================
+// 📚 과목 삭제
+// ============================================================================
+async function delSubject(subId){
+  const sub = S.subjects.find(s => s.id === subId);
+  if(!sub) return;
+  if(S.subjects.length <= 1){
+    toast('마지막 과목은 삭제할 수 없어요 📚');
+    return;
+  }
+  const qs = qsInSub(subId);
+  const msg = qs.length
+    ? `"${sub.icon} ${sub.label}" 과목을 삭제할까요?\n\n⚠️ 이 과목의 질문 ${qs.length}개, 나무 ${(S.trees[subId]||[]).length}그루도 모두 삭제됩니다.`
+    : `"${sub.icon} ${sub.label}" 과목을 삭제할까요?`;
+  if(!confirm(msg)) return;
+
+  // 질문 삭제 → 나무 삭제 → 과목 삭제 순서
+  const qIds = qs.map(q => q.id);
+  if(qIds.length) await sb.from('questions').delete().in('id', qIds);
+  const treeIds = (S.trees[subId]||[]).map(t => t.id).filter(x => !String(x).startsWith('local_'));
+  if(treeIds.length) await sb.from('trees').delete().in('id', treeIds);
+  const {error} = await sb.from('subjects').delete().eq('id', subId).eq('user_id', S.user.id);
+  if(error){ alert('삭제 실패: '+error.message); return; }
+
+  // 로컬 정리
+  S.subjects = S.subjects.filter(s => s.id !== subId);
+  delete S.questions[subId];
+  delete S.trees[subId];
+  delete S.activeTreeId[subId];
+
+  // 다른 과목으로 전환
+  if(S.activeSub === subId){
+    S.activeSub = S.subjects[0]?.id || '';
+  }
+
+  toast('🗑️ 과목을 삭제했어요');
+  render();
 }
 
 // ============================================================================
