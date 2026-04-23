@@ -19,52 +19,55 @@
   --anon:#B0BEC5; /* 익명 질문 색 (은빛) */
   --water:#4FC3F7; /* 물주기 색 */
 
-  /* 반응형 폰트 크기 (min, preferred, max) */
-  --fs-xxs: clamp(9px, 1.8vw, 11px);
-  --fs-xs:  clamp(10px, 2vw, 12px);
-  --fs-sm:  clamp(11px, 2.2vw, 13px);
-  --fs-md:  clamp(12px, 2.5vw, 14px);
-  --fs-lg:  clamp(14px, 3vw, 17px);
-  --fs-xl:  clamp(16px, 3.6vw, 20px);
-  --fs-2xl: clamp(18px, 4.2vw, 24px);
-  --fs-3xl: clamp(22px, 5.2vw, 32px);
+  /* 반응형 폰트 크기 — 노트북에서도 편하게 읽히도록 전반 확대 */
+  --fs-xxs: clamp(11px, 2vw, 13px);
+  --fs-xs:  clamp(12px, 2.2vw, 14px);
+  --fs-sm:  clamp(13px, 2.5vw, 15px);
+  --fs-md:  clamp(14px, 2.8vw, 16px);
+  --fs-lg:  clamp(16px, 3.2vw, 19px);
+  --fs-xl:  clamp(18px, 3.8vw, 22px);
+  --fs-2xl: clamp(20px, 4.5vw, 28px);
+  --fs-3xl: clamp(24px, 5.5vw, 36px);
 
   /* 반응형 간격 */
-  --sp-1: clamp(4px, 0.8vw, 6px);
-  --sp-2: clamp(6px, 1.2vw, 10px);
-  --sp-3: clamp(10px, 2vw, 16px);
-  --sp-4: clamp(14px, 2.8vw, 22px);
+  --sp-1: clamp(5px, 1vw, 8px);
+  --sp-2: clamp(8px, 1.4vw, 12px);
+  --sp-3: clamp(12px, 2.2vw, 18px);
+  --sp-4: clamp(16px, 3vw, 24px);
 
   /* 반응형 이모지 크기 */
-  --em-sm: clamp(14px, 3vw, 18px);
-  --em-md: clamp(18px, 4vw, 24px);
-  --em-lg: clamp(26px, 5.5vw, 36px);
-  --em-xl: clamp(40px, 8vw, 60px);
+  --em-sm: clamp(16px, 3vw, 20px);
+  --em-md: clamp(20px, 4vw, 28px);
+  --em-lg: clamp(28px, 5.5vw, 40px);
+  --em-xl: clamp(44px, 8vw, 64px);
 
   /* 반응형 아바타/버튼 크기 */
-  --touch-sm: clamp(28px, 6vw, 36px);
-  --touch-md: clamp(36px, 8vw, 46px);
+  --touch-sm: clamp(32px, 7vw, 40px);
+  --touch-md: clamp(40px, 9vw, 50px);
 }
 
 /* 태블릿 이상에서 더 넉넉하게 */
 @media (min-width: 768px){
   :root{
-    --fs-sm: clamp(13px, 1.4vw, 15px);
-    --fs-md: clamp(14px, 1.6vw, 16px);
-    --fs-lg: clamp(16px, 1.9vw, 19px);
+    --fs-xxs: 13px;
+    --fs-xs: 14px;
+    --fs-sm: 15px;
+    --fs-md: 16px;
+    --fs-lg: 19px;
+    --fs-xl: 22px;
   }
 }
-/* 노트북 이상 */
+/* 노트북 이상 — 확실히 큰 글자 */
 @media (min-width: 1024px){
   :root{
-    --fs-xxs: 11px;
-    --fs-xs: 12px;
-    --fs-sm: 13px;
-    --fs-md: 14px;
-    --fs-lg: 16px;
-    --fs-xl: 19px;
-    --fs-2xl: 23px;
-    --fs-3xl: 28px;
+    --fs-xxs: 13px;
+    --fs-xs: 14px;
+    --fs-sm: 15px;
+    --fs-md: 17px;
+    --fs-lg: 19px;
+    --fs-xl: 22px;
+    --fs-2xl: 26px;
+    --fs-3xl: 32px;
   }
 }
 
@@ -173,6 +176,12 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .av{background:var(--pr);color:#fff;border-radius:50%;width:var(--touch-sm);height:var(--touch-sm);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:var(--fs-xs);cursor:pointer}
 
 .sub-row{background:#fff;border-bottom:1px solid var(--bd);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.sub-row::-webkit-scrollbar{display:none}
+
+/* 담당 선생님 선택 + 과목 빈 상태 */
+.teacher-sel{display:flex;align-items:center;padding:0 4px;flex-shrink:0}
+.teacher-dd{padding:5px 10px;border:1.5px solid rgba(93,184,110,.25);border-radius:8px;font-size:var(--fs-xxs);font-weight:600;color:var(--pd);background:rgba(93,184,110,.06);cursor:pointer;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.teacher-dd:focus{border-color:var(--pr);box-shadow:0 0 0 2px rgba(93,184,110,.15)}
+.sub-empty-msg{display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:var(--fs-xs);color:var(--tl);font-weight:600;white-space:nowrap;animation:pulse 2s ease-in-out infinite}
 .sub-in{max-width:1100px;margin:0 auto;display:flex;gap:2px;padding:var(--sp-1) var(--sp-2);min-width:max-content;align-items:center}
 .st{padding:clamp(5px,1vw,8px) clamp(10px,2.2vw,16px);border-radius:9px;background:transparent;color:var(--tl);font-weight:500;font-size:var(--fs-xs);display:flex;align-items:center;gap:4px;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .2s}.st.on{font-weight:700}
 .st-add{padding:clamp(4px,1vw,7px) clamp(9px,2vw,14px);border-radius:9px;background:rgba(93,184,110,.06);color:var(--pr);font-weight:700;font-size:var(--fs-lg);margin-left:2px}.st-add:hover{background:rgba(93,184,110,.14)}
@@ -194,7 +203,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .sub-pre-ck{font-size:10px;color:var(--pr);flex-shrink:0;font-weight:700}
 
 /* 명예의 전당 */
-.hall-area{max-width:600px;margin:0 auto}
+.hall-area{max-width:720px;margin:0 auto}
 .hall-sec{margin-bottom:var(--sp-3)}
 .hall-sec-ttl{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:700;color:var(--pd);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--bd)}
 .hall-sec-ttl span{font-size:16px}
@@ -209,7 +218,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .hall-star{position:absolute;top:8px;right:10px;font-size:14px}
 
 .tab-nav{background:#fff;border-bottom:1px solid var(--bd);flex-shrink:0;display:flex;justify-content:center}
-.tab-nav-in{display:flex;max-width:min(640px,100%);width:100%}
+.tab-nav-in{display:flex;max-width:min(780px,100%);width:100%}
 .tn{flex:1;padding:clamp(6px,1.4vw,10px) 0;text-align:center;font-size:var(--fs-xxs);font-weight:600;color:var(--tl);background:transparent;border-bottom:2.5px solid transparent;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px}
 .tn span{font-size:var(--fs-md)}
 .tn.on{color:var(--pr);border-bottom-color:var(--pr);background:rgba(93,184,110,.03)}
@@ -364,7 +373,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .season-btn[data-s="winter"].on{background:linear-gradient(135deg,#90CAF9,#42A5F5)}
 
 /* Question cards */
-.q-area{max-width:min(640px,100%);margin:0 auto}
+.q-area{max-width:min(780px,100%);margin:0 auto}
 .cs{background:#fff;border-radius:var(--r);padding:var(--sp-3);box-shadow:var(--sh);border:1px solid var(--bd);margin-bottom:var(--sp-2)}
 .cs h4{font-size:var(--fs-sm);font-weight:700;margin-bottom:var(--sp-2)}
 .q-iw{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-1)}
@@ -442,6 +451,45 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .qc-branch-auth{font-weight:600;color:#8B6F47}
 .qc-branch-del{background:rgba(232,93,93,.1);color:var(--ar);border-radius:6px;padding:1px 6px;font-size:var(--fs-xxs);font-weight:600}
 .qc-branch-ans{display:flex;gap:4px;margin-top:5px}
+
+/* ═══ 답변 영역 ═══ */
+.qc-ans-area{margin-top:8px;padding-top:8px;border-top:1px dashed var(--bd)}
+.qc-ans-toggle{background:linear-gradient(135deg,rgba(33,150,243,.08),rgba(93,184,110,.06));color:var(--pd);padding:6px 12px;border-radius:8px;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:1.5px solid rgba(33,150,243,.15);transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.qc-ans-toggle:hover{border-color:rgba(33,150,243,.3);background:rgba(33,150,243,.12)}
+.qc-ans-form{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.qc-ans-input{width:100%;padding:8px 12px;border:1.5px solid var(--bd);border-radius:10px;font-size:var(--fs-xs);background:#FAFFF5;resize:vertical;min-height:60px;font-family:inherit;transition:border .2s}
+.qc-ans-input:focus{border-color:var(--pr);box-shadow:0 0 0 2px rgba(93,184,110,.12)}
+.qc-ans-btns{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.qc-ans-btn{padding:5px 10px;border-radius:8px;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:1.5px solid var(--bd);background:#fff;color:var(--tx);transition:all .15s;display:flex;align-items:center;gap:4px}
+.qc-ans-btn:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
+.qc-ans-btn.primary{background:var(--pr);color:#fff;border-color:var(--pr)}
+.qc-ans-btn.primary:hover{background:var(--pd)}
+.qc-ans-files{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.qc-ans-file-preview{position:relative;border-radius:8px;overflow:hidden;border:1.5px solid var(--bd);background:#fff}
+.qc-ans-file-preview img{max-width:120px;max-height:90px;object-fit:cover;display:block}
+.qc-ans-file-preview .file-name{padding:4px 8px;font-size:10px;color:var(--tl);font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qc-ans-file-preview .file-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(232,93,93,.9);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+
+/* 기존 답변 표시 */
+.qc-answer{margin-top:8px;padding:10px 14px;background:linear-gradient(135deg,rgba(33,150,243,.06),rgba(93,184,110,.04));border-radius:10px;border:1px solid rgba(33,150,243,.12)}
+.qc-answer-hdr{font-size:var(--fs-xxs);font-weight:700;color:#1976D2;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.qc-answer-text{font-size:var(--fs-xs);color:var(--tx);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.qc-answer-files{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.qc-answer-img{max-width:200px;max-height:150px;border-radius:8px;border:1px solid var(--bd);cursor:pointer;transition:transform .15s;object-fit:cover}
+.qc-answer-img:hover{transform:scale(1.03)}
+.qc-answer-file-link{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#fff;border:1px solid var(--bd);border-radius:8px;font-size:var(--fs-xxs);color:var(--pr);font-weight:600;text-decoration:none;transition:all .15s}
+.qc-answer-file-link:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
+
+/* ═══ 드로잉 캔버스 모달 ═══ */
+.draw-canvas-wrap{position:relative;border:2px solid var(--bd);border-radius:10px;overflow:hidden;background:#fff;touch-action:none}
+.draw-canvas{display:block;width:100%;cursor:crosshair}
+.draw-toolbar{display:flex;gap:5px;align-items:center;padding:8px 10px;background:var(--bg);border-top:1px solid var(--bd);flex-wrap:wrap}
+.draw-tool{width:32px;height:32px;border-radius:8px;background:#fff;border:1.5px solid var(--bd);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.draw-tool:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
+.draw-tool.on{border-color:var(--pr);background:rgba(93,184,110,.15);box-shadow:0 0 0 2px rgba(93,184,110,.2)}
+.draw-color{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .12s}
+.draw-color.on{border-color:var(--pd);transform:scale(1.15);box-shadow:0 0 0 2px rgba(45,106,62,.3)}
+.draw-size{width:50px;accent-color:var(--pr)}
 .qc-branch-ans input{flex:1;padding:5px 8px;border:1px solid rgba(139,110,68,.2);border-radius:7px;font-size:var(--fs-xs);background:#FFFEF7}
 .qc-branch-ans button{padding:5px 10px;border-radius:7px;background:#8B6F47;color:#fff;font-size:var(--fs-xxs);font-weight:700}
 
@@ -691,10 +739,6 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
     <!-- 나무 탭 -->
     <div class="tp on" id="tp-tree"><div class="tp-inner">
       <div class="quote-box"><div class="quote-text" id="qTxt"></div><div class="quote-author" id="qAuth"></div></div>
-      <div class="link-row">
-        <a class="link-btn link-guide" href="#" onclick="event.preventDefault();openLink('guide')">📖 질문하는 법</a>
-        <a class="link-btn link-video" href="#" onclick="event.preventDefault();openLink('video')">🎬 영상으로 배우기</a>
-      </div>
       <div class="tip tip-daily"><span style="font-size:var(--fs-md)">💡</span><span id="tipTxt"></span></div>
       <div class="tree-area">
         <div class="tree-sub" id="treeSub"></div>
@@ -958,13 +1002,42 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
   </div>
 </div>
 
-<!-- 🌿 질문 나무 이동 모달 -->
-<div class="mdl" id="mMoveQ" onclick="closeMoveQ()">
-  <div class="as-box mdl-box" onclick="event.stopPropagation()">
-    <h3 style="font-size:var(--fs-md);font-weight:700;color:var(--pd);margin-bottom:var(--sp-2)">🌿 어느 나무로 옮길까요?</h3>
-    <div class="mq-list" id="mqList"></div>
-    <button class="bm" onclick="closeMoveQ()" style="background:rgba(0,0,0,.04);color:var(--tx);box-shadow:none;margin-top:var(--sp-2)">취소</button>
+<!-- 🌿 질문 나무 이동 모달 — 중복 제거됨 (위에 이미 있음) -->
+
+<!-- 🎨 드로잉 캔버스 모달 -->
+<div class="mdl" id="mDraw" onclick="closeDrawing()">
+  <div class="as-box mdl-box" onclick="event.stopPropagation()" style="max-width:520px;padding:16px">
+    <h3 style="font-size:var(--fs-md);font-weight:700;color:var(--pd);margin-bottom:var(--sp-1);display:flex;align-items:center;gap:6px">🎨 그림 그리기</h3>
+    <p style="font-size:var(--fs-xxs);color:var(--tl);margin-bottom:8px">그림을 그려서 답변에 첨부할 수 있어요</p>
+    <div class="draw-canvas-wrap">
+      <canvas id="drawCanvas" class="draw-canvas" width="480" height="320"></canvas>
+      <div class="draw-toolbar">
+        <button class="draw-tool on" id="dtPen" onclick="setDrawTool('pen')" title="펜">✏️</button>
+        <button class="draw-tool" id="dtEraser" onclick="setDrawTool('eraser')" title="지우개">🧹</button>
+        <span style="color:var(--bd)">|</span>
+        <span class="draw-color on" style="background:#1a1a1a" data-c="#1a1a1a" onclick="setDrawColor(this)"></span>
+        <span class="draw-color" style="background:#E53935" data-c="#E53935" onclick="setDrawColor(this)"></span>
+        <span class="draw-color" style="background:#1E88E5" data-c="#1E88E5" onclick="setDrawColor(this)"></span>
+        <span class="draw-color" style="background:#43A047" data-c="#43A047" onclick="setDrawColor(this)"></span>
+        <span class="draw-color" style="background:#FB8C00" data-c="#FB8C00" onclick="setDrawColor(this)"></span>
+        <span class="draw-color" style="background:#8E24AA" data-c="#8E24AA" onclick="setDrawColor(this)"></span>
+        <span style="color:var(--bd)">|</span>
+        <input type="range" min="1" max="12" value="3" class="draw-size" id="drawSize" title="굵기">
+        <span style="flex:1"></span>
+        <button class="draw-tool" onclick="clearDrawCanvas()" title="전체 지우기">🗑️</button>
+        <button class="draw-tool" onclick="undoDraw()" title="되돌리기">↩️</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="bm" onclick="closeDrawing()" style="background:rgba(0,0,0,.04);color:var(--tx);box-shadow:none;flex:1">취소</button>
+      <button class="bm" onclick="saveDrawing()" style="flex:1">🎨 그림 첨부하기</button>
+    </div>
   </div>
+</div>
+
+<!-- 📷 이미지 확대 모달 -->
+<div class="mdl" id="mImgView" onclick="$('mImgView').classList.remove('show')">
+  <img id="imgViewSrc" style="max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5)" onclick="event.stopPropagation()">
 </div>
 
 <!-- 옛날 질문 팝업 -->
@@ -1064,6 +1137,9 @@ const S = {
   trees:{},               // { subjectId: [ {id, name, icon, sort_order}, ... ] }
   activeTreeId:{},        // { subjectId: treeId } - 과목별 현재 포커스 나무
   pendingTreeId:null,     // 질문 작성 시 선택한 나무
+  // 🧑‍🏫 담당 선생님
+  teacherList:[],         // 가입한 전체 교사 목록
+  myTeacherId:null,       // 내가 선택한 담당 선생님 id (teachers.id)
 };
 
 const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','🍐','🌸','⭐','💎','🌰','🌻'];
@@ -1330,14 +1406,22 @@ async function bootstrapUser(){
     S.unlocked=prof.unlocked_items||['default'];
     if(!S.unlocked.includes('default')) S.unlocked.unshift('default');
     S.activeTree=prof.active_tree||'default';
+    S.myTeacherId=prof.teacher_id||null;
     $('fruitSel').value=S.fruit;
     document.querySelectorAll('.season-btn').forEach(b=>b.classList.toggle('on',b.dataset.s===S.season));
     await updateStreak();
   }
   const {data:subs}=await sb.from('subjects').select('*')
-    .or(`user_id.is.null,user_id.eq.${S.user.id}`).order('sort_order');
+    .eq('user_id', S.user.id).order('sort_order');
   S.subjects=subs||[];
   if(!S.subjects.find(x=>x.id===S.activeSub)&&S.subjects.length) S.activeSub=S.subjects[0].id;
+  if(!S.subjects.length) S.activeSub = '';
+
+  // 🧑‍🏫 담당 선생님 로드 (teachers 테이블에서 가입한 교사 목록)
+  try{
+    const {data:teacherList}=await sb.from('teachers').select('id,name,subject_id,subject_label,subject_icon').order('name');
+    S.teacherList = teacherList||[];
+  }catch(e){ S.teacherList=[]; }
 
   // 🌲 나무들 로드 (과목당 여러 그루)
   const {data:trees} = await sb.from('trees').select('*')
@@ -1406,6 +1490,8 @@ async function bootstrapUser(){
       fruit_y: q.fruit_y!=null ? Number(q.fruit_y) : null,
       tree_id: tid,
       starred: q.starred||false,
+      answer_text: q.answer_text||null,
+      answer_files: q.answer_files||null,
       branches:[],
     });
     qIds.push(q.id);
@@ -1497,6 +1583,41 @@ async function changeFruit(v){
 
 function renderSubTabs(){
   const c=$('subTabs');c.innerHTML='';
+
+  // 🧑‍🏫 담당 선생님 선택 드롭다운
+  const teacherEl = document.createElement('div');
+  teacherEl.className = 'teacher-sel';
+  if(S.teacherList.length){
+    const selTeacher = S.teacherList.find(t=>t.id===S.myTeacherId);
+    const sel = document.createElement('select');
+    sel.className = 'teacher-dd';
+    sel.innerHTML = `<option value="">${selTeacher ? '' : '👩‍🏫 담당 선생님을 골라주세요!'}</option>`;
+    S.teacherList.forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.subject_icon||'📚'} ${t.name} 선생님 (${t.subject_label||''})`;
+      if(t.id === S.myTeacherId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = async ()=>{
+      const tid = sel.value ? Number(sel.value) : null;
+      S.myTeacherId = tid;
+      await sb.from('profiles').update({teacher_id:tid}).eq('id',S.user.id);
+      toast(tid ? '👩‍🏫 담당 선생님이 지정됐어요!' : '담당 선생님을 해제했어요');
+    };
+    teacherEl.appendChild(sel);
+  }
+  c.appendChild(teacherEl);
+
+  // 과목 탭들
+  if(!S.subjects.length){
+    // 과목이 하나도 없는 경우 안내 메시지
+    const msg = document.createElement('div');
+    msg.className = 'sub-empty-msg';
+    msg.innerHTML = '📚 <b>(+) 버튼</b>을 눌러 과목을 추가해주세요!';
+    c.appendChild(msg);
+  }
+
   S.subjects.forEach(s=>{
     const b=document.createElement('button');
     b.className='st'+(s.id===S.activeSub?' on':'');
@@ -2993,6 +3114,7 @@ function renderQs(){
             ${q.is_anonymous?`<span class="qc-anon-b">🕊️ 익명</span>`:''}
             ${q.water_count?`<span>💧 ${q.water_count}</span>`:''}
             ${brCount?`<span>🌿 ${brCount}</span>`:''}
+            ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}
           </div>
         </div>
         <div class="qc-a">
@@ -3005,6 +3127,48 @@ function renderQs(){
           <button class="qb qb-x" onclick="delQ(${q.id})" title="삭제">🗑️</button>
         </div>
       </div>
+
+      ${/* 기존 답변 표시 */
+        (q.answer_text || q.answer_files) ? `
+        <div class="qc-answer">
+          <div class="qc-answer-hdr">
+            <span>💬</span> 나의 답변
+            <span style="flex:1"></span>
+            <button onclick="deleteAnswer(${q.id})" style="background:none;color:var(--ar);font-size:var(--fs-xxs);font-weight:600;cursor:pointer">삭제</button>
+          </div>
+          ${q.answer_text ? `<div class="qc-answer-text">${esc(q.answer_text)}</div>` : ''}
+          ${(q.answer_files && q.answer_files.length) ? `
+            <div class="qc-answer-files">
+              ${q.answer_files.map(f => {
+                if(f.type && f.type.startsWith('image/')){
+                  return `<img src="${esc(f.url)}" class="qc-answer-img" onclick="viewImage('${esc(f.url)}')" alt="${esc(f.name)}" loading="lazy">`;
+                } else {
+                  return `<a href="${esc(f.url)}" target="_blank" class="qc-answer-file-link">📄 ${esc(f.name)}</a>`;
+                }
+              }).join('')}
+            </div>
+          ` : ''}
+        </div>` : ''}
+
+      ${''}
+      <div class="qc-ans-area">
+        <button class="qc-ans-toggle" onclick="toggleAnswer(${q.id})">
+          ${(q.answer_text || q.answer_files) ? '✏️ 답변 수정' : '💬 답변 달기'}
+        </button>
+        <div id="ansArea-${q.id}" style="display:none">
+          <div class="qc-ans-form">
+            <textarea class="qc-ans-input" id="ansText-${q.id}" placeholder="답변을 적어보세요... 이미지나 그림도 첨부할 수 있어요!" oninput="if(!_answerState[${q.id}])_answerState[${q.id}]={text:'',pendingFiles:[]};_answerState[${q.id}].text=this.value">${q.answer_text ? esc(q.answer_text) : ''}</textarea>
+            <div class="qc-ans-btns">
+              <button class="qc-ans-btn" onclick="triggerFileUpload(${q.id})">📎 파일 첨부</button>
+              <button class="qc-ans-btn" onclick="openDrawing(${q.id})">🎨 그리기</button>
+              <span style="flex:1"></span>
+              <button class="qc-ans-btn primary" id="ansSubmit-${q.id}" onclick="submitAnswer(${q.id})">💬 답변 저장</button>
+            </div>
+            <div class="qc-ans-files" id="ansPending-${q.id}"></div>
+          </div>
+        </div>
+      </div>
+
       ${brCount?`<div style="margin-top:5px;text-align:right"><button style="background:none;color:var(--pr);font-size:var(--fs-xxs);font-weight:600" onclick="togBranches(${q.id})">${expanded?'▲ 가지 접기':`▼ 꼬리질문 ${brCount}개 보기`}</button></div>`:''}
       <div class="qc-branches${expanded?' show':''}" id="branches-${q.id}">
         ${(q.branches||[]).map(br=>`
@@ -3624,6 +3788,318 @@ async function openFy(id){
 function closeFy(){$('mFy').classList.remove('show');}
 
 // ============================================================================
+// ============================================================================
+// 💬 답변 시스템 (텍스트 + 파일 첨부 + 드로잉)
+// ============================================================================
+let _answerState = {}; // {qid: {text, pendingFiles: [{file, preview, name}]}}
+const STORAGE_BUCKET = 'attachments';
+
+function toggleAnswer(qid){
+  const el = document.getElementById('ansArea-'+qid);
+  if(!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : '';
+  if(!isOpen && !_answerState[qid]) _answerState[qid] = {text:'', pendingFiles:[]};
+}
+
+function triggerFileUpload(qid){
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/png,image/jpeg,image/webp,image/gif,application/pdf';
+  inp.multiple = true;
+  inp.onchange = (e) => {
+    const files = [...e.target.files];
+    if(!_answerState[qid]) _answerState[qid] = {text:'', pendingFiles:[]};
+    files.forEach(file => {
+      if(file.size > 5*1024*1024){ toast('5MB 이하 파일만 올릴 수 있어요'); return; }
+      const reader = new FileReader();
+      reader.onload = (re) => {
+        _answerState[qid].pendingFiles.push({
+          file,
+          preview: file.type.startsWith('image/') ? re.target.result : null,
+          name: file.name,
+          type: file.type
+        });
+        renderPendingFiles(qid);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+  inp.click();
+}
+
+function renderPendingFiles(qid){
+  const el = document.getElementById('ansPending-'+qid);
+  if(!el) return;
+  const st = _answerState[qid];
+  if(!st || !st.pendingFiles.length){ el.innerHTML=''; return; }
+  el.innerHTML = st.pendingFiles.map((f,i) => `
+    <div class="qc-ans-file-preview">
+      ${f.preview ? `<img src="${f.preview}" alt="${esc(f.name)}">` : `<div class="file-name">📄 ${esc(f.name)}</div>`}
+      <div class="file-remove" onclick="removePendingFile(${qid},${i})">×</div>
+    </div>
+  `).join('');
+}
+
+function removePendingFile(qid, idx){
+  if(_answerState[qid]?.pendingFiles) _answerState[qid].pendingFiles.splice(idx, 1);
+  renderPendingFiles(qid);
+}
+
+async function uploadFileToStorage(file){
+  if(!S.user) return null;
+  const ext = file.name.split('.').pop() || 'bin';
+  const path = `${S.user.id}/${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+  const {data, error} = await sb.storage.from(STORAGE_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: false
+  });
+  if(error){
+    console.error('Upload failed:', error.message);
+    return null;
+  }
+  // 공개 URL 가져오기
+  const {data:urlData} = sb.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
+  return {
+    url: urlData.publicUrl,
+    name: file.name,
+    type: file.type,
+    path: data.path
+  };
+}
+
+async function submitAnswer(qid){
+  const textEl = document.getElementById('ansText-'+qid);
+  const text = (textEl?.value||'').trim();
+  const st = _answerState[qid] || {pendingFiles:[]};
+
+  if(!text && !st.pendingFiles.length){
+    toast('답변 텍스트나 파일을 입력해주세요');
+    return;
+  }
+
+  const submitBtn = document.getElementById('ansSubmit-'+qid);
+  if(submitBtn) submitBtn.disabled = true;
+
+  // 파일 업로드
+  const uploadedFiles = [];
+  for(const pf of st.pendingFiles){
+    toast('📤 파일 업로드 중...');
+    const result = await uploadFileToStorage(pf.file);
+    if(result) uploadedFiles.push(result);
+  }
+
+  // 기존 답변 파일이 있으면 합치기
+  const q = qsInSub(S.activeSub).find(x=>x.id===qid);
+  const existingFiles = q?.answer_files || [];
+  const allFiles = [...existingFiles, ...uploadedFiles];
+
+  // DB 저장
+  const {error} = await sb.from('questions').update({
+    answer_text: text || null,
+    answer_files: allFiles.length ? allFiles : null
+  }).eq('id', qid).eq('user_id', S.user.id);
+
+  if(submitBtn) submitBtn.disabled = false;
+  if(error){
+    toast('답변 저장 실패: '+error.message);
+    return;
+  }
+
+  // 로컬 state 업데이트
+  if(q){
+    q.answer_text = text || null;
+    q.answer_files = allFiles.length ? allFiles : null;
+  }
+
+  // 초기화
+  _answerState[qid] = {text:'', pendingFiles:[]};
+  toast('💬 답변이 저장됐어요!');
+  renderQs();
+}
+
+async function deleteAnswer(qid){
+  if(!confirm('답변을 삭제할까요?')) return;
+  const {error} = await sb.from('questions').update({
+    answer_text: null, answer_files: null
+  }).eq('id', qid).eq('user_id', S.user.id);
+  if(error){ toast('삭제 실패'); return; }
+  const q = qsInSub(S.activeSub).find(x=>x.id===qid);
+  if(q){ q.answer_text = null; q.answer_files = null; }
+  toast('답변을 삭제했어요');
+  renderQs();
+}
+
+function viewImage(url){
+  $('imgViewSrc').src = url;
+  $('mImgView').classList.add('show');
+}
+
+// ============================================================================
+// 🎨 드로잉 캔버스
+// ============================================================================
+let _draw = {
+  ctx: null,
+  drawing: false,
+  tool: 'pen',     // 'pen' | 'eraser'
+  color: '#1a1a1a',
+  size: 3,
+  history: [],     // undo용 imageData 스냅샷
+  targetQid: null  // 어떤 질문에 그림을 붙일 건지
+};
+
+function openDrawing(qid){
+  _draw.targetQid = qid;
+  _draw.tool = 'pen';
+  _draw.color = '#1a1a1a';
+  _draw.size = 3;
+  _draw.history = [];
+
+  $('mDraw').classList.add('show');
+
+  setTimeout(()=>{
+    const canvas = $('drawCanvas');
+    // 캔버스를 모달 너비에 맞춤
+    const wrap = canvas.parentElement;
+    const w = Math.min(480, wrap.clientWidth - 4);
+    const h = Math.round(w * 0.67);
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = w+'px';
+    canvas.style.height = h+'px';
+
+    _draw.ctx = canvas.getContext('2d');
+    _draw.ctx.fillStyle = '#fff';
+    _draw.ctx.fillRect(0, 0, w, h);
+    _draw.ctx.lineCap = 'round';
+    _draw.ctx.lineJoin = 'round';
+    saveDrawSnapshot();
+
+    // 이벤트 (pointer로 통일 — 터치+마우스 둘 다)
+    canvas.onpointerdown = drawStart;
+    canvas.onpointermove = drawMove;
+    canvas.onpointerup = drawEnd;
+    canvas.onpointerleave = drawEnd;
+
+    // 굵기 슬라이더
+    $('drawSize').oninput = (e) => { _draw.size = Number(e.target.value); };
+
+    // 툴 UI 초기화
+    document.querySelectorAll('.draw-tool').forEach(t=>t.classList.remove('on'));
+    $('dtPen').classList.add('on');
+    document.querySelectorAll('.draw-color').forEach(c=>c.classList.toggle('on',c.dataset.c==='#1a1a1a'));
+    $('drawSize').value = 3;
+  }, 100);
+}
+
+function closeDrawing(){ $('mDraw').classList.remove('show'); }
+
+function setDrawTool(tool){
+  _draw.tool = tool;
+  $('dtPen').classList.toggle('on', tool==='pen');
+  $('dtEraser').classList.toggle('on', tool==='eraser');
+}
+
+function setDrawColor(el){
+  _draw.color = el.dataset.c;
+  _draw.tool = 'pen';
+  $('dtPen').classList.add('on');
+  $('dtEraser').classList.remove('on');
+  document.querySelectorAll('.draw-color').forEach(c=>c.classList.toggle('on',c===el));
+}
+
+function saveDrawSnapshot(){
+  const canvas = $('drawCanvas');
+  if(!canvas) return;
+  _draw.history.push(_draw.ctx.getImageData(0, 0, canvas.width, canvas.height));
+  if(_draw.history.length > 30) _draw.history.shift();
+}
+
+function undoDraw(){
+  if(_draw.history.length <= 1) return;
+  _draw.history.pop(); // 현재 상태 제거
+  const prev = _draw.history[_draw.history.length - 1];
+  _draw.ctx.putImageData(prev, 0, 0);
+}
+
+function clearDrawCanvas(){
+  const canvas = $('drawCanvas');
+  if(!canvas) return;
+  _draw.ctx.fillStyle = '#fff';
+  _draw.ctx.fillRect(0, 0, canvas.width, canvas.height);
+  saveDrawSnapshot();
+}
+
+function _drawPos(e){
+  const canvas = $('drawCanvas');
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (canvas.width / r.width),
+    y: (e.clientY - r.top) * (canvas.height / r.height)
+  };
+}
+
+function drawStart(e){
+  _draw.drawing = true;
+  const pos = _drawPos(e);
+  _draw.ctx.beginPath();
+  _draw.ctx.moveTo(pos.x, pos.y);
+  e.preventDefault();
+}
+
+function drawMove(e){
+  if(!_draw.drawing) return;
+  const pos = _drawPos(e);
+  const ctx = _draw.ctx;
+  ctx.lineWidth = _draw.tool==='eraser' ? _draw.size*4 : _draw.size;
+  ctx.strokeStyle = _draw.tool==='eraser' ? '#ffffff' : _draw.color;
+  ctx.globalCompositeOperation = _draw.tool==='eraser' ? 'destination-out' : 'source-over';
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  e.preventDefault();
+}
+
+function drawEnd(e){
+  if(!_draw.drawing) return;
+  _draw.drawing = false;
+  _draw.ctx.globalCompositeOperation = 'source-over';
+  saveDrawSnapshot();
+}
+
+async function saveDrawing(){
+  const canvas = $('drawCanvas');
+  if(!canvas) return;
+  const qid = _draw.targetQid;
+  if(!qid) return;
+
+  // Canvas → Blob
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  if(!blob){ toast('그림 변환 실패'); return; }
+
+  // Blob → File
+  const filename = `drawing_${Date.now()}.png`;
+  const file = new File([blob], filename, {type:'image/png'});
+
+  // 답변 상태에 추가
+  if(!_answerState[qid]) _answerState[qid] = {text:'', pendingFiles:[]};
+  const reader = new FileReader();
+  reader.onload = (re) => {
+    _answerState[qid].pendingFiles.push({
+      file,
+      preview: re.target.result,
+      name: filename,
+      type: 'image/png'
+    });
+    renderPendingFiles(qid);
+    closeDrawing();
+    // 답변 영역 열기
+    const el = document.getElementById('ansArea-'+qid);
+    if(el) el.style.display = '';
+    toast('🎨 그림이 첨부됐어요! "답변 저장"을 눌러주세요');
+  };
+  reader.readAsDataURL(file);
+}
+
 // 업적
 // ============================================================================
 // ============================================================================
