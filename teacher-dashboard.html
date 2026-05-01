@@ -34,7 +34,21 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{height:100%}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100%;line-height:1.5;font-feature-settings:'cv11','ss01'}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100%;line-height:1.55;font-feature-settings:'cv11','ss01';font-size:15px}
+
+/* 노트북·태블릿에서 글자 더 크게 */
+@media (min-width:1024px){
+  body{font-size:16px}
+}
+
+/* 모든 작은 글자 일괄 상향 (1px씩) */
+[style*="font-size:9px"]{font-size:11px !important}
+[style*="font-size:10px"]{font-size:11.5px !important}
+[style*="font-size:10.5px"]{font-size:12px !important}
+[style*="font-size:11px"]{font-size:12.5px !important}
+[style*="font-size:11.5px"]{font-size:13px !important}
+[style*="font-size:12px"]{font-size:13.5px !important}
+[style*="font-size:12.5px"]{font-size:14px !important}
 
 /* 종이 질감 */
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(circle at 20% 30%,rgba(216,196,148,.08) 0%,transparent 40%),radial-gradient(circle at 80% 70%,rgba(120,148,120,.06) 0%,transparent 45%);}
@@ -99,7 +113,9 @@ input,select{font-family:inherit;outline:none}
 .topbar-logo .tag{font-family:var(--mono);font-size:9.5px;color:var(--ink4);letter-spacing:.15em;text-transform:uppercase;padding:3px 8px;border:1px solid rgba(255,252,244,.18);border-radius:2px;margin-left:4px}
 .topbar-r{display:flex;align-items:center;gap:10px}
 .teacher-badge{font-family:var(--mono);font-size:11px;font-weight:700;color:#FFFCF4;background:linear-gradient(135deg,rgba(92,184,110,.35),rgba(217,119,6,.25));padding:4px 12px;border-radius:3px;letter-spacing:.03em;white-space:nowrap}
-.topbar-r .info{font-family:var(--mono);font-size:10.5px;color:var(--ink4);font-weight:500;letter-spacing:.04em}
+.my-students-toggle{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap;font-family:var(--mono)}
+.my-students-toggle input{cursor:pointer;accent-color:var(--pr)}
+.topbar-r .info{font-family:var(--mono);font-size:12px;color:var(--ink4);font-weight:500;letter-spacing:.04em}
 .topbar-r .info::before{content:'●';color:#5CB86E;margin-right:6px;animation:pulse 2s ease-in-out infinite}
 .btn-ghost{background:rgba(255,252,244,.06);color:#FFFCF4;padding:7px 14px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.04em;transition:all .15s;font-family:var(--mono);text-transform:uppercase;display:flex;align-items:center;gap:6px}
 .btn-ghost:hover{background:rgba(255,252,244,.12)}
@@ -110,10 +126,10 @@ input,select{font-family:inherit;outline:none}
 
 /* ═══ FILTER BAR ═══ */
 .filter-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px;align-items:center;padding:14px 18px;background:var(--surface);border:1px solid var(--rule);border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
-.filter-bar .lbl{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-right:4px}
-.filter-bar select,.filter-bar .search{padding:7px 12px;border:1.5px solid var(--rule);border-radius:3px;font-size:12px;background:var(--surface2);color:var(--ink);font-weight:500;transition:all .15s;cursor:pointer}
+.filter-bar .lbl{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-right:4px}
+.filter-bar select,.filter-bar .search{padding:9px 14px;border:1.5px solid var(--rule);border-radius:3px;font-size:14px;background:var(--surface2);color:var(--ink);font-weight:500;transition:all .15s;cursor:pointer}
 .filter-bar select:hover,.filter-bar .search:focus{border-color:var(--pr);background:#fff}
-.filter-bar .search{width:200px;cursor:text;font-family:inherit}
+.filter-bar .search{width:240px;cursor:text;font-family:inherit}
 
 /* ═══ SUMMARY CARDS — editorial stat cards ═══ */
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;margin-bottom:32px;background:var(--surface);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
@@ -253,7 +269,7 @@ td strong{font-weight:700;color:var(--ink)}
 .tag-bar-count{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink3);min-width:20px;text-align:right}
 
 /* ═══ BUTTONS ═══ */
-.btn-export{background:rgba(37,99,235,.08);color:var(--blue);padding:6px 12px;border-radius:2px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-export{background:rgba(37,99,235,.08);color:var(--blue);padding:7px 14px;border-radius:2px;font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn-export:hover{background:rgba(37,99,235,.15)}
 
 /* ═══ TOOLTIP ═══ */
@@ -569,6 +585,7 @@ body.print-report-mode .dd-overlay{display:none !important}
     </div>
     <div class="topbar-r">
       <span class="info" id="lastUpdate">연결 대기</span>
+      <button class="btn-ghost" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
       <button class="btn-ghost" onclick="openWeeklyReport()"><span>📄</span> 주간 리포트</button>
       <button class="btn-ghost" id="refreshBtn" onclick="loadAll()"><span class="ico">↻</span> 새로고침</button>
       <button class="btn-ghost logout" onclick="teacherLogout()">로그아웃</button>
@@ -601,6 +618,9 @@ body.print-report-mode .dd-overlay{display:none !important}
         <option value="named">실명만</option>
       </select>
       <input class="search" id="fSearch" placeholder="🔍  이름·질문 검색..." oninput="applyFilters()">
+      <label class="my-students-toggle" id="myStudentsLabel" style="display:none">
+        <input type="checkbox" id="fMyStudents" onchange="applyFilters()"> 👩‍🏫 내 학생만
+      </label>
       <button class="btn-export" onclick="clearFilters()" style="color:var(--ink3);background:rgba(0,0,0,.04)">↺ 초기화</button>
       <span style="flex:1"></span>
       <span class="lbl" id="filterStats" style="color:var(--pr)"></span>
@@ -888,7 +908,7 @@ body.print-report-mode .dd-overlay{display:none !important}
 // ⚙️ SUPABASE — 학생 앱과 같은 프로젝트
 // ═══════════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://kpnfxcvnzashdpwnlrev.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_ClHzrxo-l5vL6ojO-zg8GA_PqsxYYUx';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwbmZ4Y3ZuemFzaGRwd25scmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzkxNDIsImV4cCI6MjA5MTkxNTE0Mn0.bBUAbH3_pLDZmbEzF7NRR3Y93KhhkQMR7eoSR-urRdE';
 
 let sb = null;
 let isServiceKey = false;
@@ -1109,9 +1129,11 @@ function showDashboard(){
     badge.className = 'teacher-badge';
     badge.innerHTML = `${currentTeacher.subject_icon||'📚'} ${esc(currentTeacher.name)} 선생님`;
     const topR = document.querySelector('.topbar-r');
-    // 기존 배지 제거
     topR?.querySelectorAll('.teacher-badge').forEach(b => b.remove());
     topR?.prepend(badge);
+    // "내 학생만" 필터 표시
+    const myLabel = $('myStudentsLabel');
+    if(myLabel) myLabel.style.display = '';
   }
 
   loadAll();
@@ -1244,6 +1266,12 @@ function applyFilters(){
   // 이름 검색은 학생에도 적용, 질문에도 적용 (검색어를 질문에 넣은 경우 대응)
   if(searchRaw){
     ps = ps.filter(p => (p.name||'').toLowerCase().includes(searchRaw));
+  }
+
+  // 👩‍🏫 "내 학생만" 필터
+  const myStudentsOn = $('fMyStudents')?.checked;
+  if(myStudentsOn && currentTeacher?.id){
+    ps = ps.filter(p => p.teacher_id === currentTeacher.id);
   }
 
   const userIds = new Set(ps.map(p => p.id));
@@ -2927,6 +2955,271 @@ window.addEventListener('afterprint', ()=>{
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape' && $('ddOverlay').classList.contains('show')) closeDrilldown();
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// 📋 학생 일괄 생성 (CSV/Excel 명렬표 업로드)
+// ═══════════════════════════════════════════════════════════════════
+function openBulkCreate(){
+  if(isServiceKey){
+    alert('Service Role Key로 접속하면 사용할 수 없어요.\n교사 계정으로 로그인 후 사용하세요.');
+    return;
+  }
+  $('mBulk').classList.add('show');
+  $('bulkPreview').innerHTML = '';
+  $('bulkResult').innerHTML = '';
+  $('bulkFile').value = '';
+  _bulkParsed = [];
+}
+
+function closeBulkCreate(){
+  $('mBulk').classList.remove('show');
+}
+
+let _bulkParsed = []; // [{grade, class_no, number, name, password}]
+
+function downloadBulkTemplate(){
+  // CSV 템플릿 다운로드
+  const csv = '\uFEFF학년,반,번호,이름,비밀번호\n1,1,1,홍길동,1234\n1,1,2,김철수,1234\n1,1,3,이영희,1234\n';
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '학생명렬표_템플릿.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function handleBulkFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  $('bulkPreview').innerHTML = '<div style="padding:12px;color:var(--ink3)">📄 파일 읽는 중...</div>';
+
+  try{
+    let rows = [];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if(ext === 'csv'){
+      const text = await file.text();
+      rows = parseCSV(text);
+    } else if(ext === 'xlsx' || ext === 'xls'){
+      // SheetJS dynamically loaded
+      if(!window.XLSX){
+        $('bulkPreview').innerHTML = '<div style="color:var(--ar);padding:12px">⚠ Excel 처리를 위해 SheetJS 라이브러리를 로드 중...</div>';
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    } else {
+      $('bulkPreview').innerHTML = '<div style="color:var(--ar);padding:12px">⚠ CSV 또는 Excel 파일만 지원합니다</div>';
+      return;
+    }
+
+    // 헤더 제외 + 파싱
+    if(rows.length < 2){
+      $('bulkPreview').innerHTML = '<div style="color:var(--ar);padding:12px">⚠ 데이터가 없어요. 첫 줄은 헤더여야 합니다 (학년/반/번호/이름/비밀번호)</div>';
+      return;
+    }
+
+    const dataRows = rows.slice(1).filter(r => r.some(cell => String(cell||'').trim()));
+    _bulkParsed = dataRows.map((r, idx) => ({
+      _row: idx + 2,
+      grade: parseInt(r[0]),
+      class_no: parseInt(r[1]),
+      number: parseInt(r[2]),
+      name: String(r[3]||'').trim(),
+      password: String(r[4]||'1234').trim() || '1234'
+    }));
+
+    // 유효성 검사
+    const errors = [];
+    _bulkParsed.forEach(s => {
+      if(!s.grade || s.grade < 1 || s.grade > 9) errors.push(`행 ${s._row}: 학년이 잘못됐어요`);
+      if(!s.class_no || s.class_no < 1 || s.class_no > 30) errors.push(`행 ${s._row}: 반이 잘못됐어요`);
+      if(!s.number || s.number < 1 || s.number > 50) errors.push(`행 ${s._row}: 번호가 잘못됐어요`);
+      if(!s.name) errors.push(`행 ${s._row}: 이름이 비었어요`);
+      if(s.password.length < 4) errors.push(`행 ${s._row}: 비밀번호는 4자 이상`);
+    });
+
+    let html = `<div style="font-size:13px;color:var(--ink2);margin-bottom:8px;font-weight:600">📋 ${_bulkParsed.length}명 미리보기</div>`;
+    if(errors.length){
+      html += `<div style="background:rgba(232,93,93,.08);border:1px solid var(--ar);padding:8px 12px;border-radius:4px;margin-bottom:8px;font-size:11px;color:var(--ar)">
+        <b>⚠ ${errors.length}개 오류</b><br>${errors.slice(0,5).map(e=>'• '+e).join('<br>')}${errors.length>5?'<br>...외 '+(errors.length-5)+'개':''}
+      </div>`;
+    }
+    html += `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--surface2);border-bottom:1.5px solid var(--rule)">
+      <th style="padding:6px 8px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase">학년</th>
+      <th style="padding:6px 8px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase">반</th>
+      <th style="padding:6px 8px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase">번호</th>
+      <th style="padding:6px 8px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase">이름</th>
+      <th style="padding:6px 8px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase">비밀번호</th>
+    </tr></thead><tbody>`;
+    _bulkParsed.slice(0, 10).forEach(s => {
+      html += `<tr style="border-bottom:1px solid var(--rule)">
+        <td style="padding:5px 8px">${s.grade||'?'}</td>
+        <td style="padding:5px 8px">${s.class_no||'?'}</td>
+        <td style="padding:5px 8px">${s.number||'?'}</td>
+        <td style="padding:5px 8px;font-weight:600">${esc(s.name||'?')}</td>
+        <td style="padding:5px 8px;font-family:var(--mono);color:var(--ink3)">${esc(s.password)}</td>
+      </tr>`;
+    });
+    if(_bulkParsed.length > 10) html += `<tr><td colspan="5" style="padding:6px 8px;text-align:center;color:var(--ink3);font-size:11px">...외 ${_bulkParsed.length - 10}명</td></tr>`;
+    html += '</tbody></table>';
+    $('bulkPreview').innerHTML = html;
+
+    $('bulkSubmitBtn').disabled = errors.length > 0;
+  }catch(e){
+    console.error(e);
+    $('bulkPreview').innerHTML = '<div style="color:var(--ar);padding:12px">⚠ 파일 처리 실패: '+esc(e.message)+'</div>';
+  }
+}
+
+// 간단한 CSV 파서
+function parseCSV(text){
+  // BOM 제거
+  if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  return lines.map(line => {
+    const cells = [];
+    let cur = '', inQuote = false;
+    for(let i = 0; i < line.length; i++){
+      const c = line[i];
+      if(c === '"'){
+        if(inQuote && line[i+1] === '"'){ cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if(c === ',' && !inQuote){
+        cells.push(cur); cur = '';
+      } else cur += c;
+    }
+    cells.push(cur);
+    return cells.map(c => c.trim());
+  });
+}
+
+async function submitBulkCreate(){
+  if(!_bulkParsed.length){ alert('파일을 먼저 선택하세요'); return; }
+  if(!confirm(`${_bulkParsed.length}명의 계정을 생성합니다. 계속할까요?\n\n* 이미 가입된 학생은 건너뜁니다.\n* 시간이 다소 걸릴 수 있습니다 (학생 1명당 약 1초).`)) return;
+
+  const btn = $('bulkSubmitBtn');
+  btn.disabled = true;
+  const result = $('bulkResult');
+  result.innerHTML = '<div style="padding:12px;color:var(--ink2)">⏳ 계정 생성 중... (0/' + _bulkParsed.length + ')</div>';
+
+  // 익명 클라이언트 사용 (signUp용)
+  const tempSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  const success = [], failed = [];
+  for(let i = 0; i < _bulkParsed.length; i++){
+    const s = _bulkParsed[i];
+    const email = `s${s.grade}_${s.class_no}_${s.number}@__SCHOOL_DOMAIN__`.replace('__SCHOOL_DOMAIN__', 'haenuri.app');
+    try{
+      const {data:authData, error:authErr} = await tempSb.auth.signUp({
+        email, password: s.password
+      });
+      if(authErr){
+        if(authErr.message.includes('already registered') || authErr.message.includes('User already')){
+          failed.push({s, reason: '이미 가입됨'});
+        } else {
+          failed.push({s, reason: authErr.message});
+        }
+      } else {
+        // 프로필 정보 저장 (서비스 클라이언트 또는 인증된 sb로)
+        const uid = authData.user?.id;
+        if(uid){
+          await sb.from('profiles').upsert({
+            id: uid,
+            name: s.name,
+            grade: s.grade,
+            class_no: s.class_no,
+            number: s.number
+          });
+          success.push(s);
+        } else {
+          failed.push({s, reason: '계정 생성됨, 프로필 보류 (이메일 인증 필요?)'});
+        }
+      }
+    }catch(e){
+      failed.push({s, reason: e.message});
+    }
+    result.innerHTML = `<div style="padding:12px;color:var(--ink2)">⏳ 진행 중... (${i+1}/${_bulkParsed.length}) — 성공 ${success.length} / 실패 ${failed.length}</div>`;
+    // 로그인 세션 정리 (다음 가입을 위해)
+    await tempSb.auth.signOut();
+    await new Promise(r => setTimeout(r, 200)); // rate limit 방지
+  }
+
+  let html = `<div style="padding:12px;background:rgba(93,184,110,.1);border:1px solid var(--pr);border-radius:4px;margin-bottom:8px">
+    <b style="color:var(--pd)">✅ 완료</b><br>
+    성공: ${success.length}명 / 실패: ${failed.length}명
+  </div>`;
+  if(failed.length){
+    html += `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--ar);font-weight:600">실패 ${failed.length}건 보기</summary>
+      <div style="margin-top:8px;font-size:11px;max-height:200px;overflow-y:auto">
+        ${failed.map(f => `<div style="padding:4px 0;border-bottom:1px solid var(--rule)">
+          ${f.s.grade}-${f.s.class_no}-${f.s.number} ${esc(f.s.name)}: <span style="color:var(--ar)">${esc(f.reason)}</span>
+        </div>`).join('')}
+      </div>
+    </details>`;
+  }
+  result.innerHTML = html;
+  btn.disabled = false;
+  // 데이터 새로고침
+  setTimeout(() => loadAll(), 1000);
+}
 </script>
+
+<!-- 📋 학생 일괄 생성 모달 -->
+<style>
+.bulk-modal{position:fixed;inset:0;background:rgba(15,30,25,.4);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.bulk-modal.show{display:flex}
+.bulk-box{background:var(--surface);border:1px solid var(--rule);border-radius:4px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.bulk-box h2{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.bulk-box .sub{font-size:12px;color:var(--ink3);margin-bottom:18px;line-height:1.6}
+.bulk-step{padding:14px;background:var(--surface2);border:1px solid var(--rule);border-radius:4px;margin-bottom:12px}
+.bulk-step h3{font-size:13px;font-weight:700;color:var(--pd);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.bulk-step p{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:8px}
+.bulk-btn{padding:8px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--rule);background:#fff;color:var(--ink);transition:all .15s;font-family:inherit}
+.bulk-btn:hover{border-color:var(--pr);background:rgba(93,184,110,.05)}
+.bulk-btn.primary{background:var(--pr);color:#fff;border-color:var(--pr)}
+.bulk-btn.primary:hover{background:var(--pd)}
+.bulk-btn.primary:disabled{opacity:.5;cursor:not-allowed}
+.bulk-file-input{display:none}
+.bulk-file-label{display:inline-block;padding:8px 16px;background:rgba(33,150,243,.1);border:1.5px dashed var(--blue);border-radius:4px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.bulk-file-label:hover{background:rgba(33,150,243,.18)}
+</style>
+<div class="bulk-modal" id="mBulk" onclick="if(event.target.id==='mBulk')closeBulkCreate()">
+  <div class="bulk-box">
+    <h2>📋 학생 계정 일괄 생성</h2>
+    <p class="sub">CSV 또는 Excel 명렬표를 업로드하면 학생 계정이 한 번에 만들어집니다.<br>학생들은 학년·반·번호·비밀번호로 바로 로그인할 수 있어요.</p>
+
+    <div class="bulk-step">
+      <h3>1️⃣ 명렬표 양식 다운로드</h3>
+      <p>아래 버튼을 눌러 양식을 받고, Excel에서 학생 정보를 입력하세요.<br>컬럼 순서: <b>학년 / 반 / 번호 / 이름 / 비밀번호</b></p>
+      <button class="bulk-btn" onclick="downloadBulkTemplate()">📥 CSV 양식 다운로드</button>
+    </div>
+
+    <div class="bulk-step">
+      <h3>2️⃣ 작성된 명렬표 업로드</h3>
+      <p>CSV(.csv) 또는 Excel(.xlsx) 파일을 선택하세요.</p>
+      <input type="file" class="bulk-file-input" id="bulkFile" accept=".csv,.xlsx,.xls" onchange="handleBulkFile(this)">
+      <label for="bulkFile" class="bulk-file-label">📁 파일 선택</label>
+      <div id="bulkPreview" style="margin-top:12px"></div>
+    </div>
+
+    <div class="bulk-step">
+      <h3>3️⃣ 계정 생성 실행</h3>
+      <p>미리보기가 정상이면 아래 버튼을 누르세요. 학생당 약 1초씩 걸립니다.</p>
+      <button class="bulk-btn primary" id="bulkSubmitBtn" onclick="submitBulkCreate()" disabled>✅ 계정 일괄 생성</button>
+      <div id="bulkResult" style="margin-top:12px"></div>
+    </div>
+
+    <div style="text-align:right;margin-top:8px">
+      <button class="bulk-btn" onclick="closeBulkCreate()">닫기</button>
+    </div>
+  </div>
+
 </body>
 </html>
