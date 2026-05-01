@@ -19,55 +19,69 @@
   --anon:#B0BEC5; /* 익명 질문 색 (은빛) */
   --water:#4FC3F7; /* 물주기 색 */
 
-  /* 반응형 폰트 크기 — 노트북에서도 편하게 읽히도록 전반 확대 */
-  --fs-xxs: clamp(11px, 2vw, 13px);
-  --fs-xs:  clamp(12px, 2.2vw, 14px);
-  --fs-sm:  clamp(13px, 2.5vw, 15px);
-  --fs-md:  clamp(14px, 2.8vw, 16px);
-  --fs-lg:  clamp(16px, 3.2vw, 19px);
-  --fs-xl:  clamp(18px, 3.8vw, 22px);
-  --fs-2xl: clamp(20px, 4.5vw, 28px);
-  --fs-3xl: clamp(24px, 5.5vw, 36px);
+  /* 반응형 폰트 크기 — 노트북·태블릿에서 더 크게 */
+  --fs-xxs: clamp(12px, 2vw, 14px);
+  --fs-xs:  clamp(13px, 2.2vw, 15px);
+  --fs-sm:  clamp(14px, 2.5vw, 16px);
+  --fs-md:  clamp(15px, 2.8vw, 18px);
+  --fs-lg:  clamp(17px, 3.2vw, 21px);
+  --fs-xl:  clamp(20px, 3.8vw, 25px);
+  --fs-2xl: clamp(22px, 4.5vw, 30px);
+  --fs-3xl: clamp(26px, 5.5vw, 38px);
 
-  /* 반응형 간격 */
-  --sp-1: clamp(5px, 1vw, 8px);
-  --sp-2: clamp(8px, 1.4vw, 12px);
-  --sp-3: clamp(12px, 2.2vw, 18px);
-  --sp-4: clamp(16px, 3vw, 24px);
+  /* 반응형 간격 — 더 여유 있게 */
+  --sp-1: clamp(6px, 1.1vw, 10px);
+  --sp-2: clamp(10px, 1.6vw, 14px);
+  --sp-3: clamp(14px, 2.4vw, 22px);
+  --sp-4: clamp(18px, 3.2vw, 28px);
 
   /* 반응형 이모지 크기 */
-  --em-sm: clamp(16px, 3vw, 20px);
-  --em-md: clamp(20px, 4vw, 28px);
-  --em-lg: clamp(28px, 5.5vw, 40px);
-  --em-xl: clamp(44px, 8vw, 64px);
+  --em-sm: clamp(18px, 3.2vw, 22px);
+  --em-md: clamp(22px, 4.2vw, 30px);
+  --em-lg: clamp(32px, 5.8vw, 44px);
+  --em-xl: clamp(48px, 8.4vw, 70px);
 
-  /* 반응형 아바타/버튼 크기 */
-  --touch-sm: clamp(32px, 7vw, 40px);
-  --touch-md: clamp(40px, 9vw, 50px);
+  /* 반응형 아바타/버튼 크기 — 터치영역 확대 */
+  --touch-sm: clamp(36px, 7.5vw, 44px);
+  --touch-md: clamp(44px, 9vw, 54px);
 }
 
-/* 태블릿 이상에서 더 넉넉하게 */
+/* 태블릿 (768px+) */
 @media (min-width: 768px){
   :root{
-    --fs-xxs: 13px;
-    --fs-xs: 14px;
-    --fs-sm: 15px;
-    --fs-md: 16px;
-    --fs-lg: 19px;
-    --fs-xl: 22px;
+    --fs-xxs: 14px;
+    --fs-xs: 15px;
+    --fs-sm: 16px;
+    --fs-md: 18px;
+    --fs-lg: 21px;
+    --fs-xl: 24px;
+    --fs-2xl: 28px;
+    --fs-3xl: 36px;
+    --sp-1: 8px;
+    --sp-2: 12px;
+    --sp-3: 18px;
+    --sp-4: 24px;
+    --touch-sm: 40px;
+    --touch-md: 50px;
   }
 }
-/* 노트북 이상 — 확실히 큰 글자 */
+/* 노트북·데스크탑 (1024px+) — 가독성 최우선 */
 @media (min-width: 1024px){
   :root{
-    --fs-xxs: 13px;
-    --fs-xs: 14px;
-    --fs-sm: 15px;
-    --fs-md: 17px;
-    --fs-lg: 19px;
-    --fs-xl: 22px;
-    --fs-2xl: 26px;
-    --fs-3xl: 32px;
+    --fs-xxs: 14px;
+    --fs-xs: 15px;
+    --fs-sm: 16px;
+    --fs-md: 18px;
+    --fs-lg: 21px;
+    --fs-xl: 25px;
+    --fs-2xl: 30px;
+    --fs-3xl: 38px;
+    --sp-1: 10px;
+    --sp-2: 14px;
+    --sp-3: 22px;
+    --sp-4: 28px;
+    --touch-sm: 42px;
+    --touch-md: 52px;
   }
 }
 
@@ -147,13 +161,13 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .ac{background:rgba(255,255,255,.9);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-radius:clamp(16px,4vw,26px);padding:clamp(22px,5vw,38px) clamp(18px,4vw,32px);max-width:min(420px,94vw);width:100%;box-shadow:0 16px 48px rgba(36,97,47,.11);position:relative;z-index:1}
 .dco{position:absolute;border-radius:50%;pointer-events:none}
 
-.fl{display:block;font-size:var(--fs-xxs);font-weight:700;color:var(--tx);margin-bottom:var(--sp-1);letter-spacing:.3px}
-.fi{width:100%;padding:clamp(10px,2.2vw,14px) clamp(11px,2.4vw,15px);border:1.5px solid var(--bd);border-radius:clamp(9px,2vw,12px);font-size:var(--fs-sm);background:#FAFFF5;transition:border .2s,box-shadow .2s}
+.fl{display:block;font-size:var(--fs-xs);font-weight:700;color:var(--tx);margin-bottom:var(--sp-1);letter-spacing:.3px}
+.fi{width:100%;padding:clamp(13px,2.6vw,18px) clamp(13px,2.8vw,18px);border:1.5px solid var(--bd);border-radius:clamp(10px,2vw,14px);font-size:var(--fs-md);background:#FAFFF5;transition:border .2s,box-shadow .2s}
 .fi:focus{border-color:var(--pl);box-shadow:0 0 0 3px rgba(93,184,110,.08)}
 .sel{width:100%;padding:clamp(10px,2.2vw,14px) clamp(11px,2.4vw,15px);border:1.5px solid var(--bd);border-radius:clamp(9px,2vw,12px);font-size:var(--fs-sm);background:#FAFFF5;cursor:pointer;transition:border .2s}
 .sel:focus{border-color:var(--pl)}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-1);margin-bottom:var(--sp-2)}
-.bm{width:100%;padding:clamp(11px,2.4vw,14px);border-radius:clamp(10px,2.2vw,14px);background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-md);font-weight:700;box-shadow:0 5px 16px rgba(93,184,110,.3);transition:all .2s}
+.bm{width:100%;padding:clamp(14px,2.6vw,18px);border-radius:clamp(11px,2.2vw,16px);background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-lg);font-weight:700;box-shadow:0 5px 16px rgba(93,184,110,.3);transition:all .2s;letter-spacing:.02em}
 .bm:hover{transform:translateY(-1px)}.bm:active{transform:scale(.97)}.bm:disabled{background:#ccc;box-shadow:none;cursor:default;transform:none}
 .bb{position:absolute;top:var(--sp-2);left:var(--sp-2);background:rgba(93,184,110,.1);border-radius:8px;padding:clamp(4px,1vw,7px) clamp(9px,2vw,13px);font-size:var(--fs-xxs);color:var(--pr);font-weight:600}
 .pwe{color:var(--ar);font-size:var(--fs-xxs);margin-bottom:5px;display:none}.pwe.show{display:block}
@@ -203,7 +217,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .sub-pre-ck{font-size:10px;color:var(--pr);flex-shrink:0;font-weight:700}
 
 /* 명예의 전당 */
-.hall-area{max-width:720px;margin:0 auto}
+.hall-area{max-width:840px;margin:0 auto}
 .hall-sec{margin-bottom:var(--sp-3)}
 .hall-sec-ttl{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);font-weight:700;color:var(--pd);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--bd)}
 .hall-sec-ttl span{font-size:16px}
@@ -218,19 +232,22 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .hall-star{position:absolute;top:8px;right:10px;font-size:14px}
 
 .tab-nav{background:#fff;border-bottom:1px solid var(--bd);flex-shrink:0;display:flex;justify-content:center}
-.tab-nav-in{display:flex;max-width:min(780px,100%);width:100%}
-.tn{flex:1;padding:clamp(6px,1.4vw,10px) 0;text-align:center;font-size:var(--fs-xxs);font-weight:600;color:var(--tl);background:transparent;border-bottom:2.5px solid transparent;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px}
-.tn span{font-size:var(--fs-md)}
-.tn.on{color:var(--pr);border-bottom-color:var(--pr);background:rgba(93,184,110,.03)}
+.tab-nav-in{display:flex;max-width:min(880px,100%);width:100%}
+.tn{flex:1;padding:clamp(10px,1.8vw,14px) 0;text-align:center;font-size:var(--fs-xs);font-weight:700;color:var(--tl);background:transparent;border-bottom:3px solid transparent;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:var(--touch-md)}
+.tn span{font-size:var(--fs-lg)}
+.tn.on{color:var(--pr);border-bottom-color:var(--pr);background:rgba(93,184,110,.05)}
 
 .tab-body{flex:1;overflow:hidden;position:relative}
 .tp{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--sp-3) var(--sp-3);padding-bottom:calc(var(--sp-3) + env(safe-area-inset-bottom))}.tp.on{display:block;animation:fadeUp .35s ease}
 .tp-inner{max-width:1000px;margin:0 auto}
 
-/* Tree area */
-.tree-area{text-align:center;max-width:min(460px,100%);margin:0 auto}
-.tree-sub{font-size:var(--fs-xxs);color:var(--tl);font-weight:600;letter-spacing:.4px;margin-bottom:2px}
-.tree-ttl{font-size:var(--fs-md);font-weight:700;color:var(--pd);margin-bottom:var(--sp-1)}
+/* Tree area — 노트북에서 더 크게 */
+.tree-area{text-align:center;max-width:min(540px,100%);margin:0 auto}
+@media (min-width:1024px){
+  .tree-area{max-width:600px}
+}
+.tree-sub{font-size:var(--fs-xs);color:var(--tl);font-weight:600;letter-spacing:.4px;margin-bottom:2px}
+.tree-ttl{font-size:var(--fs-lg);font-weight:700;color:var(--pd);margin-bottom:var(--sp-1)}
 .tree-wrap{position:relative;border-radius:clamp(12px,3vw,18px);overflow:hidden}
 
 /* ═══ 🌲 숲 뷰 (여러 그루 가로 스크롤) ═══ */
@@ -373,7 +390,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .season-btn[data-s="winter"].on{background:linear-gradient(135deg,#90CAF9,#42A5F5)}
 
 /* Question cards */
-.q-area{max-width:min(780px,100%);margin:0 auto}
+.q-area{max-width:min(880px,100%);margin:0 auto}
 .cs{background:#fff;border-radius:var(--r);padding:var(--sp-3);box-shadow:var(--sh);border:1px solid var(--bd);margin-bottom:var(--sp-2)}
 .cs h4{font-size:var(--fs-sm);font-weight:700;margin-bottom:var(--sp-2)}
 .q-iw{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-1)}
@@ -422,16 +439,16 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .qc.res{background:rgba(93,184,110,.04);border-color:rgba(93,184,110,.1)}
 .qc.unr{background:rgba(245,166,35,.02);border-color:rgba(245,166,35,.08)}
 .qc.anon{background:linear-gradient(135deg,rgba(207,216,220,.15),rgba(176,190,197,.08));border-color:rgba(120,144,156,.25);border-style:dashed}
-.qc-in{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-1)}
-.qc-t{font-size:var(--fs-sm);font-weight:500;line-height:1.55;flex:1;word-break:break-word}
+.qc-in{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--sp-2)}
+.qc-t{font-size:var(--fs-md);font-weight:500;line-height:1.6;flex:1;word-break:break-word}
 .qc.res .qc-t{text-decoration:line-through;opacity:.55}
-.qc-d{font-size:var(--fs-xxs);color:var(--tl);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.qc-anon-b{background:rgba(120,144,156,.15);color:#546E7A;padding:1px 7px;border-radius:7px;font-size:var(--fs-xxs);font-weight:700;display:inline-flex;align-items:center;gap:3px}
-.qc-fr{font-size:var(--em-sm);margin-left:2px}
-.qc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
-.qc-tag{background:rgba(93,184,110,.1);color:var(--pr);padding:1px 7px;border-radius:7px;font-size:var(--fs-xxs);font-weight:600}
-.qc-a{display:flex;gap:3px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:50%}
-.qb{width:var(--touch-sm);height:var(--touch-sm);border-radius:50%;font-size:var(--fs-sm);display:flex;align-items:center;justify-content:center;transition:all .12s;position:relative}
+.qc-d{font-size:var(--fs-xs);color:var(--tl);margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.qc-anon-b{background:rgba(120,144,156,.15);color:#546E7A;padding:2px 9px;border-radius:8px;font-size:var(--fs-xxs);font-weight:700;display:inline-flex;align-items:center;gap:3px}
+.qc-fr{font-size:var(--em-md);margin-left:3px}
+.qc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.qc-tag{background:rgba(93,184,110,.1);color:var(--pr);padding:2px 10px;border-radius:8px;font-size:var(--fs-xxs);font-weight:600}
+.qc-a{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:55%}
+.qb{width:var(--touch-sm);height:var(--touch-sm);border-radius:50%;font-size:var(--fs-md);display:flex;align-items:center;justify-content:center;transition:all .12s;position:relative;cursor:pointer;border:none}
 .qb:hover{transform:scale(1.1)}
 .qb-f{background:rgba(93,184,110,.08)}
 .qb-e{background:rgba(245,166,35,.08)}
@@ -1736,15 +1753,46 @@ function mkTree(interactive, overrideQs, treeId){
 
   let sky=`<defs>
     <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sc.sky[0]}"/><stop offset="50%" stop-color="${sc.sky[1]}"/><stop offset="100%" stop-color="${sc.sky[2]}"/></linearGradient>
-    <linearGradient id="trG" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${ts.trunk[0]}"/><stop offset="40%" stop-color="${ts.trunk[1]}"/><stop offset="70%" stop-color="${ts.trunk[2]}"/><stop offset="100%" stop-color="${ts.trunk[3]}"/></linearGradient>
-    <radialGradient id="crG" cx="40%" cy="35%"><stop offset="0%" stop-color="${finalCrown[0]}"/><stop offset="55%" stop-color="${finalCrown[1]||finalCrown[0]}"/><stop offset="100%" stop-color="${finalCrown[2]||finalCrown[0]}"/></radialGradient>
-    <radialGradient id="sunG" cx="50%" cy="50%"><stop offset="0%" stop-color="rgba(255,255,180,.35)"/><stop offset="100%" stop-color="rgba(255,255,180,0)"/></radialGradient>
-    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dx="0" dy="2"/><feComponentTransfer><feFuncA type="linear" slope=".35"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="trG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="${ts.trunk[0]}"/>
+      <stop offset="20%" stop-color="${ts.trunk[1]}"/>
+      <stop offset="50%" stop-color="${ts.trunk[2]}"/>
+      <stop offset="80%" stop-color="${ts.trunk[1]}"/>
+      <stop offset="100%" stop-color="${ts.trunk[3]}"/>
+    </linearGradient>
+    <linearGradient id="trShadow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(0,0,0,.0)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,.25)"/>
+    </linearGradient>
+    <radialGradient id="crG" cx="35%" cy="30%">
+      <stop offset="0%" stop-color="${finalCrown[0]}" stop-opacity="1"/>
+      <stop offset="40%" stop-color="${finalCrown[1]||finalCrown[0]}" stop-opacity=".95"/>
+      <stop offset="80%" stop-color="${finalCrown[2]||finalCrown[1]||finalCrown[0]}" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="${finalCrown[2]||finalCrown[0]}" stop-opacity=".85"/>
+    </radialGradient>
+    <radialGradient id="crGlow" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="rgba(255,255,200,.18)"/>
+      <stop offset="100%" stop-color="rgba(255,255,200,0)"/>
+    </radialGradient>
+    <radialGradient id="sunG" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="rgba(255,255,180,.45)"/>
+      <stop offset="60%" stop-color="rgba(255,255,180,.15)"/>
+      <stop offset="100%" stop-color="rgba(255,255,180,0)"/>
+    </radialGradient>
+    <radialGradient id="groundG" cx="50%" cy="0%">
+      <stop offset="0%" stop-color="${sc.ground}" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="${sc.ground}" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="1" dy="3"/><feComponentTransfer><feFuncA type="linear" slope=".4"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="leafGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>`;
   sky+=`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#skyG)" rx="12"/>`;
-  // 햇살
-  sky+=`<circle cx="320" cy="70" r="60" fill="url(#sunG)"/>`;
-  sky+=`<circle cx="320" cy="70" r="18" fill="#FFF9C4" opacity=".5"/>`;
+  // 햇살 (더 풍부한 빛)
+  sky+=`<circle cx="320" cy="70" r="80" fill="url(#sunG)"/>`;
+  sky+=`<circle cx="320" cy="70" r="22" fill="#FFF9C4" opacity=".65"/>`;
+  sky+=`<circle cx="320" cy="70" r="14" fill="#FFFDE7" opacity=".8"/>`;
+  // 은은한 빛 줄기
+  sky+=`<g opacity=".25"><path d="M320,70 L120,${groundY-50}" stroke="#FFF9C4" stroke-width="50" stroke-linecap="round" filter="url(#leafGlow)"/></g>`;
 
   // 구름
   const clouds = `
@@ -1758,17 +1806,33 @@ function mkTree(interactive, overrideQs, treeId){
     </g>`;
 
   let ground=`
-    <ellipse cx="200" cy="${groundY+12}" rx="190" ry="32" fill="${sc.ground}" opacity=".35"/>
-    <ellipse cx="200" cy="${groundY+6}" rx="160" ry="16" fill="${sc.ground}" opacity=".25"/>
-    <path d="M10,${groundY+2} Q100,${groundY-6} 200,${groundY} T390,${groundY+4}" stroke="${sc.grass}" stroke-width="1.5" fill="none" opacity=".6"/>`;
+    <ellipse cx="200" cy="${groundY+18}" rx="220" ry="42" fill="${sc.ground}" opacity=".25"/>
+    <ellipse cx="200" cy="${groundY+12}" rx="190" ry="32" fill="${sc.ground}" opacity=".4"/>
+    <ellipse cx="200" cy="${groundY+6}" rx="160" ry="16" fill="${sc.ground}" opacity=".55"/>
+    <ellipse cx="200" cy="${groundY+8}" rx="80" ry="6" fill="rgba(0,0,0,.2)" opacity=".5"/>
+    <path d="M10,${groundY+2} Q100,${groundY-6} 200,${groundY} T390,${groundY+4}" stroke="${sc.grass}" stroke-width="1.8" fill="none" opacity=".7"/>`;
 
+  // 더 풍성한 잔디 (앞쪽/뒤쪽 분리)
   let grass='';
+  // 뒤쪽 잔디 (옅게)
+  for(let i=0;i<32;i++){
+    const gx=15+i*12+Math.sin(i*1.7)*8;
+    const gh=3+((i*5)%6);
+    grass+=`<path d="M${gx},${groundY+4} Q${gx-1},${groundY+4-gh} ${gx+2},${groundY+4}" stroke="${sc.grass}" stroke-width="1.3" fill="none" opacity=".4"/>`;
+  }
+  // 앞쪽 잔디 (선명하게) + 들꽃
   for(let i=0;i<26;i++){
     const gx=30+i*14+Math.sin(i*1.7)*9;
-    const gh=4+((i*7)%9);
+    const gh=5+((i*7)%10);
     const hue = 90 + ((i*13)%40);
-    grass+=`<path d="M${gx},${groundY+6} Q${gx-2},${groundY+6-gh} ${gx+3},${groundY+6}" stroke="${sc.grass}" stroke-width="1.8" fill="none" opacity=".55"/>`;
-    if(i%3===0) grass+=`<circle cx="${gx+1}" cy="${groundY+6-gh}" r="1" fill="hsl(${hue},55%,70%)" opacity=".6"/>`;
+    grass+=`<path d="M${gx},${groundY+8} Q${gx-2.5},${groundY+8-gh} ${gx+3.5},${groundY+8}" stroke="${sc.grass}" stroke-width="2" fill="none" opacity=".7"/>`;
+    if(i%3===0) grass+=`<circle cx="${gx+1}" cy="${groundY+8-gh}" r="1.5" fill="hsl(${hue},65%,72%)" opacity=".75"/>`;
+    // 작은 꽃 (봄/여름만)
+    if(i%5===0 && (S.season==='spring'||S.season==='summer')){
+      const fx = gx+5, fy = groundY+8-gh-2;
+      const flowerCol = ['#FFF59D','#F8BBD0','#CE93D8','#FFCC80'][i%4];
+      grass+=`<g transform="translate(${fx},${fy})"><circle cx="0" cy="-1.5" r="1.2" fill="${flowerCol}"/><circle cx="-1.5" cy="0" r="1.2" fill="${flowerCol}"/><circle cx="1.5" cy="0" r="1.2" fill="${flowerCol}"/><circle cx="0" cy="1.5" r="1.2" fill="${flowerCol}"/><circle cx="0" cy="0" r=".8" fill="#FFD54F"/></g>`;
+    }
   }
 
   let particles='';
@@ -1927,19 +1991,35 @@ function buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, crown, variant){
   // ── 몸통 (자연스러운 테이퍼 + 약한 S커브)
   const tTop=groundY-trunkH;
   const tw = lv<=4 ? 6 : lv<=7 ? 9 : 14;
-  const topT = tw*.68; // 꼭대기 폭 더 얇게
+  const topT = tw*.68;
+  // 메인 몸통
   s+=`<path d="M${200-tw},${groundY+3}
               C${197-tw*.8},${groundY-trunkH*.3} ${197-tw*.4},${groundY-trunkH*.65} ${200-topT},${tTop}
               L${200+topT},${tTop}
               C${203+tw*.4},${groundY-trunkH*.65} ${203+tw*.8},${groundY-trunkH*.3} ${200+tw},${groundY+3}
               Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
+  // 오른쪽 그림자 면 (입체감)
+  s+=`<path d="M${200+tw*.3},${groundY+3}
+              C${200+tw*.3},${groundY-trunkH*.3} ${200+tw*.2},${groundY-trunkH*.65} ${200+topT*.4},${tTop}
+              L${200+topT},${tTop}
+              C${203+tw*.4},${groundY-trunkH*.65} ${203+tw*.8},${groundY-trunkH*.3} ${200+tw},${groundY+3}
+              Z" fill="url(#trShadow)" opacity=".6"/>`;
 
-  // ── 나무껍질 (세로 주름들)
-  s+=`<path d="M${200-tw*.4},${groundY-trunkH*.1} Q${200-tw*.1},${groundY-trunkH*.4} ${199-tw*.05},${groundY-trunkH*.75}" stroke="${ts.trunk[0]}" stroke-width=".8" fill="none" opacity=".4"/>`;
-  s+=`<path d="M${200+tw*.25},${groundY-trunkH*.15} Q${200+tw*.1},${groundY-trunkH*.45} ${201},${groundY-trunkH*.8}" stroke="${ts.trunk[0]}" stroke-width=".65" fill="none" opacity=".3"/>`;
-  s+=`<path d="M${200},${groundY-trunkH*.2} Q${200-tw*.05},${groundY-trunkH*.5} ${200+tw*.08},${groundY-trunkH*.85}" stroke="${ts.trunk[0]}" stroke-width=".5" fill="none" opacity=".25"/>`;
-  // 하이라이트 (왼쪽)
-  s+=`<path d="M${200-tw*.85},${groundY-trunkH*.1} Q${200-tw*.6},${groundY-trunkH*.5} ${200-topT*.75},${groundY-trunkH*.9}" stroke="rgba(255,255,255,.25)" stroke-width="1.4" fill="none"/>`;
+  // ── 나무껍질 (세로 주름들 + 옹이)
+  s+=`<path d="M${200-tw*.4},${groundY-trunkH*.1} Q${200-tw*.1},${groundY-trunkH*.4} ${199-tw*.05},${groundY-trunkH*.75}" stroke="${ts.trunk[0]}" stroke-width="1" fill="none" opacity=".5"/>`;
+  s+=`<path d="M${200+tw*.25},${groundY-trunkH*.15} Q${200+tw*.1},${groundY-trunkH*.45} ${201},${groundY-trunkH*.8}" stroke="${ts.trunk[0]}" stroke-width=".8" fill="none" opacity=".4"/>`;
+  s+=`<path d="M${200},${groundY-trunkH*.2} Q${200-tw*.05},${groundY-trunkH*.5} ${200+tw*.08},${groundY-trunkH*.85}" stroke="${ts.trunk[0]}" stroke-width=".6" fill="none" opacity=".35"/>`;
+  // 옹이 (lv5+)
+  if(lv>=5){
+    s+=`<ellipse cx="${200-tw*.3}" cy="${groundY-trunkH*.4}" rx="2.5" ry="3.5" fill="${ts.trunk[0]}" opacity=".55"/>`;
+    s+=`<ellipse cx="${200-tw*.3}" cy="${groundY-trunkH*.4}" rx="1.5" ry="2.2" fill="${ts.trunk[0]}" opacity=".7"/>`;
+  }
+  if(lv>=7){
+    s+=`<ellipse cx="${200+tw*.25}" cy="${groundY-trunkH*.65}" rx="2" ry="3" fill="${ts.trunk[0]}" opacity=".55"/>`;
+  }
+  // 하이라이트 (왼쪽 — 햇빛 받는 면)
+  s+=`<path d="M${200-tw*.85},${groundY-trunkH*.1} Q${200-tw*.6},${groundY-trunkH*.5} ${200-topT*.75},${groundY-trunkH*.9}" stroke="rgba(255,255,255,.32)" stroke-width="1.6" fill="none"/>`;
+  s+=`<path d="M${200-tw*.55},${groundY-trunkH*.2} Q${200-tw*.4},${groundY-trunkH*.55} ${200-topT*.5},${groundY-trunkH*.85}" stroke="rgba(255,255,255,.18)" stroke-width="1" fill="none"/>`;
 
   // ── 좌우 주 가지 (좌우 대칭 + 레벨에 따라 추가)
   s+=`<path d="M${200-tw*.7},${groundY-trunkH*.6} Q${160},${groundY-trunkH*.78} ${135},${groundY-trunkH*.92}" stroke="${ts.trunk[1]}" stroke-width="${3+lv*.3}" fill="none" stroke-linecap="round"/>`;
@@ -1955,38 +2035,58 @@ function buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, crown, variant){
     s+=`<path d="M${250},${groundY-trunkH*.8} Q${260},${groundY-trunkH*.92} ${264},${groundY-trunkH}" stroke="${ts.trunk[1]}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".8"/>`;
   }
 
-  // ── Crown (다층 레이어로 볼륨감)
-  // 가장 아래 그림자
-  s+=`<ellipse cx="200" cy="${cY+crR*.3}" rx="${crR*1.05}" ry="${crR*.8}" fill="${crown[2]||crown[0]}" opacity=".28"/>`;
+  // ── Crown (다층 레이어 + 후광 + 입체감)
+  // 후광 (부드러운 빛)
+  s+=`<ellipse cx="200" cy="${cY-crR*.1}" rx="${crR*1.4}" ry="${crR*1.1}" fill="url(#crGlow)" opacity=".6"/>`;
+  // 가장 아래 그림자 (땅 위 그림자)
+  s+=`<ellipse cx="200" cy="${cY+crR*.4}" rx="${crR*1.15}" ry="${crR*.85}" fill="${crown[2]||crown[0]}" opacity=".22"/>`;
+  // 어두운 백레이어
+  s+=`<ellipse cx="200" cy="${cY+crR*.15}" rx="${crR*1.02}" ry="${crR*.84}" fill="${crown[2]||crown[1]||crown[0]}" opacity=".55"/>`;
   // 메인 crown (큰 타원)
-  s+=`<ellipse cx="200" cy="${cY}" rx="${crR}" ry="${crR*.86}" fill="url(#crG)" opacity=".9"/>`;
-  // 볼륨 블롭들 (좌우상 대칭 위치)
+  s+=`<ellipse cx="200" cy="${cY}" rx="${crR}" ry="${crR*.86}" fill="url(#crG)" opacity=".95"/>`;
+  // 볼륨 블롭들 (좌우상 대칭 위치 + 추가 디테일)
   const blobs=[
+    [-.55, .25, .42, .38, crown[1]||crown[0], .72],
+    [ .55, .22, .42, .36, crown[2]||crown[1]||crown[0], .68],
     [-.42, .18, .5, .42, crown[1]||crown[0], .68],
     [ .42, .15, .48, .4, crown[2]||crown[1]||crown[0], .63],
-    [ 0,  -.35, .55, .4, crown[0], .7],
-    [-.25,-.1,  .35, .3, crown[1]||crown[0], .55],
-    [ .28, -.05, .38, .32, crown[2]||crown[1]||crown[0], .55],
+    [ 0,  -.4, .6, .42, crown[0], .75],
+    [-.25,-.1,  .38, .32, crown[1]||crown[0], .6],
+    [ .28, -.05, .4, .34, crown[2]||crown[1]||crown[0], .58],
+    [-.35,-.32, .3, .26, crown[0], .65],
+    [ .35,-.3,  .32, .27, crown[1]||crown[0], .6],
   ];
   blobs.forEach(b=>{
     s+=`<ellipse cx="${200+crR*b[0]}" cy="${cY+crR*b[1]}" rx="${crR*b[2]}" ry="${crR*b[3]}" fill="${b[4]}" opacity="${b[5]}"/>`;
   });
-  // 하이라이트
-  s+=`<ellipse cx="${200-crR*.28}" cy="${cY-crR*.28}" rx="${crR*.3}" ry="${crR*.2}" fill="rgba(255,255,255,.28)"/>`;
-  s+=`<ellipse cx="${200-crR*.12}" cy="${cY-crR*.4}" rx="${crR*.15}" ry="${crR*.08}" fill="rgba(255,255,255,.45)"/>`;
+  // 하이라이트 (햇빛 받는 면 — 왼쪽 위)
+  s+=`<ellipse cx="${200-crR*.32}" cy="${cY-crR*.32}" rx="${crR*.32}" ry="${crR*.22}" fill="rgba(255,255,255,.32)"/>`;
+  s+=`<ellipse cx="${200-crR*.18}" cy="${cY-crR*.42}" rx="${crR*.18}" ry="${crR*.1}" fill="rgba(255,255,255,.5)"/>`;
+  // 작은 광택점들
+  s+=`<circle cx="${200-crR*.4}" cy="${cY-crR*.2}" r="${crR*.04}" fill="rgba(255,255,255,.6)"/>`;
+  s+=`<circle cx="${200+crR*.1}" cy="${cY-crR*.45}" r="${crR*.03}" fill="rgba(255,255,255,.5)"/>`;
 
-  // ── 개별 잎사귀들 (경계 따라 더 자연스럽게)
-  const leafCount = Math.min(lv*5 + 10, 42);
+  // ── 개별 잎사귀들 (경계 따라 더 자연스럽게 + 더 많이)
+  const leafCount = Math.min(lv*7 + 14, 60);
   for(let i=0;i<leafCount;i++){
     const a=(i/leafCount)*Math.PI*2 + (i%2?0:Math.PI/leafCount);
     // 경계 근처에 배치 (중심부는 비워서 덩어리 유지)
-    const rd=crR*(.55 + ((i*13)%35)/100);
+    const rd=crR*(.55 + ((i*13)%38)/100);
     const x=200+Math.cos(a)*rd;
     const y=cY+Math.sin(a)*rd*.78;
-    const sz=2.8+((i*7)%5)*.8;
+    const sz=2.8+((i*7)%5)*.9;
     const col = crown[i%crown.length];
     const rot = Math.atan2(y-cY, x-200) * 180/Math.PI + 90;
-    s+=`<ellipse cx="${x}" cy="${y}" rx="${sz}" ry="${sz*.65}" fill="${col}" opacity=".55" transform="rotate(${rot.toFixed(1)} ${x} ${y})"/>`;
+    s+=`<ellipse cx="${x}" cy="${y}" rx="${sz}" ry="${sz*.6}" fill="${col}" opacity=".62" transform="rotate(${rot.toFixed(1)} ${x} ${y})"/>`;
+  }
+  // 추가 작은 잎들 (최외곽)
+  for(let i=0;i<Math.min(lv*4, 32);i++){
+    const a=(i/32)*Math.PI*2 + i*.41;
+    const rd=crR*(.85 + ((i*11)%15)/100);
+    const x=200+Math.cos(a)*rd;
+    const y=cY+Math.sin(a)*rd*.75;
+    const sz=1.8+((i*5)%3)*.5;
+    s+=`<ellipse cx="${x}" cy="${y}" rx="${sz}" ry="${sz*.65}" fill="${crown[1]||crown[0]}" opacity=".5"/>`;
   }
 
   // ── 벚꽃 / 단풍 전용 (기존 유지하되 살짝 정돈)
