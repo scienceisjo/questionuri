@@ -2124,299 +2124,333 @@ function buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, crown, variant){
 }
 
 // --------------------------------------------------------------------
-// 소나무 (다층 삼각 + 자연스러운 층 경계)
+// 🌲 소나무 (다층 원뿔 + 풍성한 바늘잎 + 솔방울 + 별장식)
 // --------------------------------------------------------------------
 function buildPine(groundY, trunkH, crR, cY, ts, lv, sc){
   let s='';
-  // 뿌리
-  s+=`<path d="M192,${groundY+2} Q170,${groundY+12} 148,${groundY+8}" stroke="${ts.trunk[0]}" stroke-width="2.8" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  s+=`<path d="M208,${groundY+2} Q230,${groundY+12} 252,${groundY+8}" stroke="${ts.trunk[0]}" stroke-width="2.6" fill="none" opacity=".45" stroke-linecap="round"/>`;
 
-  // 곧은 몸통 (원형 기둥, 약간 테이퍼)
-  const tw = lv<=4 ? 5 : lv<=7 ? 7 : 10;
-  const tTop = groundY-trunkH+5;
+  // 뿌리 3갈래
+  s+=`<path d="M192,${groundY+2} Q168,${groundY+14} 142,${groundY+9}" stroke="${ts.trunk[0]}" stroke-width="3.2" fill="none" opacity=".55" stroke-linecap="round"/>`;
+  s+=`<path d="M208,${groundY+2} Q232,${groundY+14} 258,${groundY+9}" stroke="${ts.trunk[0]}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>`;
+  s+=`<path d="M200,${groundY+2} Q198,${groundY+10} 196,${groundY+18}" stroke="${ts.trunk[0]}" stroke-width="2" fill="none" opacity=".38" stroke-linecap="round"/>`;
+
+  // 몸통 (곧은 기둥 + 그림자 면)
+  const tw  = lv<=4 ? 5 : lv<=7 ? 7.5 : 11;
+  const tTop = groundY - trunkH + 5;
   s+=`<path d="M${200-tw},${groundY+2} L${200-tw*.75},${tTop} L${200+tw*.75},${tTop} L${200+tw},${groundY+2} Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
-  // 나무껍질 세로선
-  s+=`<line x1="200" y1="${groundY-5}" x2="200" y2="${tTop}" stroke="${ts.trunk[0]}" stroke-width=".7" opacity=".35"/>`;
-  s+=`<line x1="${200-tw*.5}" y1="${groundY-5}" x2="${200-tw*.35}" y2="${tTop}" stroke="${ts.trunk[0]}" stroke-width=".5" opacity=".3"/>`;
-  s+=`<line x1="${200+tw*.5}" y1="${groundY-5}" x2="${200+tw*.35}" y2="${tTop}" stroke="${ts.trunk[0]}" stroke-width=".5" opacity=".3"/>`;
-  // 하이라이트
-  s+=`<path d="M${200-tw*.75},${groundY-5} L${200-tw*.5},${tTop+3}" stroke="rgba(255,255,255,.35)" stroke-width="1" fill="none"/>`;
+  s+=`<path d="M${200+tw*.3},${groundY+2} L${200+tw*.28},${tTop} L${200+tw*.75},${tTop} L${200+tw},${groundY+2} Z" fill="url(#trShadow)" opacity=".55"/>`;
+  s+=`<line x1="200" y1="${groundY-8}" x2="200" y2="${tTop+4}" stroke="${ts.trunk[0]}" stroke-width=".9" opacity=".4"/>`;
+  s+=`<line x1="${200-tw*.45}" y1="${groundY-8}" x2="${200-tw*.3}" y2="${tTop+4}" stroke="${ts.trunk[0]}" stroke-width=".7" opacity=".35"/>`;
+  s+=`<path d="M${200-tw*.7},${groundY-8} L${200-tw*.5},${tTop+5}" stroke="rgba(255,255,255,.38)" stroke-width="1.3" fill="none"/>`;
 
-  // 삼각층: 자연스러운 곡선 경계 (삼각형이 아닌 부드러운 원뿔)
-  const layers = lv<=4 ? 2 : lv<=7 ? 3 : 5;
-  const topY = groundY-trunkH-12;
-  const bottomY = groundY-12;
-  const layerH = (bottomY-topY)/layers;
+  // 삼각 층
+  const layers = lv<=3 ? 2 : lv<=5 ? 3 : lv<=8 ? 4 : 5;
+  const topY   = groundY - trunkH - 10;
+  const botY   = groundY - 14;
+  const layerH = (botY - topY) / layers;
+  const isWinter = (sc && sc.particles === '❄️');
 
-  for(let i=layers-1;i>=0;i--){ // 아래부터 그려 올라감 (위 레이어가 위에 덮임)
-    const y1 = topY + i*layerH;          // 꼭대기
-    const y2 = y1 + layerH*1.1;          // 밑변
-    const halfW = (crR*.5) * (0.38 + i*0.24);
+  for(let i = layers-1; i >= 0; i--){
+    const y1 = topY + i * layerH;
+    const y2 = y1 + layerH * 1.15;
+    const halfW = (crR * .52) * (0.32 + i * 0.26);
+
     // 그림자
-    s+=`<path d="M${200-halfW-3},${y2+3}
-                Q${200-halfW*.6},${y2+4} ${200},${y2-1}
-                Q${200+halfW*.6},${y2+4} ${200+halfW+3},${y2+3}
-                Q${200+halfW*.5},${y1-1} ${200},${y1-4}
-                Q${200-halfW*.5},${y1-1} ${200-halfW-3},${y2+3} Z"
-            fill="${ts.crown[2]}" opacity=".4"/>`;
-    // 메인 레이어 (부드러운 원뿔 실루엣)
-    s+=`<path d="M${200-halfW},${y2}
-                Q${200-halfW*.55},${y2+1} ${200},${y2-3}
-                Q${200+halfW*.55},${y2+1} ${200+halfW},${y2}
-                Q${200+halfW*.5},${y1+2} ${200},${y1-3}
-                Q${200-halfW*.5},${y1+2} ${200-halfW},${y2} Z"
-            fill="${ts.crown[0]}" opacity=".95"/>`;
-    // 볼륨 (좌측 중간)
-    s+=`<path d="M${200-halfW*.85},${y2-2}
-                Q${200-halfW*.4},${y2+1} ${200-halfW*.15},${y2-2}
-                Q${200-halfW*.3},${y1+3} ${200-halfW*.15},${y1}
-                Q${200-halfW*.7},${y1+4} ${200-halfW*.85},${y2-2} Z"
-            fill="${ts.crown[1]}" opacity=".7"/>`;
-    // 바늘잎 텍스처 - 짧은 선들이 원뿔 바깥으로 뻗어나감 (양쪽 대칭)
-    const needles = 10 + i*3;
-    for(let k=0;k<needles;k++){
-      const tt = (k+.5)/needles;
-      const side = k%2 ? 1 : -1;
-      const lx = 200 + side*halfW*(.6+tt*.4);
-      const ly = y2 - tt*(y2-y1)*.85;
-      const ang = Math.atan2(-3, side*2); // 바깥 방향
-      const nLen = 2.5 + tt*2;
-      s+=`<line x1="${lx.toFixed(1)}" y1="${ly.toFixed(1)}" x2="${(lx+Math.cos(ang)*nLen).toFixed(1)}" y2="${(ly+Math.sin(ang)*nLen).toFixed(1)}" stroke="${ts.crown[2]}" stroke-width=".8" opacity=".6" stroke-linecap="round"/>`;
+    s+=`<path d="M${200-halfW-4},${y2+5} Q${200},${y2+2} ${200+halfW+4},${y2+5} Q${200+halfW*.5},${y1} ${200},${y1-5} Q${200-halfW*.5},${y1} ${200-halfW-4},${y2+5} Z" fill="${ts.crown[2]}" opacity=".45"/>`;
+    // 메인 층
+    s+=`<path d="M${200-halfW},${y2} Q${200-halfW*.4},${y2+3} ${200},${y2-2} Q${200+halfW*.4},${y2+3} ${200+halfW},${y2} Q${200+halfW*.45},${y1+3} ${200},${y1-4} Q${200-halfW*.45},${y1+3} ${200-halfW},${y2} Z" fill="${ts.crown[0]}" opacity=".97"/>`;
+    // 밝은 왼쪽 볼륨
+    s+=`<path d="M${200-halfW*.85},${y2-2} Q${200-halfW*.35},${y2+2} ${200-halfW*.1},${y2-1} Q${200-halfW*.25},${y1+4} ${200-halfW*.1},${y1+1} Q${200-halfW*.65},${y1+5} ${200-halfW*.85},${y2-2} Z" fill="${ts.crown[1]}" opacity=".75"/>`;
+    // 눈 쌓임 (겨울)
+    if(isWinter){
+      s+=`<path d="M${200-halfW+2},${y2-1} Q${200-halfW*.3},${y2+2} ${200},${y2-3} Q${200+halfW*.3},${y2+2} ${200+halfW-2},${y2-1}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="${(halfW*.07).toFixed(1)}" stroke-linecap="round"/>`;
     }
-  }
-  // 꼭대기 뾰족한 팁 (리더)
-  s+=`<path d="M${200-2},${topY-3} Q200,${topY-8} ${200+2},${topY-3} L${200+1},${topY} L${200-1},${topY} Z" fill="${ts.crown[0]}"/>`;
-  s+=`<line x1="200" y1="${topY-3}" x2="200" y2="${topY-18}" stroke="${ts.crown[1]}" stroke-width="1.5" stroke-linecap="round"/>`;
+    // 하이라이트
+    s+=`<path d="M${200-halfW*.7},${y2-.5} Q${200-halfW*.4},${y1+5} ${200-halfW*.2},${y1+2}" stroke="rgba(255,255,255,.3)" stroke-width="1.5" fill="none"/>`;
 
-  // 솔방울 (lv6+, 양쪽 대칭)
-  if(lv>=6){
-    const coneCount = Math.min(lv-4, 5);
-    for(let k=0;k<coneCount;k++){
-      const side = k%2 ? 1 : -1;
-      const px = 200 + side*(10+(k*2));
-      const py = topY + 30 + (Math.floor(k/2))*35;
-      s+=`<g transform="translate(${px},${py})">
-        <ellipse cx="0" cy="0" rx="2.8" ry="4.5" fill="#5D3A1C"/>
-        <ellipse cx="0" cy="-1" rx="2.2" ry="2.5" fill="#7A4E28"/>
-        <ellipse cx="-.5" cy="-2" rx="1.4" ry="1.2" fill="#A0714A"/>
-      </g>`;
+    // 바늘잎 (촘촘하고 방향감 있게)
+    const needles = 9 + i * 4;
+    for(let k = 0; k < needles; k++){
+      const t  = (k + .5) / needles;
+      const side = k % 2 ? 1 : -1;
+      const nx = 200 + side * halfW * (.5 + t * .5);
+      const ny = y2 - t * (y2 - y1) * .88;
+      const baseAng = Math.atan2(-(y2-y1)*.4, side * halfW * .4);
+      const nLen = 4 + t * 3.5;
+      s+=`<line x1="${nx.toFixed(1)}" y1="${ny.toFixed(1)}" x2="${(nx+Math.cos(baseAng+.25)*nLen).toFixed(1)}" y2="${(ny+Math.sin(baseAng+.25)*nLen).toFixed(1)}" stroke="${ts.crown[1]}" stroke-width="1" opacity=".65" stroke-linecap="round"/>`;
+      s+=`<line x1="${nx.toFixed(1)}" y1="${ny.toFixed(1)}" x2="${(nx+Math.cos(baseAng)*nLen*1.1).toFixed(1)}" y2="${(ny+Math.sin(baseAng)*nLen*1.1).toFixed(1)}" stroke="${ts.crown[0]}" stroke-width=".9" opacity=".55" stroke-linecap="round"/>`;
+      if(k%3===0) s+=`<line x1="${nx.toFixed(1)}" y1="${ny.toFixed(1)}" x2="${(nx+Math.cos(baseAng-.25)*nLen*.85).toFixed(1)}" y2="${(ny+Math.sin(baseAng-.25)*nLen*.85).toFixed(1)}" stroke="${ts.crown[2]}" stroke-width=".75" opacity=".5" stroke-linecap="round"/>`;
     }
   }
 
+  // 꼭대기 팁 + 별 (lv8+)
+  s+=`<path d="M${200-2.5},${topY-2} Q200,${topY-9} ${200+2.5},${topY-2} L${200+1.2},${topY} L${200-1.2},${topY} Z" fill="${ts.crown[0]}"/>`;
+  s+=`<line x1="200" y1="${topY-4}" x2="200" y2="${topY-24}" stroke="${ts.crown[1]}" stroke-width="1.8" stroke-linecap="round"/>`;
+  if(isWinter) s+=`<path d="M200,${topY-24} L${200-2},${topY-18} L200,${topY-12} L${200+2},${topY-18} Z" fill="rgba(255,255,255,.9)"/>`;
+  if(lv >= 8){
+    const sx=200, sy=topY-30;
+    s+=`<g transform="translate(${sx},${sy})"><path d="M0,-7 L1.8,-2.4 L6.7,-2.2 L2.8,1.1 L4.1,6.2 L0,3.5 L-4.1,6.2 L-2.8,1.1 L-6.7,-2.2 L-1.8,-2.4 Z" fill="#FFD700" opacity=".95"/><path d="M0,-5 L1.2,-1.6 L4.5,-1.5 L1.9,.75 L2.8,4.2 L0,2.4 L-2.8,4.2 L-1.9,.75 L-4.5,-1.5 L-1.2,-1.6 Z" fill="#FFF9C4" opacity=".8"/></g>`;
+  }
+
+  // 솔방울 (lv6+)
+  if(lv >= 6){
+    const coneCount = Math.min(lv - 4, 6);
+    for(let k = 0; k < coneCount; k++){
+      const side = k%2 ? 1 : -1;
+      const ci   = Math.floor(k/2);
+      const px   = 200 + side * (8 + ci*4 + (k%3)*2);
+      const py   = topY + (layers-1)*layerH*.5 + 15 + ci*32;
+      if(py > groundY - 10) continue;
+      s+=`<g transform="translate(${px},${py})"><ellipse cx="0" cy="0" rx="3.5" ry="6" fill="#4A2F18"/><ellipse cx="0" cy="-1" rx="2.8" ry="3.2" fill="#6B4226"/><ellipse cx="-.4" cy="-2.5" rx="1.8" ry="1.5" fill="#8C5E3C" opacity=".8"/><ellipse cx="-.6" cy="-3" rx=".9" ry=".7" fill="rgba(255,255,255,.25)"/></g>`;
+    }
+  }
   return s;
 }
 
 // --------------------------------------------------------------------
-// 야자수 (대칭적인 방사형 잎 + 깨끗한 휘어진 몸통)
+// 🌴 야자수 (풍성한 깃털잎 + 입체 몸통 + 코코넛)
 // --------------------------------------------------------------------
 function buildPalm(groundY, trunkH, crR, cY, ts, lv){
   let s='';
-  // 뿌리
-  s+=`<path d="M190,${groundY+2} Q170,${groundY+10} 152,${groundY+6}" stroke="${ts.trunk[0]}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  s+=`<path d="M210,${groundY+2} Q230,${groundY+11} 248,${groundY+7}" stroke="${ts.trunk[0]}" stroke-width="2.3" fill="none" opacity=".45" stroke-linecap="round"/>`;
 
-  // 휘어진 몸통 (S커브, 위로 갈수록 살짝 기울어짐)
-  const tw = lv<=4 ? 5 : lv<=7 ? 7 : 9;
-  const midY = groundY-trunkH*.5;
-  const sway = lv<=4 ? 6 : 10;
+  // 뿌리 4갈래
+  s+=`<path d="M188,${groundY+2} Q165,${groundY+13} 140,${groundY+8}" stroke="${ts.trunk[0]}" stroke-width="3.2" fill="none" opacity=".55" stroke-linecap="round"/>`;
+  s+=`<path d="M212,${groundY+2} Q236,${groundY+14} 262,${groundY+9}" stroke="${ts.trunk[0]}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>`;
+  s+=`<path d="M197,${groundY+3} Q188,${groundY+11} 180,${groundY+18}" stroke="${ts.trunk[0]}" stroke-width="2.2" fill="none" opacity=".4" stroke-linecap="round"/>`;
+  s+=`<path d="M203,${groundY+3} Q212,${groundY+11} 220,${groundY+18}" stroke="${ts.trunk[0]}" stroke-width="2" fill="none" opacity=".38" stroke-linecap="round"/>`;
+
+  // 휘어진 몸통 (3차 베지어 S커브)
+  const tw   = lv<=4 ? 5.5 : lv<=7 ? 8 : 11;
+  const sway = lv<=4 ? 8 : lv<=7 ? 14 : 18;
   const topX = 200 + sway;
-  const topY = groundY-trunkH+5;
-  s+=`<path d="M${200-tw},${groundY+2}
-              C${198-tw*.8},${midY+trunkH*.15} ${195-tw*.4},${midY-trunkH*.1} ${topX-tw*.7},${topY}
-              L${topX+tw*.7},${topY}
-              C${202+tw*.4},${midY-trunkH*.1} ${202+tw*.8},${midY+trunkH*.15} ${200+tw},${groundY+2}
-              Z"
-          fill="url(#trG)" filter="url(#softShadow)"/>`;
+  const topY = groundY - trunkH + 5;
+  const cp1x = 200 + sway*.15, cp1y = groundY - trunkH*.38;
+  const cp2x = topX - sway*.1,  cp2y = groundY - trunkH*.72;
 
-  // 링무늬 (야자 특유의 질감)
-  const rings = Math.min(lv+3, 9);
-  for(let k=0;k<rings;k++){
-    const tt = (k+1)/(rings+1);
-    const ringY = groundY - trunkH*tt;
-    const ringX = 200 + tt*tt*(topX-200);
-    const rw = tw*(1 - tt*.12);
-    s+=`<ellipse cx="${ringX.toFixed(1)}" cy="${ringY.toFixed(1)}" rx="${(rw*1.08).toFixed(1)}" ry="${(rw*.3).toFixed(1)}" fill="none" stroke="${ts.trunk[0]}" stroke-width=".9" opacity=".5"/>`;
+  // 그림자 면
+  s+=`<path d="M${200+tw*.25},${groundY+2} C${cp1x+tw*.5},${cp1y} ${cp2x+tw*.35},${cp2y} ${topX+tw*.6},${topY} L${topX+tw*.75},${topY} C${cp2x+tw*.55},${cp2y} ${cp1x+tw*.9},${cp1y} ${200+tw},${groundY+2} Z" fill="url(#trShadow)" opacity=".6"/>`;
+  // 메인 몸통
+  s+=`<path d="M${200-tw},${groundY+2} C${cp1x-tw*.8},${cp1y} ${cp2x-tw*.4},${cp2y} ${topX-tw*.75},${topY} L${topX+tw*.75},${topY} C${cp2x+tw*.4},${cp2y} ${cp1x+tw*.8},${cp1y} ${200+tw},${groundY+2} Z" fill="url(#trG)" filter="url(#softShadow)"/>`;
+  // 하이라이트
+  s+=`<path d="M${200-tw*.8},${groundY-10} C${cp1x-tw*.6},${cp1y} ${cp2x-tw*.3},${cp2y} ${topX-tw*.6},${topY+3}" stroke="rgba(255,255,255,.3)" stroke-width="1.8" fill="none"/>`;
+
+  // 링무늬 (야자나무 마디) — 베지어 위 점에서 기울어진 타원
+  const rings = Math.min(lv + 4, 11);
+  for(let k = 0; k < rings; k++){
+    const t3  = (k+1)/(rings+1);
+    const bx  = (1-t3)**3*200 + 3*(1-t3)**2*t3*cp1x + 3*(1-t3)*t3**2*cp2x + t3**3*topX;
+    const by  = (1-t3)**3*(groundY+2) + 3*(1-t3)**2*t3*cp1y + 3*(1-t3)*t3**2*cp2y + t3**3*topY;
+    const rw  = tw*(1 - t3*.14);
+    const dtx = 3*(1-t3)**2*(cp1x-200)   + 6*(1-t3)*t3*(cp2x-cp1x)   + 3*t3**2*(topX-cp2x);
+    const dty = 3*(1-t3)**2*(cp1y-(groundY+2)) + 6*(1-t3)*t3*(cp2y-cp1y) + 3*t3**2*(topY-cp2y);
+    s+=`<ellipse cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" rx="${(rw*1.12).toFixed(1)}" ry="${(rw*.34).toFixed(1)}" fill="none" stroke="${ts.trunk[0]}" stroke-width="1.1" opacity=".5" transform="rotate(${(Math.atan2(dty,dtx)*180/Math.PI).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)})"/>`;
+    s+=`<path d="M${(bx-rw).toFixed(1)},${by.toFixed(1)} Q${bx.toFixed(1)},${(by+rw*.2).toFixed(1)} ${(bx+rw).toFixed(1)},${by.toFixed(1)}" fill="none" stroke="${ts.trunk[0]}" stroke-width=".7" opacity=".3" transform="rotate(${(Math.atan2(dty,dtx)*180/Math.PI).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)})"/>`;
   }
 
-  // 잎 (fronds) — 360도 중 위쪽 180도 전체에 대칭 분산
-  const fronds = lv<=4 ? 6 : lv<=7 ? 9 : 12;
-  const fcx = topX;
-  const fcy = topY;
+  // 잎 (fronds)
+  const fronds   = lv<=3 ? 6 : lv<=6 ? 9 : lv<=8 ? 11 : 13;
+  const fcx = topX, fcy = topY;
+  const startAng = -Math.PI*.96, endAng = -Math.PI*.04;
 
-  // 잎을 뒤에서부터 그리기 (뒤쪽 잎이 먼저, 앞쪽이 나중)
-  // 각도 분포: -165° ~ -15° (π 범위의 위쪽 반원, 약간의 여백)
-  const startAng = -Math.PI * 0.92;  // ≈ -165°
-  const endAng   = -Math.PI * 0.08;  // ≈  -15°
-  for(let i=0;i<fronds;i++){
-    const t = i/(fronds-1);                   // 0~1
-    const a = startAng + t*(endAng-startAng); // 부채꼴
-    // 약간의 랜덤 offset
-    const aOff = a + ((i%2) ? .08 : -.08);
-    const len = crR*1.15 + (i%3)*6;
-    const droop = .45;  // 잎 끝이 살짝 쳐짐
-    const endX = fcx + Math.cos(aOff)*len;
-    const endY = fcy + Math.sin(aOff)*len*droop;
-    // 중간 컨트롤 포인트: 잎이 위로 올라갔다가 끝에서 살짝 내려감
-    const midT = 0.5;
-    const baseMidX = fcx + Math.cos(aOff)*len*midT;
-    const baseMidY = fcy + Math.sin(aOff)*len*midT*droop;
-    // 위로 들어올린 호 (잎의 아치)
-    const liftAng = aOff - Math.PI/2;          // 수직 위 방향
-    const liftDist = 14 + (i%3)*3;
-    const midX = baseMidX + Math.cos(liftAng)*liftDist;
-    const midY = baseMidY + Math.sin(liftAng)*liftDist;
+  const frondData = [];
+  for(let i = 0; i < fronds; i++){
+    const t    = i/(fronds-1);
+    const a    = startAng + t*(endAng-startAng);
+    const aOff = a + (i%3===0 ? .12 : i%3===1 ? -.08 : .04);
+    const len  = crR*1.25 + (i%4)*7 + lv*2;
+    const droop= .38 + (i%2)*.08;
+    const ex   = fcx + Math.cos(aOff)*len;
+    const ey   = fcy + Math.sin(aOff)*len*droop;
+    const liftAng  = aOff - Math.PI/2;
+    const liftDist = 16 + (i%4)*4;
+    const mx   = fcx + Math.cos(aOff)*len*.48 + Math.cos(liftAng)*liftDist;
+    const my   = fcy + Math.sin(aOff)*len*.32 + Math.sin(liftAng)*liftDist;
+    frondData.push({aOff, ex, ey, mx, my, len, liftAng, i});
+  }
 
-    // 잎 줄기
-    s+=`<path d="M${fcx},${fcy} Q${midX.toFixed(1)},${midY.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}" stroke="${ts.trunk[1]}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".9"/>`;
+  // 뒤 잎부터 그리기
+  const order = [...frondData].sort((a,b)=>Math.abs(b.aOff+Math.PI/2)-Math.abs(a.aOff+Math.PI/2));
+  order.forEach(b=>{
+    const leafW  = 7 + (b.i%3)*1.5;
+    const upperMX = b.mx + Math.cos(b.liftAng)*leafW;
+    const upperMY = b.my + Math.sin(b.liftAng)*leafW;
+    const lowerMX = b.mx - Math.cos(b.liftAng)*leafW*.6;
+    const lowerMY = b.my - Math.sin(b.liftAng)*leafW*.6;
 
-    // 잎 몸체 (두 커브로 만든 나뭇잎 모양)
-    // 줄기를 따라 좌우로 대칭적인 깃털 달린 모양
-    const leafOffset = 5 + (i%2)*1;
-    // 위쪽 커브 (leaf upper edge)
-    const upperX1 = fcx - Math.cos(liftAng)*1;
-    const upperY1 = fcy - Math.sin(liftAng)*1;
-    const upperMX = midX + Math.cos(liftAng)*leafOffset;
-    const upperMY = midY + Math.sin(liftAng)*leafOffset;
-    // 아래쪽 커브 (leaf lower edge)
-    const lowerMX = midX - Math.cos(liftAng)*leafOffset;
-    const lowerMY = midY - Math.sin(liftAng)*leafOffset;
-    s+=`<path d="M${fcx},${fcy}
-                Q${upperMX.toFixed(1)},${upperMY.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}
-                Q${lowerMX.toFixed(1)},${lowerMY.toFixed(1)} ${fcx},${fcy} Z"
-            fill="${ts.crown[0]}" opacity=".82"/>`;
+    // 그림자
+    s+=`<path d="M${fcx+1},${fcy+2} Q${(b.mx+2).toFixed(1)},${(b.my+3).toFixed(1)} ${(b.ex+2).toFixed(1)},${(b.ey+3).toFixed(1)} Q${lowerMX.toFixed(1)},${lowerMY.toFixed(1)} ${fcx+1},${fcy+2} Z" fill="${ts.crown[2]||ts.crown[0]}" opacity=".28"/>`;
+    // 잎 몸체
+    s+=`<path d="M${fcx},${fcy} Q${upperMX.toFixed(1)},${upperMY.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)} Q${lowerMX.toFixed(1)},${lowerMY.toFixed(1)} ${fcx},${fcy} Z" fill="${ts.crown[0]}" opacity=".9"/>`;
+    // 잎맥
+    s+=`<path d="M${fcx},${fcy} Q${b.mx.toFixed(1)},${b.my.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)}" stroke="${ts.crown[1]}" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".85"/>`;
+    // 잎 하이라이트
+    s+=`<path d="M${fcx},${fcy} Q${upperMX.toFixed(1)},${upperMY.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)}" stroke="rgba(255,255,255,.18)" stroke-width=".8" fill="none"/>`;
 
-    // 잎맥 (central spine) - 이미 줄기로 그림
-
-    // 깃털 (pinnae) - 줄기 양쪽으로 뻗어나감
-    const pinnaeCount = 6;
-    for(let k=1;k<=pinnaeCount;k++){
-      const pt = k/(pinnaeCount+1);
-      // 줄기 위 점 (베지어 곡선 위)
-      const px = (1-pt)*(1-pt)*fcx + 2*(1-pt)*pt*midX + pt*pt*endX;
-      const py = (1-pt)*(1-pt)*fcy + 2*(1-pt)*pt*midY + pt*pt*endY;
-      // 탄젠트 각도
-      const tanX = 2*(1-pt)*(midX-fcx) + 2*pt*(endX-midX);
-      const tanY = 2*(1-pt)*(midY-fcy) + 2*pt*(endY-midY);
-      const tanAng = Math.atan2(tanY, tanX);
-      const perp = tanAng + Math.PI/2;
-      const pinLen = 5 - pt*3;  // 끝으로 갈수록 짧아짐
-      // 양쪽 깃털
-      s+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${(px+Math.cos(perp)*pinLen).toFixed(1)}" y2="${(py+Math.sin(perp)*pinLen).toFixed(1)}" stroke="${ts.crown[2]||ts.crown[1]}" stroke-width="1.2" opacity=".85" stroke-linecap="round"/>`;
-      s+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${(px-Math.cos(perp)*pinLen).toFixed(1)}" y2="${(py-Math.sin(perp)*pinLen).toFixed(1)}" stroke="${ts.crown[2]||ts.crown[1]}" stroke-width="1.2" opacity=".85" stroke-linecap="round"/>`;
+    // 깃털 (pinnae)
+    const pinnaeCount = 7 + Math.floor(b.len/15);
+    for(let k = 1; k <= pinnaeCount; k++){
+      const pt  = k/(pinnaeCount+1);
+      const px  = (1-pt)**2*fcx + 2*(1-pt)*pt*b.mx + pt**2*b.ex;
+      const py  = (1-pt)**2*fcy + 2*(1-pt)*pt*b.my + pt**2*b.ey;
+      const tanX= 2*(1-pt)*(b.mx-fcx)+2*pt*(b.ex-b.mx);
+      const tanY= 2*(1-pt)*(b.my-fcy)+2*pt*(b.ey-b.my);
+      const perp= Math.atan2(tanY,tanX)+Math.PI/2;
+      const pinLen= (6-pt*3.5)*(1+(k%2)*.15);
+      const pcol = k%3===0 ? ts.crown[1] : ts.crown[2]||ts.crown[0];
+      s+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${(px+Math.cos(perp)*pinLen).toFixed(1)}" y2="${(py+Math.sin(perp)*pinLen).toFixed(1)}" stroke="${pcol}" stroke-width="1.3" opacity=".82" stroke-linecap="round"/>`;
+      s+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${(px-Math.cos(perp)*pinLen*.75).toFixed(1)}" y2="${(py-Math.sin(perp)*pinLen*.75).toFixed(1)}" stroke="${pcol}" stroke-width="1.1" opacity=".7" stroke-linecap="round"/>`;
     }
-  }
+  });
 
-  // 중심 왕관 덩어리 (leaves가 모이는 중심)
-  s+=`<circle cx="${fcx}" cy="${fcy}" r="6" fill="${ts.trunk[1]}" opacity=".9"/>`;
-  s+=`<circle cx="${fcx-1}" cy="${fcy-1}" r="3" fill="${ts.trunk[0]}" opacity=".7"/>`;
+  // 왕관 중심
+  s+=`<circle cx="${fcx}" cy="${fcy}" r="8" fill="${ts.trunk[1]}" opacity=".95"/>`;
+  s+=`<circle cx="${fcx-1.5}" cy="${fcy-1.5}" r="4.5" fill="${ts.trunk[0]}" opacity=".8"/>`;
+  s+=`<circle cx="${fcx-2}" cy="${fcy-2}" r="2" fill="rgba(255,255,255,.35)"/>`;
 
-  // 코코넛 (lv5+) — 중심 아래 클러스터
-  if(lv>=5){
-    const coconutCount = Math.min(lv-3, 5);
-    for(let k=0;k<coconutCount;k++){
-      const ka = (k/coconutCount)*Math.PI - Math.PI/2;  // 아래쪽 반원
-      const cocR = 7;
-      const cx_ = fcx + Math.cos(ka)*cocR;
-      const cy_ = fcy + Math.abs(Math.sin(ka))*4 + 5;
-      s+=`<g transform="translate(${cx_.toFixed(1)},${cy_.toFixed(1)})">
-        <circle cx="0" cy="0" r="3.2" fill="#5D3A1C"/>
-        <circle cx="-.6" cy="-.6" r="1.2" fill="#8B6F47" opacity=".7"/>
-      </g>`;
+  // 코코넛 (lv5+)
+  if(lv >= 5){
+    const cocCount = Math.min(lv-3, 6);
+    for(let k = 0; k < cocCount; k++){
+      const ka  = (k/cocCount)*Math.PI*1.1 - Math.PI*.55;
+      const cocR= 9+(k%2)*2;
+      const cx_ = fcx+Math.cos(ka)*cocR;
+      const cy_ = fcy+Math.abs(Math.sin(ka))*5+7;
+      s+=`<g transform="translate(${cx_.toFixed(1)},${cy_.toFixed(1)})"><circle cx="0" cy="0" r="4.5" fill="#3E2008"/><circle cx="0" cy="0" r="3.8" fill="#5D3A1C"/><ellipse cx="-1" cy="-1.2" rx="2" ry="1.4" fill="#7A5235" opacity=".7"/><circle cx="-1.2" cy="-1.4" r=".8" fill="rgba(255,255,255,.3)"/><circle cx="1" cy="1.2" r=".5" fill="rgba(0,0,0,.3)"/></g>`;
     }
   }
   return s;
 }
 
 // --------------------------------------------------------------------
-// 바오밥 (거대한 병 모양 몸통, 대칭적인 방사형 가지)
+// 🌳 바오밥 (병 모양 거대 몸통 + 방사형 가지 + 풍성한 잎 덩어리)
 // --------------------------------------------------------------------
 function buildBaobab(groundY, trunkH, crR, cY, ts, lv, sc){
   let s='';
-  // 뿌리 (큼직한 4가닥)
-  s+=`<path d="M178,${groundY+2} Q145,${groundY+18} 105,${groundY+12}" stroke="${ts.trunk[0]}" stroke-width="5" fill="none" opacity=".55" stroke-linecap="round"/>`;
-  s+=`<path d="M222,${groundY+2} Q255,${groundY+18} 295,${groundY+12}" stroke="${ts.trunk[0]}" stroke-width="4.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  s+=`<path d="M195,${groundY+2} Q180,${groundY+8} 165,${groundY+14}" stroke="${ts.trunk[0]}" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>`;
-  s+=`<path d="M205,${groundY+2} Q220,${groundY+8} 235,${groundY+14}" stroke="${ts.trunk[0]}" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>`;
 
-  // 두꺼운 병 모양 몸통 (특유의 실루엣)
-  const tw = lv<=4 ? 18 : lv<=7 ? 26 : 36;
-  const tTop = groundY-trunkH+5;
-  const topW = tw*.55;
+  // 뿌리 4갈래 (굵고 힘차게)
+  s+=`<path d="M178,${groundY+2} Q142,${groundY+20} 100,${groundY+13}" stroke="${ts.trunk[0]}" stroke-width="6" fill="none" opacity=".6" stroke-linecap="round"/>`;
+  s+=`<path d="M222,${groundY+2} Q258,${groundY+20} 300,${groundY+13}" stroke="${ts.trunk[0]}" stroke-width="5.5" fill="none" opacity=".55" stroke-linecap="round"/>`;
+  s+=`<path d="M193,${groundY+2} Q175,${groundY+10} 160,${groundY+18}" stroke="${ts.trunk[0]}" stroke-width="3.5" fill="none" opacity=".48" stroke-linecap="round"/>`;
+  s+=`<path d="M207,${groundY+2} Q225,${groundY+10} 240,${groundY+18}" stroke="${ts.trunk[0]}" stroke-width="3.2" fill="none" opacity=".45" stroke-linecap="round"/>`;
+
+  // 병 모양 몸통 (바오밥 특유의 불룩한 실루엣)
+  const tw   = lv<=4 ? 20 : lv<=7 ? 28 : 38;
+  const tTop = groundY - trunkH + 5;
+  const topW = tw * .52;
+  // 불룩한 중간 부분
+  const bulgeY = groundY - trunkH * .38;
+  const bulgeW = tw * 1.08;
+
   s+=`<path d="M${200-tw},${groundY+3}
-              C${200-tw*1.02},${groundY-trunkH*.25} ${200-tw*.9},${groundY-trunkH*.6} ${200-tw*.82},${groundY-trunkH*.75}
-              C${200-topW-5},${tTop+12} ${200-topW-2},${tTop+4} ${200-topW},${tTop}
+              C${200-bulgeW},${bulgeY} ${200-tw*.88},${groundY-trunkH*.65} ${200-tw*.8},${groundY-trunkH*.78}
+              C${200-topW-6},${tTop+14} ${200-topW-2},${tTop+5} ${200-topW},${tTop}
               L${200+topW},${tTop}
-              C${200+topW+2},${tTop+4} ${200+topW+5},${tTop+12} ${200+tw*.82},${groundY-trunkH*.75}
-              C${200+tw*.9},${groundY-trunkH*.6} ${200+tw*1.02},${groundY-trunkH*.25} ${200+tw},${groundY+3} Z"
+              C${200+topW+2},${tTop+5} ${200+topW+6},${tTop+14} ${200+tw*.8},${groundY-trunkH*.78}
+              C${200+tw*.88},${groundY-trunkH*.65} ${200+bulgeW},${bulgeY} ${200+tw},${groundY+3} Z"
           fill="url(#trG)" filter="url(#softShadow)"/>`;
 
-  // 몸통 주름 (세로 곡선)
-  s+=`<path d="M${200-tw*.5},${groundY-trunkH*.1} C${200-tw*.3},${groundY-trunkH*.35} ${200-tw*.4},${groundY-trunkH*.55} ${200-tw*.25},${groundY-trunkH*.75}" stroke="${ts.trunk[0]}" stroke-width="1.2" fill="none" opacity=".4"/>`;
-  s+=`<path d="M${200+tw*.4},${groundY-trunkH*.15} C${200+tw*.25},${groundY-trunkH*.4} ${200+tw*.35},${groundY-trunkH*.6} ${200+tw*.2},${groundY-trunkH*.78}" stroke="${ts.trunk[0]}" stroke-width="1" fill="none" opacity=".35"/>`;
-  s+=`<path d="M${200-tw*.15},${groundY-trunkH*.2} C${200},${groundY-trunkH*.45} ${200-tw*.1},${groundY-trunkH*.65} ${200+tw*.05},${groundY-trunkH*.82}" stroke="${ts.trunk[0]}" stroke-width=".8" fill="none" opacity=".3"/>`;
-  // 옹이
-  s+=`<ellipse cx="${200-tw*.35}" cy="${groundY-trunkH*.35}" rx="${tw*.08}" ry="3.5" fill="${ts.trunk[0]}" opacity=".3"/>`;
-  s+=`<ellipse cx="${200+tw*.25}" cy="${groundY-trunkH*.55}" rx="${tw*.06}" ry="2.5" fill="${ts.trunk[0]}" opacity=".3"/>`;
-  // 하이라이트
-  s+=`<path d="M${200-tw*.85},${groundY-trunkH*.2} Q${200-tw*.65},${groundY-trunkH*.55} ${200-topW*.85},${groundY-trunkH*.9}" stroke="rgba(255,255,255,.2)" stroke-width="2.5" fill="none"/>`;
+  // 오른쪽 그림자 면
+  s+=`<path d="M${200+tw*.4},${groundY+3}
+              C${200+bulgeW*.85},${bulgeY} ${200+tw*.8},${groundY-trunkH*.65} ${200+tw*.72},${groundY-trunkH*.78}
+              C${200+topW+2},${tTop+14} ${200+topW+1},${tTop+5} ${200+topW},${tTop}
+              L${200+topW+1},${tTop}
+              C${200+topW+2},${tTop+5} ${200+topW+6},${tTop+14} ${200+tw*.8},${groundY-trunkH*.78}
+              C${200+tw*.88},${groundY-trunkH*.65} ${200+bulgeW},${bulgeY} ${200+tw},${groundY+3} Z"
+          fill="url(#trShadow)" opacity=".55"/>`;
 
-  // 위에서 뻗어나가는 가지들 — 대칭적 방사형 (바오밥 특유의 "뒤집힌 뿌리")
-  const branches = lv<=4 ? 5 : lv<=7 ? 7 : 9;
-  const bStart = -Math.PI * 0.92;  // ≈ -165°
-  const bEnd   = -Math.PI * 0.08;  // ≈  -15°
-  // 가지는 뒤쪽부터 그림
-  const branchData = [];
-  for(let i=0;i<branches;i++){
-    const t = i/(branches-1);
-    const a = bStart + t*(bEnd-bStart);
-    const len = 30 + lv*3 + ((i*7)%4)*5;
-    // 약간 위로 들어올려진 아치
-    const liftAng = a - Math.PI/2 + (i%2 ? .15 : -.15);
-    const liftDist = 8 + (i%3)*3;
-    const ex = 200 + Math.cos(a)*len;
-    const ey = tTop + Math.sin(a)*len*.6;
-    const baseMx = 200 + Math.cos(a)*len*.5;
-    const baseMy = tTop + Math.sin(a)*len*.35;
-    const mx = baseMx + Math.cos(liftAng)*liftDist;
-    const my = baseMy + Math.sin(liftAng)*liftDist;
-    branchData.push({a, ex, ey, mx, my, i});
-  }
+  // 몸통 세로 주름 (더 풍부하게)
+  s+=`<path d="M${200-tw*.5},${groundY-trunkH*.08} C${200-tw*.32},${groundY-trunkH*.35} ${200-tw*.42},${groundY-trunkH*.58} ${200-tw*.26},${groundY-trunkH*.77}" stroke="${ts.trunk[0]}" stroke-width="1.4" fill="none" opacity=".45"/>`;
+  s+=`<path d="M${200+tw*.42},${groundY-trunkH*.12} C${200+tw*.28},${groundY-trunkH*.38} ${200+tw*.36},${groundY-trunkH*.6} ${200+tw*.22},${groundY-trunkH*.8}" stroke="${ts.trunk[0]}" stroke-width="1.2" fill="none" opacity=".38"/>`;
+  s+=`<path d="M${200-tw*.18},${groundY-trunkH*.18} C${200-tw*.05},${groundY-trunkH*.44} ${200-tw*.12},${groundY-trunkH*.65} ${200+tw*.04},${groundY-trunkH*.83}" stroke="${ts.trunk[0]}" stroke-width="1" fill="none" opacity=".32"/>`;
+  s+=`<path d="M${200+tw*.12},${groundY-trunkH*.22} C${200+tw*.22},${groundY-trunkH*.48} ${200+tw*.15},${groundY-trunkH*.68} ${200+tw*.08},${groundY-trunkH*.85}" stroke="${ts.trunk[0]}" stroke-width=".8" fill="none" opacity=".28"/>`;
 
-  // 가지 줄기
-  branchData.forEach(b=>{
-    s+=`<path d="M200,${tTop} Q${b.mx.toFixed(1)},${b.my.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)}" stroke="${ts.trunk[1]}" stroke-width="${(3+lv*.2).toFixed(1)}" fill="none" stroke-linecap="round"/>`;
-    // 가지 하이라이트
-    s+=`<path d="M200,${tTop} Q${b.mx.toFixed(1)},${b.my.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)}" stroke="rgba(255,255,255,.18)" stroke-width="1" fill="none"/>`;
+  // 옹이 (입체적으로)
+  [[-.38,.32],[.28,.52],[-.18,.58],[.35,.38]].forEach(([xr,yr])=>{
+    s+=`<ellipse cx="${200+tw*xr}" cy="${groundY-trunkH*yr}" rx="${(tw*.09).toFixed(1)}" ry="4" fill="${ts.trunk[0]}" opacity=".35"/>`;
+    s+=`<ellipse cx="${200+tw*xr}" cy="${groundY-trunkH*yr}" rx="${(tw*.055).toFixed(1)}" ry="2.4" fill="${ts.trunk[0]}" opacity=".5"/>`;
   });
 
-  // 잎 덩어리 (가지 끝)
+  // 하이라이트 (왼쪽 빛)
+  s+=`<path d="M${200-tw*.88},${groundY-trunkH*.18} Q${200-tw*.68},${groundY-trunkH*.55} ${200-topW*.85},${groundY-trunkH*.9}" stroke="rgba(255,255,255,.25)" stroke-width="3" fill="none"/>`;
+  s+=`<path d="M${200-tw*.72},${groundY-trunkH*.22} Q${200-tw*.55},${groundY-trunkH*.58} ${200-topW*.68},${groundY-trunkH*.88}" stroke="rgba(255,255,255,.15)" stroke-width="1.5" fill="none"/>`;
+
+  // 가지 (방사형 — 바오밥의 특징적인 '뒤집힌 뿌리' 실루엣)
+  const branches = lv<=4 ? 5 : lv<=7 ? 7 : 9;
+  const bStart   = -Math.PI * .94;
+  const bEnd     = -Math.PI * .06;
+  const branchData = [];
+
+  for(let i = 0; i < branches; i++){
+    const t   = i/(branches-1);
+    const a   = bStart + t*(bEnd-bStart);
+    const len = 32 + lv*3.5 + ((i*7)%5)*6;
+    const liftAng  = a - Math.PI/2 + (i%2 ? .18 : -.18);
+    const liftDist = 10 + (i%3)*4;
+    const ex  = 200 + Math.cos(a)*len;
+    const ey  = tTop + Math.sin(a)*len*.58;
+    const mx  = 200 + Math.cos(a)*len*.48 + Math.cos(liftAng)*liftDist;
+    const my  = tTop + Math.sin(a)*len*.3  + Math.sin(liftAng)*liftDist;
+    branchData.push({a, ex, ey, mx, my, len, i});
+  }
+
+  // 가지 줄기 (굵기 차등)
   branchData.forEach(b=>{
-    // 그림자
-    s+=`<ellipse cx="${b.ex.toFixed(1)}" cy="${(b.ey+3).toFixed(1)}" rx="${(15+lv*.8).toFixed(1)}" ry="${(10+lv*.5).toFixed(1)}" fill="${ts.crown[2]||ts.crown[0]}" opacity=".35"/>`;
-    // 메인 덩어리
-    s+=`<ellipse cx="${b.ex.toFixed(1)}" cy="${b.ey.toFixed(1)}" rx="${(14+lv*.7).toFixed(1)}" ry="${(10+lv*.5).toFixed(1)}" fill="${ts.crown[0]}" opacity=".9"/>`;
-    // 볼륨
-    s+=`<ellipse cx="${(b.ex-3).toFixed(1)}" cy="${(b.ey-2).toFixed(1)}" rx="${8}" ry="${6}" fill="${ts.crown[1]}" opacity=".7"/>`;
+    const bw = (3.5 + lv*.25).toFixed(1);
+    s+=`<path d="M200,${tTop} Q${b.mx.toFixed(1)},${b.my.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)}" stroke="${ts.trunk[1]}" stroke-width="${bw}" fill="none" stroke-linecap="round"/>`;
+    // 그림자 가지
+    s+=`<path d="M202,${tTop+2} Q${(b.mx+2).toFixed(1)},${(b.my+2).toFixed(1)} ${(b.ex+2).toFixed(1)},${(b.ey+2).toFixed(1)}" stroke="${ts.trunk[0]}" stroke-width="${bw}" fill="none" stroke-linecap="round" opacity=".25"/>`;
     // 하이라이트
-    s+=`<ellipse cx="${(b.ex-2).toFixed(1)}" cy="${(b.ey-4).toFixed(1)}" rx="3.5" ry="2" fill="rgba(255,255,255,.35)"/>`;
-    // 작은 경계 잎들 (덩어리 바깥)
-    for(let k=0;k<5;k++){
-      const aa = k*Math.PI*2/5 + .3;
-      const rd = 9 + (k%2)*3;
-      const lx = b.ex + Math.cos(aa)*rd;
-      const ly = b.ey + Math.sin(aa)*rd*.7;
-      s+=`<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="3.5" ry="2.2" fill="${ts.crown[2]||ts.crown[0]}" opacity=".6" transform="rotate(${(k*37)%180} ${lx.toFixed(1)} ${ly.toFixed(1)})"/>`;
+    s+=`<path d="M200,${tTop} Q${b.mx.toFixed(1)},${b.my.toFixed(1)} ${b.ex.toFixed(1)},${b.ey.toFixed(1)}" stroke="rgba(255,255,255,.22)" stroke-width="1.2" fill="none"/>`;
+    // 잔 가지들 (lv5+)
+    if(lv >= 5){
+      for(let j=0;j<2;j++){
+        const jt  = .6+j*.2;
+        const jx  = (1-jt)**2*200 + 2*(1-jt)*jt*b.mx + jt**2*b.ex;
+        const jy  = (1-jt)**2*tTop + 2*(1-jt)*jt*b.my + jt**2*b.ey;
+        const ja  = b.a + (j===0 ? .4 : -.4);
+        const jlen= 12 + lv*1.5;
+        s+=`<path d="M${jx.toFixed(1)},${jy.toFixed(1)} L${(jx+Math.cos(ja)*jlen).toFixed(1)},${(jy+Math.sin(ja)*jlen*.7).toFixed(1)}" stroke="${ts.trunk[1]}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+      }
     }
   });
 
-  // 중앙 상단 작은 잎 덩어리 (정수리)
-  s+=`<ellipse cx="200" cy="${tTop-8}" rx="${(crR*.5).toFixed(1)}" ry="${(crR*.3).toFixed(1)}" fill="${ts.crown[0]}" opacity=".8"/>`;
-  s+=`<ellipse cx="200" cy="${tTop-11}" rx="${(crR*.35).toFixed(1)}" ry="${(crR*.2).toFixed(1)}" fill="${ts.crown[1]}" opacity=".65"/>`;
-  s+=`<ellipse cx="${200-crR*.1}" cy="${tTop-12}" rx="${(crR*.12).toFixed(1)}" ry="${(crR*.06).toFixed(1)}" fill="rgba(255,255,255,.4)"/>`;
+  // 잎 덩어리 (가지 끝 — 더 풍성하게)
+  branchData.forEach(b=>{
+    const rx = 16 + lv*.9;
+    const ry = 11 + lv*.6;
+    // 그림자
+    s+=`<ellipse cx="${(b.ex+3).toFixed(1)}" cy="${(b.ey+4).toFixed(1)}" rx="${(rx*1.1).toFixed(1)}" ry="${(ry*1.0).toFixed(1)}" fill="${ts.crown[2]||ts.crown[0]}" opacity=".4"/>`;
+    // 메인 덩어리
+    s+=`<ellipse cx="${b.ex.toFixed(1)}" cy="${b.ey.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${ts.crown[0]}" opacity=".92"/>`;
+    // 볼륨 레이어 (2개)
+    s+=`<ellipse cx="${(b.ex-rx*.28).toFixed(1)}" cy="${(b.ey-ry*.22).toFixed(1)}" rx="${(rx*.6).toFixed(1)}" ry="${(ry*.52).toFixed(1)}" fill="${ts.crown[1]}" opacity=".72"/>`;
+    s+=`<ellipse cx="${(b.ex+rx*.1).toFixed(1)}" cy="${(b.ey-ry*.32).toFixed(1)}" rx="${(rx*.38).toFixed(1)}" ry="${(ry*.3).toFixed(1)}" fill="${ts.crown[0]}" opacity=".55"/>`;
+    // 하이라이트
+    s+=`<ellipse cx="${(b.ex-rx*.22).toFixed(1)}" cy="${(b.ey-ry*.38).toFixed(1)}" rx="${(rx*.18).toFixed(1)}" ry="${(ry*.12).toFixed(1)}" fill="rgba(255,255,255,.42)"/>`;
+    s+=`<circle cx="${(b.ex-rx*.32).toFixed(1)}" cy="${(b.ey-ry*.42).toFixed(1)}" r="${(rx*.055).toFixed(1)}" fill="rgba(255,255,255,.6)"/>`;
+    // 경계 잎들 (8개로 늘림)
+    for(let k = 0; k < 8; k++){
+      const aa  = k*Math.PI*2/8 + .4;
+      const rd  = rx*.72 + (k%2)*4;
+      const lx  = b.ex + Math.cos(aa)*rd;
+      const ly  = b.ey + Math.sin(aa)*rd*.72;
+      const lsz = 4.5 + (k%3)*1.2;
+      const lcol= k%3===0 ? ts.crown[1] : ts.crown[2]||ts.crown[0];
+      s+=`<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="${lsz.toFixed(1)}" ry="${(lsz*.62).toFixed(1)}" fill="${lcol}" opacity=".65" transform="rotate(${(k*45)%180} ${lx.toFixed(1)} ${ly.toFixed(1)})"/>`;
+    }
+  });
+
+  // 정수리 잎 덩어리 (크게)
+  const cr2 = crR*.55;
+  s+=`<ellipse cx="200" cy="${tTop-10}" rx="${(cr2*1.1).toFixed(1)}" ry="${(cr2*.65).toFixed(1)}" fill="${ts.crown[2]||ts.crown[0]}" opacity=".45"/>`;
+  s+=`<ellipse cx="200" cy="${tTop-12}" rx="${cr2.toFixed(1)}" ry="${(cr2*.55).toFixed(1)}" fill="${ts.crown[0]}" opacity=".88"/>`;
+  s+=`<ellipse cx="${200-cr2*.22}" cy="${tTop-16}" rx="${(cr2*.65).toFixed(1)}" ry="${(cr2*.38).toFixed(1)}" fill="${ts.crown[1]}" opacity=".7"/>`;
+  s+=`<ellipse cx="${200-cr2*.14}" cy="${tTop-18}" rx="${(cr2*.28).toFixed(1)}" ry="${(cr2*.14).toFixed(1)}" fill="rgba(255,255,255,.4)"/>`;
+  s+=`<circle cx="${200-cr2*.2}" cy="${tTop-19}" r="${(cr2*.055).toFixed(1)}" fill="rgba(255,255,255,.6)"/>`;
 
   return s;
 }
+
 
 // 질문별 열매 적용 — crown 영역(cx,cy,r) 전체에 나선형으로 분포
 // zones 형식(구버전)이나 {cx,cy,r} 형식(신버전) 둘 다 받음 - 호환성
