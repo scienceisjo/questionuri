@@ -351,6 +351,23 @@ td strong{font-weight:700;color:var(--ink)}
 
 /* Timeline chart */
 .dd-chart-sec{background:var(--surface);border:1px solid var(--rule);border-radius:3px;overflow:hidden;margin-bottom:20px}
+
+/* 👥 교사 협업 메모 */
+.dd-notes-sec{background:linear-gradient(135deg,var(--surface),rgba(45,106,62,.02))}
+.dd-notes-input{padding:14px 16px;display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid var(--rule);background:var(--surface2)}
+.dd-notes-input textarea{flex:1;padding:10px 12px;border:1.5px solid var(--rule);border-radius:3px;font-size:13px;font-family:inherit;background:#fff;resize:vertical;min-height:44px;line-height:1.5}
+.dd-notes-input textarea:focus{border-color:var(--pr);outline:none;box-shadow:0 0 0 2px rgba(93,184,110,.12)}
+.dd-notes-input .dd-btn{align-self:stretch;white-space:nowrap;padding:0 14px}
+.dd-notes-list{padding:8px 16px 14px;display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto}
+.dd-note-empty{padding:24px 16px;text-align:center;color:var(--ink3);font-size:12.5px;font-style:italic}
+.dd-note{padding:10px 14px;background:#fff;border-left:3px solid #90A4AE;border-radius:0 3px 3px 0;font-size:13px}
+.dd-note.mine{border-left-color:var(--pr);background:rgba(93,184,110,.04)}
+.dd-note-hdr{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.dd-note-author{font-size:12px;font-weight:700;color:var(--pd);font-family:var(--mono)}
+.dd-note-time{font-size:10.5px;color:var(--ink3);font-family:var(--mono);font-weight:500}
+.dd-note-del{margin-left:auto;background:none;color:var(--ar);font-size:16px;cursor:pointer;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;line-height:1;border:none}
+.dd-note-del:hover{background:rgba(232,93,93,.1)}
+.dd-note-txt{color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .dd-chart-hdr{padding:12px 18px;border-bottom:1px solid var(--rule);background:var(--surface2)}
 .dd-chart-hdr h3{font-family:var(--serif);font-size:13.5px;font-weight:700;color:var(--pd)}
 .dd-chart-canvas{width:100%;height:220px;padding:14px 10px 6px}
@@ -585,6 +602,7 @@ body.print-report-mode .dd-overlay{display:none !important}
     </div>
     <div class="topbar-r">
       <span class="info" id="lastUpdate">연결 대기</span>
+      <button class="btn-ghost" onclick="openMaterials()"><span>📚</span> 수업 자료</button>
       <button class="btn-ghost" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
       <button class="btn-ghost" onclick="openWeeklyReport()"><span>📄</span> 주간 리포트</button>
       <button class="btn-ghost" id="refreshBtn" onclick="loadAll()"><span class="ico">↻</span> 새로고침</button>
@@ -2463,7 +2481,14 @@ async function openDrilldown(studentId){
   const brOnMyQ = allBranches.filter(b=>qIds.has(b.question_id));
   const brByMe = allBranches.filter(b=>b.author_id===studentId);
 
-  currentDrilldown = {student:s, questions:myQs, branchesOnMyQs:brOnMyQ, branchesByMe:brByMe};
+  // 교사 메모 로드 (모든 교사의 메모 공유)
+  let teacherNotes = [];
+  try{
+    const {data} = await sb.from('student_notes').select('*').eq('student_id', studentId).order('created_at', {ascending:false});
+    teacherNotes = data || [];
+  }catch(e){ /* table not yet */ }
+
+  currentDrilldown = {student:s, questions:myQs, branchesOnMyQs:brOnMyQ, branchesByMe:brByMe, teacherNotes};
 
   // 제목
   $('ddTitle').textContent = `${s.grade}학년 ${s.class_no}반 ${s.number}번 · ${s.name||'?'}`;
@@ -2482,9 +2507,62 @@ function closeDrilldown(){
   currentDrilldown = null;
 }
 
+// 👥 교사 메모 추가
+async function addStudentNote(studentId){
+  const inp = $('ddNoteInput');
+  if(!inp) return;
+  const txt = (inp.value||'').trim();
+  if(txt.length < 3){ alert('메모는 3자 이상 작성해주세요'); return; }
+  if(txt.length > 500){ alert('메모는 500자 이내로 작성해주세요'); return; }
+  if(!currentTeacher?.id){ alert('교사 로그인이 필요해요'); return; }
+
+  try{
+    const {data, error} = await sb.from('student_notes').insert({
+      student_id: studentId,
+      author_id: currentTeacher.id,
+      author_name: currentTeacher.name || '선생님',
+      author_subject: currentTeacher.subject_label || null,
+      text: txt
+    }).select().single();
+    if(error){
+      alert('메모 저장 실패: ' + error.message);
+      return;
+    }
+    // 로컬 업데이트
+    if(currentDrilldown){
+      currentDrilldown.teacherNotes = [data, ...(currentDrilldown.teacherNotes||[])];
+      renderDrilldownBody();
+    }
+    inp.value = '';
+  }catch(e){
+    alert('오류: ' + (e.message||''));
+  }
+}
+
+async function deleteStudentNote(noteId){
+  if(!confirm('이 메모를 삭제할까요?')) return;
+  const {error} = await sb.from('student_notes').delete().eq('id', noteId).eq('author_id', currentTeacher.id);
+  if(error){ alert('삭제 실패'); return; }
+  if(currentDrilldown){
+    currentDrilldown.teacherNotes = (currentDrilldown.teacherNotes||[]).filter(n => n.id !== noteId);
+    renderDrilldownBody();
+  }
+}
+
+// Ctrl+Enter로 메모 저장
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    const inp = $('ddNoteInput');
+    if(inp && document.activeElement === inp && currentDrilldown){
+      e.preventDefault();
+      addStudentNote(currentDrilldown.student.id);
+    }
+  }
+});
+
 function renderDrilldownBody(){
   if(!currentDrilldown) return;
-  const {student:s, questions, branchesOnMyQs, branchesByMe} = currentDrilldown;
+  const {student:s, questions, branchesOnMyQs, branchesByMe, teacherNotes = []} = currentDrilldown;
 
   // 나무 SVG (크게)
   const lv = Math.min(Math.floor(s.total/2)+1, 10);
@@ -2553,6 +2631,31 @@ function renderDrilldownBody(){
         <strong>${esc(insight.headline)}</strong>
         ${insight.body}
         <span class="sep">${insight.tag}</span>
+      </div>
+    </div>
+
+    <!-- 👥 교사 협업 메모 (다중 교사 공유) -->
+    <div class="dd-chart-sec dd-notes-sec">
+      <div class="dd-chart-hdr">
+        <h3>👥 교사 협업 메모 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-left:6px">${teacherNotes.length} notes · 다른 선생님과 공유</span></h3>
+      </div>
+      <div class="dd-notes-input">
+        <textarea id="ddNoteInput" placeholder="이 학생에 대한 관찰·피드백·소통 내용을 메모하세요. 다른 선생님과 공유돼요. (Ctrl+Enter로 저장)" rows="2"></textarea>
+        <button class="dd-btn primary" onclick="addStudentNote('${s.id}')">💾 메모 추가</button>
+      </div>
+      <div class="dd-notes-list" id="ddNotesList">
+        ${teacherNotes.length === 0 ? `
+          <div class="dd-note-empty">아직 메모가 없어요. 이 학생에 대한 첫 관찰 메모를 남겨보세요.</div>
+        ` : teacherNotes.map(n => `
+          <div class="dd-note${n.author_id === (currentTeacher?.id || '') ? ' mine' : ''}">
+            <div class="dd-note-hdr">
+              <span class="dd-note-author">${esc(n.author_name || '익명 선생님')}${n.author_subject ? ` · ${esc(n.author_subject)}` : ''}</span>
+              <span class="dd-note-time">${n.created_at ? new Date(n.created_at).toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}</span>
+              ${n.author_id === (currentTeacher?.id || '') ? `<button class="dd-note-del" onclick="deleteStudentNote(${n.id})">×</button>` : ''}
+            </div>
+            <div class="dd-note-txt">${esc(n.text)}</div>
+          </div>
+        `).join('')}
       </div>
     </div>
 
@@ -3220,6 +3323,309 @@ async function submitBulkCreate(){
       <button class="bulk-btn" onclick="closeBulkCreate()">닫기</button>
     </div>
   </div>
+</div>
+
+<!-- 📚 수업 자료 관리 모달 -->
+<style>
+.mat-modal{position:fixed;inset:0;background:rgba(15,30,25,.4);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.mat-modal.show{display:flex}
+.mat-box{background:var(--surface);border:1px solid var(--rule);border-radius:4px;max-width:760px;width:100%;max-height:92vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.mat-box h2{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.mat-box .sub{font-size:12px;color:var(--ink3);margin-bottom:18px;line-height:1.6}
+.mat-form{padding:16px;background:var(--surface2);border:1px solid var(--rule);border-radius:4px;margin-bottom:18px}
+.mat-form .row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.mat-form label{display:block;font-size:11px;font-weight:700;color:var(--pd);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em}
+.mat-form input[type=text],.mat-form textarea,.mat-form select{width:100%;padding:9px 12px;border:1.5px solid var(--rule);border-radius:3px;font-size:13px;font-family:inherit;background:#fff}
+.mat-form textarea{resize:vertical;min-height:54px;line-height:1.5}
+.mat-form input:focus,.mat-form textarea:focus,.mat-form select:focus{border-color:var(--pr);outline:none;box-shadow:0 0 0 2px rgba(93,184,110,.12)}
+.mat-file-label{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:rgba(33,150,243,.1);border:1.5px dashed var(--blue);border-radius:4px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.mat-file-label:hover{background:rgba(33,150,243,.18)}
+.mat-previews{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.mat-prev{position:relative;border-radius:6px;overflow:hidden;border:1.5px solid var(--rule);background:#fff}
+.mat-prev img,.mat-prev video{width:90px;height:68px;object-fit:cover;display:block}
+.mat-prev .nm{padding:3px 6px;font-size:9.5px;color:var(--ink3);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mat-prev .rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(232,93,93,.9);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.mat-btn{padding:8px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--rule);background:#fff;color:var(--ink);transition:all .15s;font-family:inherit}
+.mat-btn:hover{border-color:var(--pr);background:rgba(93,184,110,.05)}
+.mat-btn.primary{background:var(--pr);color:#fff;border-color:var(--pr)}
+.mat-btn.primary:hover{background:var(--pd)}
+.mat-btn.primary:disabled{opacity:.5;cursor:not-allowed}
+.mat-list{display:flex;flex-direction:column;gap:10px}
+.mat-list-hdr{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;padding-top:6px;border-top:1px solid var(--rule)}
+.mat-card{display:flex;gap:12px;padding:12px;background:#fff;border:1px solid var(--rule);border-radius:4px;align-items:flex-start}
+.mat-card.inactive{opacity:.55}
+.mat-card-thumb{width:64px;height:64px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--surface2)}
+.mat-card-body{flex:1;min-width:0}
+.mat-card-title{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.mat-card-meta{font-size:11px;color:var(--ink3);font-family:var(--mono);margin-bottom:4px}
+.mat-card-desc{font-size:12px;color:var(--ink2);line-height:1.5;margin-bottom:6px}
+.mat-card-stats{display:flex;gap:10px;font-size:11px;color:var(--pd);font-weight:600}
+.mat-card-acts{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.mat-card-acts button{padding:4px 8px;font-size:10.5px;border-radius:3px;border:1px solid var(--rule);background:#fff;cursor:pointer;white-space:nowrap}
+.mat-card-acts button:hover{border-color:var(--pr)}
+.mat-empty{padding:30px 16px;text-align:center;color:var(--ink3);font-size:12.5px}
+</style>
+<div class="mat-modal" id="mMat" onclick="if(event.target.id==='mMat')closeMaterials()">
+  <div class="mat-box">
+    <h2>📚 수업 자료</h2>
+    <p class="sub">사진·동영상을 올리면 <b>내 과목(<span id="matSubjLabel">과목</span>)을 듣는 학생 전체</b>의 <b>오늘의 자료 탭</b>에 표시돼요. 학생들은 자료를 보고 <b>"💡 질문 떠올리기"</b>로 질문을 작성합니다.</p>
+
+    <div class="mat-form">
+      <div class="row">
+        <div style="flex:1;min-width:200px">
+          <label>제목 *</label>
+          <input type="text" id="matTitle" placeholder="예: 광합성 실험 영상, 세포 분열 사진" maxlength="120">
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1">
+          <label>설명 (선택)</label>
+          <textarea id="matDesc" placeholder="이 자료를 보고 어떤 점을 관찰하면 좋을지 안내해주세요"  maxlength="1000"></textarea>
+        </div>
+      </div>
+      <div style="background:rgba(93,184,110,.08);border:1px solid rgba(93,184,110,.25);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:var(--pd);line-height:1.5">
+        💡 기본적으로 <b>내 과목을 듣는 학생 전체</b>에게 보여요. 아래에서 특정 학년·반만 골라 더 좁힐 수도 있어요. (선택사항)
+      </div>
+      <div class="row">
+        <div style="flex:1;min-width:120px">
+          <label>대상 학년 (선택)</label>
+          <select id="matGrade"><option value="">전체 학년</option><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select>
+        </div>
+        <div style="flex:1;min-width:120px">
+          <label>대상 반 (선택)</label>
+          <select id="matClass"><option value="">전체 반</option>${Array.from({length:15},(_,i)=>`<option value="${i+1}">${i+1}반</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1">
+          <label>사진 / 동영상 첨부</label>
+          <input type="file" id="matFile" accept="image/*,video/*" multiple style="display:none" onchange="handleMatFiles(this)">
+          <label for="matFile" class="mat-file-label">📎 파일 선택 (사진·영상)</label>
+          <div class="mat-previews" id="matPreviews"></div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <button class="mat-btn primary" id="matSubmitBtn" onclick="submitMaterial()">📤 자료 올리기</button>
+      </div>
+      <div id="matResult" style="margin-top:8px"></div>
+    </div>
+
+    <div class="mat-list-hdr">📋 올린 자료 목록</div>
+    <div class="mat-list" id="matList">
+      <div class="mat-empty">불러오는 중...</div>
+    </div>
+
+    <div style="text-align:right;margin-top:14px">
+      <button class="mat-btn" onclick="closeMaterials()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// 📚 수업 자료 관리
+// ═══════════════════════════════════════════════════════════════════
+let _matPending = []; // [{file, preview, name, type, kind}]
+let _matEditId = null;
+
+function openMaterials(){
+  if(isServiceKey){
+    alert('Service Role Key로는 사용할 수 없어요. 교사 계정으로 로그인하세요.');
+    return;
+  }
+  if(!currentTeacher?.id){
+    alert('교사 로그인이 필요해요.');
+    return;
+  }
+  $('mMat').classList.add('show');
+  const subjLabel = $('matSubjLabel');
+  if(subjLabel) subjLabel.textContent = currentTeacher.subject_label || '과목 미지정';
+  $('matTitle').value = '';
+  $('matDesc').value = '';
+  $('matGrade').value = currentTeacher.grade || '';
+  $('matClass').value = '';
+  $('matResult').innerHTML = '';
+  _matPending = [];
+  _matEditId = null;
+  renderMatPreviews();
+  loadMaterials();
+}
+function closeMaterials(){ $('mMat').classList.remove('show'); }
+
+function handleMatFiles(input){
+  const files = [...input.files];
+  files.forEach(file => {
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 50*1024*1024 : 8*1024*1024; // 영상 50MB, 사진 8MB
+    if(file.size > maxSize){
+      alert(`${file.name}: ${isVideo?'영상은 50MB':'사진은 8MB'} 이하만 가능해요`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      _matPending.push({
+        file,
+        preview: file.type.startsWith('image/') ? e.target.result : null,
+        name: file.name,
+        type: file.type,
+        kind: isVideo ? 'video' : 'image'
+      });
+      renderMatPreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderMatPreviews(){
+  const el = $('matPreviews');
+  if(!_matPending.length){ el.innerHTML = ''; return; }
+  el.innerHTML = _matPending.map((f,i) => `
+    <div class="mat-prev">
+      ${f.preview ? `<img src="${f.preview}" alt="">` : `<div style="width:90px;height:68px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--surface2)">${f.kind==='video'?'🎬':'📄'}</div>`}
+      <div class="nm">${esc(f.name)}</div>
+      <div class="rm" onclick="removeMatFile(${i})">×</div>
+    </div>
+  `).join('');
+}
+function removeMatFile(i){ _matPending.splice(i,1); renderMatPreviews(); }
+
+async function uploadMatFile(file){
+  const ext = file.name.split('.').pop() || 'bin';
+  const path = `materials/${currentTeacher.id}/${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+  const {data, error} = await sb.storage.from('attachments').upload(path, file, {cacheControl:'3600', upsert:false});
+  if(error){ console.error('Upload failed:', error.message); return null; }
+  const {data:urlData} = sb.storage.from('attachments').getPublicUrl(data.path);
+  return {url:urlData.publicUrl, name:file.name, type:file.type, path:data.path, kind:file.type.startsWith('video/')?'video':'image'};
+}
+
+async function submitMaterial(){
+  const title = $('matTitle').value.trim();
+  if(!title){ alert('제목을 입력해주세요'); return; }
+  if(!_matPending.length && !_matEditId){ alert('사진이나 영상을 1개 이상 첨부해주세요'); return; }
+
+  const btn = $('matSubmitBtn');
+  btn.disabled = true;
+  $('matResult').innerHTML = '<div style="color:var(--ink2);font-size:12px">📤 업로드 중...</div>';
+
+  // 파일 업로드
+  const uploaded = [];
+  for(let i=0;i<_matPending.length;i++){
+    $('matResult').innerHTML = `<div style="color:var(--ink2);font-size:12px">📤 파일 업로드 중... (${i+1}/${_matPending.length})</div>`;
+    const r = await uploadMatFile(_matPending[i].file);
+    if(r) uploaded.push(r);
+  }
+
+  const payload = {
+    teacher_id: currentTeacher.id,
+    teacher_name: currentTeacher.name || '선생님',
+    subject_id: currentTeacher.subject_id || null,
+    subject_label: currentTeacher.subject_label || null,
+    title,
+    description: $('matDesc').value.trim() || null,
+    files: uploaded.length ? uploaded : null,
+    target_grade: $('matGrade').value ? Number($('matGrade').value) : null,
+    target_class: $('matClass').value ? Number($('matClass').value) : null,
+    is_active: true
+  };
+
+  const {error} = await sb.from('lesson_materials').insert(payload);
+  btn.disabled = false;
+  if(error){
+    $('matResult').innerHTML = `<div style="color:var(--ar);font-size:12px">⚠ 저장 실패: ${esc(error.message)}</div>`;
+    return;
+  }
+  $('matResult').innerHTML = '<div style="color:var(--pd);font-size:12px;font-weight:700">✅ 자료가 올라갔어요! 학생들이 볼 수 있어요.</div>';
+  $('matTitle').value = '';
+  $('matDesc').value = '';
+  _matPending = [];
+  renderMatPreviews();
+  loadMaterials();
+}
+
+async function loadMaterials(){
+  const el = $('matList');
+  try{
+    const {data, error} = await sb.from('lesson_materials')
+      .select('*').eq('teacher_id', currentTeacher.id)
+      .order('created_at', {ascending:false});
+    if(error) throw error;
+
+    // 자료별 질문 수 집계
+    const matIds = (data||[]).map(m=>m.id);
+    let qCountByMat = {};
+    if(matIds.length){
+      const {data:qs} = await sb.from('questions').select('material_id').in('material_id', matIds);
+      (qs||[]).forEach(q => { if(q.material_id) qCountByMat[q.material_id] = (qCountByMat[q.material_id]||0)+1; });
+    }
+
+    if(!data || !data.length){
+      el.innerHTML = '<div class="mat-empty">아직 올린 자료가 없어요. 위에서 첫 자료를 올려보세요!</div>';
+      return;
+    }
+
+    el.innerHTML = data.map(m => {
+      const firstFile = (m.files && m.files[0]) || null;
+      const thumb = firstFile && firstFile.kind === 'image'
+        ? `<img class="mat-card-thumb" src="${esc(firstFile.url)}" alt="">`
+        : firstFile && firstFile.kind === 'video'
+        ? `<div class="mat-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`
+        : `<div class="mat-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px">📚</div>`;
+      const target = `${m.target_grade?m.target_grade+'학년':'전체학년'} ${m.target_class?m.target_class+'반':'전체반'}`;
+      const qCount = qCountByMat[m.id] || 0;
+      const fileCount = (m.files||[]).length;
+      return `
+        <div class="mat-card${m.is_active?'':' inactive'}">
+          ${thumb}
+          <div class="mat-card-body">
+            <div class="mat-card-title">${esc(m.title)}</div>
+            <div class="mat-card-meta">${target} · ${m.subject_label||'과목미지정'} · ${new Date(m.created_at).toLocaleDateString('ko-KR')}</div>
+            ${m.description?`<div class="mat-card-desc">${esc(m.description)}</div>`:''}
+            <div class="mat-card-stats">
+              <span>📎 ${fileCount}개 파일</span>
+              <span>💡 ${qCount}개 질문 생성</span>
+              <span>${m.is_active?'🟢 공개중':'⚪ 숨김'}</span>
+            </div>
+          </div>
+          <div class="mat-card-acts">
+            <button onclick="toggleMaterial(${m.id}, ${!m.is_active})">${m.is_active?'🙈 숨기기':'👁 공개'}</button>
+            ${qCount?`<button onclick="viewMaterialQuestions(${m.id}, '${esc(m.title)}')">💡 질문보기</button>`:''}
+            <button onclick="deleteMaterial(${m.id})" style="color:var(--ar)">🗑 삭제</button>
+          </div>
+        </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML = `<div class="mat-empty">⚠ 불러오기 실패: ${esc(e.message)}<br><span style="font-size:11px">lesson_materials 테이블이 있는지 확인하세요 (SQL 마이그레이션)</span></div>`;
+  }
+}
+
+async function toggleMaterial(id, active){
+  const {error} = await sb.from('lesson_materials').update({is_active:active}).eq('id', id);
+  if(error){ alert('변경 실패: '+error.message); return; }
+  loadMaterials();
+}
+
+async function deleteMaterial(id){
+  if(!confirm('이 자료를 삭제할까요?\n(연결된 학생 질문은 유지되지만 자료 연결이 끊어져요)')) return;
+  const {error} = await sb.from('lesson_materials').delete().eq('id', id);
+  if(error){ alert('삭제 실패: '+error.message); return; }
+  loadMaterials();
+}
+
+function viewMaterialQuestions(matId, title){
+  // 해당 자료로 생성된 질문들을 필터링해서 보여줌
+  closeMaterials();
+  // 검색창에 표시하고 전체 질문 중 material_id 일치하는 것 강조
+  const matched = allQuestions.filter(q => q.material_id === matId);
+  if(!matched.length){ alert('아직 이 자료로 작성된 질문이 없어요'); return; }
+  const lines = matched.map(q => {
+    const stu = allProfiles.find(p=>p.id===q.user_id);
+    const who = stu ? `${stu.grade}-${stu.class_no}-${stu.number} ${stu.name||''}` : '익명';
+    return `• [${who}] ${q.text}`;
+  });
+  alert(`💡 "${title}" 자료로 작성된 질문 ${matched.length}개:\n\n${lines.join('\n\n')}`);
+}
+</script>
 
 </body>
 </html>
