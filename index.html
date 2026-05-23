@@ -947,6 +947,63 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .hn-logo{width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;filter:drop-shadow(0 1px 4px rgba(0,0,0,.2));transition:transform .2s}
 .hn-logo:hover{transform:scale(1.08)}
 .hn-logo-wl{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:10px;filter:drop-shadow(0 3px 10px rgba(0,0,0,.18))}
+/* ═══ 🌅🌙 수업 단계 & 🌿 질문 확장 & 🌳 성장 리포트 ═══ */
+.phase-seg{display:flex;gap:6px;background:rgba(93,184,110,.08);padding:5px;border-radius:14px;margin-bottom:10px}
+.phase-opt{flex:1;display:flex;align-items:center;gap:8px;justify-content:center;padding:8px 10px;border:none;background:transparent;border-radius:10px;cursor:pointer;color:var(--tl);transition:.18s;font-family:inherit}
+.phase-opt .phase-em{font-size:var(--em-sm)}
+.phase-opt .phase-tx{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.phase-opt .phase-tx b{font-size:var(--fs-xs);color:var(--tx)}
+.phase-opt .phase-tx small{font-size:10px;color:var(--tl)}
+.phase-opt.on{background:var(--card);box-shadow:0 2px 8px rgba(36,97,47,.12)}
+.phase-opt.on[data-phase="before"]{box-shadow:0 2px 10px rgba(245,166,35,.25);outline:2px solid rgba(245,166,35,.4)}
+.phase-opt.on[data-phase="after"]{box-shadow:0 2px 10px rgba(63,139,79,.25);outline:2px solid rgba(63,139,79,.4)}
+.phase-note{font-size:var(--fs-xxs);color:var(--tl);margin:2px 0 10px;line-height:1.5}
+.phase-chip.on{background:var(--pd)!important;color:#fff!important}
+
+/* 카드 단계 뱃지 */
+.qc-phase{font-size:.9em;margin-right:2px}
+.qc.ph-after{border-left:3px solid rgba(63,139,79,.45)}
+.qc.ph-before{border-left:3px solid rgba(245,166,35,.45)}
+.qc.is-child{background:linear-gradient(180deg,rgba(93,184,110,.05),transparent)}
+.qc.has-children{box-shadow:inset 0 0 0 1px rgba(63,139,79,.18)}
+
+/* 자란 질문 표식 */
+.qc-grewfrom{font-size:11px;color:var(--tl);margin-bottom:4px;display:flex;gap:4px;align-items:center}
+.qc-grewfrom span{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;color:var(--pr)}
+.qc-grewinto{color:var(--pd)!important;font-weight:700}
+
+/* 키우기 버튼 */
+.qb-grow{background:rgba(63,139,79,.12)!important;color:var(--pd)!important;font-weight:800}
+.qb-grow:hover{background:var(--pr)!important;color:#fff!important}
+
+/* 인라인 확장 작성기 */
+.qc-expand{margin-top:8px;padding:12px;background:rgba(63,139,79,.06);border:1px dashed rgba(63,139,79,.35);border-radius:12px}
+.qc-expand-hdr{font-size:var(--fs-xs);color:var(--pd);margin-bottom:8px}
+.qc-expand-scaffold{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.exp-chip{font-size:11px;padding:4px 9px;border:1px solid rgba(63,139,79,.3);background:var(--card);color:var(--pr);border-radius:20px;cursor:pointer;font-family:inherit}
+.exp-chip:hover{background:var(--pr);color:#fff}
+.qc-expand-input{width:100%;min-height:56px;border:1px solid var(--bd);border-radius:10px;padding:9px 11px;font-family:inherit;font-size:var(--fs-xs);resize:vertical;box-sizing:border-box}
+.qc-expand-btns{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
+.exp-cancel,.exp-save{padding:7px 14px;border:none;border-radius:9px;cursor:pointer;font-family:inherit;font-size:var(--fs-xxs);font-weight:700}
+.exp-cancel{background:rgba(0,0,0,.06);color:var(--tl)}
+.exp-save{background:var(--pr);color:#fff}
+.exp-save:hover{background:var(--pd)}
+
+/* 성장 리포트 카드 */
+.growth-card{border-radius:var(--r);padding:14px 16px;margin-bottom:12px;background:linear-gradient(135deg,#F0FAF0,#E6F4EA);border:1px solid rgba(63,139,79,.18);box-shadow:var(--sh)}
+.growth-card.good{background:linear-gradient(135deg,#EAF8EC,#DCF1E1);border-color:rgba(63,139,79,.35)}
+.growth-card.wait{background:linear-gradient(135deg,#FFF8EC,#FDF1DA);border-color:rgba(245,166,35,.3)}
+.growth-head{font-size:var(--fs-xs);font-weight:800;color:var(--pd);margin-bottom:10px}
+.growth-meter{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.gm-col{text-align:center}
+.gm-n{font-size:var(--fs-2xl);font-weight:800;color:var(--tx);line-height:1}
+.gm-n.gm-end{color:var(--pr)}
+.gm-l{font-size:10px;color:var(--tl);margin-top:3px}
+.gm-arrow{font-size:var(--fs-lg);color:var(--pr)}
+.gm-delta{background:var(--pr);color:#fff;font-weight:800;font-size:var(--fs-xs);padding:4px 12px;border-radius:20px;margin-left:auto;animation:pulse 1.4s ease infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.growth-grew{font-size:var(--fs-xxs);color:var(--pd);margin-bottom:6px}
+.growth-msg{font-size:var(--fs-xxs);color:var(--tx);line-height:1.55}
 </style>
 </head>
 <body>
@@ -1166,8 +1223,20 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
     </div></div></div>
     <!-- 질문 탭 -->
     <div class="tp" id="tp-questions"><div class="tp-inner"><div class="q-area">
+      <!-- 🌳 오늘의 탐구 성장 리포트 -->
+      <div id="growthCard"></div>
       <div class="cs">
-        <h4>🌱 새로운 질문 심기</h4>
+        <!-- 🌅🌙 수업 단계 토글 -->
+        <div class="phase-seg" id="phaseSeg">
+          <button class="phase-opt on" data-phase="before" onclick="setPhase('before')">
+            <span class="phase-em">🌅</span><span class="phase-tx"><b>수업 열기</b><small>수업 전 궁금한 것</small></span>
+          </button>
+          <button class="phase-opt" data-phase="after" onclick="setPhase('after')">
+            <span class="phase-em">🌙</span><span class="phase-tx"><b>수업 닫기</b><small>수업 뒤 새로 생긴 질문</small></span>
+          </button>
+        </div>
+        <h4 id="qHead">🌅 수업 열기 — 새로운 질문 심기</h4>
+        <p class="phase-note" id="phaseNote">오늘 수업에서 무엇이 가장 궁금한가요? 🌱</p>
         <div id="matLinkBanner" class="mat-link-banner" style="display:none"></div>
         <div class="q-iw">
           <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter')addQ()">
@@ -1676,6 +1745,9 @@ const S = {
   subjects:[], questions:{},
   pendingTags:[], pendingFruit:null, pendingAnon:false,
   filterTag:null,
+  phase:'before',          // 🌅 현재 질문 작성 단계: 'before'(수업 열기) | 'after'(수업 닫기)
+  phaseFilter:null,        // 질문 목록 단계 필터: null | 'before' | 'after'
+  expandParentId:null,     // 🌿 지금 '키우는 중'인 원본 질문 id (인라인 확장 작성기)
   expandedBranches:new Set(),
   frPickId:null,
   bmId:null,
@@ -1694,6 +1766,8 @@ const S = {
 };
 
 const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','🍐','🌸','⭐','💎','🌰','🌻'];
+// 🌿 질문 키우기(확장) 사고 스캐폴드 — 더 나은 질문을 낳도록 돕는 출발 문구
+const EXPAND_PROMPTS = ['그래서 만약 ~라면?','왜 꼭 그래야 할까?','다른 경우에도 그럴까?','반대로 생각하면?','이건 무엇과 연결될까?','한 단계 더 들어가면?'];
 const STICKERS=['🌸','🦋','🐝','🌺','🍃','☘️','🌻','🐞','🌈','💫','✨','🎵','❤️','🌟','🎀'];
 const EMOJIS=['📐','📖','🎨','🎵','🏃','🌐','💻','📊','🗺️','🔭','⚗️','🧲','🎭','📜','💡'];
 const TIPS=[
@@ -2226,6 +2300,7 @@ async function bootstrapUser(){
       id:q.id,text:q.text,resolved:q.resolved,date:q.question_date,hint:q.hint,
       tags:q.tags||[], fruit:q.fruit_emoji||null,
       is_anonymous:q.is_anonymous||false,
+      phase:q.phase||'before', parent_id:q.parent_id||null,
       water_count:q.water_count||0, watered_by:q.watered_by||[],
       fruit_x: q.fruit_x!=null ? Number(q.fruit_x) : null,
       fruit_y: q.fruit_y!=null ? Number(q.fruit_y) : null,
@@ -2294,7 +2369,7 @@ function swTab(t){
 }
 
 function render(){
-  renderSubTabs();renderTree();renderQs();renderStats();
+  renderSubTabs();renderTree();renderQs();renderStats();renderGrowthReport();
   renderAch();renderSkTray();renderDecoTree();renderTagPresets();
   renderFruitPicker();renderAnonTog();renderTreePicker();
   const q=QUOTES[new Date().getDate()%QUOTES.length];
@@ -4019,12 +4094,32 @@ function renderQs(){
   const{qs}=gD();
   const c=$('qList');c.innerHTML='';
   const fr=$('filterRow');
+  fr.innerHTML='';
+
+  // 🌅🌙 단계 필터 칩
+  const beforeN=qs.filter(q=>(q.phase||'before')==='before').length;
+  const afterN=qs.filter(q=>q.phase==='after').length;
+  if(beforeN||afterN){
+    const phChips=[
+      {key:null,  label:`전체 ${qs.length}`},
+      {key:'before',label:`🌅 열기 ${beforeN}`},
+      {key:'after', label:`🌙 닫기 ${afterN}`},
+    ];
+    phChips.forEach(pc=>{
+      const b=document.createElement('button');
+      b.className='filter-chip phase-chip'+(S.phaseFilter===pc.key?' on':'');
+      b.textContent=pc.label;
+      b.onclick=()=>{S.phaseFilter=S.phaseFilter===pc.key?null:pc.key;renderQs();};
+      fr.appendChild(b);
+    });
+  }
+
+  // 🏷️ 태그 필터 칩
   const tags=allTagsInSubject(S.activeSub);
   if(tags.length){
-    fr.innerHTML='';
     const all=document.createElement('button');
     all.className='filter-chip'+(S.filterTag===null?' on':'');
-    all.textContent='전체';all.onclick=()=>{S.filterTag=null;renderQs();};
+    all.textContent='#전체';all.onclick=()=>{S.filterTag=null;renderQs();};
     fr.appendChild(all);
     tags.forEach(t=>{
       const b=document.createElement('button');
@@ -4032,9 +4127,22 @@ function renderQs(){
       b.textContent=t;b.onclick=()=>{S.filterTag=S.filterTag===t?null:t;renderQs();};
       fr.appendChild(b);
     });
-  } else {fr.innerHTML='';}
+  }
 
-  const filtered=S.filterTag?qs.filter(q=>(q.tags||[]).includes(S.filterTag)):qs;
+  // 🌿 같은 과목 내 부모→자식(확장) 관계 맵
+  const subQs=qsInSub(S.activeSub);
+  const childCount={};         // parentId -> 자란 질문 수
+  const parentText={};         // childId  -> 원본 질문 텍스트
+  subQs.forEach(x=>{
+    if(x.parent_id){
+      childCount[x.parent_id]=(childCount[x.parent_id]||0)+1;
+      const p=subQs.find(y=>y.id===x.parent_id);
+      if(p) parentText[x.id]=p.text;
+    }
+  });
+
+  let filtered=S.filterTag?qs.filter(q=>(q.tags||[]).includes(S.filterTag)):qs;
+  if(S.phaseFilter) filtered=filtered.filter(q=>(q.phase||'before')===S.phaseFilter);
   if(!filtered.length){
     c.innerHTML='<div class="empty"><div class="em">🌱</div><div style="font-size:var(--fs-xs)">'+(S.filterTag?'이 태그의 질문이 없어요':'아직 질문이 없어요')+'</div></div>';
     return;
@@ -4044,6 +4152,9 @@ function renderQs(){
     const d=document.createElement('div');
     let cls='qc slide-up '+(q.resolved?'res':'unr');
     if(q.is_anonymous) cls+=' anon';
+    cls+=' ph-'+(q.phase||'before');
+    if(q.parent_id) cls+=' is-child';
+    if(childCount[q.id]) cls+=' has-children';
     d.className=cls;
     d.style.animationDelay=(i*.03)+'s';
 
@@ -4063,17 +4174,20 @@ function renderQs(){
 
       d.innerHTML=`<div class="qc-in">
         <div style="flex:1;min-width:0">
-          <div class="qc-t" data-math="1">${escWithMath(q.text)} <span class="qc-fr" title="이 질문의 열매">${frEmoji}</span></div>
+          ${q.parent_id&&parentText[q.id]?`<div class="qc-grewfrom" title="이 질문에서 자랐어요">🌱 <span>${esc(parentText[q.id])}</span> 에서 자란 질문</div>`:''}
+          <div class="qc-t" data-math="1"><span class="qc-phase ph-${q.phase||'before'}" title="${q.phase==='after'?'수업 닫기 질문':'수업 열기 질문'}">${q.phase==='after'?'🌙':'🌅'}</span> ${escWithMath(q.text)} <span class="qc-fr" title="이 질문의 열매">${frEmoji}</span></div>
           ${tagHtml?`<div class="qc-tags">${tagHtml}</div>`:''}
           <div class="qc-d">
             <span>📅 ${q.date||''}</span>
             ${q.is_anonymous?`<span class="qc-anon-b">🕊️ 익명</span>`:''}
             ${q.water_count?`<span>💧 ${q.water_count}</span>`:''}
             ${brCount?`<span>🌿 ${brCount}</span>`:''}
+            ${childCount[q.id]?`<span class="qc-grewinto">🌳 자란 질문 ${childCount[q.id]}</span>`:''}
             ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}
           </div>
         </div>
         <div class="qc-a">
+          <button class="qb qb-grow" onclick="openExpand(${q.id})" title="이 질문 키우기 — 더 깊은 질문으로">🌿+</button>
           <button class="qb qb-f" onclick="openFy(${q.id})" title="AI 힌트">🧚</button>
           <button class="qb qb-br" onclick="openBM(${q.id})" title="꼬리질문">🌿</button>
           <button class="qb qb-e" onclick="openFrPick(${q.id})" title="열매 모양">🍎</button>
@@ -4083,6 +4197,20 @@ function renderQs(){
           <button class="qb qb-x" onclick="delQ(${q.id})" title="삭제">🗑️</button>
         </div>
       </div>
+
+      ${/* 🌿 인라인 확장(키우기) 작성기 */
+        S.expandParentId===q.id ? `
+        <div class="qc-expand">
+          <div class="qc-expand-hdr">🌿 이 질문을 <b>한 걸음 더</b> 키워볼까요?</div>
+          <div class="qc-expand-scaffold">
+            ${EXPAND_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
+          </div>
+          <textarea class="qc-expand-input" id="expText-${q.id}" placeholder="여기서 더 궁금해진 점, 더 깊은 질문을 적어보세요... 🌱"></textarea>
+          <div class="qc-expand-btns">
+            <button class="exp-cancel" onclick="closeExpand()">취소</button>
+            <button class="exp-save" onclick="submitExpand(${q.id})">🌱 더 깊은 질문 심기</button>
+          </div>
+        </div>` : ''}
 
       ${/* 기존 답변 표시 */
         (q.answer_text || q.answer_files) ? `
@@ -4170,6 +4298,108 @@ function togBranches(qid){
 }
 
 // ============================================================================
+// 🌅🌙 수업 단계 (열기 / 닫기)
+// ============================================================================
+function setPhase(p){
+  S.phase = p;
+  document.querySelectorAll('#phaseSeg .phase-opt').forEach(b=>b.classList.toggle('on', b.dataset.phase===p));
+  const head=$('qHead'), note=$('phaseNote'), inp=$('qInp');
+  if(p==='after'){
+    if(head) head.textContent='🌙 수업 닫기 — 새로 생긴 질문 심기';
+    if(note) note.textContent='수업이 끝났어요. 알게 된 만큼 새로 궁금해진 것은 무엇인가요? 좋은 탐구는 더 나은 질문을 낳아요 🌳';
+    if(inp) inp.placeholder='수업 뒤 새로 생긴 질문을 적어보세요...';
+  } else {
+    if(head) head.textContent='🌅 수업 열기 — 새로운 질문 심기';
+    if(note) note.textContent='오늘 수업에서 무엇이 가장 궁금한가요? 🌱';
+    if(inp) inp.placeholder='궁금한 것을 적어보세요... ($수식$ 가능)';
+  }
+}
+
+// ============================================================================
+// 🌿 질문 키우기 (확장) — 질문을 닫는 대신 더 깊은 질문으로 자라게 하기
+// ============================================================================
+function openExpand(qid){ S.expandParentId = (S.expandParentId===qid?null:qid); renderQs();
+  if(S.expandParentId===qid) setTimeout(()=>$('expText-'+qid)?.focus(),50); }
+function closeExpand(){ S.expandParentId=null; renderQs(); }
+function expChip(qid, prompt){
+  const t=$('expText-'+qid); if(!t) return;
+  t.value = (t.value.trim()? t.value.trim()+' ' : '') + prompt + ' ';
+  t.focus();
+}
+async function submitExpand(parentId){
+  const ta=$('expText-'+parentId); if(!ta) return;
+  const t=ta.value.trim();
+  const r=await chkQ(t);
+  if(!r.ok){ ta.style.borderColor='var(--ar)'; toast('🤔 '+r.msg); shk(ta); return; }
+  // 원본 질문 찾기 (같은 과목 내)
+  const parent = qsInSub(S.activeSub).find(q=>q.id===parentId);
+  if(!parent){ toast('원본 질문을 찾지 못했어요'); return; }
+  const treeId = parent.tree_id || curTreeId();
+  const payload={
+    user_id:S.user.id, subject_id:S.activeSub, text:t,
+    tags:(parent.tags||[]), question_date:td(),
+    fruit_emoji:S.fruit||null, is_anonymous:false,
+    phase:'after', parent_id:parentId,
+    water_count:0, watered_by:[]
+  };
+  if(treeId && !String(treeId).startsWith('local_')) payload.tree_id=treeId;
+  const {data,error}=await sb.from('questions').insert(payload).select().single();
+  if(error){ toast('저장 실패: '+error.message); return; }
+  if(!S.questions[S.activeSub]) S.questions[S.activeSub]={};
+  if(!S.questions[S.activeSub][treeId]) S.questions[S.activeSub][treeId]=[];
+  S.questions[S.activeSub][treeId].push({
+    id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
+    tags:data.tags||[], fruit:data.fruit_emoji||null, is_anonymous:false,
+    phase:'after', parent_id:parentId,
+    water_count:0, watered_by:[], branches:[], tree_id:treeId, material_id:null,
+  });
+  S.activeTreeId[S.activeSub]=treeId;
+  S.expandParentId=null;
+  await addSeeds(2, '🌿 질문이 한 걸음 더 자랐어요! +2 🌰');
+  toast('🌱 더 깊은 질문이 나무에 열렸어요!');
+  render();
+}
+
+// ============================================================================
+// 🌳 오늘의 탐구 성장 리포트 — "처음보다 질문이 늘었다면 건강한 수업"
+// ============================================================================
+function renderGrowthReport(){
+  const el=$('growthCard'); if(!el) return;
+  const today=td();
+  const sub=S.subjects.find(s=>s.id===S.activeSub);
+  // 오늘·이 과목의 질문만 집계
+  const todays=qsInSub(S.activeSub).filter(q=>q.date===today);
+  const before=todays.filter(q=>(q.phase||'before')==='before').length;
+  const after=todays.filter(q=>q.phase==='after').length;
+  const grew=todays.filter(q=>q.parent_id).length;   // 확장으로 자란 질문
+  if(!todays.length){ el.innerHTML=''; return; }
+  const delta=after; // 닫기 단계에서 새로 생긴 질문 수 (열기 대비 증가분)
+  const healthy = after>0;       // 닫기 질문이 하나라도 생기면 = 질문이 늘어난 건강한 수업
+  const startN=before, endN=before+after;
+  const pct = startN>0 ? Math.round((endN/startN-1)*100) : (endN>0?100:0);
+  let msg, mood;
+  if(after===0 && before>0){
+    msg='수업을 닫는 질문을 아직 안 했어요. 수업이 끝났다면 🌙 <b>수업 닫기</b>에서 새로 궁금해진 걸 적어볼까요?'; mood='wait';
+  } else if(healthy){
+    msg=`수업 전 <b>${startN}개</b> → 수업 후 <b>${endN}개</b>로 질문이 <b>${after}개</b> 늘었어요. 좋은 질문이 더 나은 질문을 낳았네요 🌳 <b>건강한 수업이에요!</b>`; mood='good';
+  } else {
+    msg='오늘의 질문을 심어보며 탐구를 시작해봐요 🌱'; mood='start';
+  }
+  el.innerHTML=`
+    <div class="growth-card ${mood}">
+      <div class="growth-head">🌳 오늘의 탐구 성장 ${sub?`· ${sub.icon} ${esc(sub.label)}`:''}</div>
+      <div class="growth-meter">
+        <div class="gm-col"><div class="gm-n">${startN}</div><div class="gm-l">🌅 수업 전</div></div>
+        <div class="gm-arrow">${endN>startN?'⤳':'→'}</div>
+        <div class="gm-col"><div class="gm-n gm-end">${endN}</div><div class="gm-l">🌙 수업 후</div></div>
+        ${after>0?`<div class="gm-delta">+${after}</div>`:''}
+      </div>
+      ${grew?`<div class="growth-grew">그중 🌿 <b>${grew}개</b>는 다른 질문에서 자란 질문이에요</div>`:''}
+      <div class="growth-msg">${msg}</div>
+    </div>`;
+}
+
+// ============================================================================
 // 질문 CRUD
 // ============================================================================
 async function addQ(){
@@ -4195,6 +4425,7 @@ async function addQ(){
     tags, question_date:td(),
     fruit_emoji:fruit||null,
     is_anonymous:S.pendingAnon||false,
+    phase:S.phase||'before',
     water_count:0, watered_by:[]
   };
   // tree_id 는 로컬 fallback일 수 있으니 실제 DB 저장 전에 체크
@@ -4216,6 +4447,7 @@ async function addQ(){
     id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
     tags:data.tags||[], fruit:data.fruit_emoji||null,
     is_anonymous:data.is_anonymous||false,
+    phase:data.phase||'before', parent_id:null,
     water_count:0, watered_by:[], branches:[],
     tree_id: treeId,
     material_id: data.material_id||null,
@@ -4235,7 +4467,9 @@ async function addQ(){
 
   inp.value='';S.pendingTags=[];S.pendingFruit=null;S.pendingAnon=false;S.pendingTreeId=null;
   renderPendingTags();renderFruitPicker();renderAnonTog();renderTreePicker();
-  const m=$('qMsg');m.textContent='🌱 질문이 심어졌어요!';m.className='q-msg ok';
+  const m=$('qMsg');
+  m.textContent = (S.phase==='after') ? '🌙 수업 닫기 질문이 심어졌어요!' : '🌅 수업 열기 질문이 심어졌어요!';
+  m.className='q-msg ok';
   setTimeout(()=>{m.className='q-msg';},1500);
   render();
 }
