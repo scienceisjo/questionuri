@@ -573,21 +573,11 @@ body.print-report-mode .dd-overlay{display:none !important}
       <label class="fl">비밀번호 (6자 이상)</label>
       <input id="sgPw" type="password" placeholder="••••••••">
       <label class="fl">비밀번호 확인</label>
-      <input id="sgPw2" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')teacherSignup()">
+      <input id="sgPw2" type="password" placeholder="••••••••">
+      <label class="fl" style="margin-top:12px">🎟️ 교사 초대코드</label>
+      <input id="sgInvite" type="text" placeholder="학교에서 받은 코드" onkeydown="if(event.key==='Enter')teacherSignup()">
       <div class="auth-err" id="sgErr"></div>
       <button class="bm" id="sgBtn" onclick="teacherSignup()" style="background:linear-gradient(135deg,#D97706,#B45309)">📝 가입하기</button>
-    </div>
-
-    <div class="sk-link">
-      <a onclick="showServiceKeyMode()">→ 관리자: Service Role Key로 접속</a>
-    </div>
-    <div id="skMode" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--rule)">
-      <label class="fl">Supabase URL</label>
-      <input id="skUrl" placeholder="https://xxx.supabase.co">
-      <label class="fl">Service Role Key</label>
-      <input id="skKey" type="password" placeholder="eyJ...">
-      <button class="bm" onclick="serviceKeyLogin()" style="background:var(--ac)">Service Key로 접속</button>
-      <p style="font-family:var(--mono);font-size:9.5px;color:var(--ar);margin-top:8px;letter-spacing:.02em">⚠ 관리자 전용 · 학생에게 절대 노출 금지</p>
     </div>
   </div>
 </div>
@@ -927,6 +917,7 @@ body.print-report-mode .dd-overlay{display:none !important}
 // ═══════════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://kpnfxcvnzashdpwnlrev.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwbmZ4Y3ZuemFzaGRwd25scmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzkxNDIsImV4cCI6MjA5MTkxNTE0Mn0.bBUAbH3_pLDZmbEzF7NRR3Y93KhhkQMR7eoSR-urRdE';
+const EDGE_FN = SUPABASE_URL + '/functions/v1/teacher-admin';  // 🔐 교사 등록·일괄생성 (service_role은 서버 전용)
 
 let sb = null;
 let isServiceKey = false;
@@ -982,7 +973,39 @@ function hideTip(){ $('tip').classList.remove('show'); }
 // ═══════════════════════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════════════════════
-function showServiceKeyMode(){ $('skMode').style.display='block'; }
+// 🔐 Edge Function 호출 (현재 교사 세션 JWT 첨부)
+async function edgeCall(payload){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session) throw new Error('로그인이 필요합니다');
+  const res = await fetch(EDGE_FN, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+session.access_token,
+      'apikey':SUPABASE_ANON,
+    },
+    body: JSON.stringify(payload),
+  });
+  let j={}; try{ j = await res.json(); }catch{}
+  if(!res.ok) throw new Error(j.error || ('요청 실패 ('+res.status+')'));
+  return j;
+}
+
+// 교사 등록 (초대코드 검증은 서버에서)
+async function doRegister(invite){
+  const subPreset = T_SUBJECT_PRESETS.find(p => p.id === sgSelectedSubject);
+  const grade = $('sgGrade').value;
+  const { teacher } = await edgeCall({
+    action:'register',
+    name: ($('sgName').value||'').trim(),
+    subject_id: sgSelectedSubject,
+    subject_label: subPreset?.label || sgSelectedSubject,
+    subject_icon: subPreset?.icon || '📚',
+    grade: grade ? Number(grade) : null,
+    invite_code: invite,
+  });
+  return teacher;
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // 교사 과목 프리셋 (학생앱과 동일)
@@ -1051,10 +1074,16 @@ async function teacherLogin(){
   // teachers 테이블에서 교사 정보 로드
   isServiceKey = false;
   const uid = authData.user.id;
-  const {data:teacher, error:tErr} = await sb.from('teachers').select('*').eq('auth_id', uid).maybeSingle();
-  if(tErr) console.warn('teachers lookup:', tErr.message);
-  currentTeacher = teacher || null;
-
+  const {data:teacher} = await sb.from('teachers').select('*').eq('auth_id', uid).maybeSingle();
+  if(!teacher){
+    // 인증은 됐지만 교사 등록(teachers 행)이 없음 → 회원가입 탭에서 초대코드로 등록 완료 유도
+    err.textContent='로그인은 됐지만 교사 등록이 필요해요. "📝 회원가입" 탭에서 정보와 초대코드를 입력해 등록을 완료하세요.';
+    err.classList.add('show');
+    switchAuthTab('signup');
+    $('sgEmail').value = email;
+    return;
+  }
+  currentTeacher = teacher;
   showDashboard();
 }
 
@@ -1075,66 +1104,42 @@ async function teacherSignup(){
 
   $('sgBtn').disabled = true;
 
-  // 1) Supabase Auth에 계정 생성
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-  const { data:authData, error:authErr } = await sb.auth.signUp({ email, password:pw });
-  if(authErr){
+  const invite = ($('sgInvite').value || '').trim();
+  if(!invite){ $('sgBtn').disabled=false; err.textContent='교사 초대코드를 입력해주세요'; err.classList.add('show'); return; }
+
+  try{
+    // 1) Auth 계정 확보 — 신규면 signUp, 이미 있으면 signIn
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    let { data:authData, error:authErr } = await sb.auth.signUp({ email, password:pw });
+    if(authErr && /already|registered|exists/i.test(authErr.message||'')){
+      // 이미 가입된 계정 → 로그인 시도 (등록만 마무리하는 경우)
+      const r = await sb.auth.signInWithPassword({ email, password:pw });
+      authData = r.data; authErr = r.error;
+    }
+    if(authErr) throw new Error(authErr.message);
+
+    // 2) 세션 확보 (이메일 인증이 켜져 있으면 세션이 없을 수 있음)
+    let { data:{ session } } = await sb.auth.getSession();
+    if(!session){
+      const r = await sb.auth.signInWithPassword({ email, password:pw });
+      if(r.error){
+        $('sgBtn').disabled=false;
+        err.textContent='계정은 생성됐어요. 이메일 인증을 켜두셨다면 인증 후 로그인하면 등록이 완료됩니다.';
+        err.classList.add('show'); switchAuthTab('login'); $('authEmail').value=email; return;
+      }
+    }
+
+    // 3) Edge Function 으로 교사 등록 (초대코드 서버 검증)
+    const teacher = await doRegister(invite);
     $('sgBtn').disabled = false;
-    err.textContent = '가입 실패: ' + authErr.message;
-    err.classList.add('show');
-    return;
-  }
-
-  const uid = authData.user?.id;
-  if(!uid){
+    isServiceKey = false;
+    currentTeacher = teacher;
+    showDashboard();
+  }catch(e){
     $('sgBtn').disabled = false;
-    err.textContent = '계정 생성됨 — 이메일 인증 후 로그인해주세요';
-    err.classList.add('show');
-    // 이메일 인증 필요한 경우
-    switchAuthTab('login');
-    return;
-  }
-
-  // 2) teachers 테이블에 교사 정보 저장
-  const subPreset = T_SUBJECT_PRESETS.find(p => p.id === sgSelectedSubject);
-  const {error:insErr} = await sb.from('teachers').insert({
-    auth_id: uid,
-    name: name,
-    subject_id: sgSelectedSubject,
-    subject_label: subPreset?.label || sgSelectedSubject,
-    subject_icon: subPreset?.icon || '📚',
-    grade: grade ? Number(grade) : null,
-  });
-  $('sgBtn').disabled = false;
-
-  if(insErr){
-    console.warn('teachers insert:', insErr.message);
-    // 테이블이 없을 수 있으니 경고만
-    err.textContent = '계정은 생성됨. 교사 프로필 저장 실패: ' + insErr.message;
+    err.textContent = '가입 실패: ' + (e.message||e);
     err.classList.add('show');
   }
-
-  // 로그인 처리
-  isServiceKey = false;
-  currentTeacher = {
-    auth_id: uid, name, subject_id: sgSelectedSubject,
-    subject_label: subPreset?.label, subject_icon: subPreset?.icon,
-    grade: grade ? Number(grade) : null
-  };
-
-  showDashboard();
-}
-
-function serviceKeyLogin(){
-  const url = $('skUrl').value.trim();
-  const key = $('skKey').value.trim();
-  const err = $('authErr');
-  err.classList.remove('show');
-  if(!url||!key){ err.textContent='URL과 Key를 모두 입력하세요'; err.classList.add('show'); return; }
-  sb = window.supabase.createClient(url, key, { auth:{autoRefreshToken:false, persistSession:false} });
-  isServiceKey = true;
-  currentTeacher = null;
-  showDashboard();
 }
 
 function showDashboard(){
@@ -1223,7 +1228,7 @@ async function loadAll(){
     $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo}`;
   }catch(e){
     console.error('loadAll error:', e);
-    alert('데이터 로드 실패: '+(e.message||e)+'\n\nService Role Key 인지 확인하세요.\n\nRLS 정책이 profiles/questions 테이블을 막고 있을 수 있습니다.');
+    alert('데이터 로드 실패: '+(e.message||e)+'\n\n교사 계정으로 로그인했는지, 그리고 security_v5.sql 정책이 적용됐는지 확인하세요.');
   }
   btn.classList.remove('loading');
   hideLoader();
@@ -3063,8 +3068,8 @@ document.addEventListener('keydown', e=>{
 // 📋 학생 일괄 생성 (CSV/Excel 명렬표 업로드)
 // ═══════════════════════════════════════════════════════════════════
 function openBulkCreate(){
-  if(isServiceKey){
-    alert('Service Role Key로 접속하면 사용할 수 없어요.\n교사 계정으로 로그인 후 사용하세요.');
+  if(!currentTeacher){
+    alert('교사 계정으로 로그인한 뒤 사용할 수 있어요.');
     return;
   }
   $('mBulk').classList.add('show');
@@ -3205,53 +3210,22 @@ function parseCSV(text){
 
 async function submitBulkCreate(){
   if(!_bulkParsed.length){ alert('파일을 먼저 선택하세요'); return; }
-  if(!confirm(`${_bulkParsed.length}명의 계정을 생성합니다. 계속할까요?\n\n* 이미 가입된 학생은 건너뜁니다.\n* 시간이 다소 걸릴 수 있습니다 (학생 1명당 약 1초).`)) return;
+  if(!confirm(`${_bulkParsed.length}명의 계정을 생성합니다. 계속할까요?\n\n* 이미 가입된 학생은 건너뜁니다.\n* 서버에서 한 번에 처리됩니다.`)) return;
 
   const btn = $('bulkSubmitBtn');
   btn.disabled = true;
   const result = $('bulkResult');
-  result.innerHTML = '<div style="padding:12px;color:var(--ink2)">⏳ 계정 생성 중... (0/' + _bulkParsed.length + ')</div>';
+  result.innerHTML = `<div style="padding:12px;color:var(--ink2)">⏳ 서버에서 ${_bulkParsed.length}명 생성 중...</div>`;
 
-  // 익명 클라이언트 사용 (signUp용)
-  const tempSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  const success = [], failed = [];
-  for(let i = 0; i < _bulkParsed.length; i++){
-    const s = _bulkParsed[i];
-    const email = `s${s.grade}_${s.class_no}_${s.number}@__SCHOOL_DOMAIN__`.replace('__SCHOOL_DOMAIN__', 'haenuri.app');
-    try{
-      const {data:authData, error:authErr} = await tempSb.auth.signUp({
-        email, password: s.password
-      });
-      if(authErr){
-        if(authErr.message.includes('already registered') || authErr.message.includes('User already')){
-          failed.push({s, reason: '이미 가입됨'});
-        } else {
-          failed.push({s, reason: authErr.message});
-        }
-      } else {
-        // 프로필 정보 저장 (서비스 클라이언트 또는 인증된 sb로)
-        const uid = authData.user?.id;
-        if(uid){
-          await sb.from('profiles').upsert({
-            id: uid,
-            name: s.name,
-            grade: s.grade,
-            class_no: s.class_no,
-            number: s.number
-          });
-          success.push(s);
-        } else {
-          failed.push({s, reason: '계정 생성됨, 프로필 보류 (이메일 인증 필요?)'});
-        }
-      }
-    }catch(e){
-      failed.push({s, reason: e.message});
-    }
-    result.innerHTML = `<div style="padding:12px;color:var(--ink2)">⏳ 진행 중... (${i+1}/${_bulkParsed.length}) — 성공 ${success.length} / 실패 ${failed.length}</div>`;
-    // 로그인 세션 정리 (다음 가입을 위해)
-    await tempSb.auth.signOut();
-    await new Promise(r => setTimeout(r, 200)); // rate limit 방지
+  let success = [], failed = [];
+  try{
+    const j = await edgeCall({ action:'bulk_create', students:_bulkParsed });
+    success = j.success || [];
+    failed  = j.failed  || [];
+  }catch(e){
+    btn.disabled = false;
+    result.innerHTML = `<div style="padding:12px;color:var(--ar)">생성 실패: ${esc(e.message||String(e))}</div>`;
+    return;
   }
 
   let html = `<div style="padding:12px;background:rgba(93,184,110,.1);border:1px solid var(--pr);border-radius:4px;margin-bottom:8px">
@@ -3262,14 +3236,13 @@ async function submitBulkCreate(){
     html += `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--ar);font-weight:600">실패 ${failed.length}건 보기</summary>
       <div style="margin-top:8px;font-size:11px;max-height:200px;overflow-y:auto">
         ${failed.map(f => `<div style="padding:4px 0;border-bottom:1px solid var(--rule)">
-          ${f.s.grade}-${f.s.class_no}-${f.s.number} ${esc(f.s.name)}: <span style="color:var(--ar)">${esc(f.reason)}</span>
+          ${esc(f.tag||'')}: <span style="color:var(--ar)">${esc(f.reason||'')}</span>
         </div>`).join('')}
       </div>
     </details>`;
   }
   result.innerHTML = html;
   btn.disabled = false;
-  // 데이터 새로고침
   setTimeout(() => loadAll(), 1000);
 }
 </script>
@@ -3429,10 +3402,6 @@ let _matPending = []; // [{file, preview, name, type, kind}]
 let _matEditId = null;
 
 function openMaterials(){
-  if(isServiceKey){
-    alert('Service Role Key로는 사용할 수 없어요. 교사 계정으로 로그인하세요.');
-    return;
-  }
   if(!currentTeacher?.id){
     alert('교사 로그인이 필요해요.');
     return;
