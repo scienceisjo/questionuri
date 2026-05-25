@@ -526,6 +526,52 @@ body.print-report-mode .dd-overlay{display:none !important}
 /* 해누리 로고 */
 .hn-logo-t{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;filter:drop-shadow(0 1px 4px rgba(0,0,0,.25));transition:transform .2s;vertical-align:middle}
 .hn-logo-t:hover{transform:scale(1.08)}
+
+/* 🎯 자가체크 뷰 + 📥 내보내기 */
+.exp-btn{padding:6px 12px;border:1.5px solid var(--pr);background:var(--surface);color:var(--pr);border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;transition:.15s}
+.exp-btn:hover{background:var(--pr);color:#fff}
+.sc-summary{background:var(--surface2);border:1px solid var(--rule);border-radius:6px;padding:16px;margin-bottom:18px}
+.sc-sum-stats{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:14px}
+.sc-sum-stats>div{display:flex;flex-direction:column}
+.sc-sum-stats b{font-size:24px;color:var(--pd);font-family:var(--mono)}
+.sc-sum-stats span{font-size:11px;color:var(--ink2)}
+.sc-dist{display:flex;flex-direction:column;gap:5px}
+.sc-dist-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink2)}
+.sc-dist-l{flex:0 0 150px}
+.sc-dist-bar{flex:1;height:12px;background:rgba(45,106,62,.1);border-radius:999px;overflow:hidden}
+.sc-dist-bar i{display:block;height:100%;background:linear-gradient(90deg,#5CB86E,#2D6A3E);border-radius:999px}
+.sc-dist-row b{flex:0 0 28px;text-align:right;font-family:var(--mono);color:var(--pd)}
+.sc-stu{border:1px solid var(--rule);border-radius:6px;margin-bottom:12px;overflow:hidden}
+.sc-stu-h{background:var(--surface2);padding:10px 14px;font-weight:700;color:var(--pd);font-size:13px;display:flex;align-items:center;gap:8px}
+.sc-stu-n{font-size:11px;font-weight:400;color:var(--ink2);font-family:var(--mono)}
+.sc-q{padding:11px 14px;border-top:1px solid var(--rule)}
+.sc-q-t{font-size:13px;color:var(--ink);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sc-q-c{font-size:11px;color:#B45309;font-weight:700;font-family:var(--mono)}
+.sc-q-r{display:flex;gap:10px;font-size:12px;padding:4px 0 4px 14px;border-left:2px solid rgba(45,106,62,.25);margin:3px 0 3px 4px}
+.sc-q-ic{flex:0 0 145px;color:var(--pr);font-weight:600}
+.sc-q-rs{flex:1;color:var(--ink2);line-height:1.5}
+
+/* 📈 성장·리포트 뷰 */
+.gv-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.gv-card{flex:1;min-width:130px;border:1px solid var(--rule);border-radius:8px;padding:14px;background:var(--surface2);text-align:center}
+.gv-card b{display:block;font-size:26px;color:var(--pd);font-family:var(--mono)}
+.gv-card span{font-size:11px;color:var(--ink2)}
+.gv-card.hi{background:linear-gradient(135deg,#EAF8EC,#DCF1E1);border-color:var(--pr)}
+.gv-bar{display:flex;height:30px;border-radius:8px;overflow:hidden;border:1px solid var(--rule)}
+.gv-bar-seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;min-width:0;white-space:nowrap}
+.gv-bar-seg.before{background:linear-gradient(135deg,#F5A623,#E8901C)}
+.gv-bar-seg.after{background:linear-gradient(135deg,#5CB86E,#2D6A3E)}
+.gv-note{font-size:12px;color:var(--ink2);margin:8px 0 4px}
+.gv-h{font-size:14px;color:var(--pd);margin:20px 0 8px}
+.gv-table{width:100%;border-collapse:collapse}
+.gv-table th,.gv-table td{border:1px solid var(--rule);padding:7px 10px;text-align:center;font-size:12px}
+.gv-table th{background:var(--surface2);color:var(--pd)}
+.gv-ok{color:var(--pr);font-weight:700}
+.gv-low{color:#B45309}
+.gv-chains{display:flex;flex-direction:column;gap:6px}
+.gv-chain{display:flex;align-items:center;gap:8px;font-size:12px;background:var(--surface2);border:1px solid var(--rule);border-radius:6px;padding:7px 10px}
+.gv-chain i{color:var(--pr);font-style:normal;font-weight:700}
+.gv-from{color:var(--ink2);flex:1}.gv-to{color:var(--pd);font-weight:600;flex:1}
 </style>
 </head>
 <body>
@@ -639,6 +685,8 @@ body.print-report-mode .dd-overlay{display:none !important}
       <button class="vm-tab on" data-view="default" onclick="switchView('default')">📊 종합 현황</button>
       <button class="vm-tab" data-view="subjects" onclick="switchView('subjects')">📚 과목별 보기</button>
       <button class="vm-tab" data-view="students" onclick="switchView('students')">👩‍🎓 학생별 보기</button>
+      <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">🎯 자가체크</button>
+      <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
     </div>
 
     <!-- ALERTS (주목 학생) -->
@@ -879,6 +927,39 @@ body.print-report-mode .dd-overlay{display:none !important}
       </div>
     </div>
 
+    <!-- ═════════ VIEW: 자가체크 + 내보내기 ═════════ -->
+    <div class="view-body" id="viewSelfcheck" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>🎯 좋은 질문 자가체크</h2>
+          <span class="sub">학생들이 7가지 특성에 단 근거 모아보기 · 📥 생기부·과세특용 내보내기</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="exp-btn" onclick="exportQuestionsCSV()">📥 질문 상세 CSV</button>
+            <button class="exp-btn" onclick="exportStudentsCSV()">📥 학생 요약 CSV</button>
+            <button class="exp-btn" onclick="exportSelfcheckCSV()">📥 자가체크 근거 CSV</button>
+          </div>
+        </div>
+        <div class="section-body pad">
+          <div id="selfcheckSummary"></div>
+          <div id="selfcheckBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════ VIEW: 성장·리포트 ═════════ -->
+    <div class="view-body" id="viewGrowth" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>📈 질문 성장 · 단계 분석</h2>
+          <span class="sub">수업 전→후 질문이 늘어난 "건강한 수업" 지표 · 확장 현황</span>
+          <div style="margin-left:auto">
+            <button class="exp-btn" onclick="printClassReport()">🖨️ 학급 리포트 인쇄 / PDF</button>
+          </div>
+        </div>
+        <div class="section-body pad" id="growthBody"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -915,8 +996,8 @@ body.print-report-mode .dd-overlay{display:none !important}
 // ═══════════════════════════════════════════════════════════════════
 // ⚙️ SUPABASE — 학생 앱과 같은 프로젝트
 // ═══════════════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://kpnfxcvnzashdpwnlrev.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwbmZ4Y3ZuemFzaGRwd25scmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzkxNDIsImV4cCI6MjA5MTkxNTE0Mn0.bBUAbH3_pLDZmbEzF7NRR3Y93KhhkQMR7eoSR-urRdE';
+const SUPABASE_URL  = 'https://hmzklbrksfdhzsgwzfyg.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_OFVhbjVPbJiMWXVz2nKQuw_m6RmVVZE';
 const EDGE_FN = SUPABASE_URL + '/functions/v1/teacher-admin';  // 🔐 교사 등록·일괄생성 (service_role은 서버 전용)
 
 let sb = null;
@@ -1400,7 +1481,231 @@ function applyFilters(){
     renderSummary();
     renderAlerts();
     renderStudentsView();
+  } else if(activeView === 'selfcheck'){
+    renderSummary();
+    renderAlerts();
+    renderSelfcheckView();
+  } else if(activeView === 'growth'){
+    renderSummary();
+    renderAlerts();
+    renderGrowthView();
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🎯 자가체크 모아보기 + 📥 내보내기 (생기부/과세특용)
+// ═══════════════════════════════════════════════════════════════════
+const GOOD_Q = [
+  {n:1, icon:'🔓', t:'정답이 하나가 아니에요'},
+  {n:2, icon:'🤔', t:'머리를 굴리게 해요'},
+  {n:3, icon:'🧠', t:'깊게 생각하게 해요'},
+  {n:4, icon:'🔗', t:'다른 것과 이어져요'},
+  {n:5, icon:'🌱', t:'또 다른 질문을 낳아요'},
+  {n:6, icon:'📌', t:'"왜?"에 답할 수 있어요'},
+  {n:7, icon:'🔁', t:'계속 떠올라요'},
+];
+function scValid(e){ return !!(e && e.checked && (e.reason||'').trim()); }
+function scCount(q){ const sc=q.self_check; if(!sc) return 0; let n=0; GOOD_Q.forEach(g=>{ if(scValid(sc[g.n])) n++; }); return n; }
+function pLabel(p){ return `${p.grade??'?'}-${p.class_no??'?'}-${p.number??'?'} ${p.name||'(이름없음)'}`; }
+function qStatus(q){ return q.resolved ? '해결' : (allQuestions.some(x=>x.parent_id===q.id) ? '확장됨' : '탐구중'); }
+function scText(q){ const sc=q.self_check; if(!sc) return ''; return GOOD_Q.filter(g=>scValid(sc[g.n])).map(g=>`[${g.t}] ${sc[g.n].reason}`).join(' / '); }
+
+function renderSelfcheckView(){
+  const pm={}; allProfiles.forEach(p=>pm[p.id]=p);
+  const scQs = filteredQuestions.filter(q=>scCount(q)>0);
+  const sum=$('selfcheckSummary'), body=$('selfcheckBody');
+  if(!scQs.length){
+    sum.innerHTML='';
+    body.innerHTML='<div class="empty-row" style="padding:40px">아직 자가체크한 질문이 없어요.<br><span style="font-size:11px;color:var(--ink2)">학생 앱에서 🎯 자가체크 시 근거까지 입력하면 여기에 모입니다.</span></div>';
+    return;
+  }
+  const dist={}; GOOD_Q.forEach(g=>dist[g.n]=0);
+  scQs.forEach(q=>GOOD_Q.forEach(g=>{ if(scValid(q.self_check[g.n])) dist[g.n]++; }));
+  const studentsWith=new Set(scQs.map(q=>q.user_id)).size;
+  const avg=(scQs.reduce((a,q)=>a+scCount(q),0)/scQs.length).toFixed(1);
+  const maxD=Math.max(1,...Object.values(dist));
+  sum.innerHTML=`
+    <div class="sc-summary">
+      <div class="sc-sum-stats">
+        <div><b>${studentsWith}</b><span>자가체크한 학생</span></div>
+        <div><b>${scQs.length}</b><span>자가체크한 질문</span></div>
+        <div><b>${avg}/7</b><span>평균 충족 특성</span></div>
+      </div>
+      <div class="sc-dist">
+        ${GOOD_Q.map(g=>`<div class="sc-dist-row"><span class="sc-dist-l">${g.icon} ${g.t}</span><span class="sc-dist-bar"><i style="width:${Math.round(100*dist[g.n]/maxD)}%"></i></span><b>${dist[g.n]}</b></div>`).join('')}
+      </div>
+    </div>`;
+  const byStu={};
+  scQs.forEach(q=>{ (byStu[q.user_id]=byStu[q.user_id]||[]).push(q); });
+  const order=Object.keys(byStu).sort((a,b)=>{
+    const pa=pm[a]||{}, pb=pm[b]||{};
+    return ((pa.grade||0)-(pb.grade||0))||((pa.class_no||0)-(pb.class_no||0))||((pa.number||0)-(pb.number||0));
+  });
+  body.innerHTML=order.map(uid=>{
+    const p=pm[uid]||{}, qs=byStu[uid];
+    return `<div class="sc-stu">
+      <div class="sc-stu-h">${esc(pLabel(p))} <span class="sc-stu-n">자가체크 ${qs.length}건</span></div>
+      ${qs.map(q=>`<div class="sc-q">
+        <div class="sc-q-t">${q.resolved?'✅':'❓'} ${esc(q.text)} <span class="sc-q-c">🎯 ${scCount(q)}/7</span></div>
+        ${GOOD_Q.filter(g=>scValid(q.self_check[g.n])).map(g=>`<div class="sc-q-r"><span class="sc-q-ic">${g.icon} ${esc(g.t)}</span><span class="sc-q-rs">${esc(q.self_check[g.n].reason)}</span></div>`).join('')}
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ── CSV 내보내기 ──────────────────────────────────────────────────
+function csvCell(v){ v=(v==null?'':String(v)); return /[",\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function downloadCSV(filename, rows){
+  const csv='\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'); // BOM → 엑셀 한글 깨짐 방지
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function exportQuestionsCSV(){
+  if(!filteredQuestions.length){ alert('내보낼 질문이 없어요. 필터를 확인하세요.'); return; }
+  const pm={}; allProfiles.forEach(p=>pm[p.id]=p);
+  const brByQ={}; allBranches.forEach(b=>{ brByQ[b.question_id]=(brByQ[b.question_id]||0)+1; });
+  const rows=[['학년','반','번호','이름','질문','단계','상태','물','꼬리질문','자가체크충족','자가체크근거','작성일']];
+  filteredQuestions.forEach(q=>{
+    const p=pm[q.user_id]||{};
+    rows.push([p.grade,p.class_no,p.number,p.name,q.text,(q.phase==='after'?'수업후':'수업전'),qStatus(q),q.water_count||0,brByQ[q.id]||0,scCount(q),scText(q),(q.created_at||'').slice(0,10)]);
+  });
+  downloadCSV(`해누리_질문상세_${today()}.csv`, rows);
+}
+function exportStudentsCSV(){
+  if(!filteredStudents.length){ alert('내보낼 학생이 없어요.'); return; }
+  const rows=[['학년','반','번호','이름','질문수','해결수','해결률(%)','확장질문수','꼬리질문','받은공감','평균자가체크','강점특성']];
+  filteredStudents.forEach(s=>{
+    const myQs=filteredQuestions.filter(q=>q.user_id===s.id);
+    const expanded=myQs.filter(q=>allQuestions.some(x=>x.parent_id===q.id)).length;
+    const scd=myQs.filter(q=>scCount(q)>0);
+    const avgSc=scd.length?(scd.reduce((a,q)=>a+scCount(q),0)/scd.length).toFixed(1):'';
+    const dist={}; GOOD_Q.forEach(g=>dist[g.n]=0);
+    myQs.forEach(q=>q.self_check&&GOOD_Q.forEach(g=>{ if(scValid(q.self_check[g.n])) dist[g.n]++; }));
+    const top=GOOD_Q.slice().sort((a,b)=>dist[b.n]-dist[a.n]).filter(g=>dist[g.n]>0).slice(0,2).map(g=>g.t).join(', ');
+    rows.push([s.grade,s.class_no,s.number,s.name,s.total,s.resolved,s.pct,expanded,s.branches,s.waters_got,avgSc,top]);
+  });
+  downloadCSV(`해누리_학생요약_${today()}.csv`, rows);
+}
+function exportSelfcheckCSV(){
+  const pm={}; allProfiles.forEach(p=>pm[p.id]=p);
+  const rows=[['학년','반','번호','이름','질문','특성번호','특성','근거']];
+  filteredQuestions.filter(q=>scCount(q)>0).forEach(q=>{
+    const p=pm[q.user_id]||{};
+    GOOD_Q.forEach(g=>{ if(scValid(q.self_check[g.n])) rows.push([p.grade,p.class_no,p.number,p.name,q.text,g.n,g.t,q.self_check[g.n].reason]); });
+  });
+  if(rows.length===1){ alert('자가체크 근거가 있는 질문이 없어요.'); return; }
+  downloadCSV(`해누리_자가체크근거_${today()}.csv`, rows);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 📈 질문 성장 · 단계 분석 + 🖨️ 학급 리포트
+// ═══════════════════════════════════════════════════════════════════
+function computeGrowth(){
+  const pm={}; allProfiles.forEach(p=>pm[p.id]=p);
+  const before=filteredQuestions.filter(q=>(q.phase||'before')!=='after').length;
+  const after =filteredQuestions.filter(q=>q.phase==='after').length;
+  const grown =filteredQuestions.filter(q=>q.parent_id).length;
+  const expandedParents=filteredQuestions.filter(q=>allQuestions.some(x=>x.parent_id===q.id)).length;
+  const cls={};
+  filteredQuestions.forEach(q=>{
+    const p=pm[q.user_id]||{}; const key=`${p.grade??'?'}-${p.class_no??'?'}`;
+    if(!cls[key]) cls[key]={key,grade:p.grade||0,class_no:p.class_no||0,before:0,after:0,expanded:0,total:0,students:new Set()};
+    const c=cls[key]; c.total++;
+    if(q.phase==='after') c.after++; else c.before++;
+    if(allQuestions.some(x=>x.parent_id===q.id)) c.expanded++;
+    c.students.add(q.user_id);
+  });
+  const byClass=Object.values(cls).map(c=>({...c,students:c.students.size}))
+    .sort((a,b)=>(a.grade-b.grade)||(a.class_no-b.class_no));
+  const qm={}; allQuestions.forEach(q=>qm[q.id]=q);
+  const chains=filteredQuestions.filter(q=>q.parent_id&&qm[q.parent_id]).slice(0,8)
+    .map(q=>({from:qm[q.parent_id].text, to:q.text}));
+  return {before,after,grown,expandedParents,byClass,chains,total:filteredQuestions.length};
+}
+
+function renderGrowthView(){
+  const body=$('growthBody');
+  if(!filteredQuestions.length){ body.innerHTML='<div class="empty-row" style="padding:40px">해당 조건의 질문이 없어요</div>'; return; }
+  const g=computeGrowth(); const tot=(g.before+g.after)||1;
+  body.innerHTML=`
+    <div class="gv-cards">
+      <div class="gv-card"><b>${g.before}</b><span>🌅 수업 전(열기) 질문</span></div>
+      <div class="gv-card"><b>${g.after}</b><span>🌙 수업 후(닫기) 질문</span></div>
+      <div class="gv-card hi"><b>${g.after>0?'+'+g.after:'0'}</b><span>수업 후 늘어난 질문</span></div>
+      <div class="gv-card"><b>${g.grown}</b><span>🌿 확장으로 자란 질문</span></div>
+    </div>
+    <div class="gv-bar">
+      <div class="gv-bar-seg before" style="width:${Math.round(100*g.before/tot)}%">🌅 ${g.before}</div>
+      <div class="gv-bar-seg after" style="width:${Math.round(100*g.after/tot)}%">🌙 ${g.after}</div>
+    </div>
+    <p class="gv-note">${g.after>0?'🌳 수업 후 질문이 생겼어요 — 좋은 수업은 더 많은 질문을 남깁니다.':'아직 수업 후(닫기) 질문이 적어요. 수업을 질문으로 닫는 활동을 권해보세요.'}</p>
+    <h3 class="gv-h">반별 질문 성장</h3>
+    <table class="gv-table">
+      <thead><tr><th>학년-반</th><th>학생</th><th>전체</th><th>🌅 수업 전</th><th>🌙 수업 후</th><th>🌿 확장</th><th>건강도</th></tr></thead>
+      <tbody>${g.byClass.map(c=>{
+        const healthy=c.after>0; const ratio=c.total?Math.round(100*c.after/c.total):0;
+        return `<tr><td><b>${c.grade}-${c.class_no}</b></td><td>${c.students}</td><td>${c.total}</td><td>${c.before}</td><td>${c.after}</td><td>${c.expanded}</td><td>${healthy?`<span class="gv-ok">🌳 ${ratio}%</span>`:'<span class="gv-low">🌱 시작 단계</span>'}</td></tr>`;
+      }).join('')}</tbody>
+    </table>
+    ${g.chains.length?`<h3 class="gv-h">🌿 질문이 자란 사례</h3>
+      <div class="gv-chains">${g.chains.map(ch=>`<div class="gv-chain"><span class="gv-from">${esc(ch.from)}</span><i>→</i><span class="gv-to">${esc(ch.to)}</span></div>`).join('')}</div>`:''}`;
+}
+
+function printClassReport(){
+  if(!filteredQuestions.length){ alert('인쇄할 데이터가 없어요. 필터를 확인하세요.'); return; }
+  const g=computeGrowth();
+  const resolved=filteredQuestions.filter(q=>q.resolved).length;
+  const pct=filteredQuestions.length?Math.round(100*resolved/filteredQuestions.length):0;
+  const scd=filteredQuestions.filter(q=>scCount(q)>0);
+  const avgSc=scd.length?(scd.reduce((a,q)=>a+scCount(q),0)/scd.length).toFixed(1):'-';
+  const gF=$('fGrade').value, cF=$('fClass').value, sF=$('fSubject').value;
+  const scope=[gF?gF+'학년':'', cF?cF+'반':'', sF?((allSubjects.find(s=>s.id===sF)||{}).label||sF):''].filter(Boolean).join(' ')||'전체';
+  const studentRows=filteredStudents.slice().sort((a,b)=>(a.grade-b.grade)||(a.class_no-b.class_no)||(a.number-b.number)).map(s=>{
+    const myQs=filteredQuestions.filter(q=>q.user_id===s.id);
+    const expanded=myQs.filter(q=>allQuestions.some(x=>x.parent_id===q.id)).length;
+    const sc=myQs.filter(q=>scCount(q)>0);
+    const avg=sc.length?(sc.reduce((a,q)=>a+scCount(q),0)/sc.length).toFixed(1):'-';
+    return `<tr><td>${s.grade}-${s.class_no}-${s.number}</td><td>${esc(s.name||'')}</td><td>${s.total}</td><td>${s.resolved}</td><td>${s.pct}%</td><td>${expanded}</td><td>${avg}</td></tr>`;
+  }).join('');
+  const classRows=g.byClass.map(c=>`<tr><td>${c.grade}-${c.class_no}</td><td>${c.students}</td><td>${c.total}</td><td>${c.before}</td><td>${c.after}</td><td>${c.expanded}</td></tr>`).join('');
+  const teacher=(currentTeacher&&currentTeacher.name)?currentTeacher.name:'';
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>해누리 학급 리포트</title>
+  <style>
+    *{box-sizing:border-box} body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1a2421;margin:32px;font-size:13px}
+    h1{font-size:22px;margin:0 0 4px;color:#184B28} h2{font-size:15px;margin:22px 0 8px;color:#2D6A3E;border-bottom:2px solid #2D6A3E;padding-bottom:4px}
+    .meta{color:#555;font-size:12px;margin-bottom:6px}
+    .cards{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+    .card{border:1px solid #ccc;border-radius:8px;padding:10px 16px;min-width:110px}
+    .card b{display:block;font-size:22px;color:#184B28} .card span{font-size:11px;color:#555}
+    table{width:100%;border-collapse:collapse;margin-top:6px} th,td{border:1px solid #ccc;padding:5px 8px;text-align:center;font-size:12px}
+    th{background:#EAF3EC;color:#184B28} td:nth-child(2){text-align:left}
+    .note{background:#F0FAF0;border:1px solid #cde7d2;border-radius:6px;padding:8px 12px;margin:8px 0;font-size:12px}
+    @media print{body{margin:12mm}.no-print{display:none}}
+    .foot{margin-top:24px;color:#888;font-size:10px;text-align:center}
+  </style></head><body>
+    <h1>🌳 해누리 질문 과수원 — 학급 리포트</h1>
+    <div class="meta">범위: ${esc(scope)} ${teacher?(' · 교사: '+esc(teacher)):''} · 작성일: ${today()}</div>
+    <div class="cards">
+      <div class="card"><b>${filteredStudents.length}</b><span>학생</span></div>
+      <div class="card"><b>${filteredQuestions.length}</b><span>질문</span></div>
+      <div class="card"><b>${pct}%</b><span>해결률 (${resolved}/${filteredQuestions.length})</span></div>
+      <div class="card"><b>${g.grown}</b><span>확장 질문</span></div>
+      <div class="card"><b>${avgSc}/7</b><span>평균 자가체크</span></div>
+    </div>
+    <h2>질문 성장 (수업 전 → 후)</h2>
+    <div class="note">🌅 수업 전 ${g.before}개 · 🌙 수업 후 ${g.after}개 · 🌿 확장으로 자란 질문 ${g.grown}개</div>
+    <h2>반별 현황</h2>
+    <table><thead><tr><th>학년-반</th><th>학생</th><th>전체</th><th>수업 전</th><th>수업 후</th><th>확장</th></tr></thead><tbody>${classRows}</tbody></table>
+    <h2>학생별 요약</h2>
+    <table><thead><tr><th>학번</th><th>이름</th><th>질문</th><th>해결</th><th>해결률</th><th>확장</th><th>평균 자가체크</th></tr></thead><tbody>${studentRows}</tbody></table>
+    <div class="foot">해누리 질문 과수원 · 자동 생성 리포트</div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(!w){ alert('팝업이 차단되었어요. 팝업 허용 후 다시 시도해주세요.'); return; }
+  w.document.write(html); w.document.close(); w.focus();
+  setTimeout(()=>{ try{w.print();}catch(e){} }, 500);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1416,6 +1721,8 @@ function switchView(view){
   $('viewDefault').style.display = view === 'default' ? '' : 'none';
   $('viewSubjects').style.display = view === 'subjects' ? '' : 'none';
   $('viewStudents').style.display = view === 'students' ? '' : 'none';
+  $('viewSelfcheck').style.display = view === 'selfcheck' ? '' : 'none';
+  $('viewGrowth').style.display = view === 'growth' ? '' : 'none';
   // 알림 섹션은 모든 뷰에서 표시
   applyFilters();
 }
