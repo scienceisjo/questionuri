@@ -385,9 +385,15 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .sub-row{background:#fff;border-bottom:1px solid var(--bd);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.sub-row::-webkit-scrollbar{display:none}
 
 /* 담당 선생님 선택 + 과목 빈 상태 */
-.teacher-sel{display:flex;align-items:center;padding:0 4px;flex-shrink:0}
-.teacher-dd{padding:5px 10px;border:1.5px solid rgba(93,184,110,.25);border-radius:8px;font-size:var(--fs-xxs);font-weight:600;color:var(--pd);background:rgba(93,184,110,.06);cursor:pointer;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.teacher-dd:focus{border-color:var(--pr);box-shadow:0 0 0 2px rgba(93,184,110,.15)}
+.teacher-sel{display:flex;align-items:center;gap:6px;padding:0 4px;flex-shrink:0;min-width:0}
+.teacher-sel-lbl{font-size:var(--fs-xxs);font-weight:700;color:var(--tl);flex-shrink:0;white-space:nowrap}
+.teacher-chips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;max-width:560px}
+.teacher-chips::-webkit-scrollbar{display:none}
+.teacher-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1.5px solid rgba(93,184,110,.3);border-radius:14px;font-size:var(--fs-xxs);font-weight:600;color:var(--tl);background:#fff;cursor:pointer;white-space:nowrap;transition:all .15s;user-select:none}
+.teacher-chip:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
+.teacher-chip.on{background:linear-gradient(135deg,rgba(93,184,110,.18),rgba(217,119,6,.10));border-color:var(--pr);color:var(--pd);box-shadow:0 1.5px 5px rgba(93,184,110,.15)}
+.teacher-chip.on::after{content:'✓';margin-left:2px;color:var(--pr);font-weight:800}
+.teacher-chip-empty{font-size:var(--fs-xxs);color:var(--tl);font-style:italic;padding:5px 8px}
 .sub-empty-msg{display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:var(--fs-xs);color:var(--tl);font-weight:600;white-space:nowrap;animation:pulse 2s ease-in-out infinite}
 .sub-in{max-width:1100px;margin:0 auto;display:flex;gap:2px;padding:var(--sp-1) var(--sp-2);min-width:max-content;align-items:center}
 .st{padding:clamp(5px,1vw,8px) clamp(10px,2.2vw,16px);border-radius:9px;background:transparent;color:var(--tl);font-weight:500;font-size:var(--fs-xs);display:flex;align-items:center;gap:4px;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .2s}.st.on{font-weight:700}
@@ -857,6 +863,26 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .fv-q{background:#fff;border:1.5px solid var(--bd);border-radius:clamp(10px,2.2vw,14px);padding:var(--sp-2) var(--sp-3);transition:all .2s}
 .fv-q:hover{border-color:var(--pl);box-shadow:0 3px 10px rgba(36,97,47,.06)}
 .fv-q.resolved{background:linear-gradient(135deg,rgba(93,184,110,.06),#fff)}
+/* 🍎 수확(해결) 기록 패널 + 표시 */
+.qc-harvest{margin:var(--sp-2) 0;padding:var(--sp-2);background:linear-gradient(135deg,rgba(232,93,93,.05),rgba(93,184,110,.06));border:1.5px solid rgba(232,93,93,.2);border-radius:12px}
+.qc-harvest-hdr{font-size:var(--fs-xs);font-weight:700;color:var(--pd);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.qc-harvest-fld{margin-bottom:10px}
+.qc-harvest-fld label{display:block;font-size:var(--fs-xxs);font-weight:700;color:var(--tx);margin-bottom:4px}
+.qc-harvest-fld label .opt{font-weight:400;color:var(--tl)}
+.qc-harvest-fld textarea{width:100%;min-height:52px;padding:8px 10px;border:1.5px solid var(--bd);border-radius:9px;font-size:var(--fs-xs);font-family:inherit;resize:vertical;background:#fff;line-height:1.5}
+.qc-harvest-fld textarea:focus{outline:none;border-color:var(--pr);box-shadow:0 0 0 2px rgba(93,184,110,.12)}
+.qc-harvest-fld textarea.wonder:focus{border-color:#7C6FD9;box-shadow:0 0 0 2px rgba(124,111,217,.12)}
+.qc-harvest-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.hv-cancel{padding:7px 14px;border-radius:8px;background:var(--bg2);color:var(--tl);font-size:var(--fs-xxs);font-weight:600;cursor:pointer}
+.hv-save{padding:7px 16px;border-radius:8px;background:linear-gradient(135deg,#E8835D,#E85D5D);color:#fff;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(232,93,93,.25)}
+.hv-save:hover{filter:brightness(1.05)}
+/* 수확 기록 표시 (해결된 질문 카드) */
+.qc-record{margin:10px 0 4px;padding:10px 12px;background:rgba(93,184,110,.05);border-left:3px solid var(--pr);border-radius:0 9px 9px 0}
+.qc-record-row{font-size:var(--fs-xs);line-height:1.55;margin:3px 0;color:var(--tx)}
+.qc-record-row b{color:var(--pd)}
+.qc-record-row.wonder b{color:#6A5ACD}
+.qc-record-edit{font-size:var(--fs-xxs);color:var(--tl);font-weight:600;cursor:pointer;margin-top:4px;display:inline-block}
+.qc-record-edit:hover{color:var(--pr)}
 .fv-q-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-1);margin-bottom:4px}
 .fv-q-txt{flex:1;font-size:var(--fs-sm);font-weight:600;color:var(--tx);line-height:1.4}
 .fv-q-fr{font-size:18px;flex-shrink:0}
@@ -865,6 +891,9 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .fv-q-meta .anon-bdg{background:rgba(158,158,158,.15);color:#616161;padding:1px 6px;border-radius:6px;font-weight:600}
 .fv-q-act{display:flex;gap:6px;margin-top:6px}
 .fv-w-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 12px;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border:1.5px solid #90CAF9;color:#1565C0;border-radius:clamp(8px,1.8vw,10px);font-size:var(--fs-xs);font-weight:700;cursor:pointer;transition:all .2s}
+.fv-vote-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 12px;background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:1.5px solid #FFB74D;color:#E65100;border-radius:clamp(8px,1.8vw,10px);font-size:var(--fs-xs);font-weight:700;cursor:pointer;transition:all .2s}
+.fv-vote-btn:hover{filter:brightness(1.03)}
+.fv-vote-btn.voted{background:linear-gradient(135deg,#FFE0B2,#FFCC80);border-color:#FB8C00}
 .fv-w-btn:hover:not(:disabled){background:linear-gradient(135deg,#BBDEFB,#90CAF9);transform:translateY(-1px);box-shadow:0 3px 8px rgba(33,150,243,.3)}
 .fv-w-btn:disabled{background:rgba(0,0,0,.04);color:var(--tl);border-color:var(--bd);cursor:not-allowed;opacity:.65}
 .fv-w-btn .wc-bdg{background:#fff;color:#1976D2;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700}
@@ -981,6 +1010,66 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .qc-expand-hdr{font-size:var(--fs-xs);color:var(--pd);margin-bottom:8px}
 .qc-expand-scaffold{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
 .exp-chip{font-size:11px;padding:4px 9px;border:1px solid rgba(63,139,79,.3);background:var(--card);color:var(--pr);border-radius:20px;cursor:pointer;font-family:inherit}
+.q-stems{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.q-stem{font-size:var(--fs-xxs);padding:4px 10px;border:1.3px dashed rgba(93,184,110,.45);background:rgba(93,184,110,.05);color:var(--pd);border-radius:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .12s}
+.q-stem:hover{background:rgba(93,184,110,.14);border-style:solid}
+.q-stems-lbl{font-size:var(--fs-xxs);color:var(--tl);font-weight:700;margin-right:2px;align-self:center}
+/* 🌿 교사의 되묻기 (학생 카드) */
+.qc-nudge{margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgba(124,111,217,.08),rgba(93,184,110,.08));border:1.5px solid rgba(124,111,217,.28);border-radius:12px}
+.qc-nudge-hdr{font-size:var(--fs-xxs);font-weight:800;color:#6A5ACD;margin-bottom:4px}
+.qc-nudge-txt{font-size:var(--fs-sm);font-weight:600;color:var(--tx);line-height:1.5}
+.qc-nudge-grow{margin-top:8px;padding:6px 12px;border-radius:9px;background:linear-gradient(135deg,#7C6FD9,#5CB86E);color:#fff;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:none}
+.qc-nudge-grow:hover{filter:brightness(1.06)}
+/* 📈 성장 거울 */
+.growth-area{max-width:840px;margin:0 auto;padding:var(--sp-2) 0}
+.gm-title{font-size:var(--fs-lg);font-weight:700;color:var(--pd);margin-bottom:2px}
+.gm-sub{font-size:var(--fs-xxs);color:var(--tl);margin-bottom:var(--sp-3)}
+.gm-empty{text-align:center;padding:48px 16px;color:var(--tl)}
+.gm-empty-em{font-size:42px;margin-bottom:8px}.gm-empty-t{font-weight:700;color:var(--tx);font-size:var(--fs-md)}.gm-empty-s{font-size:var(--fs-xs);margin-top:4px}
+.gm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-bottom:var(--sp-3)}
+.gm-card{background:linear-gradient(135deg,var(--card),rgba(93,184,110,.06));border:1.5px solid rgba(93,184,110,.18);border-radius:14px;padding:12px 10px;text-align:center}
+.gm-card b{display:block;font-size:24px;color:var(--pd);font-weight:800;line-height:1.1}
+.gm-card .gm-card-unit{font-size:13px;color:var(--tl)}
+.gm-card span{font-size:var(--fs-xxs);color:var(--tl);font-weight:600}
+.gm-phase{margin-bottom:var(--sp-3)}
+.gm-phase-bar{display:flex;height:34px;border-radius:10px;overflow:hidden;font-size:var(--fs-xxs);font-weight:700;color:#fff}
+.gm-phase-before{background:linear-gradient(135deg,#FBBF6E,#F59E2C);display:flex;align-items:center;justify-content:center;min-width:50px}
+.gm-phase-after{background:linear-gradient(135deg,#7C8FD9,#5B6FC0);display:flex;align-items:center;justify-content:center;min-width:50px}
+.gm-phase-note{font-size:var(--fs-xxs);color:var(--tl);margin-top:5px}
+.gm-strong{background:rgba(93,184,110,.1);border-radius:10px;padding:9px 12px;font-size:var(--fs-xs);color:var(--tx);margin-bottom:var(--sp-2)}
+.gm-strong b{color:var(--pd)}
+.gm-sec-t{font-size:var(--fs-sm);font-weight:700;color:var(--pd);margin:var(--sp-3) 0 8px;padding-bottom:5px;border-bottom:1.5px solid var(--bd)}
+.gm-bars{display:flex;flex-direction:column;gap:5px}
+.gm-bar-row{display:flex;align-items:center;gap:8px;font-size:var(--fs-xxs)}
+.gm-bar-ic{width:18px;text-align:center;flex-shrink:0}
+.gm-bar-lbl{width:120px;flex-shrink:0;color:var(--tx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gm-bar-track{flex:1;height:12px;background:rgba(93,184,110,.1);border-radius:6px;overflow:hidden}
+.gm-bar-fill{display:block;height:100%;background:linear-gradient(90deg,#5CB86E,#3F8B4F);border-radius:6px;transition:width .5s}
+.gm-bar-n{width:24px;text-align:right;color:var(--pd);font-weight:700;flex-shrink:0}
+.gm-compare{display:flex;align-items:stretch;gap:8px}
+.gm-cmp-card{flex:1;background:var(--card);border:1.5px solid var(--bd);border-radius:12px;padding:11px 12px}
+.gm-cmp-card.recent{border-color:rgba(93,184,110,.4);background:linear-gradient(135deg,var(--card),rgba(93,184,110,.06))}
+.gm-cmp-tag{font-size:10px;color:var(--tl);font-weight:700;margin-bottom:5px}
+.gm-cmp-q{font-size:var(--fs-xs);color:var(--tx);font-weight:600;line-height:1.45;margin-bottom:6px}
+.gm-cmp-sc{font-size:10px;color:var(--pr);font-weight:700}
+.gm-cmp-arrow{display:flex;align-items:center;color:var(--pr);font-size:20px;font-weight:800;flex-shrink:0}
+.gm-wonders{display:flex;flex-direction:column;gap:6px}
+.gm-wonder{background:rgba(124,111,217,.07);border-left:3px solid #7C6FD9;border-radius:0 9px 9px 0;padding:8px 11px;font-size:var(--fs-xs);color:var(--tx);line-height:1.5}
+@media(max-width:560px){.gm-compare{flex-direction:column}.gm-cmp-arrow{transform:rotate(90deg);justify-content:center}.gm-bar-lbl{width:84px}}
+/* 🔴 라이브 질문 세션 배너 (학생) */
+.live-banner{margin:0 var(--sp-2) var(--sp-2);background:linear-gradient(135deg,#FFEBEE,#FFF8E1);border:2px solid #EF5350;border-radius:14px;padding:14px 16px;box-shadow:0 4px 16px rgba(239,83,80,.18);animation:livePulse 2.5s ease-in-out infinite}
+@keyframes livePulse{0%,100%{box-shadow:0 4px 16px rgba(239,83,80,.18)}50%{box-shadow:0 4px 22px rgba(239,83,80,.34)}}
+.live-banner-hdr{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);font-weight:800;color:#C62828;margin-bottom:4px}
+.live-dot{width:10px;height:10px;border-radius:50%;background:#EF5350;animation:liveBlink 1s steps(2,start) infinite}
+@keyframes liveBlink{50%{opacity:.25}}
+.live-banner-prompt{font-size:var(--fs-md);font-weight:700;color:var(--tx);line-height:1.5;margin-bottom:4px}
+.live-banner-meta{font-size:var(--fs-xxs);color:var(--tl);margin-bottom:10px}
+.live-banner-iw{display:flex;gap:6px}
+.live-banner-iw input{flex:1;padding:11px 13px;border:1.5px solid #EF9A9A;border-radius:10px;font-size:var(--fs-sm);font-family:inherit;background:#fff}
+.live-banner-iw input:focus{outline:none;border-color:#EF5350;box-shadow:0 0 0 3px rgba(239,83,80,.14)}
+.live-banner-send{padding:11px 18px;border-radius:10px;background:linear-gradient(135deg,#EF5350,#E53935);color:#fff;font-size:var(--fs-sm);font-weight:800;cursor:pointer;border:none;white-space:nowrap}
+.live-banner-send:hover{filter:brightness(1.05)}
+.live-banner-done{font-size:var(--fs-xxs);color:#2E7D32;font-weight:700;margin-top:7px}
 .exp-chip:hover{background:var(--pr);color:#fff}
 .qc-expand-input{width:100%;min-height:56px;border:1px solid var(--bd);border-radius:10px;padding:9px 11px;font-family:inherit;font-size:var(--fs-xs);resize:vertical;box-sizing:border-box}
 .qc-expand-btns{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
@@ -1446,8 +1535,10 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
     <button class="tn" data-tab="hall" onclick="swTab('hall')"><span>🏅</span>명예의 전당</button>
     <button class="tn" data-tab="deco" onclick="swTab('deco')"><span>🎨</span>꾸미기</button>
     <button class="tn" data-tab="ach" onclick="swTab('ach')"><span>🏆</span>업적</button>
+    <button class="tn" data-tab="growth" onclick="swTab('growth')"><span>📈</span>나의 성장</button>
   </div></div>
   <div class="tab-body">
+    <div id="liveBanner" class="live-banner" style="display:none"></div>
     <!-- 나무 탭 -->
     <div class="tp on" id="tp-tree"><div class="tp-inner">
       <div class="quote-box"><div class="quote-text" id="qTxt"></div><div class="quote-author" id="qAuth"></div></div>
@@ -1507,6 +1598,7 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
           <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter')addQ()">
           <button class="ba" id="addBtn" onclick="addQ()">심기</button>
         </div>
+        <div class="q-stems" id="qStems"></div>
         <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
           <button class="math-helper-btn" onclick="openMathHelper('qInp')" title="수식·화학식 입력 도우미">🧮 수식·화학식</button>
         </div>
@@ -1600,6 +1692,7 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
       <p style="font-size:var(--fs-xxs);color:var(--tl);margin-bottom:var(--sp-3)">지금까지 달성한 업적</p>
       <div class="ach-g" id="achG"></div>
     </div></div></div>
+    <div class="tp" id="tp-growth"><div class="tp-inner"><div class="growth-area" id="growthArea"></div></div></div>
   </div>
 </div>
 
@@ -2039,6 +2132,8 @@ const S = {
   phaseFilter:null,        // 질문 목록 단계 필터: null | 'before' | 'after'
   expandParentId:null,     // 🌿 지금 '키우는 중'인 원본 질문 id (인라인 확장 작성기)
   checkId:null,            // 🎯 지금 자가체크 중인 질문 id
+  harvestId:null,          // 🍎 지금 '수확(해결)' 기록 중인 질문 id
+  harvestEdit:false,       // 🍎 수확 패널이 '기록 수정' 모드인지(이미 해결됨)
   qView:'list',            // 📋 질문 보기 방식: 'list' | 'board'
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
@@ -2054,15 +2149,17 @@ const S = {
   trees:{},               // { subjectId: [ {id, name, icon, sort_order}, ... ] }
   activeTreeId:{},        // { subjectId: treeId } - 과목별 현재 포커스 나무
   pendingTreeId:null,     // 질문 작성 시 선택한 나무
-  // 🧑‍🏫 담당 선생님
+  // 🧑‍🏫 담당 선생님 (다중 지원)
   teacherList:[],         // 가입한 전체 교사 목록
-  myTeacherId:null,       // 내가 선택한 담당 선생님 id (teachers.id)
+  myTeacherIds:new Set(), // 내가 고른 담당 선생님들 id (teachers.id) — 여러 명 가능
   loginCount:0,           // 👋 나의 접속 횟수
 };
 
 const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','🍐','🌸','⭐','💎','🌰','🌻'];
 // 🌿 질문 키우기(확장) 사고 스캐폴드 — 더 나은 질문을 낳도록 돕는 출발 문구
 const EXPAND_PROMPTS = ['그래서 만약 ~라면?','왜 꼭 그래야 할까?','다른 경우에도 그럴까?','반대로 생각하면?','이건 무엇과 연결될까?','한 단계 더 들어가면?'];
+// 🪜 질문 만들기 비계 — 막막할 때 탭하면 입력칸에 깔리는 문장 시작틀
+const QUESTION_STEMS = ['왜 ','만약 ','어떻게 ','정말 ','무엇이 ','~와 ~는 어떻게 다를까?','~이 없다면?','왜 하필 '];
 const STICKERS=['🌸','🦋','🐝','🌺','🍃','☘️','🌻','🐞','🌈','💫','✨','🎵','❤️','🌟','🎀'];
 const EMOJIS=['📐','📖','🎨','🎵','🏃','🌐','💻','📊','🗺️','🔭','⚗️','🧲','🎭','📜','💡'];
 const TIPS=[
@@ -2519,6 +2616,7 @@ async function doLogin(){
 
 async function doLogout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
+  stopLivePolling();
   await sb.auth.signOut();
   document.body.classList.remove("is-guest");Object.assign(S,{guest:false,user:null,profile:null,name:'',grade:'',cls:'',num:'',questions:{},subjects:[],stickers:[],activeSub:'integrated',seeds:0,unlocked:['default'],activeTree:'default',frView:null});
   goTo('welcome');
@@ -2537,7 +2635,13 @@ async function bootstrapUser(){
     S.unlocked=prof.unlocked_items||['default'];
     if(!S.unlocked.includes('default')) S.unlocked.unshift('default');
     S.activeTree=prof.active_tree||'default';
-    S.myTeacherId=prof.teacher_id||null;
+    // 다중 담당 선생님: teacher_ids 배열 우선, 없으면 단일 teacher_id로 폴백
+    S.myTeacherIds = new Set();
+    if(Array.isArray(prof.teacher_ids) && prof.teacher_ids.length){
+      prof.teacher_ids.forEach(id => { if(id!=null) S.myTeacherIds.add(Number(id)); });
+    } else if(prof.teacher_id){
+      S.myTeacherIds.add(Number(prof.teacher_id));
+    }
     S.loginCount=prof.login_count||0;
     $('fruitSel').value=S.fruit;
     document.querySelectorAll('.season-btn').forEach(b=>b.classList.toggle('on',b.dataset.s===S.season));
@@ -2626,6 +2730,12 @@ async function bootstrapUser(){
       starred: q.starred||false,
       answer_text: q.answer_text||null,
       answer_files: q.answer_files||null,
+      finding: q.finding||null,
+      still_wondering: q.still_wondering||null,
+      teacher_nudge: q.teacher_nudge||null,
+      unit: q.unit||null,
+      explore_votes: q.explore_votes||0,
+      explore_voters: q.explore_voters||[],
       branches:[],
     });
     qIds.push(q.id);
@@ -2647,6 +2757,7 @@ async function bootstrapUser(){
   const {data:ts}=await sb.from('tree_state').select('*').eq('user_id',S.user.id).maybeSingle();
   if(ts&&ts.stickers) S.stickers=ts.stickers;
   hideLoading();
+  startLivePolling();   // 🔴 라이브 세션 감시 시작
 }
 
 async function updateStreak(){
@@ -2679,11 +2790,12 @@ function swTab(t){
   document.querySelectorAll('.tn').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   document.querySelectorAll('.tp').forEach(p=>p.classList.toggle('on',p.id==='tp-'+t));
   if(t==='deco'){renderDecoTree();renderSkTray();}
-  if(t==='questions'){renderTagPresets();renderFruitPicker();renderAnonTog();renderTreePicker();}
+  if(t==='questions'){renderTagPresets();renderFruitPicker();renderAnonTog();renderTreePicker();renderStems();}
   if(t==='forest') renderForest();
   if(t==='shop') renderShop();
   if(t==='hall') renderHallOfFame();
   if(t==='materials') renderMaterials();
+  if(t==='growth') renderGrowthMirror();
 }
 
 function render(){
@@ -2720,28 +2832,44 @@ async function changeFruit(v){
 function renderSubTabs(){
   const c=$('subTabs');c.innerHTML='';
 
-  // 🧑‍🏫 담당 선생님 선택 드롭다운
+  // 🧑‍🏫 담당 선생님 다중 선택 (칩 토글)
   const teacherEl = document.createElement('div');
   teacherEl.className = 'teacher-sel';
   if(S.teacherList.length){
-    const selTeacher = S.teacherList.find(t=>t.id===S.myTeacherId);
-    const sel = document.createElement('select');
-    sel.className = 'teacher-dd';
-    sel.innerHTML = `<option value="">${selTeacher ? '' : '👩‍🏫 담당 선생님을 골라주세요!'}</option>`;
+    const lbl = document.createElement('span');
+    lbl.className = 'teacher-sel-lbl';
+    lbl.textContent = '👩‍🏫 듣는 수업:';
+    teacherEl.appendChild(lbl);
+
+    const chipsBox = document.createElement('div');
+    chipsBox.className = 'teacher-chips';
     S.teacherList.forEach(t=>{
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = `${t.subject_icon||'📚'} ${t.name} 선생님 (${t.subject_label||''})`;
-      if(t.id === S.myTeacherId) opt.selected = true;
-      sel.appendChild(opt);
+      const chip = document.createElement('button');
+      const tid = Number(t.id);
+      chip.className = 'teacher-chip' + (S.myTeacherIds.has(tid) ? ' on' : '');
+      chip.type = 'button';
+      chip.textContent = `${t.subject_icon||'📚'} ${t.name} 선생님 (${t.subject_label||''})`;
+      chip.dataset.tid = tid;
+      chip.onclick = async ()=>{
+        const on = S.myTeacherIds.has(tid);
+        if(on) S.myTeacherIds.delete(tid); else S.myTeacherIds.add(tid);
+        chip.classList.toggle('on');
+        const arr = [...S.myTeacherIds];
+        // teacher_ids 배열 갱신 + 호환을 위해 teacher_id(첫 값)도 동기화
+        await sb.from('profiles').update({
+          teacher_ids: arr,
+          teacher_id: arr.length ? arr[0] : null
+        }).eq('id', S.user.id);
+        toast(on ? `${t.name} 선생님 수업을 뺐어요` : `${t.name} 선생님 수업을 들어요!`);
+      };
+      chipsBox.appendChild(chip);
     });
-    sel.onchange = async ()=>{
-      const tid = sel.value ? Number(sel.value) : null;
-      S.myTeacherId = tid;
-      await sb.from('profiles').update({teacher_id:tid}).eq('id',S.user.id);
-      toast(tid ? '👩‍🏫 담당 선생님이 지정됐어요!' : '담당 선생님을 해제했어요');
-    };
-    teacherEl.appendChild(sel);
+    teacherEl.appendChild(chipsBox);
+  } else {
+    const empty = document.createElement('span');
+    empty.className = 'teacher-chip-empty';
+    empty.textContent = '아직 등록된 선생님이 없어요';
+    teacherEl.appendChild(empty);
   }
   c.appendChild(teacherEl);
 
@@ -4318,6 +4446,21 @@ function setPendingTree(tid){
 // ============================================================================
 // 🍎 질문별 열매 선택 UI
 // ============================================================================
+function renderStems(){
+  const box = $('qStems'); if(!box) return;
+  box.innerHTML = '<span class="q-stems-lbl">🪜 막막하면:</span>' +
+    QUESTION_STEMS.map(s=>`<button class="q-stem" onclick="useStem('${esc(s)}')">${esc(s.trim()||s)}</button>`).join('');
+}
+function useStem(stem){
+  const inp = $('qInp'); if(!inp) return;
+  // 시작틀이 이미 비슷하게 들어가 있지 않으면 앞에 붙이고, 비어있으면 그대로
+  const cur = inp.value.trim();
+  inp.value = cur ? (stem + cur) : stem;
+  inp.focus();
+  // 커서를 끝으로
+  const v = inp.value; inp.value=''; inp.value=v;
+}
+
 function renderFruitPicker(){
   const c=$('qFrPick');if(!c) return;
   c.innerHTML='';
@@ -4598,6 +4741,12 @@ function renderQs(){
             ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}
           </div>
           ${questionTrail(q)}
+          ${q.teacher_nudge ? `
+            <div class="qc-nudge">
+              <div class="qc-nudge-hdr">🌿 선생님의 되묻기</div>
+              <div class="qc-nudge-txt" data-math="1">${escWithMath(q.teacher_nudge)}</div>
+              <button class="qc-nudge-grow" onclick="openExpand(${q.id})">🌱 이 되묻기로 질문 키우기</button>
+            </div>` : ''}
         </div>
         <div class="qc-a">
           <button class="qb qb-grow" onclick="openExpand(${q.id})" title="이 질문 키우기 — 더 깊은 질문으로">🌿+</button>
@@ -4628,6 +4777,17 @@ function renderQs(){
 
       ${/* 🎯 좋은 질문 자가체크 */
         S.checkId===q.id ? renderSelfCheckPanel(q) : ''}
+
+      ${/* 🍎 수확(해결) 기록 패널 */
+        S.harvestId===q.id ? renderHarvestPanel(q) : ''}
+
+      ${/* 🍎 수확 기록 표시 (해결됐고 기록이 있을 때) */
+        (q.resolved && (q.finding || q.still_wondering) && S.harvestId!==q.id) ? `
+        <div class="qc-record">
+          ${q.finding ? `<div class="qc-record-row">🍎 <b>알아낸 것</b> — ${escWithMath(q.finding)}</div>` : ''}
+          ${q.still_wondering ? `<div class="qc-record-row wonder">🌱 <b>아직 모르는 것</b> — ${escWithMath(q.still_wondering)}</div>` : ''}
+          <span class="qc-record-edit" onclick="openHarvest(${q.id})">✏️ 수확 기록 고치기</span>
+        </div>` : ''}
 
       ${/* 기존 답변 표시 */
         (q.answer_text || q.answer_files) ? `
@@ -4851,9 +5011,11 @@ async function addQ(){
   if(treeId && !String(treeId).startsWith('local_')){
     payload.tree_id = treeId;
   }
-  // 📚 수업 자료 연결
+  // 📚 수업 자료 연결 (자료의 단원을 질문에 상속)
   if(_pendingMaterialId){
     payload.material_id = _pendingMaterialId;
+    const _mat = (_materials||[]).find(m=>m.id===_pendingMaterialId);
+    if(_mat && _mat.unit) payload.unit = _mat.unit;
   }
 
   const {data,error}=await sb.from('questions').insert(payload).select().single();
@@ -4870,6 +5032,9 @@ async function addQ(){
     water_count:0, watered_by:[], branches:[],
     tree_id: treeId,
     material_id: data.material_id||null,
+    unit: data.unit||null, teacher_nudge:null,
+    finding:null, still_wondering:null,
+    explore_votes:0, explore_voters:[],
   });
 
   // 자료 연결이 있었으면 추가 보상 + 연결 해제
@@ -4909,15 +5074,46 @@ async function saveEd(id){
   S.editId=null;renderQs();
 }
 
+// 🍎 수확하기: 해결 버튼을 누르면 "알아낸 것/아직 모르는 것"을 적는 패널을 연다
+function openHarvest(id){
+  if(guestNudge()) return;
+  const q = qsInSub(S.activeSub).find(x=>x.id===id);
+  if(!q) return;
+  S.harvestEdit = !!q.resolved;   // 이미 해결된 질문이면 '기록 수정' 모드
+  S.harvestId = id;
+  S.checkId = null; S.expandParentId = null;
+  renderQs();
+  setTimeout(()=>{ const t=$('hvFind-'+id); if(t) t.focus(); }, 60);
+}
+function closeHarvest(){ S.harvestId=null; S.harvestEdit=false; renderQs(); }
+
+async function saveHarvest(id){
+  if(guestNudge()) return;
+  const q = qsInSub(S.activeSub).find(x=>x.id===id);
+  if(!q) return;
+  const finding = ($('hvFind-'+id)?.value||'').trim();
+  const wonder  = ($('hvWonder-'+id)?.value||'').trim();
+  const wasResolved = !!q.resolved;
+  const patch = { finding: finding||null, still_wondering: wonder||null };
+  if(!wasResolved) patch.resolved = true;  // 처음 수확이면 해결 처리
+  const {error}=await sb.from('questions').update(patch).eq('id',id).eq('user_id',S.user.id);
+  if(error){ alert('저장 실패: '+error.message); return; }
+  q.finding = patch.finding; q.still_wondering = patch.still_wondering;
+  if(!wasResolved){ q.resolved = true; await addSeeds(2, '🍎 열매 수확! +2 🌰'); }
+  S.harvestId=null; S.harvestEdit=false;
+  toast(wonder ? '🍎 수확! 아직 모르는 것도 멋진 씨앗이에요 🌱' : '🍎 수확했어요!');
+  render();
+}
+
+// 해결 토글(해제용) — 이미 해결된 열매를 다시 눌러 ○로 되돌릴 때
 async function togRes(id){
   if(guestNudge()) return;
   const q=qsInSub(S.activeSub).find(x=>x.id===id);
   if(!q) return;
-  const next=!q.resolved;
-  const {error}=await sb.from('questions').update({resolved:next}).eq('id',id).eq('user_id',S.user.id);
+  if(!q.resolved){ openHarvest(id); return; }  // 아직이면 수확 패널로
+  const {error}=await sb.from('questions').update({resolved:false}).eq('id',id).eq('user_id',S.user.id);
   if(error){alert('저장 실패: '+error.message);return;}
-  q.resolved=next;
-  if(next){await addSeeds(2, '🍎 열매 수확! +2 🌰');}
+  q.resolved=false;
   render();
 }
 
@@ -4990,6 +5186,25 @@ async function waterQ(ev, qid, ownerId){
   renderFrViewList();
 }
 
+// 🗳️ 함께 탐구하고 싶은 질문에 투표 (토글)
+async function voteExplore(ev, qid){
+  if(guestNudge()) return;
+  ev?.stopPropagation?.();
+  const q = S.frView?.questions?.find(x=>x.id===qid);
+  if(!q) return;
+  const voters = q.explore_voters||[];
+  const voted = voters.includes(S.user.id);
+  const newVoters = voted ? voters.filter(u=>u!==S.user.id) : [...voters, S.user.id];
+  const newCnt = Math.max(0, (q.explore_votes||0) + (voted?-1:1));
+  const {error}=await sb.from('questions')
+    .update({explore_votes:newCnt, explore_voters:newVoters})
+    .eq('id',qid);
+  if(error){ console.warn('vote failed:', error); toast('투표를 저장하지 못했어요 😢'); return; }
+  q.explore_votes=newCnt; q.explore_voters=newVoters;
+  toast(voted ? '투표를 취소했어요' : '🗳️ 함께 탐구하고 싶은 질문에 투표했어요!');
+  renderFrViewList();
+}
+
 // ============================================================================
 // 🌳 친구 나무 열기 — 우리반의 숲에서 클릭하면 해당 친구의 질문 목록 표시
 // ============================================================================
@@ -5029,6 +5244,8 @@ async function openFrView(profile){
       is_anonymous:q.is_anonymous||false,
       water_count:q.water_count||0,
       watered_by:q.watered_by||[],
+      explore_votes:q.explore_votes||0,
+      explore_voters:q.explore_voters||[],
       peer_answers: peerByQ[q.id] || []
     }));
     renderFrViewList();
@@ -5106,6 +5323,10 @@ function renderFrViewList(){
           <button class="fv-w-btn" onclick="waterQ(event,${q.id},'${esc(S.frView.profile.id)}')" ${disabled?'disabled':''}>
             ${watered?'💧 이미 물을 줬어요':'💧 나도 궁금해!'}
             ${q.water_count?`<span class="wc-bdg">${q.water_count}</span>`:''}
+          </button>
+          <button class="fv-vote-btn${(q.explore_voters||[]).includes(S.user?.id)?' voted':''}" onclick="voteExplore(event,${q.id})">
+            ${(q.explore_voters||[]).includes(S.user?.id)?'🗳️ 투표함':'🗳️ 같이 탐구하고 싶어요'}
+            ${q.explore_votes?`<span class="wc-bdg">${q.explore_votes}</span>`:''}
           </button>
           ${!hasMyPeerAnswer && S.frView.profile.id !== S.user?.id ? `
             <button class="fv-peer-btn" onclick="openPeerAnswer(${q.id})">
@@ -5298,18 +5519,111 @@ async function handleShopClick(it){
 // ============================================================================
 let _materials = [];
 
+// ── 🔴 라이브 질문 세션 (학생) — 폴링 기반 ──────────────────────────
+let _livePollTimer = null;
+let _liveSession = null;
+let _liveSentIds = new Set();
+
+function startLivePolling(){
+  if(_livePollTimer) return;
+  pollLiveSession();
+  _livePollTimer = setInterval(pollLiveSession, 4000);
+}
+function stopLivePolling(){
+  if(_livePollTimer){ clearInterval(_livePollTimer); _livePollTimer=null; }
+  _liveSession=null;
+  const b=$('liveBanner'); if(b){ b.style.display='none'; b.innerHTML=''; }
+}
+async function pollLiveSession(){
+  if(!S.user) return;
+  try{
+    const g = S.grade?Number(S.grade):null;
+    const {data} = await sb.from('live_sessions').select('*')
+      .eq('status','open').order('created_at',{ascending:false}).limit(10);
+    let sess = (data||[]).filter(s=>{
+      const gradeOk = !s.target_grade || Number(s.target_grade)===g;
+      const classOk = !s.target_class || Number(s.target_class)===Number(S.cls);
+      return gradeOk && classOk;
+    });
+    // 내가 듣는 선생님 세션을 우선
+    const mine = sess.filter(s => S.myTeacherIds && S.myTeacherIds.has(Number(s.teacher_id)));
+    const pick = (mine.length?mine:sess)[0] || null;
+    if(pick){
+      const changed = !_liveSession || _liveSession.id!==pick.id;
+      _liveSession = pick;
+      if(changed) renderLiveBanner(pick);
+    } else if(_liveSession){
+      _liveSession=null;
+      const b=$('liveBanner'); if(b){ b.style.display='none'; b.innerHTML=''; }
+    }
+  }catch(e){ /* 테이블 없거나 권한 — 조용히 무시 */ }
+}
+function renderLiveBanner(s){
+  const b=$('liveBanner'); if(!b) return;
+  const sent=_liveSentIds.has(s.id);
+  b.style.display='';
+  b.innerHTML=`
+    <div class="live-banner-hdr"><span class="live-dot"></span>🔴 지금 라이브 질문 중!${s.teacher_name?` · ${esc(s.teacher_name)} 선생님`:''}</div>
+    <div class="live-banner-prompt">${escWithMath(s.prompt)}</div>
+    <div class="live-banner-meta">${s.subject_label?('📚 '+esc(s.subject_label)+' · '):''}떠오른 질문을 바로 보내보세요!</div>
+    <div class="live-banner-iw">
+      <input id="liveInp-${s.id}" placeholder="궁금한 것을 적어보세요..." onkeydown="if(event.key==='Enter')submitLiveQuestion(${s.id})">
+      <button class="live-banner-send" onclick="submitLiveQuestion(${s.id})">질문 보내기 🚀</button>
+    </div>
+    <div class="live-banner-done" id="liveDone-${s.id}" style="${sent?'':'display:none'}">✓ 보냈어요! 더 보내도 좋아요 🌱</div>`;
+  if(window.MathJax?.typesetPromise){ try{ MathJax.typesetPromise([b]); }catch(e){} }
+}
+async function submitLiveQuestion(sessionId){
+  if(guestNudge()) return;
+  const inp=$('liveInp-'+sessionId); if(!inp) return;
+  const t=inp.value.trim(); if(!t){ inp.focus(); return; }
+  const s=_liveSession; if(!s||s.id!==sessionId){ toast('세션이 종료됐어요'); return; }
+  // 세션 과목에 맞는 나무 찾기 (없으면 활성 나무/orphan)
+  let subId = s.subject_id || S.activeSub || null;
+  let treeId = null;
+  if(subId && S.trees[subId] && S.trees[subId][0]) treeId = S.trees[subId][0].id;
+  else if(S.activeSub && S.trees[S.activeSub] && S.trees[S.activeSub][0]){ subId=S.activeSub; treeId=S.trees[S.activeSub][0].id; }
+  const payload={
+    user_id:S.user.id, subject_id:subId, text:t,
+    tags:[], question_date:td(), phase:'before',
+    is_anonymous:false, water_count:0, watered_by:[],
+    session_id:sessionId
+  };
+  if(treeId && !String(treeId).startsWith('local_')) payload.tree_id=treeId;
+  const {data,error}=await sb.from('questions').insert(payload).select().single();
+  if(error){ toast('보내지 못했어요: '+error.message); return; }
+  // 로컬에도 반영 (해당 과목/나무 트리에)
+  if(subId){
+    const tid = treeId || 'orphan';
+    if(!S.questions[subId]) S.questions[subId]={};
+    if(!S.questions[subId][tid]) S.questions[subId][tid]=[];
+    S.questions[subId][tid].push({
+      id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
+      tags:[],fruit:null,is_anonymous:false,phase:'before',parent_id:null,self_check:null,
+      water_count:0,watered_by:[],branches:[],tree_id:tid,material_id:null,
+      unit:null,teacher_nudge:null,finding:null,still_wondering:null,explore_votes:0,explore_voters:[],
+    });
+  }
+  _liveSentIds.add(sessionId);
+  inp.value='';
+  const d=$('liveDone-'+sessionId); if(d) d.style.display='';
+  await addSeeds(1,'🔴 라이브 질문 +1 🌰');
+  toast('🚀 질문을 보냈어요!');
+}
+
 async function renderMaterials(){
   const el = $('matAreaList');
   el.innerHTML = '<div class="mat-area-empty"><div class="em">⏳</div><div>자료를 불러오는 중...</div></div>';
 
   try{
-    // 필터 기준: 담당 선생님(내가 듣는 과목)을 올린 자료를 보여줌
-    //  - 담당 선생님을 골랐으면: 그 선생님이 올린 자료(또는 같은 과목)만
+    // 필터 기준: 학생이 듣는 선생님들의 자료를 보여줌 (다중 교사 지원)
+    //  - 선생님을 한 명이라도 골랐으면: 그 선생님들이 올린 자료(또는 같은 과목)만
     //  - 아직 안 골랐으면: 내 학년·반에 맞는 자료를 모두 보여줌(놓치지 않게)
     //  - target_grade/target_class 가 지정돼 있으면 추가로 좁힘 (NULL이면 전체)
-    const myTeacherId = S.myTeacherId || null;
-    const myTeacher = (S.teacherList||[]).find(t => Number(t.id) === Number(myTeacherId));
-    const myTeacherSubjId = myTeacher ? myTeacher.subject_id : null;
+    const myTeacherIds = S.myTeacherIds || new Set();
+    const myTeacherSubjIds = new Set(
+      (S.teacherList||[]).filter(t => myTeacherIds.has(Number(t.id))).map(t => t.subject_id).filter(Boolean)
+    );
     const myGrade = S.grade ? Number(S.grade) : null;
     const myClass = S.cls ? Number(S.cls) : null;
 
@@ -5321,10 +5635,10 @@ async function renderMaterials(){
       const gradeOk = !m.target_grade || Number(m.target_grade) === myGrade;
       const classOk = !m.target_class || Number(m.target_class) === myClass;
       if(!gradeOk || !classOk) return false;
-      // 담당 선생님을 골랐으면 그 선생님(또는 같은 과목) 자료만, 안 골랐으면 학년·반 맞는 자료 모두
-      if(!myTeacherId) return true;
-      return Number(m.teacher_id) === Number(myTeacherId)
-          || (myTeacherSubjId && m.subject_id === myTeacherSubjId);
+      // 선생님을 한 명이라도 골랐으면 그 선생님들(또는 같은 과목) 자료만, 안 골랐으면 학년·반 맞는 자료 모두
+      if(!myTeacherIds.size) return true;
+      return myTeacherIds.has(Number(m.teacher_id))
+          || (m.subject_id && myTeacherSubjIds.has(m.subject_id));
     });
 
     if(!_materials.length){
@@ -6586,6 +6900,122 @@ function selfCheckCount(q){
   for(const g of GOOD_Q){ const e=sc[g.n]; if(e && e.checked && (e.reason||'').trim()) n++; }
   return n;
 }
+
+// 📈 학생 본인의 성장 거울 — 내 질문 데이터로 나의 변화를 비춰줌
+function renderGrowthMirror(){
+  const box = $('growthArea'); if(!box) return;
+  const qs = allQs(S);
+  if(!qs.length){
+    box.innerHTML = `<div class="gm-empty"><div class="gm-empty-em">🌱</div>
+      <div class="gm-empty-t">아직 심은 질문이 없어요</div>
+      <div class="gm-empty-s">질문을 심으면 여기서 나의 성장을 볼 수 있어요!</div></div>`;
+    return;
+  }
+  const total = qs.length;
+  const resolved = qs.filter(q=>q.resolved).length;
+  const pct = total ? Math.round(100*resolved/total) : 0;
+  const after = qs.filter(q=>q.phase==='after').length;
+  const before = total - after;
+  const grown = qs.filter(q=>q.parent_id).length;           // 더 깊은 질문으로 키운 횟수
+  const scd = qs.filter(q=>selfCheckCount(q)>0);
+  const avgSc = scd.length ? (scd.reduce((a,q)=>a+selfCheckCount(q),0)/scd.length).toFixed(1) : '0';
+
+  // 특성별 충족 횟수
+  const tally = {}; GOOD_Q.forEach(g=>tally[g.n]=0);
+  qs.forEach(q=>{ const sc=q.self_check; if(sc) GOOD_Q.forEach(g=>{ const e=sc[g.n]; if(e&&e.checked&&(e.reason||'').trim()) tally[g.n]++; }); });
+  const maxTally = Math.max(1, ...Object.values(tally));
+  const topG = GOOD_Q.slice().sort((a,b)=>tally[b.n]-tally[a.n])[0];
+
+  // 첫 질문 ↔ 최근 질문
+  const sorted = qs.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  const firstQ = sorted[0], lastQ = sorted[sorted.length-1];
+
+  // 아직 모르는 것 모음 (다음 질문의 씨앗)
+  const wonders = qs.filter(q=>q.still_wondering && q.still_wondering.trim())
+                    .map(q=>({w:q.still_wondering, t:q.text})).slice(0,8);
+
+  const barRow = GOOD_Q.map(g=>{
+    const w = Math.round(100*tally[g.n]/maxTally);
+    return `<div class="gm-bar-row" title="${esc(g.t)}">
+      <span class="gm-bar-ic">${g.icon}</span>
+      <span class="gm-bar-lbl">${esc(g.t)}</span>
+      <span class="gm-bar-track"><span class="gm-bar-fill" style="width:${w}%"></span></span>
+      <span class="gm-bar-n">${tally[g.n]}</span>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <h3 class="gm-title">📈 나의 성장</h3>
+    <p class="gm-sub">내가 던진 질문들이 그려낸 나의 모습이에요 🌳</p>
+
+    <div class="gm-cards">
+      <div class="gm-card"><b>${total}</b><span>심은 질문</span></div>
+      <div class="gm-card"><b>${resolved}</b><span>수확한 질문</span></div>
+      <div class="gm-card"><b>${pct}%</b><span>수확률</span></div>
+      <div class="gm-card"><b>${grown}</b><span>🌿 키운 질문</span></div>
+      <div class="gm-card"><b>${avgSc}<span class="gm-card-unit">/7</span></b><span>평균 좋은질문</span></div>
+    </div>
+
+    <div class="gm-phase">
+      <div class="gm-phase-bar">
+        <span class="gm-phase-before" style="flex:${Math.max(before,0.001)}">🌅 열기 ${before}</span>
+        <span class="gm-phase-after" style="flex:${Math.max(after,0.001)}">🌙 닫기 ${after}</span>
+      </div>
+      <div class="gm-phase-note">수업을 닫으며 던진 질문이 많을수록, 수업에서 더 깊이 배웠다는 뜻이에요.</div>
+    </div>
+
+    ${topG && tally[topG.n]>0 ? `<div class="gm-strong">💪 나의 강점: <b>${topG.icon} ${esc(topG.t)}</b> (${tally[topG.n]}번)</div>` : ''}
+
+    <div class="gm-sec-t">🎯 어떤 '좋은 질문'을 많이 했나</div>
+    <div class="gm-bars">${barRow}</div>
+
+    ${(firstQ && lastQ && firstQ.id!==lastQ.id) ? `
+      <div class="gm-sec-t">🪞 첫 질문 ↔ 최근 질문</div>
+      <div class="gm-compare">
+        <div class="gm-cmp-card">
+          <div class="gm-cmp-tag">🌱 첫 질문 · ${esc(firstQ.date||'')}</div>
+          <div class="gm-cmp-q">${escWithMath(firstQ.text)}</div>
+          <div class="gm-cmp-sc">🎯 ${selfCheckCount(firstQ)}/7</div>
+        </div>
+        <div class="gm-cmp-arrow">→</div>
+        <div class="gm-cmp-card recent">
+          <div class="gm-cmp-tag">🌳 최근 질문 · ${esc(lastQ.date||'')}</div>
+          <div class="gm-cmp-q">${escWithMath(lastQ.text)}</div>
+          <div class="gm-cmp-sc">🎯 ${selfCheckCount(lastQ)}/7</div>
+        </div>
+      </div>` : ''}
+
+    ${wonders.length ? `
+      <div class="gm-sec-t">🌱 아직 모르는 것 — 다음 질문의 씨앗</div>
+      <div class="gm-wonders">
+        ${wonders.map(o=>`<div class="gm-wonder">🌱 ${escWithMath(o.w)}</div>`).join('')}
+      </div>` : ''}
+  `;
+  if(window.MathJax && window.MathJax.typesetPromise){ try{ MathJax.typesetPromise([box]); }catch(e){} }
+}
+
+function renderHarvestPanel(q){
+  const editing = S.harvestEdit;
+  const f = q.finding ? esc(q.finding) : '';
+  const w = q.still_wondering ? esc(q.still_wondering) : '';
+  return `
+    <div class="qc-harvest">
+      <div class="qc-harvest-hdr">🍎 ${editing ? '수확 기록 고치기' : '이 질문, 수확할까요?'}</div>
+      <div class="qc-harvest-fld">
+        <label>🍎 알아낸 것 <span class="opt">(선택)</span></label>
+        <textarea id="hvFind-${q.id}" placeholder="이 질문을 탐구하면서 알게 된 것을 적어보세요">${f}</textarea>
+      </div>
+      <div class="qc-harvest-fld">
+        <label>🌱 그래도 아직 모르는 것 <span class="opt">(선택 — 남겨두면 다음 질문의 씨앗이 돼요)</span></label>
+        <textarea class="wonder" id="hvWonder-${q.id}" placeholder="아직 궁금한 점, 새로 생긴 의문을 적어보세요">${w}</textarea>
+      </div>
+      <div class="qc-harvest-btns">
+        <button class="hv-cancel" onclick="closeHarvest()">취소</button>
+        <button class="hv-save" onclick="saveHarvest(${q.id})">${editing ? '💾 기록 저장' : '🍎 수확하기'}</button>
+      </div>
+    </div>`;
+}
+
 function renderSelfCheckPanel(q){
   const sc = q.self_check || {};
   const rows = GOOD_Q.map(g=>{
