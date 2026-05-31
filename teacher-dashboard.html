@@ -411,6 +411,30 @@ td strong{font-weight:700;color:var(--ink)}
 /* 토스트 */
 .t-toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:#23311F;color:#FFFCF4;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:all .25s;z-index:9999;max-width:90vw;text-align:center}
 .t-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* 🗂️ 질문 보드 (대시보드) */
+.bmode-btn{padding:7px 14px;min-height:36px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.bmode-btn.on{background:var(--ac);color:#1A2421;border-color:transparent}
+.db-board{display:flex;gap:14px;overflow-x:auto;padding:18px;-webkit-overflow-scrolling:touch}
+.db-col{flex:0 0 290px;background:var(--surface2);border:1px solid var(--rule);border-radius:10px;display:flex;flex-direction:column;max-height:68vh}
+.db-col-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;font-size:13.5px;font-weight:800;color:var(--ink);border-bottom:1.5px solid var(--rule);position:sticky;top:0;background:var(--surface);border-radius:10px 10px 0 0}
+.db-col-cnt{background:var(--pr);color:#fff;font-size:11px;font-weight:700;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.db-col-body{overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.db-card{background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:10px 12px;cursor:pointer;transition:all .12s}
+.db-card:hover{border-color:var(--pr);box-shadow:0 2px 8px rgba(45,106,62,.1)}
+.db-card.done{background:linear-gradient(135deg,var(--surface),rgba(92,184,110,.08));border-color:rgba(92,184,110,.35)}
+.db-card-q{font-size:13px;font-weight:600;color:var(--ink);line-height:1.45;margin-bottom:6px}
+.db-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:10.5px;color:var(--ink3);font-weight:600;font-family:var(--mono)}
+.db-done{color:var(--pr)!important}
+.db-map-note{padding:16px 18px 0;font-size:12.5px;color:var(--ink3)}
+.db-map-wrap{padding:8px 18px 22px;overflow-x:auto}
+.db-map-svg{width:100%;min-width:560px;height:auto;display:block}
+.board-unit-sel{padding:6px 10px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;max-width:240px}
+.board-unit-sel:focus{outline:none;border-color:var(--pr)}
+.db-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 18px;font-size:13px;color:var(--ink2);background:rgba(45,106,62,.05);border-bottom:1px solid var(--rule)}
+.db-filter-bar b{color:var(--pr)}
+.db-filter-clear{margin-left:4px;padding:4px 11px;border-radius:14px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font-size:11.5px;font-weight:700;cursor:pointer}
+.db-filter-clear:hover{border-color:var(--pr);color:var(--pr)}
+.db-hint{margin:12px 18px 0;padding:9px 13px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;font-size:12px;color:var(--ink2);line-height:1.55}
 .dd-q-branches{margin-top:10px;padding:10px 12px;background:var(--surface2);border-left:3px solid var(--pl);border-radius:0 3px 3px 0;font-size:11.5px}
 .dd-q-branch{padding:6px 0;border-bottom:1px dashed var(--rule2)}
 .dd-q-branch:last-child{border-bottom:none}
@@ -705,6 +729,7 @@ body.print-report-mode .dd-overlay{display:none !important}
       <button class="vm-tab" data-view="subjects" onclick="switchView('subjects')">📚 과목별 보기</button>
       <button class="vm-tab" data-view="students" onclick="switchView('students')">👩‍🎓 학생별 보기</button>
       <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">🎯 자가체크</button>
+      <button class="vm-tab" data-view="board" onclick="switchView('board')">🗂️ 질문 보드</button>
       <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
     </div>
 
@@ -962,6 +987,22 @@ body.print-report-mode .dd-overlay{display:none !important}
           <div id="selfcheckSummary"></div>
           <div id="selfcheckBody"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ═════════ VIEW: 질문 보드 (단원별) ═════════ -->
+    <div class="view-body" id="viewBoard" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>🗂️ 질문 보드 — 단원별 모아보기</h2>
+          <span class="sub">학급 질문을 단원(성취기준) 기준으로 모아봐요 · 위 필터(학년·반·과목)가 함께 적용됩니다</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="boardUnitSel" class="board-unit-sel" onchange="onBoardUnitChange(this.value)"><option value="">📑 전체 단원</option></select>
+            <button class="bmode-btn on" data-bmode="board" onclick="setBoardMode('board')">🗂️ 보드</button>
+            <button class="bmode-btn" data-bmode="map" onclick="setBoardMode('map')">🧠 마인드맵</button>
+          </div>
+        </div>
+        <div class="section-body" id="boardBody"></div>
       </div>
     </div>
 
@@ -1527,6 +1568,9 @@ function applyFilters(){
     renderSummary();
     renderAlerts();
     renderSelfcheckView();
+  } else if(activeView === 'board'){
+    renderAlerts();
+    renderBoardView();
   } else if(activeView === 'growth'){
     renderSummary();
     renderAlerts();
@@ -1871,6 +1915,127 @@ async function endLiveSession(){
   renderLiveForm();
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// 🗂️ 질문 보드 — 단원별 (보드 / 마인드맵)
+// ═══════════════════════════════════════════════════════════════════
+let _boardMode = 'board';
+let _boardUnit = null;       // null = 전체, 아니면 단원 키('__none__' 포함)
+let _mapNodeKeys = [];       // 마인드맵 노드 인덱스 → 단원 키
+function setBoardMode(m){
+  _boardMode = m;
+  document.querySelectorAll('.bmode-btn').forEach(b=>b.classList.toggle('on', b.dataset.bmode===m));
+  renderBoardView();
+}
+function _groupByUnit(qs){
+  const groups={};
+  qs.forEach(q=>{ const u=(q.unit&&q.unit.trim())?q.unit.trim():'__none__'; (groups[u]=groups[u]||[]).push(q); });
+  const units=Object.keys(groups).filter(u=>u!=='__none__').sort((a,b)=>groups[b].length-groups[a].length);
+  if(groups['__none__']) units.push('__none__');
+  return {groups, units};
+}
+function _unitLabel(u){ return u==='__none__' ? '단원 미지정' : u; }
+function _attr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function onBoardUnitChange(v){ _boardUnit = (v==='') ? null : v; renderBoardView(); }
+function clearBoardUnit(){ _boardUnit = null; renderBoardView(); }
+function mapNodeClick(i){
+  const key=_mapNodeKeys[i];
+  if(!key || key==='__etc__') return;   // '기타' 묶음은 단일 단원이 아니므로 무시
+  _boardUnit = key;
+  setBoardMode('board');
+}
+function renderBoardView(){
+  const box=$('boardBody'); if(!box) return;
+  const qs=filteredQuestions||[];
+  const {groups, units}=_groupByUnit(qs);
+  // 단원 드롭다운 채우기
+  const sel=$('boardUnitSel');
+  if(sel){
+    if(_boardUnit!=null && !units.includes(_boardUnit)) _boardUnit=null;   // 데이터에 없으면 초기화
+    sel.innerHTML = `<option value="">📑 전체 단원 (${qs.length})</option>` +
+      units.map(u=>`<option value="${_attr(u)}">${esc(_unitLabel(u))} (${groups[u].length})</option>`).join('');
+    sel.value = _boardUnit==null ? '' : _boardUnit;
+  }
+  if(!qs.length){ box.innerHTML='<div class="empty-row" style="padding:40px">표시할 질문이 없어요. 위 필터를 확인하세요.</div>'; return; }
+  if(_boardMode==='map') renderUnitMindmap(box, groups, units, qs.length);
+  else renderUnitBoard(box, groups, units);
+}
+function _boardCol(u, arr, pm){
+  const title=u==='__none__'?'🗂️ 단원 미지정':'📑 '+esc(u);
+  const cards=arr.slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).map(q=>{
+    const p=pm[q.user_id];
+    const who=q.is_anonymous?'🕊 익명':(p?`${p.grade}-${p.class_no}-${p.number} ${esc(p.name||'')}`:'학생');
+    const sc=scCount(q); const phase=q.phase==='after'?'🌙':'🌅';
+    return `<div class="db-card${q.resolved?' done':''}" onclick="openDrilldown('${q.user_id}')" title="학생 상세 보기">
+      <div class="db-card-q">${phase} ${esc(q.text)}</div>
+      <div class="db-card-meta">
+        <span>${who}</span>
+        ${q.resolved?'<span class="db-done">🍎</span>':''}
+        ${sc?`<span>🎯${sc}</span>`:''}
+        ${q.water_count?`<span>💧${q.water_count}</span>`:''}
+        ${q.explore_votes?`<span>🗳️${q.explore_votes}</span>`:''}
+        ${q.teacher_nudge?'<span title="되묻기 있음">🌿</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="db-col"><div class="db-col-hdr">${title}<span class="db-col-cnt">${arr.length}</span></div><div class="db-col-body">${cards}</div></div>`;
+}
+function renderUnitBoard(box, groups, units){
+  const pm=profileMap();
+  const showUnits = _boardUnit!=null ? units.filter(u=>u===_boardUnit) : units;
+  const total = showUnits.reduce((s,u)=>s+(groups[u]?groups[u].length:0),0);
+  const cols = showUnits.map(u=>_boardCol(u, groups[u]||[], pm)).join('');
+  let header='';
+  if(_boardUnit!=null){
+    const arr=groups[_boardUnit]||[];
+    const res=arr.filter(q=>q.resolved).length;
+    const scd=arr.filter(q=>scCount(q)>0);
+    const avg=scd.length?(scd.reduce((a,q)=>a+scCount(q),0)/scd.length).toFixed(1):'-';
+    const nud=arr.filter(q=>q.teacher_nudge).length;
+    header = `<div class="db-filter-bar">📑 <b>${esc(_unitLabel(_boardUnit))}</b> · 질문 ${arr.length} · 해결 ${res} · 평균 자가체크 ${avg}/7 · 되묻기 ${nud} <button class="db-filter-clear" onclick="clearBoardUnit()">✕ 전체 단원</button></div>`;
+  }
+  const noneHint = (_boardUnit==='__none__')
+    ? `<div class="db-hint">💡 학생 상세(드릴다운)의 각 질문에서 “📑 단원” 버튼으로 단원을 지정하면 여기 단원별로 정리돼요. 자료 업로드 시 단원을 적어두면 그 자료로 만든 질문에 자동으로 붙습니다.</div>` : '';
+  box.innerHTML = header + noneHint + `<div class="db-board">${cols}</div>`;
+}
+function renderUnitMindmap(box, groups, units, total){
+  let nodes=units.map(u=>({u, n:groups[u].length, label:_unitLabel(u)}));
+  if(nodes.length>10){
+    const top=nodes.slice(0,10);
+    const restN=nodes.slice(10).reduce((s,x)=>s+x.n,0);
+    top.push({u:'__etc__', n:restN, label:`기타 ${nodes.length-10}개`});
+    nodes=top;
+  }
+  _mapNodeKeys = nodes.map(nd=>nd.u);
+  const W=900,H=560,cx=W/2,cy=H/2;
+  const maxN=Math.max(1,...nodes.map(x=>x.n));
+  const rx=Math.min(360, 140+nodes.length*16), ry=200;
+  const parts=[]; const labels=[];
+  nodes.forEach((nd,i)=>{
+    const ang=(-90 + i*(360/nodes.length))*Math.PI/180;
+    const x=cx+rx*Math.cos(ang), y=cy+ry*Math.sin(ang);
+    const r=22+Math.round(26*(nd.n/maxN));
+    const clickable = nd.u!=='__etc__';
+    const cur = (cx+(x-cx)*0.5), cmy=(cy+(y-cy)*0.5-20);
+    parts.push(`<path d="M${cx} ${cy} Q ${cur} ${cmy} ${x} ${y}" fill="none" stroke="#cfe6d5" stroke-width="2"/>`);
+    const clk = clickable?` style="cursor:pointer" onclick="mapNodeClick(${i})"`:'';
+    parts.push(`<g${clk}><circle cx="${x}" cy="${y}" r="${r}" fill="url(#ndg)" stroke="#3F8B4F" stroke-width="2"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="16" font-weight="800" fill="#184B28">${nd.n}</text></g>`);
+    const short=nd.label.length>10?esc(nd.label.slice(0,9))+'…':esc(nd.label);
+    labels.push(`<text x="${x}" y="${y+r+15}" text-anchor="middle" font-size="12" font-weight="700" fill="#2D6A3E"${clk}>${short}</text>`);
+  });
+  const svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="db-map-svg">
+    <defs>
+      <radialGradient id="ndg" cx="40%" cy="35%"><stop offset="0%" stop-color="#EAF7EC"/><stop offset="100%" stop-color="#C7E8CE"/></radialGradient>
+      <radialGradient id="ctg" cx="40%" cy="35%"><stop offset="0%" stop-color="#5CB86E"/><stop offset="100%" stop-color="#2D6A3E"/></radialGradient>
+    </defs>
+    ${parts.join('')}
+    <circle cx="${cx}" cy="${cy}" r="54" fill="url(#ctg)" stroke="#184B28" stroke-width="2.5"/>
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">우리 반의 질문</text>
+    <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">${total}</text>
+    ${labels.join('')}
+  </svg>`;
+  box.innerHTML=`<div class="db-map-note">단원(성취기준)을 중심으로 학급 질문이 어떻게 모이는지 한눈에 봐요. 원 크기 = 질문 수 · <b>원을 클릭하면 그 단원 질문만 보드로 모아봅니다</b>.</div><div class="db-map-wrap">${svg}</div>`;
+}
+
 // 📄 학생 개인 탐구 포트폴리오 (상담·생기부·학부모용)
 function printStudentPortfolio(){
   if(!currentDrilldown){ alert('학생을 먼저 선택해주세요.'); return; }
@@ -1958,6 +2123,7 @@ function switchView(view){
   $('viewSubjects').style.display = view === 'subjects' ? '' : 'none';
   $('viewStudents').style.display = view === 'students' ? '' : 'none';
   $('viewSelfcheck').style.display = view === 'selfcheck' ? '' : 'none';
+  $('viewBoard').style.display = view === 'board' ? '' : 'none';
   $('viewGrowth').style.display = view === 'growth' ? '' : 'none';
   // 알림 섹션은 모든 뷰에서 표시
   applyFilters();
