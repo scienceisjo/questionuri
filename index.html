@@ -5898,6 +5898,11 @@ function clearMaterialLink(){
 // ============================================================================
 // 🌲 우리 반의 숲
 // ============================================================================
+// 로그인한 학생의 학년·반을 정수로 안전 변환 (없으면 ok:false)
+function _myGC(){
+  const g=parseInt(S.grade,10), c=parseInt(S.cls,10);
+  return { g, c, ok: Number.isFinite(g) && Number.isFinite(c) };
+}
 async function renderForest(){
   // 탭 재진입 시 기본 모드(친구 나무)로 + 보드 캐시/단원필터 초기화
   _classBoardCache = null;
@@ -5910,11 +5915,16 @@ async function renderForest(){
   grid.innerHTML='<div class="empty"><div class="em">🌲</div><div style="font-size:var(--fs-xs)">숲을 불러오는 중...</div></div>';
   stats.innerHTML='';
 
+  const _gc=_myGC();
+  if(!_gc.ok){
+    grid.innerHTML='<div class="empty"><div class="em">🔑</div><div style="font-size:var(--fs-xs)">학년·반 정보를 불러오지 못했어요.<br>로그아웃 후 다시 로그인해 주세요.</div></div>';
+    return;
+  }
   try{
     // 같은 학년·반 친구들 프로필
     const {data:classmates,error}=await sb.from('profiles')
       .select('id,name,grade,class_no,number,fruit_emoji,season,active_tree,active_companion')
-      .eq('grade',Number(S.grade)).eq('class_no',Number(S.cls))
+      .eq('grade',_gc.g).eq('class_no',_gc.c)
       .order('number');
     if(error) throw error;
     if(!classmates||!classmates.length){
@@ -5989,9 +5999,11 @@ async function renderClassCollection(mode){
   const board=$('forestBoard');
   if(_classBoardCache){ _dispatchClassView(board, mode, _classBoardCache); return; }
   board.innerHTML='<div class="cb-loading">🗂️ 우리 반 질문을 모으는 중...</div>';
+  const _gc=_myGC();
+  if(!_gc.ok){ board.innerHTML=emptyStateHTML(null,'학년·반 정보를 불러오지 못했어요','로그아웃 후 다시 로그인하면 우리 반 질문을 모아볼 수 있어요.',null,null); return; }
   try{
     const {data:classmates}=await sb.from('profiles')
-      .select('id,name,number,active_tree').eq('grade',Number(S.grade)).eq('class_no',Number(S.cls));
+      .select('id,name,number,active_tree').eq('grade',_gc.g).eq('class_no',_gc.c);
     const nameById={}; (classmates||[]).forEach(c=>nameById[c.id]=c);
     const ids=(classmates||[]).map(c=>c.id);
     if(!ids.length){ board.innerHTML=emptyStateHTML(EMPTY_FOREST,'아직 같은 반 친구가 없어요','반 친구들이 질문을 심으면 단원별로 모아서 볼 수 있어요!',null,null); return; }
