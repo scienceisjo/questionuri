@@ -5120,6 +5120,15 @@ function renderGrowthReport(){
 // ============================================================================
 // 질문 CRUD
 // ============================================================================
+// 삽입 직전 현재 세션의 실제 사용자 id를 읽어 사용 (계정 전환/세션 갱신으로 S.user.id가 어긋나는 경우 방지)
+async function freshUid(){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const u = session ? session.user : null;
+    if(u && S.user && S.user.id!==u.id) S.user.id=u.id;  // stale 보정
+    return u ? u.id : null;
+  }catch(e){ return null; }
+}
 async function addQ(){
   if(guestNudge()) return;
   const inp=$('qInp');const t=inp.value.trim();
@@ -5139,8 +5148,10 @@ async function addQ(){
   const tags=[...S.pendingTags];
   const fruit=S.pendingFruit;
 
+  const uid = await freshUid();
+  if(!uid){ $('addBtn').disabled=false; const m=$('qMsg'); m.textContent='로그인이 풀렸어요. 다시 로그인해 주세요.'; m.className='q-msg err'; return; }
   const payload={
-    user_id:S.user.id, subject_id:S.activeSub, text:t,
+    user_id:uid, subject_id:S.activeSub, text:t,
     tags, question_date:td(),
     fruit_emoji:fruit||null,
     is_anonymous:S.pendingAnon||false,
@@ -5719,13 +5730,15 @@ async function submitLiveQuestion(sessionId){
   const inp=$('liveInp-'+sessionId); if(!inp) return;
   const t=inp.value.trim(); if(!t){ inp.focus(); return; }
   const s=_liveSession; if(!s||s.id!==sessionId){ toast('세션이 종료됐어요'); return; }
+  const uid = await freshUid();
+  if(!uid){ toast('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
   // 세션 과목에 맞는 나무 찾기 (없으면 활성 나무/orphan)
   let subId = s.subject_id || S.activeSub || null;
   let treeId = null;
   if(subId && S.trees[subId] && S.trees[subId][0]) treeId = S.trees[subId][0].id;
   else if(S.activeSub && S.trees[S.activeSub] && S.trees[S.activeSub][0]){ subId=S.activeSub; treeId=S.trees[S.activeSub][0].id; }
   const payload={
-    user_id:S.user.id, subject_id:subId, text:t,
+    user_id:uid, subject_id:subId, text:t,
     tags:[], question_date:td(), phase:'before',
     is_anonymous:false, water_count:0, watered_by:[],
     session_id:sessionId
