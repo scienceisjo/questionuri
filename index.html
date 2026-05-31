@@ -1077,6 +1077,10 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .cb-card-q{font-size:var(--fs-sm);font-weight:600;color:var(--tx);line-height:1.45;margin-bottom:6px}
 .cb-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:10px;color:var(--tl);font-weight:600}
 .cb-done{color:var(--pr)!important}
+.cb-go{cursor:pointer;transition:all .12s}
+.cb-go:hover{border-color:var(--pr);box-shadow:0 2px 8px rgba(63,139,79,.14)}
+.cb-go:active{transform:scale(.99)}
+.cb-go-hint{margin-left:auto;color:var(--pr);font-weight:700}
 .cb-map-wrap{display:flex;justify-content:center;padding:6px 0 16px;overflow-x:auto}
 .cb-map-svg{width:100%;max-width:420px;min-width:320px;height:auto;display:block}
 .cb-filtered{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
@@ -5987,7 +5991,7 @@ async function renderClassCollection(mode){
   board.innerHTML='<div class="cb-loading">🗂️ 우리 반 질문을 모으는 중...</div>';
   try{
     const {data:classmates}=await sb.from('profiles')
-      .select('id,name,number').eq('grade',Number(S.grade)).eq('class_no',Number(S.cls));
+      .select('id,name,number,active_tree').eq('grade',Number(S.grade)).eq('class_no',Number(S.cls));
     const nameById={}; (classmates||[]).forEach(c=>nameById[c.id]=c);
     const ids=(classmates||[]).map(c=>c.id);
     if(!ids.length){ board.innerHTML=emptyStateHTML(EMPTY_FOREST,'아직 같은 반 친구가 없어요','반 친구들이 질문을 심으면 단원별로 모아서 볼 수 있어요!',null,null); return; }
@@ -6030,10 +6034,13 @@ function clearClassUnit(){
 function _classCol(u, arr, nameById){
   const title = u==='__none__' ? '🗂️ 단원 미지정' : '📑 '+esc(u);
   const cards = arr.map(q=>{
-    const who = q.is_anonymous ? '🕊️ 익명' : `${nameById[q.user_id]?.number||''}번 ${esc(nameById[q.user_id]?.name||'친구')}`;
+    const anon = q.is_anonymous;
+    const who = anon ? '🕊️ 익명' : `${nameById[q.user_id]?.number||''}번 ${esc(nameById[q.user_id]?.name||'친구')}`;
     const sc = selfCheckCount(q);
     const phase = q.phase==='after' ? '🌙' : '🌅';
-    return `<div class="cb-card${q.resolved?' done':''}">
+    const clickable = !anon;
+    const clk = clickable ? ` data-go="1" onclick="openClassmateTree('${q.user_id}')" title="${esc(nameById[q.user_id]?.name||'친구')}의 나무 보기"` : '';
+    return `<div class="cb-card${q.resolved?' done':''}${clickable?' cb-go':''}"${clk}>
       <div class="cb-card-q">${phase} ${escWithMath(q.text)}</div>
       <div class="cb-card-meta">
         <span>${who}</span>
@@ -6041,10 +6048,16 @@ function _classCol(u, arr, nameById){
         ${sc?`<span>🎯 ${sc}/7</span>`:''}
         ${q.water_count?`<span>💧 ${q.water_count}</span>`:''}
         ${q.explore_votes?`<span>🗳️ ${q.explore_votes}</span>`:''}
+        ${clickable?'<span class="cb-go-hint">나무 보기 →</span>':''}
       </div>
     </div>`;
   }).join('');
   return `<div class="cb-col"><div class="cb-col-hdr">${title}<span class="cb-col-cnt">${arr.length}</span></div><div class="cb-col-body">${cards}</div></div>`;
+}
+function openClassmateTree(userId){
+  const c = _classBoardCache?.nameById?.[userId];
+  if(!c){ return; }
+  openFrView({ id:userId, name:c.name, number:c.number, active_tree:c.active_tree, grade:Number(S.grade), class_no:Number(S.cls) });
 }
 function _renderClassKanban(board, list, nameById){
   const {groups, units}=_groupQsByUnit(list);
