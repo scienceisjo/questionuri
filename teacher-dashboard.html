@@ -435,6 +435,14 @@ td strong{font-weight:700;color:var(--ink)}
 .db-filter-clear{margin-left:4px;padding:4px 11px;border-radius:14px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font-size:11.5px;font-weight:700;cursor:pointer}
 .db-filter-clear:hover{border-color:var(--pr);color:var(--pr)}
 .db-hint{margin:12px 18px 0;padding:9px 13px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;font-size:12px;color:var(--ink2);line-height:1.55}
+.db-card-foot{margin-top:7px}
+.db-unit-chip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:12px;border:1.3px dashed var(--rule);background:transparent;color:var(--ink3);cursor:pointer;font-family:inherit}
+.db-unit-chip.set{border-style:solid;border-color:rgba(124,111,217,.4);color:#6A5ACD;background:rgba(124,111,217,.07)}
+.db-unit-chip:hover{border-color:var(--pr);color:var(--pr)}
+.db-unit-editor{display:flex;gap:5px;margin-top:7px}
+.db-unit-editor input{flex:1;min-width:0;padding:6px 9px;border:1.5px solid var(--pr);border-radius:7px;font-family:inherit;font-size:12px;color:var(--ink)}
+.db-unit-editor input:focus{outline:none;box-shadow:0 0 0 2px rgba(45,106,62,.15)}
+.db-unit-save{padding:6px 12px;border-radius:7px;background:var(--pr);color:#fff;border:none;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .dd-q-branches{margin-top:10px;padding:10px 12px;background:var(--surface2);border-left:3px solid var(--pl);border-radius:0 3px 3px 0;font-size:11.5px}
 .dd-q-branch{padding:6px 0;border-bottom:1px dashed var(--rule2)}
 .dd-q-branch:last-child{border-bottom:none}
@@ -1965,6 +1973,9 @@ function _boardCol(u, arr, pm){
     const p=pm[q.user_id];
     const who=q.is_anonymous?'🕊 익명':(p?`${p.grade}-${p.class_no}-${p.number} ${esc(p.name||'')}`:'학생');
     const sc=scCount(q); const phase=q.phase==='after'?'🌙':'🌅';
+    const unitChip = q.unit
+      ? `<button class="db-unit-chip set" onclick="boardEditUnit(event,${q.id})" title="단원 바꾸기">📑 ${esc(q.unit)}</button>`
+      : `<button class="db-unit-chip" onclick="boardEditUnit(event,${q.id})" title="단원 지정">＋ 단원 지정</button>`;
     return `<div class="db-card${q.resolved?' done':''}" onclick="openDrilldown('${q.user_id}')" title="학생 상세 보기">
       <div class="db-card-q">${phase} ${esc(q.text)}</div>
       <div class="db-card-meta">
@@ -1975,15 +1986,40 @@ function _boardCol(u, arr, pm){
         ${q.explore_votes?`<span>🗳️${q.explore_votes}</span>`:''}
         ${q.teacher_nudge?'<span title="되묻기 있음">🌿</span>':''}
       </div>
+      <div class="db-card-foot">${unitChip}</div>
+      <div class="db-unit-editor" id="bUnitEd-${q.id}" style="display:none" onclick="event.stopPropagation()">
+        <input id="bUnitTx-${q.id}" list="bUnitDL" value="${_attr(q.unit||'')}" placeholder="단원/성취기준 (비우면 미지정)" onkeydown="if(event.key==='Enter')boardSaveUnit(event,${q.id})">
+        <button class="db-unit-save" onclick="boardSaveUnit(event,${q.id})">저장</button>
+      </div>
     </div>`;
   }).join('');
   return `<div class="db-col"><div class="db-col-hdr">${title}<span class="db-col-cnt">${arr.length}</span></div><div class="db-col-body">${cards}</div></div>`;
+}
+function boardEditUnit(ev, id){
+  ev.stopPropagation();
+  const ed=$('bUnitEd-'+id); if(!ed) return;
+  const open = ed.style.display==='none';
+  // 다른 열린 편집기 닫기
+  document.querySelectorAll('.db-unit-editor').forEach(e=>{ if(e!==ed) e.style.display='none'; });
+  ed.style.display = open ? 'flex' : 'none';
+  if(open){ const i=$('bUnitTx-'+id); if(i){ i.focus(); i.select(); } }
+}
+async function boardSaveUnit(ev, id){
+  ev.stopPropagation();
+  const i=$('bUnitTx-'+id); if(!i) return;
+  const val=i.value.trim();
+  const {error}=await sb.from('questions').update({unit: val||null}).eq('id',id);
+  if(error){ alert('저장 실패: '+error.message); return; }
+  _applyQField(id, {unit: val||null});
+  toast(val?`📑 단원 "${val}" 로 이동`:'단원을 비웠어요(미지정)');
+  renderBoardView();   // 카드가 새 단원 칸으로 이동
 }
 function renderUnitBoard(box, groups, units){
   const pm=profileMap();
   const showUnits = _boardUnit!=null ? units.filter(u=>u===_boardUnit) : units;
   const total = showUnits.reduce((s,u)=>s+(groups[u]?groups[u].length:0),0);
   const cols = showUnits.map(u=>_boardCol(u, groups[u]||[], pm)).join('');
+  const dl = `<datalist id="bUnitDL">${units.filter(u=>u!=='__none__').map(u=>`<option value="${_attr(u)}">`).join('')}</datalist>`;
   let header='';
   if(_boardUnit!=null){
     const arr=groups[_boardUnit]||[];
@@ -1994,8 +2030,8 @@ function renderUnitBoard(box, groups, units){
     header = `<div class="db-filter-bar">📑 <b>${esc(_unitLabel(_boardUnit))}</b> · 질문 ${arr.length} · 해결 ${res} · 평균 자가체크 ${avg}/7 · 되묻기 ${nud} <button class="db-filter-clear" onclick="clearBoardUnit()">✕ 전체 단원</button></div>`;
   }
   const noneHint = (_boardUnit==='__none__')
-    ? `<div class="db-hint">💡 학생 상세(드릴다운)의 각 질문에서 “📑 단원” 버튼으로 단원을 지정하면 여기 단원별로 정리돼요. 자료 업로드 시 단원을 적어두면 그 자료로 만든 질문에 자동으로 붙습니다.</div>` : '';
-  box.innerHTML = header + noneHint + `<div class="db-board">${cols}</div>`;
+    ? `<div class="db-hint">💡 카드의 “＋ 단원 지정” 버튼으로 바로 단원을 붙일 수 있어요. 자료 업로드 시 단원을 적어두면 그 자료로 만든 질문에 자동으로 붙습니다.</div>` : '';
+  box.innerHTML = dl + header + noneHint + `<div class="db-board">${cols}</div>`;
 }
 function renderUnitMindmap(box, groups, units, total){
   let nodes=units.map(u=>({u, n:groups[u].length, label:_unitLabel(u)}));
