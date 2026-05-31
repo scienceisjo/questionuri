@@ -1888,6 +1888,14 @@ async function pollLiveBoard(){
     renderLiveBoard(qs||[]);
   }catch(e){ /* 무시 */ }
 }
+// 작성자 표시: 학년·반·번호가 비면 null-null-null 대신 이름/미등록으로
+function whoLabel(p){
+  if(!p) return '미등록 학생';
+  const hasId=[p.grade,p.class_no,p.number].every(v=>v!=null && v!=='');
+  const idPart = hasId ? `${p.grade}-${p.class_no}-${p.number}` : '';
+  const nm = p.name || '';
+  return (idPart&&nm) ? `${idPart} ${esc(nm)}` : (idPart || (nm?esc(nm):'미등록 학생'));
+}
 function renderLiveBoard(qs){
   const board=$('liveBoard'); if(!board) return;
   const cnt=$('liveCount'); if(cnt) cnt.textContent=`${qs.length}개 도착`;
@@ -1895,7 +1903,7 @@ function renderLiveBoard(qs){
   const pm = (typeof profileMap==='function') ? profileMap() : {};
   board.innerHTML = qs.map(q=>{
     const p=pm[q.user_id];
-    const who = q.is_anonymous ? '🕊 익명' : (p?`${p.grade}-${p.class_no}-${p.number} ${p.name||''}`:'학생');
+    const who = q.is_anonymous ? '🕊 익명' : whoLabel(p);
     const starred = q.starred;
     return `<div class="live-qcard${starred?' starred':''}">
       <div class="live-qcard-txt">${esc(q.text)}</div>
@@ -1971,7 +1979,7 @@ function _boardCol(u, arr, pm){
   const title=u==='__none__'?'🗂️ 단원 미지정':'📑 '+esc(u);
   const cards=arr.slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).map(q=>{
     const p=pm[q.user_id];
-    const who=q.is_anonymous?'🕊 익명':(p?`${p.grade}-${p.class_no}-${p.number} ${esc(p.name||'')}`:'학생');
+    const who=q.is_anonymous?'🕊 익명':whoLabel(p);
     const sc=scCount(q); const phase=q.phase==='after'?'🌙':'🌅';
     const unitChip = q.unit
       ? `<button class="db-unit-chip set" onclick="boardEditUnit(event,${q.id})" title="단원 바꾸기">📑 ${esc(q.unit)}</button>`
