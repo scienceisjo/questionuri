@@ -5619,7 +5619,7 @@ async function openPeerAnswer(qid){
     if(!q.peer_answers) q.peer_answers = [];
     q.peer_answers.push(data);
     toast('💬 친구에게 답을 남겼어요! 🌰+2');
-    renderFrView();
+    renderFrViewList();
   }catch(e){
     toast('오류: ' + (e.message||''));
   }
@@ -5635,7 +5635,7 @@ async function deletePeerAnswer(qid, paId){
     q.peer_answers = q.peer_answers.filter(pa => pa.id !== paId);
   }
   toast('답변을 삭제했어요');
-  renderFrView();
+  renderFrViewList();
 }
 
 // ============================================================================
