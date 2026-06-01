@@ -1619,8 +1619,25 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
         <button class="more-item" onclick="swMore('hall')"><span>🏅</span><b>명예의 전당</b><small>우리 반 좋은 질문</small></button>
         <button class="more-item" onclick="swMore('ach')"><span>🏆</span><b>업적</b><small>달성한 배지</small></button>
         <button class="more-item" onclick="swMore('deco')"><span>🎨</span><b>꾸미기</b><small>내 나무 꾸미기</small></button>
+        <button class="more-item" onclick="openPwChange()"><span>🔑</span><b>비밀번호 변경</b><small>내 비밀번호 바꾸기</small></button>
       </div>
       <button class="more-close" onclick="closeMore()">닫기</button>
+    </div>
+  </div>
+
+  <!-- 🔑 비밀번호 변경 시트 -->
+  <div class="more-sheet" id="pwSheet" onclick="if(event.target.id==='pwSheet')closePwChange()">
+    <div class="more-card">
+      <div class="more-handle"></div>
+      <div class="more-title">🔑 비밀번호 변경</div>
+      <p style="font-size:var(--fs-xs);color:var(--tl);text-align:center;margin:-2px 0 14px;line-height:1.55">새 비밀번호를 정해주세요.<br>다음 로그인부터 새 비밀번호로 들어와요.</p>
+      <label class="fl">새 비밀번호</label>
+      <input class="fi" id="pwNew" type="password" placeholder="4자 이상" autocomplete="new-password" style="margin-bottom:8px">
+      <label class="fl">새 비밀번호 확인</label>
+      <input class="fi" id="pwNew2" type="password" placeholder="한 번 더 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePw()">
+      <div id="pwMsg" style="margin-top:10px;font-size:var(--fs-xs);font-weight:700;min-height:18px"></div>
+      <button class="more-close" id="pwSaveBtn" onclick="doChangePw()" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none;margin-top:10px">변경하기</button>
+      <button class="more-close" onclick="closePwChange()" style="margin-top:8px">취소</button>
     </div>
   </div>
 
@@ -2927,6 +2944,34 @@ function swTab(t){
   const fab=$('fabAsk'); if(fab) fab.style.display = (t==='questions')?'none':'';
 }
 function openMore(){ $('moreSheet')?.classList.add('show'); }
+// 🔑 학생 본인 비밀번호 변경
+function openPwChange(){
+  if(guestNudge()) return;
+  closeMore();
+  const m=$('pwMsg'); if(m){ m.textContent=''; }
+  const a=$('pwNew'), b=$('pwNew2'); if(a)a.value=''; if(b)b.value='';
+  $('pwSheet')?.classList.add('show');
+  setTimeout(()=>$('pwNew')?.focus(), 100);
+}
+function closePwChange(){ $('pwSheet')?.classList.remove('show'); }
+async function doChangePw(){
+  const a=$('pwNew').value, b=$('pwNew2').value, m=$('pwMsg');
+  const setMsg=(t,ok)=>{ if(m){ m.textContent=t; m.style.color=ok?'#2D6A3E':'#d9534f'; } };
+  if(a.length<4){ setMsg('비밀번호는 4자 이상이어야 해요',false); return; }
+  if(a!==b){ setMsg('두 비밀번호가 서로 달라요',false); return; }
+  const btn=$('pwSaveBtn'); if(btn) btn.disabled=true; setMsg('변경 중...',true);
+  try{
+    const {error}=await sb.auth.updateUser({password:a});
+    if(btn) btn.disabled=false;
+    if(error){ setMsg('변경 실패: '+error.message,false); return; }
+    setMsg('✅ 변경됐어요! 다음 로그인부터 새 비밀번호를 쓰세요.',true);
+    toast('🔑 비밀번호가 변경됐어요');
+    setTimeout(closePwChange, 1600);
+  }catch(err){
+    if(btn) btn.disabled=false;
+    setMsg('변경 실패: '+(err.message||'오류'),false);
+  }
+}
 function closeMore(){ $('moreSheet')?.classList.remove('show'); }
 function swMore(t){ closeMore(); swTab(t); }
 function fabAskTap(){ swTab('questions'); setTimeout(()=>{ const i=$('qInp'); if(i){ i.focus(); i.scrollIntoView({behavior:'smooth',block:'center'}); } }, 60); }
