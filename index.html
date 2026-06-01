@@ -5603,16 +5603,18 @@ async function openPeerAnswer(qid){
   if(txt.length < 10){ toast('답변은 10자 이상 작성해주세요'); return; }
   if(txt.length > 500){ toast('답변은 500자 이내로 작성해주세요'); return; }
   try{
+    const uid = await freshUid();
+    if(!uid){ toast('로그인이 풀렸어요. 다시 로그인해주세요.'); return; }
     const {data, error} = await sb.from('peer_answers').insert({
       question_id: qid,
-      user_id: S.user.id,
+      user_id: uid,
       author_name: S.name || '친구',
       text: txt
     }).select().single();
     if(error){ toast('답변 저장 실패: ' + error.message); return; }
     // 도토리 +2 보상
     S.seeds = (S.seeds||0) + 2;
-    await sb.from('profiles').update({seeds: S.seeds}).eq('id', S.user.id);
+    await sb.from('profiles').update({seeds: S.seeds}).eq('id', uid);
     // 로컬 데이터 업데이트
     if(!q.peer_answers) q.peer_answers = [];
     q.peer_answers.push(data);
@@ -5625,7 +5627,8 @@ async function openPeerAnswer(qid){
 
 async function deletePeerAnswer(qid, paId){
   if(!confirm('내 답변을 삭제할까요?')) return;
-  const {error} = await sb.from('peer_answers').delete().eq('id', paId).eq('user_id', S.user.id);
+  const uid = await freshUid();
+  const {error} = await sb.from('peer_answers').delete().eq('id', paId).eq('user_id', uid || S.user.id);
   if(error){ toast('삭제 실패'); return; }
   const q = (S.frView.questions||[]).find(x=>x.id===qid);
   if(q && q.peer_answers){
