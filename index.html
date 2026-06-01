@@ -394,6 +394,10 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .teacher-chip.on{background:linear-gradient(135deg,rgba(93,184,110,.18),rgba(217,119,6,.10));border-color:var(--pr);color:var(--pd);box-shadow:0 1.5px 5px rgba(93,184,110,.15)}
 .teacher-chip.on::after{content:'✓';margin-left:2px;color:var(--pr);font-weight:800}
 .teacher-chip-empty{font-size:var(--fs-xxs);color:var(--tl);font-style:italic;padding:5px 8px}
+.teacher-chip.joined{background:linear-gradient(135deg,rgba(93,184,110,.18),rgba(217,119,6,.10));border-color:var(--pr);color:var(--pd);cursor:default}
+.teacher-chip .tc-x{margin-left:5px;color:#c0504d;font-weight:800;cursor:pointer;font-size:12px;line-height:1}
+.teacher-join-btn{flex-shrink:0;padding:5px 11px;border:1.5px dashed var(--pr);border-radius:14px;font-size:var(--fs-xxs);font-weight:700;color:var(--pr);background:#fff;cursor:pointer;white-space:nowrap;font-family:inherit}
+.teacher-join-btn:hover{background:rgba(93,184,110,.08)}
 .sub-empty-msg{display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:var(--fs-xs);color:var(--tl);font-weight:600;white-space:nowrap;animation:pulse 2s ease-in-out infinite}
 .sub-in{max-width:1100px;margin:0 auto;display:flex;gap:2px;padding:var(--sp-1) var(--sp-2);min-width:max-content;align-items:center}
 .st{padding:clamp(5px,1vw,8px) clamp(10px,2.2vw,16px);border-radius:9px;background:transparent;color:var(--tl);font-weight:500;font-size:var(--fs-xs);display:flex;align-items:center;gap:4px;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .2s}.st.on{font-weight:700}
@@ -799,6 +803,8 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .mat-area-media-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:var(--sp-2)}
 .mat-area-media{width:100%;max-height:360px;object-fit:contain;border-radius:10px;border:1px solid var(--bd);background:#000}
 img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
+.mat-area-yt{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:#000}
+.mat-area-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .mat-area-q-btn{width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-sm);font-weight:700;cursor:pointer;border:none;transition:all .2s;box-shadow:0 3px 10px rgba(93,184,110,.25)}
 .mat-area-q-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(93,184,110,.35)}
 
@@ -1638,6 +1644,19 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
       <div id="pwMsg" style="margin-top:10px;font-size:var(--fs-xs);font-weight:700;min-height:18px"></div>
       <button class="more-close" id="pwSaveBtn" onclick="doChangePw()" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none;margin-top:10px">변경하기</button>
       <button class="more-close" onclick="closePwChange()" style="margin-top:8px">취소</button>
+    </div>
+  </div>
+
+  <!-- 👩‍🏫 수업 참여 (코드) 시트 -->
+  <div class="more-sheet" id="joinSheet" onclick="if(event.target.id==='joinSheet')closeJoinClass()">
+    <div class="more-card">
+      <div class="more-handle"></div>
+      <div class="more-title">👩‍🏫 수업 참여</div>
+      <p style="font-size:var(--fs-xs);color:var(--tl);text-align:center;margin:-2px 0 14px;line-height:1.55">선생님께 받은 <b>수업 참여 코드</b>를 입력하세요.<br>참여하면 그 선생님이 올린 자료가 보여요.</p>
+      <input class="fi" id="joinCodeInput" type="text" placeholder="예: K3F2QA" autocapitalize="characters" style="text-align:center;letter-spacing:3px;font-weight:700;font-size:var(--fs-lg)" onkeydown="if(event.key==='Enter')joinByCode()">
+      <div id="joinMsg" style="margin-top:10px;font-size:var(--fs-xs);font-weight:700;min-height:18px;text-align:center"></div>
+      <button class="more-close" id="joinBtn2" onclick="joinByCode()" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none;margin-top:10px">참여하기</button>
+      <button class="more-close" onclick="closeJoinClass()" style="margin-top:8px">취소</button>
     </div>
   </div>
 
@@ -2954,6 +2973,40 @@ function openPwChange(){
   setTimeout(()=>$('pwNew')?.focus(), 100);
 }
 function closePwChange(){ $('pwSheet')?.classList.remove('show'); }
+// 👩‍🏫 수업 참여 (코드)
+function openJoinClass(){
+  if(guestNudge()) return;
+  closeMore();
+  const m=$('joinMsg'); if(m) m.textContent='';
+  const i=$('joinCodeInput'); if(i) i.value='';
+  $('joinSheet')?.classList.add('show');
+  setTimeout(()=>$('joinCodeInput')?.focus(), 100);
+}
+function closeJoinClass(){ $('joinSheet')?.classList.remove('show'); }
+async function joinByCode(){
+  if(guestNudge()) return;
+  const inp=$('joinCodeInput'), msg=$('joinMsg');
+  const code=((inp&&inp.value)||'').trim().toUpperCase();
+  const setMsg=(t,ok)=>{ if(msg){ msg.textContent=t; msg.style.color=ok?'#2D6A3E':'#d9534f'; } };
+  if(code.length<4){ setMsg('코드를 입력해주세요',false); return; }
+  const btn=$('joinBtn2'); if(btn) btn.disabled=true; setMsg('확인 중...',true);
+  try{
+    const {data:t,error}=await sb.from('teachers').select('id,name,subject_label,subject_icon,subject_id').eq('join_code',code).maybeSingle();
+    if(btn) btn.disabled=false;
+    if(error || !t){ setMsg('코드를 다시 확인해주세요.',false); return; }
+    const tid=Number(t.id);
+    if(S.myTeacherIds.has(tid)){ setMsg(`이미 ${t.name} 선생님 수업에 참여 중이에요`,true); return; }
+    S.myTeacherIds.add(tid);
+    const arr=[...S.myTeacherIds];
+    const {error:uerr}=await sb.from('profiles').update({teacher_ids:arr, teacher_id:arr.length?arr[0]:null}).eq('id',S.user.id);
+    if(uerr){ S.myTeacherIds.delete(tid); setMsg('참여 실패: '+uerr.message,false); return; }
+    if(!(S.teacherList||[]).find(x=>Number(x.id)===tid)) (S.teacherList=S.teacherList||[]).push(t);
+    setMsg(`✅ ${t.name} 선생님 수업에 참여했어요!`,true);
+    toast(`${t.name} 선생님 수업에 참여했어요!`);
+    renderSubTabs();
+    setTimeout(()=>{ closeJoinClass(); if($('matAreaList')) renderMaterials(); }, 1200);
+  }catch(err){ if(btn) btn.disabled=false; setMsg('오류: '+(err.message||''),false); }
+}
 async function doChangePw(){
   const a=$('pwNew').value, b=$('pwNew2').value, m=$('pwMsg');
   const setMsg=(t,ok)=>{ if(m){ m.textContent=t; m.style.color=ok?'#2D6A3E':'#d9534f'; } };
@@ -3016,45 +3069,47 @@ async function changeFruit(v){
 function renderSubTabs(){
   const c=$('subTabs');c.innerHTML='';
 
-  // 🧑‍🏫 담당 선생님 다중 선택 (칩 토글)
+  // 🧑‍🏫 듣는 수업 (참여한 교사만 표시) + 코드로 참여
   const teacherEl = document.createElement('div');
   teacherEl.className = 'teacher-sel';
-  if(S.teacherList.length){
-    const lbl = document.createElement('span');
-    lbl.className = 'teacher-sel-lbl';
-    lbl.textContent = '👩‍🏫 듣는 수업:';
-    teacherEl.appendChild(lbl);
-
-    const chipsBox = document.createElement('div');
-    chipsBox.className = 'teacher-chips';
-    S.teacherList.forEach(t=>{
-      const chip = document.createElement('button');
+  const lbl = document.createElement('span');
+  lbl.className = 'teacher-sel-lbl';
+  lbl.textContent = '👩‍🏫 듣는 수업:';
+  teacherEl.appendChild(lbl);
+  const chipsBox = document.createElement('div');
+  chipsBox.className = 'teacher-chips';
+  const joined = (S.teacherList||[]).filter(t => S.myTeacherIds.has(Number(t.id)));
+  if(joined.length){
+    joined.forEach(t=>{
       const tid = Number(t.id);
-      chip.className = 'teacher-chip' + (S.myTeacherIds.has(tid) ? ' on' : '');
-      chip.type = 'button';
-      chip.textContent = `${t.subject_icon||'📚'} ${t.name} 선생님 (${t.subject_label||''})`;
-      chip.dataset.tid = tid;
-      chip.onclick = async ()=>{
-        const on = S.myTeacherIds.has(tid);
-        if(on) S.myTeacherIds.delete(tid); else S.myTeacherIds.add(tid);
-        chip.classList.toggle('on');
-        const arr = [...S.myTeacherIds];
-        // teacher_ids 배열 갱신 + 호환을 위해 teacher_id(첫 값)도 동기화
-        await sb.from('profiles').update({
-          teacher_ids: arr,
-          teacher_id: arr.length ? arr[0] : null
-        }).eq('id', S.user.id);
-        toast(on ? `${t.name} 선생님 수업을 뺐어요` : `${t.name} 선생님 수업을 들어요!`);
+      const chip = document.createElement('span');
+      chip.className = 'teacher-chip joined';
+      chip.innerHTML = `${t.subject_icon||'📚'} ${esc(t.name)} 선생님 <b class="tc-x" title="수업 나가기">✕</b>`;
+      chip.querySelector('.tc-x').onclick = async (ev)=>{
+        ev.stopPropagation();
+        if(!confirm(`${t.name} 선생님 수업에서 나갈까요?`)) return;
+        S.myTeacherIds.delete(tid);
+        const arr=[...S.myTeacherIds];
+        await sb.from('profiles').update({teacher_ids:arr, teacher_id:arr.length?arr[0]:null}).eq('id',S.user.id);
+        toast(`${t.name} 선생님 수업에서 나갔어요`);
+        renderSubTabs();
+        if($('matAreaList')) renderMaterials();
       };
       chipsBox.appendChild(chip);
     });
-    teacherEl.appendChild(chipsBox);
   } else {
-    const empty = document.createElement('span');
-    empty.className = 'teacher-chip-empty';
-    empty.textContent = '아직 등록된 선생님이 없어요';
-    teacherEl.appendChild(empty);
+    const empty=document.createElement('span');
+    empty.className='teacher-chip-empty';
+    empty.textContent='아직 참여한 수업이 없어요';
+    chipsBox.appendChild(empty);
   }
+  const joinBtn=document.createElement('button');
+  joinBtn.className='teacher-join-btn';
+  joinBtn.type='button';
+  joinBtn.textContent='＋ 수업 참여';
+  joinBtn.onclick=openJoinClass;
+  chipsBox.appendChild(joinBtn);
+  teacherEl.appendChild(chipsBox);
   c.appendChild(teacherEl);
 
   // 과목 탭들
@@ -5815,16 +5870,16 @@ async function renderMaterials(){
   el.innerHTML = '<div class="mat-area-empty"><div class="em">⏳</div><div>자료를 불러오는 중...</div></div>';
 
   try{
-    // 필터 기준: 학생이 듣는 선생님들의 자료를 보여줌 (다중 교사 지원)
-    //  - 선생님을 한 명이라도 골랐으면: 그 선생님들이 올린 자료(또는 같은 과목)만
-    //  - 아직 안 골랐으면: 내 학년·반에 맞는 자료를 모두 보여줌(놓치지 않게)
-    //  - target_grade/target_class 가 지정돼 있으면 추가로 좁힘 (NULL이면 전체)
+    // 자료는 RLS가 '참여(teacher_ids)한 교사'로 이미 한정함.
+    // 여기서는 학년·반 타겟만 추가로 거른다.
     const myTeacherIds = S.myTeacherIds || new Set();
-    const myTeacherSubjIds = new Set(
-      (S.teacherList||[]).filter(t => myTeacherIds.has(Number(t.id))).map(t => t.subject_id).filter(Boolean)
-    );
     const myGrade = S.grade ? Number(S.grade) : null;
     const myClass = S.cls ? Number(S.cls) : null;
+
+    if(!myTeacherIds.size){
+      el.innerHTML = emptyStateHTML(EMPTY_SIGN, '아직 참여한 수업이 없어요', '선생님께 받은 수업 참여 코드를 입력하면, 그 선생님이 올린 자료가 여기 보여요.', '＋ 수업 참여', 'openJoinClass()');
+      return;
+    }
 
     let query = sb.from('lesson_materials').select('*').eq('is_active', true).order('created_at', {ascending:false});
     const {data, error} = await query;
@@ -5833,15 +5888,11 @@ async function renderMaterials(){
     _materials = (data||[]).filter(m => {
       const gradeOk = !m.target_grade || Number(m.target_grade) === myGrade;
       const classOk = !m.target_class || Number(m.target_class) === myClass;
-      if(!gradeOk || !classOk) return false;
-      // 선생님을 한 명이라도 골랐으면 그 선생님들(또는 같은 과목) 자료만, 안 골랐으면 학년·반 맞는 자료 모두
-      if(!myTeacherIds.size) return true;
-      return myTeacherIds.has(Number(m.teacher_id))
-          || (m.subject_id && myTeacherSubjIds.has(m.subject_id));
+      return gradeOk && classOk;
     });
 
     if(!_materials.length){
-      el.innerHTML = emptyStateHTML(EMPTY_SIGN, '아직 올라온 자료가 없어요', '선생님이 사진이나 영상을 올리면 여기에 나타나요. 그걸 보고 궁금한 걸 질문해봐요!', null, null);
+      el.innerHTML = emptyStateHTML(EMPTY_SIGN, '아직 올라온 자료가 없어요', '참여한 선생님이 자료를 올리면 여기에 나타나요. 그걸 보고 궁금한 걸 질문해봐요!', null, null);
       return;
     }
 
@@ -5864,7 +5915,9 @@ async function renderMaterials(){
     const renderCard = (m) => {
       const files = m.files || [];
       const filesHtml = files.map(f => {
-        if(f.kind === 'video' || (f.type||'').startsWith('video/')){
+        if(f.kind === 'youtube' && f.videoId){
+          return `<div class="mat-area-yt"><iframe src="https://www.youtube.com/embed/${esc(f.videoId)}" title="YouTube 영상" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`;
+        } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
           return `<video controls playsinline class="mat-area-media" src="${esc(f.url)}"></video>`;
         } else {
           return `<img class="mat-area-media" src="${esc(f.url)}" alt="${esc(f.name)}" onclick="viewMatImage('${esc(f.url)}')" loading="lazy">`;
