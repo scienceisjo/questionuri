@@ -4199,7 +4199,16 @@ async function submitBulkCreate(){
 <div class="mat-modal" id="mMat" onclick="if(event.target.id==='mMat')closeMaterials()">
   <div class="mat-box">
     <h2>📚 수업 자료</h2>
-    <p class="sub">사진·동영상을 올리면 <b>내 과목(<span id="matSubjLabel">과목</span>)을 듣는 학생 전체</b>의 <b>오늘의 자료 탭</b>에 표시돼요. 학생들은 자료를 보고 <b>"💡 질문 떠올리기"</b>로 질문을 작성합니다.</p>
+    <p class="sub">사진·동영상을 올리면 <b>내 수업에 참여한 학생</b>의 <b>오늘의 자료 탭</b>에만 표시돼요. 학생들은 자료를 보고 <b>"💡 질문 떠올리기"</b>로 질문을 작성합니다.</p>
+
+    <div id="joinCodeBox" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#eaf3e7,#fbefd8);border:1.5px solid #cfe0c6;border-radius:12px;padding:12px 16px;margin:0 0 8px">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#5a7a52;letter-spacing:.5px">우리 수업 참여 코드</div>
+        <div id="jcCode" style="font-size:26px;font-weight:800;letter-spacing:4px;color:#1e4d2b;font-family:'Courier New',monospace">······</div>
+      </div>
+      <button id="jcCopyBtn" onclick="copyJoinCode()" style="padding:9px 16px;border:none;border-radius:9px;background:#2c5f2d;color:#fff;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">복사</button>
+    </div>
+    <p style="font-size:12px;color:#6e7e70;margin:0 0 14px;line-height:1.55">이 코드를 <b>우리 반 학생에게만</b> 알려주세요. 학생이 앱에서 <b>＋수업 참여</b>로 코드를 입력해야 내 자료가 보여요. (다른 반·다른 선생님에게는 보이지 않습니다)</p>
 
     <div class="mat-form">
       <div class="row">
@@ -4221,7 +4230,7 @@ async function submitBulkCreate(){
         </div>
       </div>
       <div style="background:rgba(93,184,110,.08);border:1px solid rgba(93,184,110,.25);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:var(--pd);line-height:1.5">
-        💡 기본적으로 <b>내 과목을 듣는 학생 전체</b>에게 보여요. 아래에서 특정 학년·반만 골라 더 좁힐 수도 있어요. (선택사항)
+        💡 기본적으로 <b>내 수업에 참여한 학생</b>에게 보여요. 아래에서 특정 학년·반만 골라 더 좁힐 수도 있어요. (선택사항)
       </div>
       <div class="row">
         <div style="flex:1;min-width:120px">
@@ -4239,6 +4248,16 @@ async function submitBulkCreate(){
           <input type="file" id="matFile" accept="image/*,video/*" multiple style="display:none" onchange="handleMatFiles(this)">
           <label for="matFile" class="mat-file-label">📎 파일 선택 (사진·영상)</label>
           <div class="mat-previews" id="matPreviews"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1">
+          <label>▶️ 유튜브 링크 (선택) — 용량 걱정 없이 임베드</label>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <input type="text" id="matYtUrl" placeholder="유튜브 주소 붙여넣기 (youtu.be/… 또는 watch?v=…)" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addYoutubeMat();}">
+            <button type="button" class="mat-btn" onclick="addYoutubeMat()" style="white-space:nowrap;padding:0 16px">＋ 추가</button>
+          </div>
+          <div id="matYtMsg" style="font-size:11.5px;margin-top:4px;min-height:14px;color:var(--ar)"></div>
         </div>
       </div>
       <div style="text-align:right;margin-top:8px">
@@ -4273,6 +4292,7 @@ function openMaterials(){
   $('mMat').classList.add('show');
   const subjLabel = $('matSubjLabel');
   if(subjLabel) subjLabel.textContent = currentTeacher.subject_label || '과목 미지정';
+  ensureJoinCode();
   $('matTitle').value = '';
   $('matDesc').value = '';
   $('matGrade').value = currentTeacher.grade || '';
@@ -4284,6 +4304,35 @@ function openMaterials(){
   loadMaterials();
 }
 function closeMaterials(){ $('mMat').classList.remove('show'); }
+
+// 👩‍🏫 수업 참여 코드 (없으면 생성, 교사 본인 행에 저장)
+function _genJoinCode(){
+  const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 0/O/1/I 제외
+  let s=''; for(let i=0;i<6;i++) s+=A[Math.floor(Math.random()*A.length)];
+  return s;
+}
+async function ensureJoinCode(){
+  if(!currentTeacher?.id) return;
+  const setUI=(c)=>{ const el=$('jcCode'); if(el) el.textContent=c||'------'; };
+  if(currentTeacher.join_code){ setUI(currentTeacher.join_code); return; }
+  let uid = currentTeacher.auth_id;
+  if(!uid){ try{ uid=(await sb.auth.getUser()).data?.user?.id; }catch(e){} }
+  if(!uid){ setUI(null); return; }
+  for(let attempt=0; attempt<5; attempt++){
+    const code=_genJoinCode();
+    const {error}=await sb.from('teachers').update({join_code:code}).eq('auth_id', uid);
+    if(!error){ currentTeacher.join_code=code; setUI(code); return; }
+    if(!/duplicate|unique|23505/i.test(error.message||'')){ console.warn('참여코드 저장 실패:', error.message); setUI(null); return; }
+    // 중복이면 재시도
+  }
+  setUI(null);
+}
+async function copyJoinCode(){
+  const code = currentTeacher?.join_code;
+  if(!code) return;
+  try{ await navigator.clipboard.writeText(code); }catch(e){}
+  const b=$('jcCopyBtn'); if(b){ const t=b.textContent; b.textContent='복사됨!'; b.style.background='#3f8b4f'; setTimeout(()=>{ b.textContent=t; b.style.background='#2c5f2d'; },1500); }
+}
 
 function handleMatFiles(input){
   const files = [...input.files];
@@ -4323,6 +4372,41 @@ function renderMatPreviews(){
 }
 function removeMatFile(i){ _matPending.splice(i,1); renderMatPreviews(); }
 
+// ▶️ 유튜브 링크 → 영상 ID 추출 (업로드 없이 임베드)
+function parseYouTubeId(url){
+  if(!url) return null;
+  url = url.trim();
+  const pats = [
+    /(?:youtube\.com\/watch\?(?:.*&)?v=)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+    /(?:youtube\.com\/shorts\/)([\w-]{11})/,
+    /(?:youtube\.com\/live\/)([\w-]{11})/,
+    /(?:m\.youtube\.com\/watch\?(?:.*&)?v=)([\w-]{11})/
+  ];
+  for(const p of pats){ const m = url.match(p); if(m) return m[1]; }
+  if(/^[\w-]{11}$/.test(url)) return url; // ID만 붙여넣은 경우
+  return null;
+}
+function addYoutubeMat(){
+  const inp = $('matYtUrl'), msg = $('matYtMsg');
+  const id = parseYouTubeId(inp ? inp.value : '');
+  const setMsg=(t,ok)=>{ if(msg){ msg.textContent=t; msg.style.color = ok ? 'var(--pd)' : 'var(--ar)'; } };
+  if(!id){ setMsg('올바른 유튜브 주소가 아니에요. 영상 링크를 붙여넣어 주세요.', false); return; }
+  if(_matPending.some(f => f.kind==='youtube' && f.videoId===id)){ setMsg('이미 추가된 영상이에요.', false); return; }
+  _matPending.push({
+    kind:'youtube',
+    videoId:id,
+    url:`https://www.youtube.com/watch?v=${id}`,
+    name:'YouTube 영상',
+    type:'youtube',
+    preview:`https://img.youtube.com/vi/${id}/mqdefault.jpg`
+  });
+  setMsg('✅ 유튜브 영상이 추가됐어요.', true);
+  if(inp) inp.value='';
+  renderMatPreviews();
+}
+
 async function uploadMatFile(file){
   const ext = file.name.split('.').pop() || 'bin';
   const path = `materials/${currentTeacher.id}/${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
@@ -4335,17 +4419,25 @@ async function uploadMatFile(file){
 async function submitMaterial(){
   const title = $('matTitle').value.trim();
   if(!title){ alert('제목을 입력해주세요'); return; }
-  if(!_matPending.length && !_matEditId){ alert('사진이나 영상을 1개 이상 첨부해주세요'); return; }
+  if(!_matPending.length && !_matEditId){ alert('사진·영상 또는 유튜브 링크를 1개 이상 추가해주세요'); return; }
 
   const btn = $('matSubmitBtn');
   btn.disabled = true;
   $('matResult').innerHTML = '<div style="color:var(--ink2);font-size:12px">📤 업로드 중...</div>';
 
-  // 파일 업로드
+  // 파일 업로드 (유튜브 링크는 업로드 없이 그대로 저장 — 용량 0)
   const uploaded = [];
+  const fileItems = _matPending.filter(f => f.kind !== 'youtube');
+  let done = 0;
   for(let i=0;i<_matPending.length;i++){
-    $('matResult').innerHTML = `<div style="color:var(--ink2);font-size:12px">📤 파일 업로드 중... (${i+1}/${_matPending.length})</div>`;
-    const r = await uploadMatFile(_matPending[i].file);
+    const item = _matPending[i];
+    if(item.kind === 'youtube'){
+      uploaded.push({ kind:'youtube', videoId:item.videoId, url:item.url, name:item.name||'YouTube 영상', type:'youtube' });
+      continue;
+    }
+    done++;
+    $('matResult').innerHTML = `<div style="color:var(--ink2);font-size:12px">📤 파일 업로드 중... (${done}/${fileItems.length})</div>`;
+    const r = await uploadMatFile(item.file);
     if(r) uploaded.push(r);
   }
 
@@ -4401,7 +4493,9 @@ async function loadMaterials(){
 
     el.innerHTML = data.map(m => {
       const firstFile = (m.files && m.files[0]) || null;
-      const thumb = firstFile && firstFile.kind === 'image'
+      const thumb = firstFile && firstFile.kind === 'youtube' && firstFile.videoId
+        ? `<img class="mat-card-thumb" src="https://img.youtube.com/vi/${esc(firstFile.videoId)}/mqdefault.jpg" alt="">`
+        : firstFile && firstFile.kind === 'image'
         ? `<img class="mat-card-thumb" src="${esc(firstFile.url)}" alt="">`
         : firstFile && firstFile.kind === 'video'
         ? `<div class="mat-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`
