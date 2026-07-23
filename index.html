@@ -1435,6 +1435,12 @@ body[data-theme="cute"] .gq-item{background:rgba(124,197,138,.1)}
 body.is-guest .guest-banner{display:flex}
 .guest-banner button{background:var(--pr);color:#fff;border:none;border-radius:999px;padding:5px 14px;font-family:inherit;font-weight:700;cursor:pointer;font-size:var(--fs-xxs)}
 body[data-theme="pixel"] .guest-banner{font-family:'Jua',sans-serif}
+/* 👀 게스트 예시 학생 전환 */
+.gb-personas{display:inline-flex;gap:4px;flex-wrap:wrap}
+.guest-banner .gb-p{background:rgba(255,255,255,.78);color:#7a5200;border:1.5px solid rgba(245,166,35,.55);padding:4px 11px;font-size:var(--fs-xxs);font-weight:700;border-radius:999px;cursor:pointer;line-height:1.5}
+.guest-banner .gb-p:hover{background:#fff}
+.guest-banner .gb-p.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+.gb-lv{opacity:.8;font-weight:700;font-size:.92em;margin-left:2px}
 
 /* ════ 📋🗂️ 뷰 토글 · 분류 툴바 ════ */
 .ql-tools{display:flex;align-items:center;gap:10px}
@@ -1644,7 +1650,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 
 <!-- APP -->
 <div class="app" id="app">
-  <div class="guest-banner" id="guestBanner">👀 게스트 모드 — 둘러보는 중이에요. 저장하려면 가입이 필요해요. <button onclick="goTo('signup')">🌱 회원가입</button></div>
+  <div class="guest-banner" id="guestBanner"><span>👀 예시 학생 둘러보기</span><span class="gb-personas"><button class="gb-p" data-p="high" onclick="switchGuestPersona('high')">🏆 질문왕<span class="gb-lv">Lv.10</span></button><button class="gb-p" data-p="mid" onclick="switchGuestPersona('mid')">🌿 보통<span class="gb-lv">Lv.5</span></button><button class="gb-p" data-p="low" onclick="switchGuestPersona('low')">🌱 시작<span class="gb-lv">Lv.2</span></button></span><button onclick="goTo('signup')">🌱 회원가입</button></div>
   <header class="hdr"><div class="hdr-in">
     <div class="hdr-logo"><img src="assets/logo.webp" class="hn-logo" alt="해누리" style="width:28px;height:28px;margin-right:6px"><b>해누리 질문 과수원</b><span style="font-size:10px;color:var(--tl);font-weight:600;margin-left:6px">🏫 질문하는 교실</span></div>
     <div class="hdr-r">
@@ -3624,6 +3630,16 @@ function mkTree(interactive, overrideQs, treeId){
     : `style="animation:treeSway ${swayDur} ease-in-out infinite;transform-origin:200px ${groundY}px"`;
 
   // 🌬️ 부드러운 바람 입자 (계절별)
+  // 📐 나무 치수(trunkH/crR/cY) 선계산
+  //    아래 🐝벌(lv5+)·✨반짝이(lv7+) 연출이 이 값을 참조한다. 선언이 뒤에 있으면
+  //    Lv7 이상 학생에게서 TDZ 오류(Cannot access 'crR' before initialization)로
+  //    나무 렌더 전체가 실패했다. (원본부터 있던 버그)
+  let trunkH, crR, cY;
+  if(lv===2){ trunkH=70; crR=28; }
+  else if(lv<=4){ trunkH=80+lv*10; crR=35+lv*8; }
+  else if(lv<=7){ trunkH=100+lv*8; crR=55+lv*7; }
+  else { trunkH=140+lv; crR=95+lv*3; }
+  cY = groundY - trunkH - crR*.35;
   let livingCreatures = '';
   // 🦊 B2: 여우 동반자 (나무 밑을 지나감 — 기존 companion 패턴)
   if(S.profile && S.profile.active_companion === 'fox'){
@@ -3722,7 +3738,7 @@ function mkTree(interactive, overrideQs, treeId){
   }
 
   // 레벨 2~10: 종별 분기
-  let trunkH, crR, cY;
+  // 📐 치수는 위(연출 계산 전)에서 이미 선언·계산됨. 아래 분기는 동일 값 재계산이라 무해.
   if(lv===2){ trunkH=70; crR=28; }
   else if(lv<=4){ trunkH=80+lv*10; crR=35+lv*8; }
   else if(lv<=7){ trunkH=100+lv*8; crR=55+lv*7; }
@@ -7852,32 +7868,175 @@ function guestNudge(){
   if(S.guest){ toast('👀 게스트 모드예요 — 회원가입하면 저장돼요!'); return true; }
   return false;
 }
-function enterGuest(){
+function enterGuest(key){
   S.guest=true;
   document.body.classList.add('is-guest');
-  S.user={id:'guest'};
-  S.name='둘러보는 친구'; S.grade='1'; S.cls='1'; S.num='0';
-  S.profile={seeds:12, streak_days:1, unlocked_items:['default'], active_tree:'default'};
-  S.seeds=12; S.unlocked=['default']; S.activeTree='default'; S.fruit='🍎'; S.season='spring';
-  S.loginCount=0;
-  // 샘플 데이터 (메모리에서만)
-  S.subjects=[{id:'demo_sci',label:'과학',icon:'🔬',color:'#5CB86E',sort_order:1}];
-  S.activeSub='demo_sci';
-  S.trees={demo_sci:[{id:'demo_tree',name:'궁금증 나무',icon:'🌳',sort_order:1,subject_id:'demo_sci'}]};
-  S.activeTreeId={demo_sci:'demo_tree'};
-  S.teacherList=[];
-  S.questions={demo_sci:{demo_tree:[
-    {id:9001,text:'식물은 왜 햇빛 쪽으로 자랄까?',resolved:false,date:td(),hint:null,tags:['호기심'],fruit:'🌻',
-     is_anonymous:false,phase:'before',parent_id:null,water_count:3,watered_by:[],branches:[],tree_id:'demo_tree',
-     self_check:{1:{checked:true,reason:'왜 그런지 답이 여러 가지일 수 있어서'},6:{checked:true,reason:'이유를 설명해야 해서'}}},
-    {id:9002,text:'만약 지구에 달이 없다면 어떤 일이 생길까?',resolved:false,date:td(),hint:null,tags:['만약에'],fruit:'🌙',
-     is_anonymous:false,phase:'before',parent_id:null,water_count:5,watered_by:[],branches:[],tree_id:'demo_tree',self_check:null},
-    {id:9003,text:'물이 위로 올라가는 현상은 다른 곳에서도 볼 수 있을까?',resolved:true,date:td(),hint:null,tags:[],fruit:'💧',
-     is_anonymous:false,phase:'after',parent_id:9001,water_count:1,watered_by:[],branches:[],tree_id:'demo_tree',self_check:null},
-  ]}};
+  applyGuestPersona(key||'high');
   goTo('dash');
-  toast('👀 게스트 모드 — 자유롭게 둘러보세요! (저장은 안 돼요)');
+  toast('👀 예시 학생을 둘러보는 중이에요 — 위 버튼으로 바꿔볼 수 있어요!');
 }
+
+// 예시 학생 전환 (게스트 모드 전용)
+function switchGuestPersona(key){
+  if(!S.guest) return;
+  applyGuestPersona(key);
+  render();
+  var p=GUEST_PERSONAS[key];
+  toast((p?p.emoji+' '+p.label:'예시')+' 학생의 과수원이에요');
+}
+
+// 질문 1개 만들기 (기본값 + 덮어쓰기)
+function gq(id,text,o){
+  return Object.assign({
+    id:id, text:text, resolved:false, date:td(), hint:null, tags:[], fruit:null,
+    is_anonymous:false, phase:'before', parent_id:null, self_check:null,
+    water_count:0, watered_by:[], fruit_x:null, fruit_y:null,
+    tree_id:null, starred:false, branches:[], material_id:null,
+    answer_text:null, answer_files:null, finding:null, still_wondering:null,
+    teacher_nudge:null, unit:null
+  }, o||{});
+}
+// 꼬리질문 1개
+function gbr(id,name,text,answer){
+  return {id:id, question_id:0, author_id:'demo_'+id, author_name:name, text:text, answer:answer||null};
+}
+function gAttach(arr,tid){ arr.forEach(function(q){ q.tree_id=tid; }); return arr; }
+
+// ── 예시 학생 3명 (상/중/하) ──────────────────────────────────────────
+var GUEST_PERSONAS = {
+  high: { emoji:'🏆', label:'질문왕', name:'질문왕 예시', grade:'2', cls:'3', num:'7',
+          seeds:86, streak:12, activeTree:'storytree', companion:'fox', season:'summer',
+          unlocked:['default','pine','cherry','storytree'] },
+  mid:  { emoji:'🌿', label:'보통', name:'보통 예시', grade:'2', cls:'3', num:'14',
+          seeds:24, streak:3, activeTree:'pine', companion:null, season:'spring',
+          unlocked:['default','pine'] },
+  low:  { emoji:'🌱', label:'시작', name:'시작 예시', grade:'2', cls:'3', num:'21',
+          seeds:4, streak:1, activeTree:'default', companion:null, season:'spring',
+          unlocked:['default'] }
+};
+
+function buildGuestData(key){
+  if(key==='low'){
+    return {
+      subjects:[{id:'demo_sci',label:'과학',icon:'🔬',color:'#5CB86E',sort_order:1}],
+      activeSub:'demo_sci',
+      trees:{demo_sci:[{id:'t_sci1',name:'나의 첫 나무',icon:'🌱',sort_order:1,subject_id:'demo_sci'}]},
+      activeTreeId:{demo_sci:'t_sci1'},
+      questions:{demo_sci:{t_sci1: gAttach([
+        gq(9101,'식물은 왜 햇빛 쪽으로 자랄까?',{tags:['호기심'],fruit:'🌻',water_count:1}),
+        gq(9102,'얼음은 왜 물에 뜰까?',{tags:['왜'],fruit:'💧'})
+      ],'t_sci1')}}
+    };
+  }
+  if(key==='mid'){
+    return {
+      subjects:[{id:'demo_sci',label:'과학',icon:'🔬',color:'#5CB86E',sort_order:1}],
+      activeSub:'demo_sci',
+      trees:{demo_sci:[{id:'t_sci1',name:'궁금증 나무',icon:'🌳',sort_order:1,subject_id:'demo_sci'}]},
+      activeTreeId:{demo_sci:'t_sci1'},
+      questions:{demo_sci:{t_sci1: gAttach([
+        gq(9201,'식물은 왜 햇빛 쪽으로 자랄까?',{tags:['호기심'],fruit:'🌻',water_count:3,
+           self_check:{1:{checked:true,reason:'답이 하나가 아니라서'},6:{checked:true,reason:'이유를 설명해야 해서'}}}),
+        gq(9202,'만약 지구에 달이 없다면 밀물과 썰물은 어떻게 될까?',{tags:['만약에'],fruit:'🌙',water_count:2}),
+        gq(9203,'소금물은 왜 순수한 물보다 늦게 얼까?',{tags:['왜'],fruit:'❄️'}),
+        gq(9204,'무거운 쇠배는 뜨는데 작은 못은 왜 가라앉을까?',{tags:['비교'],fruit:'⚓',resolved:true,water_count:4,
+           finding:'물에 잠긴 부피만큼의 부력이 무게보다 크면 뜬다는 걸 알았다'}),
+        gq(9205,'식물도 밤에는 숨을 쉴까?',{tags:['호기심'],fruit:'🌿',resolved:true}),
+        gq(9206,'소리는 진공에서 왜 전달되지 않을까?',{tags:['왜'],fruit:'🔔',
+           branches:[gbr(1,'같은 반 친구','그럼 우주에서는 소리를 아예 못 듣는 걸까?',null)]}),
+        gq(9207,'무지개는 왜 항상 같은 순서로 보일까?',{tags:['왜'],fruit:'🌈',water_count:1,phase:'after'}),
+        gq(9208,'같은 온도인데 쇠가 나무보다 더 차갑게 느껴지는 이유는?',{tags:['비교'],fruit:'🥶',phase:'after'})
+      ],'t_sci1')}}
+    };
+  }
+  // high — 질문왕
+  return {
+    subjects:[
+      {id:'demo_sci',label:'과학',icon:'🔬',color:'#5CB86E',sort_order:1},
+      {id:'demo_soc',label:'사회',icon:'🌏',color:'#5B8AC7',sort_order:2},
+      {id:'demo_kor',label:'국어',icon:'📖',color:'#C77BA8',sort_order:3}
+    ],
+    activeSub:'demo_sci',
+    trees:{
+      demo_sci:[
+        {id:'t_sci1',name:'궁금증 나무',icon:'🌳',sort_order:1,subject_id:'demo_sci'},
+        {id:'t_sci2',name:'실험 나무',icon:'🧪',sort_order:2,subject_id:'demo_sci'}
+      ],
+      demo_soc:[{id:'t_soc1',name:'사회 나무',icon:'🌏',sort_order:1,subject_id:'demo_soc'}],
+      demo_kor:[{id:'t_kor1',name:'국어 나무',icon:'📖',sort_order:1,subject_id:'demo_kor'}]
+    },
+    activeTreeId:{demo_sci:'t_sci1',demo_soc:'t_soc1',demo_kor:'t_kor1'},
+    questions:{
+      demo_sci:{
+        t_sci1: gAttach([
+          gq(9001,'식물은 왜 햇빛 쪽으로 자랄까?',{tags:['호기심','식물'],fruit:'🌻',water_count:7,starred:true,
+             self_check:{1:{checked:true,reason:'답이 하나가 아니라서'},2:{checked:true,reason:'외워서는 답이 안 나와서'},
+                         5:{checked:true,reason:'또 다른 궁금증이 생겨서'},6:{checked:true,reason:'이유를 댈 수 있어서'}},
+             branches:[
+               gbr(11,'같은 반 친구','그럼 빛이 없는 동굴 속 식물은 어디로 자랄까?','중력 방향을 따라 자란다고 배웠어!'),
+               gbr(12,'같은 반 친구','빛을 옆에서만 주면 줄기가 휘어질까?',null),
+               gbr(13,'나','옥신이라는 물질이 그늘 쪽에 많이 모인다던데 왜 그럴까?',null)
+             ]}),
+          gq(9002,'만약 지구에 달이 없다면 밀물과 썰물은 어떻게 될까?',{tags:['만약에','지구'],fruit:'🌙',water_count:6,starred:true}),
+          gq(9003,'별빛은 몇 년 전의 빛일까? 지금 보는 별이 이미 없어졌을 수도 있을까?',{tags:['우주'],fruit:'⭐',water_count:6}),
+          gq(9004,'무거운 쇠배는 뜨는데 작은 못은 왜 가라앉을까?',{tags:['비교'],fruit:'⚓',resolved:true,water_count:4,
+             finding:'잠긴 부피만큼의 부력이 무게보다 크면 뜬다'}),
+          gq(9005,'우리가 마시는 물은 공룡이 마시던 물과 같은 물일까?',{tags:['호기심'],fruit:'💧',water_count:4,is_anonymous:true}),
+          gq(9006,'열은 왜 항상 뜨거운 곳에서 차가운 곳으로만 이동할까?',{tags:['왜'],fruit:'🔥',resolved:true,water_count:3}),
+          gq(9007,'같은 온도인데 쇠가 나무보다 더 차갑게 느껴지는 이유는?',{tags:['비교'],fruit:'🥶',resolved:true,starred:true}),
+          gq(9008,'소리는 진공에서 왜 전달되지 않을까?',{tags:['왜'],fruit:'🔔',water_count:2,
+             branches:[gbr(14,'같은 반 친구','우주에서는 소리를 아예 못 듣는 걸까?',null)]}),
+          gq(9009,'무지개는 왜 항상 같은 순서로 보일까?',{tags:['빛'],fruit:'🌈',resolved:true,water_count:3}),
+          gq(9010,'만약 마찰력이 없다면 우리는 걸을 수 있을까?',{tags:['만약에'],fruit:'👟',is_anonymous:true,water_count:2}),
+          gq(9011,'자석의 N극과 S극은 왜 따로 나눌 수 없을까?',{tags:['왜'],fruit:'🧲'}),
+          gq(9012,'식물도 밤에는 숨을 쉴까?',{tags:['식물'],fruit:'🌿',resolved:true}),
+          gq(9013,'왜 기름과 물은 섞이지 않을까?',{tags:['왜'],fruit:'🫗',water_count:1}),
+          gq(9014,'사람마다 목소리가 다른 이유는 무엇일까?',{tags:['호기심'],fruit:'🎤',is_anonymous:true}),
+          gq(9015,'소금물은 왜 순수한 물보다 늦게 얼까?',{tags:['왜'],fruit:'❄️',phase:'after'}),
+          gq(9016,'우리 몸의 세포는 왜 계속 죽고 새로 생길까?',{tags:['생명'],fruit:'🧬',phase:'after',water_count:2}),
+          gq(9017,'식물의 뿌리는 어떻게 위아래를 알까?',{tags:['식물'],fruit:'🌱',phase:'after',parent_id:9001,
+             branches:[gbr(15,'같은 반 친구','우주정거장에서 키우면 뿌리가 어디로 갈까?',null)]}),
+          gq(9018,'얼음이 물에 뜨는 건 다른 물질에서도 흔한 일일까?',{tags:['비교'],fruit:'🧊',resolved:true,phase:'after',
+             finding:'물은 얼면 부피가 늘어나는 드문 물질이라는 걸 알게 됨'})
+        ],'t_sci1'),
+        t_sci2: gAttach([
+          gq(9031,'같은 양의 물인데 왜 넓은 접시에서 더 빨리 마를까?',{tags:['실험'],fruit:'💨',water_count:2}),
+          gq(9032,'식초와 베이킹소다를 섞으면 왜 차가워질까?',{tags:['실험'],fruit:'🧪',resolved:true}),
+          gq(9033,'물의 온도를 바꾸면 설탕이 녹는 속도도 달라질까?',{tags:['실험'],fruit:'🍬'}),
+          gq(9034,'같은 조건인데 실험 결과가 매번 조금씩 다른 이유는?',{tags:['실험'],fruit:'📏',phase:'after'})
+        ],'t_sci2')
+      },
+      demo_soc:{ t_soc1: gAttach([
+        gq(9051,'지도는 왜 나라마다 다르게 그려질까?',{tags:['사회'],fruit:'🗺️',water_count:2}),
+        gq(9052,'만약 우리 동네에 지하철이 생기면 무엇이 달라질까?',{tags:['만약에'],fruit:'🚇'}),
+        gq(9053,'사람들은 왜 도시로 모일까?',{tags:['사회'],fruit:'🏙️',resolved:true})
+      ],'t_soc1')},
+      demo_kor:{ t_kor1: gAttach([
+        gq(9071,'같은 글인데 사람마다 다르게 느끼는 이유는?',{tags:['국어'],fruit:'📖',water_count:1}),
+        gq(9072,'시에서 굳이 어려운 말을 쓰는 까닭은 무엇일까?',{tags:['국어'],fruit:'✒️'})
+      ],'t_kor1')}
+    }
+  };
+}
+
+function applyGuestPersona(key){
+  var p = GUEST_PERSONAS[key] || GUEST_PERSONAS.high;
+  GUEST_KEY = key;
+  var d = buildGuestData(key);
+  S.user={id:'guest'};
+  S.name=p.name; S.grade=p.grade; S.cls=p.cls; S.num=p.num;
+  S.profile={seeds:p.seeds, streak_days:p.streak, unlocked_items:p.unlocked.slice(),
+             active_tree:p.activeTree, active_companion:p.companion, waters_given:p.seeds>50?14:(p.seeds>10?4:0)};
+  S.seeds=p.seeds; S.unlocked=p.unlocked.slice(); S.activeTree=p.activeTree;
+  S.fruit='🍎'; S.season=p.season; S.loginCount=0;
+  S.teacherList=[]; S.myTeacherIds=new Set();
+  S.subjects=d.subjects; S.activeSub=d.activeSub;
+  S.trees=d.trees; S.activeTreeId=d.activeTreeId; S.questions=d.questions;
+  S.stickers=[]; S.filterTag=null; S.phaseFilter=null; S.expandedBranches=new Set();
+  S.lvMemory={};
+  document.querySelectorAll('.gb-p').forEach(function(b){ b.classList.toggle('on', b.dataset.p===key); });
+}
+var GUEST_KEY='high';
 
 function applyBranding(){
   try{
