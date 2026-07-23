@@ -2360,6 +2360,8 @@ const EMPTY_SPROUT='assets/empty-sprout.webp';
 const EMPTY_FOREST='assets/empty-forest.webp';
 const EMPTY_SIGN='assets/empty-sign.webp';
 const EMPTY_HARVEST='assets/empty-harvest.webp';
+const EMPTY_HOMEWORK='assets/empty-homework.webp';
+const EMPTY_ERROR='assets/empty-error.webp';
 
 function emptyStateHTML(imgUri, title, sub, ctaText, ctaOnclick){
   return `<div class="mascot-empty">
@@ -6192,7 +6194,7 @@ async function renderMaterials(){
     });
 
     if(!_materials.length){
-      el.innerHTML = emptyStateHTML(EMPTY_SIGN, '아직 올라온 자료가 없어요', '참여한 선생님이 자료를 올리면 여기에 나타나요. 그걸 보고 궁금한 걸 질문해봐요!', null, null);
+      el.innerHTML = emptyStateHTML(EMPTY_HOMEWORK, '아직 올라온 자료가 없어요', '참여한 선생님이 자료를 올리면 여기에 나타나요. 그걸 보고 궁금한 걸 질문해봐요!', null, null);
       return;
     }
 
@@ -6466,7 +6468,7 @@ async function renderClassCollection(mode){
   if(_classBoardCache){ _dispatchClassView(board, mode, _classBoardCache); return; }
   board.innerHTML='<div class="cb-loading">🗂️ 우리 반 질문을 모으는 중...</div>';
   const _gc=_myGC();
-  if(!_gc.ok){ board.innerHTML=emptyStateHTML(null,'학년·반 정보를 불러오지 못했어요','로그아웃 후 다시 로그인하면 우리 반 질문을 모아볼 수 있어요.',null,null); return; }
+  if(!_gc.ok){ board.innerHTML=emptyStateHTML(EMPTY_ERROR,'학년·반 정보를 불러오지 못했어요','로그아웃 후 다시 로그인하면 우리 반 질문을 모아볼 수 있어요.',null,null); return; }
   try{
     const {data:classmates}=await sb.from('profiles')
       .select('id,name,number,active_tree').eq('grade',_gc.g).eq('class_no',_gc.c);
@@ -6480,7 +6482,7 @@ async function renderClassCollection(mode){
     _dispatchClassView(board, mode, _classBoardCache);
   }catch(err){
     console.error('classBoard error:', err);
-    board.innerHTML=emptyStateHTML(null, '불러오지 못했어요', esc(err.message||''), null, null);
+    board.innerHTML=emptyStateHTML(EMPTY_ERROR, '불러오지 못했어요', esc(err.message||''), null, null);
   }
 }
 function _groupQsByUnit(list){
