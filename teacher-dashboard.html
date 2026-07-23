@@ -562,6 +562,13 @@ body.print-report-mode .dd-overlay{display:none !important}
 .stu-card-progress-pct{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--ink2);min-width:30px;text-align:right}
 .stu-card-meta{display:flex;gap:8px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.03em;flex-wrap:wrap}
 .stu-card-meta span{padding:2px 6px;background:var(--surface2);border-radius:2px}
+/* 🔑 학생 비밀번호 초기화 버튼 (카드/표/드릴다운 공용) */
+.pw-reset-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;background:var(--surface2);border:1px solid var(--rule);border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.03em;color:var(--ink2);cursor:pointer;line-height:1.5;white-space:nowrap}
+.pw-reset-btn:hover{background:var(--ac);border-color:var(--ac);color:#FFFCF4}
+.pw-reset-btn.card{margin-top:6px}
+.pw-reset-btn.row{margin-left:6px;padding:1px 5px;font-size:9px}
+.pw-reset-btn.hero{margin:-8px 0 16px;padding:6px 11px;font-size:10.5px}
+@media print{.pw-reset-btn{display:none !important}}
 
 /* ═══ RESPONSIVE ═══ */
 @media(max-width:900px){
@@ -1131,6 +1138,57 @@ function toast(msg){
 }
 function showLoader(t){ $('loaderTxt').textContent=t||'불러오는 중...'; $('loader').classList.add('show'); }
 function hideLoader(){ $('loader').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════════════════
+// 🔑 학생 비밀번호 초기화 (교사 전용)
+//   학생 계정은 s{학년}_{반}_{번호}@haenuri.app 가짜 이메일이라 비번 재설정 메일이
+//   갈 곳이 없다. anon 키로는 타인 비번을 바꿀 수 없으므로 서버의 SECURITY DEFINER
+//   함수 public.teacher_reset_student_password() 에 위임한다. (service_role 키 불필요)
+// ═══════════════════════════════════════════════════════════════════
+async function resetStudentPw(studentId, ev){
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  if(!studentId){ toast('학생을 찾을 수 없어요'); return; }
+  if(!sb){ alert('로그인이 필요해요'); return; }
+  if(isServiceKey){ alert('🔑 관리자 키 모드에서는 비밀번호 초기화를 쓸 수 없어요.\n교사 계정(이메일·비밀번호)으로 로그인한 뒤 다시 시도해 주세요.'); return; }
+
+  const s = filteredStudents.find(x => x.id === studentId) || allProfiles.find(p => p.id === studentId);
+  const who = s ? `${s.grade}학년 ${s.class_no}반 ${s.number}번 ${s.name || ''}`.trim() : '이 학생';
+
+  const raw = prompt(`🔑 ${who} 학생의 새 비밀번호를 정해주세요.\n\n· 4자 이상\n· 학생에게 직접 알려주고, 로그인 후 바로 바꾸게 해주세요`, '1234');
+  if(raw === null) return;
+  const newPw = String(raw).trim();
+  if(newPw.length < 4){ alert('비밀번호는 4자 이상이어야 해요'); return; }
+  if(!confirm(`${who} 학생의 비밀번호를 "${newPw}" 로 바꿀까요?\n\n기존 비밀번호는 즉시 쓸 수 없게 됩니다.`)) return;
+
+  showLoader('비밀번호 초기화 중...');
+  try{
+    const { error } = await sb.rpc('teacher_reset_student_password', {
+      p_student_id: studentId,
+      p_new_password: newPw
+    });
+    if(error) throw error;
+    toast(`🔑 ${(s && s.name) || '학생'} 비밀번호를 "${newPw}" 로 바꿨어요`);
+  }catch(e){
+    console.error('resetStudentPw error:', e);
+    const m = String((e && (e.message || e.hint || e.details)) || '');
+    let msg = '비밀번호 초기화에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    if(/schema cache|does not exist|Could not find the function|404/i.test(m)){
+      msg = '서버에 초기화 기능이 아직 설치되지 않았어요.\n(SQL 에디터에서 비밀번호초기화 SQL을 1회 실행해 주세요)';
+    }else if(/교사 계정의 비밀번호/.test(m)){
+      msg = '교사 계정은 이 기능으로 바꿀 수 없어요.';
+    }else if(/교사 계정만|로그인이 필요|permission denied|not authorized|42501/i.test(m)){
+      msg = '교사 계정만 쓸 수 있어요. 교사 계정으로 다시 로그인해 주세요.';
+    }else if(/찾을 수 없/.test(m)){
+      msg = '해당 학생 계정을 찾을 수 없어요. 목록을 새로고침해 주세요.';
+    }else if(/4자/.test(m)){
+      msg = '비밀번호는 4자 이상이어야 해요.';
+    }else if(/Failed to fetch|NetworkError/i.test(m)){
+      msg = '네트워크 연결을 확인해 주세요.';
+    }
+    alert('❌ ' + msg);
+  }
+  hideLoader();
+}
 
 // Tooltip helpers
 function showTip(html,x,y){
@@ -2335,7 +2393,7 @@ function renderStudentsView(){
               <div class="stu-card-avatar">👤</div>
               <div style="min-width:0;flex:1">
                 <div class="stu-card-nm">${esc(s.name||'?')}</div>
-                <div class="stu-card-ref">${s.grade}학년 ${s.class_no}반 ${s.number}번</div>
+                <div class="stu-card-ref">${s.grade}학년 ${s.class_no}반 ${s.number}번</div><button class="pw-reset-btn card" onclick="resetStudentPw('${s.id}',event)" title="이 학생의 로그인 비밀번호를 새로 설정합니다">🔑 비번 초기화</button>
               </div>
             </div>
             <div class="stu-card-stats">
@@ -2970,7 +3028,7 @@ function sortAndRenderStudents(){
       <td>${s.grade??''}</td>
       <td>${s.class_no??''}</td>
       <td>${s.number??''}</td>
-      <td><strong>${esc(s.name)}</strong>${alertBadge}</td>
+      <td><strong>${esc(s.name)}</strong>${alertBadge}<button class="pw-reset-btn row" onclick="resetStudentPw('${s.id}',event)" title="비밀번호 초기화">🔑</button></td>
       <td>${s.total}</td>
       <td>${s.resolved}</td>
       <td><div class="resolved-bar"><div class="bar-bg"><div class="bar-fg" style="width:${s.pct}%"></div></div><span class="pct">${s.pct}%</span></div></td>
@@ -3372,7 +3430,7 @@ function renderDrilldownBody(){
       <div class="dd-tree">${bigTreeSVG}</div>
       <div class="dd-hero-r">
         <div class="dd-hero-nm">${esc(s.name||'?')}</div>
-        <div class="dd-hero-ref">${esc(s.grade)}학년 ${esc(s.class_no)}반 ${esc(s.number)}번 · 마지막 접속 ${lastTxt}</div>
+        <div class="dd-hero-ref">${esc(s.grade)}학년 ${esc(s.class_no)}반 ${esc(s.number)}번 · 마지막 접속 ${lastTxt}</div><button class="pw-reset-btn hero" onclick="resetStudentPw('${s.id}',event)" title="이 학생의 로그인 비밀번호를 새로 설정합니다">🔑 비밀번호 초기화</button>
         <div class="dd-hero-stats">
           <div class="dd-stat"><div class="dd-stat-lbl">질문</div><div class="dd-stat-val">${s.total}<span class="em">개</span></div><div class="dd-stat-sub">해결 ${s.resolved} · 미해결 ${open}</div></div>
           <div class="dd-stat"><div class="dd-stat-lbl">해결률</div><div class="dd-stat-val">${s.pct}<span class="em">%</span></div><div class="dd-stat-sub">Lv.${lv} 나무</div></div>
