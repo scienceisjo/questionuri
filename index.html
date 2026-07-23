@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>🌳 해누리 질문 과수원 - 🏫 질문하는 교실</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#5CB86E">
+<meta name="description" content="궁금한 것을 심으면 나무에 열매가 열려요 — 질문하는 교실, 해누리 질문 과수원">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="해누리 질문 과수원">
+<meta property="og:title" content="🌳 해누리 질문 과수원">
+<meta property="og:description" content="궁금한 것을 심으면 나무에 열매가 열려요 · 질문하는 교실">
+<meta property="og:image" content="https://scienceisjo.github.io/questionuri/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://scienceisjo.github.io/questionuri/">
+<meta name="twitter:card" content="summary_large_image">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&family=Gaegu:wght@400;700&family=Jua&display=swap" rel="stylesheet">
 <!-- 🧮 수식 렌더링 (KaTeX) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -142,6 +155,23 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
   100%{transform:translate(-6px,470px) rotate(380deg);opacity:0}
 }
 @keyframes waterDrop{0%{transform:translateY(-20px);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translateY(80px);opacity:0}}
+/* A3 물주기 스플래시 */
+@keyframes splashOut{0%{transform:translate(0,0) scale(.4);opacity:0}15%{opacity:1}100%{transform:translate(var(--sx,0px),var(--sy,-30px)) scale(1);opacity:0}}
+.water-splash{position:fixed;pointer-events:none;z-index:46;font-size:12px;animation:splashOut .7s ease-out forwards}
+/* A4 수확 연출 */
+@keyframes fruitFall{0%{transform:translateY(0) rotate(0);opacity:1}70%{opacity:1}100%{transform:translateY(60px) rotate(40deg);opacity:0}}
+@keyframes acornPop{0%{transform:translate(-50%,0) scale(.5);opacity:0}25%{transform:translate(-50%,-18px) scale(1.15);opacity:1}75%{transform:translate(-50%,-26px) scale(1);opacity:1}100%{transform:translate(-50%,-46px) scale(.95);opacity:0}}
+@keyframes sparkTwinkle{0%{transform:scale(0) rotate(0);opacity:0}40%{transform:scale(1.2) rotate(90deg);opacity:1}100%{transform:scale(.3) rotate(180deg);opacity:0}}
+.harvest-fruit{position:fixed;pointer-events:none;z-index:47;font-size:26px;animation:fruitFall 1s ease-in forwards}
+.harvest-acorn{position:fixed;pointer-events:none;z-index:48;font-weight:800;color:#8B5A2B;font-size:18px;font-family:'Gaegu',cursive;text-shadow:0 1px 2px rgba(255,255,255,.8);animation:acornPop 1.4s ease-out forwards}
+.harvest-spark{position:fixed;pointer-events:none;z-index:47;font-size:14px;animation:sparkTwinkle .9s ease-out forwards}
+/* A5 레벨업 연출 */
+@keyframes lvlupPulse{0%{transform:scale(1)}30%{transform:scale(1.06)}55%{transform:scale(.98)}100%{transform:scale(1)}}
+@keyframes confettiFly{0%{transform:translate(0,0) scale(1) rotate(0);opacity:1}100%{transform:translate(var(--dx,0px),var(--dy,-40px)) scale(.3) rotate(360deg);opacity:0}}
+@keyframes badgePop{0%{transform:translate(-50%,0) scale(.4);opacity:0}25%{transform:translate(-50%,-14px) scale(1.1);opacity:1}75%{transform:translate(-50%,-20px) scale(1);opacity:1}100%{transform:translate(-50%,-40px) scale(.9);opacity:0}}
+.lvlup-pulse{animation:lvlupPulse .85s ease-in-out}
+.lvlup-confetti{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:60;animation:confettiFly 1s ease-out forwards}
+.lvlup-badge{position:fixed;pointer-events:none;z-index:61;font-weight:800;color:#F5A623;font-size:20px;font-family:'Gaegu',cursive;text-shadow:0 2px 4px rgba(0,0,0,.15);white-space:nowrap;animation:badgePop 1.5s ease-out forwards}
 @keyframes fruitBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
@@ -192,7 +222,9 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
   0%,100%{opacity:0;transform:scale(0) rotate(0deg)}
   50%{opacity:1;transform:scale(1) rotate(180deg)}
 }
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes starTwinkle{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes storyGlow{0%,100%{opacity:.15}50%{opacity:.4}}
+@keyframes foxTrot{0%{transform:translateX(-60px) scaleX(1)}45%{transform:translateX(320px) scaleX(1)}50%{transform:translateX(320px) scaleX(-1)}95%{transform:translateX(-60px) scaleX(-1)}100%{transform:translateX(-60px) scaleX(1)}}
 @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
 
 /* 🌿 식물 생장 (레벨업 시) */
@@ -817,6 +849,12 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .mat-area-count{background:rgba(93,184,110,.12);color:var(--pr);padding:2px 9px;border-radius:10px;font-size:var(--fs-xxs);font-weight:700}
 .mat-area-card.today{border-color:rgba(245,166,35,.5);box-shadow:0 2px 14px rgba(245,166,35,.18);background:linear-gradient(135deg,#fff,rgba(255,248,225,.4))}
 .mat-area-new{display:inline-block;background:linear-gradient(135deg,#FF5722,#F4511E);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;margin-right:6px;vertical-align:middle;letter-spacing:.05em;animation:pulse 2s ease-in-out infinite}
+/* 📼 주말 과제(거꾸로수업) 카드 */
+.mat-area-card.hw{border-color:rgba(103,58,183,.4);box-shadow:0 2px 14px rgba(103,58,183,.15);background:linear-gradient(135deg,#fff,rgba(237,231,246,.5))}
+.mat-hw-tag{display:inline-block;background:linear-gradient(135deg,#7E57C2,#5E35B1);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;margin-right:6px;vertical-align:middle;letter-spacing:.03em}
+.mat-hw-dday{background:linear-gradient(135deg,#FF9800,#F57C00);color:#fff;padding:3px 10px;border-radius:10px;font-size:var(--fs-xxs);font-weight:800;white-space:nowrap;flex-shrink:0}
+.mat-hw-dday.soon{background:linear-gradient(135deg,#F44336,#D32F2F);animation:pulse 2s ease-in-out infinite}
+.mat-hw-dday.over{background:rgba(120,120,120,.85)}
 
 /* KaTeX 인라인 / 블록 수식 */
 .math-inline{display:inline-block;padding:0 2px}
@@ -1428,6 +1466,15 @@ body[data-theme="pixel"] .guest-banner{font-family:'Jua',sans-serif}
 /* 픽셀 테마 보드 */
 body[data-theme="pixel"] #app .bcol{background:rgba(42,42,42,.12)}
 body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a}
+/* ✨ cute 시작화면 폴리시 — 순수 시각 개선(레이아웃·mc-theme 정렬 불변) */
+body[data-theme="cute"] .mc-panel{transition:transform .35s ease;animation:cutePanelGlow 6s ease-in-out infinite}
+@keyframes cutePanelGlow{0%,100%{box-shadow:0 18px 50px rgba(36,97,47,.16),0 4px 14px rgba(36,97,47,.08),0 0 0 0 rgba(124,197,138,0)}50%{box-shadow:0 22px 56px rgba(36,97,47,.18),0 4px 14px rgba(36,97,47,.08),0 0 34px 6px rgba(124,197,138,.20)}}
+body[data-theme="cute"] .mc-panel:hover{transform:translateY(-3px)}
+body[data-theme="cute"] .mc-panel::after{content:'✨';position:absolute;top:14px;right:16px;font-size:16px;opacity:.7;pointer-events:none;animation:cuteTwinkle 2.8s ease-in-out infinite}
+@keyframes cuteTwinkle{0%,100%{opacity:.35;transform:scale(.9)}50%{opacity:.9;transform:scale(1.12)}}
+body[data-theme="cute"] .mc-btn,body[data-theme="cute"] .mc-rank-btn,body[data-theme="cute"] .mc-link-btn{transition:transform .18s ease,box-shadow .18s ease,background .25s ease}
+body[data-theme="cute"] .mc-btn.primary:hover{box-shadow:0 12px 26px rgba(61,139,79,.30)}
+body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166,35,.30)}
 </style>
 </head>
 <body data-theme="cute">
@@ -1525,8 +1572,8 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
   <div class="mc-panel">
     <button class="theme-toggle wel-theme" onclick="toggleTheme()" title="디자인 전환">🎨 <span class="tt-label">🌿 깔끔</span></button>
     <div class="mc-title-wrap">
-      <img src="data:image/webp;
-         <div class="mc-title">해누리 질문 과수원</div>
+      <img src="assets/logo.webp" class="mc-logo-blk" alt="해누리중학교 로고">
+      <div class="mc-title">해누리 질문 과수원</div>
       <div class="mc-school" id="welSchool" style="font-size:var(--fs-xxs);color:var(--tl);font-weight:700;margin-top:-2px">🏫 해누리중학교</div>
       <div class="mc-subtitle">⛏️ 질문하는 교실</div>
       <div class="mc-tagline">세상에 나쁜 질문은 없다.<br>불친절한 답변만 있을 뿐!</div>
@@ -1551,7 +1598,8 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
 <div class="scr auth" id="s-login">
   <div class="ac fade-up">
     <button class="bb" onclick="goTo('welcome')">← 뒤로</button>
-    <img class="login-hero" src="data:image/  <div style="text-align:center;margin:var(--sp-1) 0 var(--sp-3)"><h2 style="font-size:var(--fs-xl);font-weight:700;color:var(--pd);margin-top:3px">🌳 질문 과수원</h2><p style="font-size:var(--fs-xs);color:var(--tl);margin-top:2px">궁금증이 자라는 곳</p></div>
+    <img class="login-hero" src="assets/login-hero.webp" alt="질문 과수원">
+    <div style="text-align:center;margin:var(--sp-1) 0 var(--sp-3)"><h2 style="font-size:var(--fs-xl);font-weight:700;color:var(--pd);margin-top:3px">🌳 질문 과수원</h2><p style="font-size:var(--fs-xs);color:var(--tl);margin-top:2px">궁금증이 자라는 곳</p></div>
     <label class="fl">학년 · 반 · 번호</label>
     <div class="row3">
       <input class="fi" id="lgG" type="number" min="1" max="9" placeholder="학년">
@@ -1594,14 +1642,15 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
 <div class="app" id="app">
   <div class="guest-banner" id="guestBanner">👀 게스트 모드 — 둘러보는 중이에요. 저장하려면 가입이 필요해요. <button onclick="goTo('signup')">🌱 회원가입</button></div>
   <header class="hdr"><div class="hdr-in">
-    <div class="hdr-logo"><img src="data:image/webp;
-                             <div class="hdr-r">
+    <div class="hdr-logo"><img src="assets/logo.webp" class="hn-logo" alt="해누리" style="width:28px;height:28px;margin-right:6px"><b>해누리 질문 과수원</b><span style="font-size:10px;color:var(--tl);font-weight:600;margin-left:6px">🏫 질문하는 교실</span></div>
+    <div class="hdr-r">
       <div class="seeds" id="seedsN" onclick="swTab('shop')"><span>🌰</span><span id="seedsCnt">0</span></div>
       <div class="streak"><span>🔥</span><span id="streakN">0일</span></div>
       <div class="streak" id="myVisitsBox" title="나의 접속 횟수" style="display:none"><span>👋</span><span id="myVisitsN">0</span>번째</div>
       <button class="theme-toggle hdr-theme" onclick="toggleTheme()" title="디자인 전환">🎨</button>
       <div class="av" id="av" onclick="doLogout()" title="로그아웃">?</div>
-      <img src="data:image/webp;    </div>
+      <img src="assets/logo.webp" class="hn-logo" alt="해누리중학교 로고">
+    </div>
   </div></header>
   <div class="sub-row"><div class="sub-in" id="subTabs"></div></div>
   <div class="tab-nav"><div class="tab-nav-in">
@@ -1832,7 +1881,8 @@ body[data-theme="pixel"] #app .tstep{background:rgba(42,42,42,.15);color:#2a2a2a
 <div class="mdl" id="mFy" onclick="closeFy()">
   <div class="fy-box mdl-box" onclick="event.stopPropagation()">
     <div class="fy-hdr">
-      <div class="fy-info"><img class="fy-mascot" src="data:image/webp;    <button class="fy-x" onclick="closeFy()">✕</button>
+      <div class="fy-info"><img class="fy-mascot" src="assets/fy-mascot.webp" alt=""><div><div class="fy-nm">힌트 요정</div><div class="fy-sub">AI 탐구 도우미</div></div></div>
+      <button class="fy-x" onclick="closeFy()">✕</button>
     </div>
     <div class="fy-body">
       <div class="fy-q"><div class="fy-ql">질문</div><div class="fy-qt" id="fyQ"></div></div>
@@ -2265,6 +2315,7 @@ const S = {
   checkId:null,            // 🎯 지금 자가체크 중인 질문 id
   harvestId:null,          // 🍎 지금 '수확(해결)' 기록 중인 질문 id
   harvestEdit:false,       // 🍎 수확 패널이 '기록 수정' 모드인지(이미 해결됨)
+  lvMemory:{},             // 🎉 나무별 마지막 레벨(레벨업 연출 감지용)
   qView:'list',            // 📋 질문 보기 방식: 'list' | 'board'
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
@@ -2293,7 +2344,13 @@ const EXPAND_PROMPTS = ['그래서 만약 ~라면?','왜 꼭 그래야 할까?',
 const QUESTION_STEMS = ['왜 ','만약 ','어떻게 ','정말 ','무엇이 ','~와 ~는 어떻게 다를까?','~이 없다면?','왜 하필 '];
 
 // 🧚 마스코트 + 일러스트 에셋 (AI 생성 이미지, base64 인라인)
-const MASCOT_CHEER='data:image/webp;const EMPTY_SPROUT='data:image/webp;const EMPTY_FOREST='data:image/webp;const EMPTY_SIGN='data:image/webp;const EMPTY_HARVEST='data:image/webp
+const MASCOT_CHEER='assets/mascot-cheer.webp';
+const EMPTY_SPROUT='assets/empty-sprout.webp';
+const EMPTY_FOREST='assets/empty-forest.webp';
+const EMPTY_SIGN='assets/empty-sign.webp';
+const EMPTY_HARVEST='assets/empty-harvest.webp';
+
+function emptyStateHTML(imgUri, title, sub, ctaText, ctaOnclick){
   return `<div class="mascot-empty">
     ${imgUri?`<img class="me-illust" src="${imgUri}" alt="">`:''}
     <div class="me-t">${title}</div>
@@ -2345,6 +2402,8 @@ const ACHS=[
   {l:'용기있는 질문',i:'🕊️',d:'익명 질문 3개',check:s=>anonQs(s)>=3},
   {l:'명예의 전당',i:'🏅',d:'💧 공감 5회 이상 받은 질문 보유',check:s=>allQs(s).some(q=>(q.water_count||0)>=5)},
   {l:'질문 스타',i:'⭐',d:'⭐ 교사 뽑은 질문 보유',check:s=>allQs(s).some(q=>q.starred)},
+  {l:'이야기꾼',i:'📖',d:'꼬리질문 10개 달기',check:s=>totalBranches(s)>=10},
+  {l:'멋쟁이 정원사',i:'🛍️',d:'상점 아이템 3개 모으기',check:s=>(s.unlocked||[]).length>=3},
 ];
 const TAG_PRESETS = ['#수업','#실험','#숙제','#호기심','#어려움','#시험','#일상','#관찰'];
 
@@ -2366,6 +2425,7 @@ const SHOP = {
     {id:'maple',nm:'단풍나무',ic:'🍁',price:40,desc:'가을빛 단풍나무'},
     {id:'palm',nm:'야자수',ic:'🌴',price:50,desc:'이국적인 야자수'},
     {id:'baobab',nm:'바오밥',ic:'🌳',price:100,desc:'거대한 바오밥나무'},
+    {id:'storytree',nm:'이야기나무',ic:'📖',price:150,desc:'밤이면 별빛으로 은은하게 빛나는 나무'},
   ],
   companion: [
     {id:'bird',nm:'파랑새',ic:'🐦',price:15,desc:'나무에 새가 날아와요'},
@@ -2374,6 +2434,7 @@ const SHOP = {
     {id:'owl',nm:'부엉이',ic:'🦉',price:35,desc:'지혜로운 부엉이'},
     {id:'swing',nm:'그네',ic:'🪢',price:25,desc:'나뭇가지 그네'},
     {id:'beehive',nm:'벌집',ic:'🍯',price:30,desc:'꿀벌들의 집'},
+    {id:'fox',nm:'여우',ic:'🦊',price:40,desc:'나무 밑을 총총 지나가는 여우'},
   ],
 };
 
@@ -2506,6 +2567,89 @@ function toast(msg){
   setTimeout(()=>t.remove(),2400);
 }
 
+// 🎬 상호작용 연출(순수 add-on) — A3 물튀김 / A4 수확 / A5 레벨업
+function waterSplash(x,y){
+  for(let i=0;i<8;i++){
+    const d=document.createElement('div');
+    d.className='water-splash';
+    d.textContent='💧';
+    const ang=Math.PI*(0.1+0.8*(i/7)); // 위쪽 반원으로 퍼짐
+    const dist=26+Math.random()*24;
+    d.style.setProperty('--sx',(Math.cos(ang)*dist).toFixed(1)+'px');
+    d.style.setProperty('--sy',(-Math.sin(ang)*dist).toFixed(1)+'px');
+    d.style.left=x+'px';
+    d.style.top=y+'px';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),700);
+  }
+}
+
+function harvestCelebrate(){
+  try{
+    const card=document.querySelector('.forest-card.active');
+    const box=card?card.getBoundingClientRect():{left:window.innerWidth/2-80,top:140,width:160};
+    const cx=box.left+box.width/2, cy=box.top+70;
+    const fr=document.createElement('div');
+    fr.className='harvest-fruit';
+    fr.textContent=(S.fruit||'🍎');
+    fr.style.left=(cx-13)+'px';
+    fr.style.top=cy+'px';
+    document.body.appendChild(fr);
+    setTimeout(()=>fr.remove(),1000);
+    for(let i=0;i<6;i++){
+      const sp=document.createElement('div');
+      sp.className='harvest-spark';
+      sp.textContent='✨';
+      sp.style.left=(cx+(Math.random()*70-35))+'px';
+      sp.style.top=(cy+(Math.random()*50-10))+'px';
+      sp.style.animationDelay=(i*40)+'ms';
+      document.body.appendChild(sp);
+      setTimeout(()=>sp.remove(),1000);
+    }
+    const ac=document.createElement('div');
+    ac.className='harvest-acorn';
+    ac.textContent='🌰 +2';
+    ac.style.left=cx+'px';
+    ac.style.top=(cy+6)+'px';
+    document.body.appendChild(ac);
+    setTimeout(()=>ac.remove(),1500);
+  }catch(_){}
+}
+
+function levelUpCelebrate(lv){
+  try{
+    const card=document.querySelector('.forest-card.active');
+    if(card){
+      card.classList.remove('lvlup-pulse');
+      void card.offsetWidth;
+      card.classList.add('lvlup-pulse');
+      setTimeout(()=>card.classList.remove('lvlup-pulse'),900);
+    }
+    const box=card?card.getBoundingClientRect():{left:window.innerWidth/2-80,top:120,width:160};
+    const cx=box.left+box.width/2, cy=box.top+50;
+    const colors=['#F5A623','#5DB86E','#4FC3F7','#EC86A9','#FFD166'];
+    for(let i=0;i<24;i++){
+      const c=document.createElement('div');
+      c.className='lvlup-confetti';
+      c.style.left=cx+'px';
+      c.style.top=cy+'px';
+      c.style.background=colors[i%colors.length];
+      const ang=(Math.PI*2*i)/24, dist=60+Math.random()*70;
+      c.style.setProperty('--dx',(Math.cos(ang)*dist).toFixed(1)+'px');
+      c.style.setProperty('--dy',(Math.sin(ang)*dist-40).toFixed(1)+'px');
+      document.body.appendChild(c);
+      setTimeout(()=>c.remove(),1100);
+    }
+    const badge=document.createElement('div');
+    badge.className='lvlup-badge';
+    badge.textContent='🎉 Lv.'+lv+' 달성!';
+    badge.style.left=cx+'px';
+    badge.style.top=(cy-10)+'px';
+    document.body.appendChild(badge);
+    setTimeout(()=>badge.remove(),1600);
+  }catch(_){}
+}
+
 function waterAnim(x,y){
   for(let i=0;i<5;i++){
     setTimeout(()=>{
@@ -2576,31 +2720,34 @@ async function switchMCRank(type){
   list.innerHTML = '<div class="mc-rank-loading">⏳ 랭킹을 불러오는 중...</div>';
   try{
     let ranking = [];
-    if(type === 'king'){
-      // 질문왕: 질문 수 TOP
-      const {data:qs} = await sb.from('questions').select('user_id');
-      const cnt = {};
-      (qs||[]).forEach(q=>{ if(q.user_id) cnt[q.user_id]=(cnt[q.user_id]||0)+1; });
-      ranking = await buildRanking(cnt, '개');
-    } else if(type === 'helper'){
-      // 도움왕: 또래답변 수 TOP
-      try{
+    const unit = (type === 'king') ? '개' : '번';
+    // 🔒 보안: 전교 랭킹은 SECURITY DEFINER RPC로 집계(원본 테이블 직접 열람 없이).
+    //    RPC가 아직 배포되지 않았으면 기존 방식으로 자동 폴백 → 배포 순서와 무관하게 항상 동작.
+    const {data:rows, error:rErr} = await sb.rpc('get_school_ranking', {kind: type});
+    if(!rErr && Array.isArray(rows)){
+      ranking = rows.map(r=>({ name: mcName(r), score: r.score||0, unit }));
+    } else {
+      if(type === 'king'){
+        const {data:qs} = await sb.from('questions').select('user_id');
+        const cnt = {};
+        (qs||[]).forEach(q=>{ if(q.user_id) cnt[q.user_id]=(cnt[q.user_id]||0)+1; });
+        ranking = await buildRanking(cnt, '개');
+      } else if(type === 'helper'){
         const {data:pa} = await sb.from('peer_answers').select('user_id');
         const cnt = {};
         (pa||[]).forEach(p=>{ if(p.user_id) cnt[p.user_id]=(cnt[p.user_id]||0)+1; });
         ranking = await buildRanking(cnt, '번');
-      }catch(e){ ranking = []; }
-    } else if(type === 'water'){
-      // 물주기왕: waters_given TOP
-      const {data:profs} = await sb.from('profiles').select('id,name,grade,class_no,number,waters_given');
-      ranking = (profs||[])
-        .filter(p=>(p.waters_given||0)>0)
-        .map(p=>({name:mcName(p), score:p.waters_given||0, unit:'번'}))
-        .sort((a,b)=>b.score-a.score).slice(0,10);
+      } else if(type === 'water'){
+        const {data:profs} = await sb.from('profiles').select('id,name,grade,class_no,number,waters_given');
+        ranking = (profs||[])
+          .filter(p=>(p.waters_given||0)>0)
+          .map(p=>({name:mcName(p), score:p.waters_given||0, unit:'번'}))
+          .sort((a,b)=>b.score-a.score).slice(0,10);
+      }
     }
     renderMCRank(ranking, type);
   }catch(e){
-    list.innerHTML = `<div class="mc-rank-empty">⚠ 랭킹을 불러올 수 없어요<br><span style="font-size:11px">${esc(e.message||'')}</span></div>`;
+    console.warn('rank:', e?.message||e); renderMCRank([], type);
   }
 }
 
@@ -3195,6 +3342,7 @@ const TREE_STYLES = {
   maple:   {trunk:['#4A2F18','#7A4E28','#8C5C36','#4A2F18'], crown:['#E65100','#F57C00','#D84315'], accent:'#FFB74D', label:'🍁 단풍나무'},
   palm:    {trunk:['#6D4C2C','#9B7A4E','#B89060','#6D4C2C'], crown:['#558B2F','#33691E','#689F38'], accent:'#8BC34A', label:'🌴 야자수'},
   baobab:  {trunk:['#6B4226','#9B7040','#B8885A','#6B4226'], crown:['#5D8B3E','#4A7530','#6B9E49'], accent:'#8BC34A', label:'🌴 바오밥'},
+  storytree:{trunk:['#3E2C4F','#5E4576','#7B5C95','#3E2C4F'], crown:['#8E7CC3','#B39DDB','#7E57C2'], accent:'#D1C4E9', label:'📖 이야기나무'},
 };
 
 function mkTree(interactive, overrideQs, treeId){
@@ -3212,6 +3360,9 @@ function mkTree(interactive, overrideQs, treeId){
   const W=400,H=420;
   const groundY=370;
   const species = (S.activeTree && TREE_STYLES[S.activeTree]) ? S.activeTree : 'default';
+  const nightHr = new Date().getHours();
+  const isNight = (nightHr >= 21 || nightHr <= 5);
+  const isDusk  = (nightHr >= 18 && nightHr <= 20);
   const ts = TREE_STYLES[species];
 
   // 꼬리질문으로 뻗어나간 가지 수
@@ -3282,6 +3433,21 @@ function mkTree(interactive, overrideQs, treeId){
   sky+=`<circle cx="320" cy="70" r="14" fill="#FFFDE7" opacity=".8"/>`;
   // 은은한 빛 줄기
   sky+=`<g opacity=".25"><path d="M320,70 L120,${groundY-50}" stroke="#FFF9C4" stroke-width="50" stroke-linecap="round" filter="url(#leafGlow)"/></g>`;
+  // 🌙 A2: 저녁 노을 / 밤하늘 (밤일 때만 sky를 덮어씀)
+  if(isNight){
+    sky+=`<defs><linearGradient id="nightG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0B1026"/><stop offset="55%" stop-color="#1A2151"/><stop offset="100%" stop-color="#2D3561"/></linearGradient></defs>`;
+    sky+=`<rect x="0" y="0" width="${W}" height="${H}" fill="url(#nightG)" rx="12"/>`;
+    for(let i=0;i<28;i++){
+      const r1=((i*7919)%97)/97, r2=((i*6577+13)%73)/73, r3=((i*5381+29)%59)/59;
+      const sx=(10+r1*380).toFixed(1), sy=(10+r2*220).toFixed(1);
+      const sr=(0.6+r3*1.3).toFixed(2), so=(0.5+r3*0.5).toFixed(2);
+      sky+=`<circle cx="${sx}" cy="${sy}" r="${sr}" fill="#FFFDE7" opacity="${so}" style="animation:starTwinkle ${(2.5+r1*3).toFixed(1)}s ease-in-out infinite;animation-delay:${(-r2*3).toFixed(2)}s"/>`;
+    }
+    sky+=`<g transform="translate(320,70)"><circle cx="0" cy="0" r="20" fill="#FFF9C4" opacity=".95"/><circle cx="7" cy="-3" r="17" fill="#141B40"/></g>`;
+  } else if(isDusk){
+    sky+=`<rect x="0" y="0" width="${W}" height="${H}" fill="#F57C00" opacity=".26" rx="12"/>`;
+    sky+=`<rect x="0" y="0" width="${W}" height="${(H*.55).toFixed(0)}" fill="#7E57C2" opacity=".2" rx="12"/>`;
+  }
 
   // 구름
   const clouds = `
@@ -3413,6 +3579,10 @@ function mkTree(interactive, overrideQs, treeId){
 
   // 🌬️ 부드러운 바람 입자 (계절별)
   let livingCreatures = '';
+  // 🦊 B2: 여우 동반자 (나무 밑을 지나감 — 기존 companion 패턴)
+  if(S.profile && S.profile.active_companion === 'fox'){
+    livingCreatures += drawFox(groundY);
+  }
   // 새들 (lv4+) — 하늘을 가로지름
   if(lv >= 4 && interactive){
     const birdCount = Math.min(Math.floor(lv/3) + 1, 3);
@@ -3521,6 +3691,17 @@ function mkTree(interactive, overrideQs, treeId){
     tree += buildPalm(groundY, trunkH, crR, cY, ts, lv);
   } else if(species==='baobab'){
     tree += buildBaobab(groundY, trunkH, crR, cY, ts, lv, sc);
+  } else if(species==='storytree'){
+    tree += buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, finalCrown, 'default');
+    for(let si=0; si<Math.min(lv*2,16); si++){
+      const sa=(si/16)*Math.PI*2 + si*0.5;
+      const srd=crR*(0.4+((si*13)%45)/100);
+      const sgx=200+Math.cos(sa)*srd, sgy=cY+Math.sin(sa)*srd*0.7;
+      tree += `<g transform="translate(${sgx.toFixed(1)},${sgy.toFixed(1)})" style="animation:sparkle 3.5s ease-in-out infinite;animation-delay:${(si*0.3).toFixed(2)}s"><path d="M0,-3.5 L.8,-.8 L3.5,0 L.8,.8 L0,3.5 L-.8,.8 L-3.5,0 L-.8,-.8 Z" fill="#EDE7F6" opacity=".9"/></g>`;
+    }
+    if(isNight){
+      tree += `<ellipse cx="200" cy="${cY}" rx="${(crR*1.25).toFixed(1)}" ry="${(crR*1.05).toFixed(1)}" fill="#B39DDB" style="animation:storyGlow 4s ease-in-out infinite" opacity=".2"/>`;
+    }
   } else if(species==='cherry'){
     tree += buildRoundCrownTree(groundY, trunkH, crR, cY, ts, lv, finalCrown, 'cherry');
   } else if(species==='maple'){
@@ -3530,6 +3711,26 @@ function mkTree(interactive, overrideQs, treeId){
   }
 
   // 공통 오버레이: 열매, 꼬리가지, 익명잎, 동반자, 스티커
+  // 🍃 A1: 수관 입체화 — 잎뭉치 클러스터 (lv>=3, 둥근 수관 종만, 기존 crown 위에 겹쳐 그림)
+  if(lv>=3 && (species==='default'||species==='cherry'||species==='maple')){
+    const nClump = Math.min(5 + Math.floor(lv/2), 8);
+    for(let ci=0; ci<nClump; ci++){
+      const ca=(ci/nClump)*Math.PI*2 + ci*0.6;
+      const crd=crR*(0.45 + ((ci*17)%40)/100);
+      const cbx=200 + Math.cos(ca)*crd;
+      const cby=cY + Math.sin(ca)*crd*0.72;
+      const cbr=crR*(0.3 + ((ci*11)%22)/100);
+      const cbc=finalCrown[ci%finalCrown.length];
+      tree += `<circle cx="${cbx.toFixed(1)}" cy="${cby.toFixed(1)}" r="${cbr.toFixed(1)}" fill="${cbc}" opacity=".5"/>`;
+      for(let sj=0; sj<7; sj++){
+        const sca=(sj/7)*Math.PI*2;
+        const scx=cbx + Math.cos(sca)*cbr;
+        const scy=cby + Math.sin(sca)*cbr*0.9;
+        tree += `<circle cx="${scx.toFixed(1)}" cy="${scy.toFixed(1)}" r="${(cbr*0.34).toFixed(1)}" fill="${cbc}" opacity=".42"/>`;
+      }
+      tree += `<circle cx="${(cbx-cbr*0.3).toFixed(1)}" cy="${(cby-cbr*0.35).toFixed(1)}" r="${(cbr*0.28).toFixed(1)}" fill="rgba(255,255,255,.28)"/>`;
+    }
+  }
   // 소나무는 원형 crown이 없고 삼각이므로 열매 영역을 중앙으로
   const fruitCenter = (species==='pine') ? {cx:200, cy:groundY-trunkH*.5, r:crR*.55}
                     : (species==='palm') ? {cx:200, cy:cY+5, r:crR*.5}
@@ -4128,6 +4329,28 @@ function companionSVG(cx, cy, crR){
   return `<foreignObject x="${x-12}" y="${y-12}" width="24" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:18px;text-align:center;line-height:24px;animation:fruitBob 3s ease-in-out infinite">${em}</div></foreignObject>`;
 }
 
+function drawFox(groundY){
+  const y = groundY - 2;
+  return `<g style="animation:foxTrot 22s linear infinite;transform-origin:center bottom">
+    <g transform="translate(0,${y})">
+      <ellipse cx="-3" cy="0" rx="11" ry="2.2" fill="#000" opacity=".12"/>
+      <path d="M-13,-8 Q-23,-10 -20,-2 Q-15,-5 -10,-6 Z" fill="#E67E22"/>
+      <path d="M-20,-2 Q-22,-5 -21,-7 Q-18,-5 -16,-4 Z" fill="#FFFFFF" opacity=".9"/>
+      <ellipse cx="-4" cy="-8" rx="9" ry="5.2" fill="#E67E22"/>
+      <rect x="-9" y="-5" width="2" height="6" rx="1" fill="#8C3F12"/>
+      <rect x="-1" y="-5" width="2" height="6" rx="1" fill="#B35418"/>
+      <rect x="3" y="-5" width="2" height="6" rx="1" fill="#8C3F12"/>
+      <path d="M5,-14 Q13,-13 13,-7 Q13,-4 6,-5 Q3,-8 4,-12 Z" fill="#E67E22"/>
+      <path d="M12,-8 L18,-7 L12,-5 Z" fill="#FFFFFF" opacity=".95"/>
+      <circle cx="18" cy="-7" r="1" fill="#2C2C2C"/>
+      <path d="M4,-13 L3,-19 L9,-14 Z" fill="#E67E22"/>
+      <path d="M9,-14 L11,-19 L13,-13 Z" fill="#E67E22"/>
+      <path d="M6,-14 L5.5,-16.5 L8,-14.8 Z" fill="#3B2416"/>
+      <circle cx="9" cy="-10" r="1" fill="#2C2C2C"/>
+    </g>
+  </g>`;
+}
+
 function stickersSVG(interactive){
   let s='';
   (S.stickers||[]).forEach(st=>{
@@ -4202,6 +4425,18 @@ function renderTree(){
   `;
 
   container.innerHTML = html;
+
+  // 🎉 A5 레벨업 감지 (활성 나무 기준)
+  try{
+    S.lvMemory = S.lvMemory || {};
+    const _atid = trees[activeIdx] && trees[activeIdx].id;
+    if(_atid!=null){
+      const _alv = Math.min(Math.floor(qsInTree(subId,_atid).length/2)+1,10);
+      const _prev = S.lvMemory[_atid];
+      if(_prev!=null && _alv>_prev) levelUpCelebrate(_alv);
+      S.lvMemory[_atid] = _alv;
+    }
+  }catch(_){}
 
   // 활성 나무 위치로 스크롤
   setTimeout(()=>{
@@ -5342,7 +5577,7 @@ async function saveHarvest(id){
   const {error}=await sb.from('questions').update(patch).eq('id',id).eq('user_id',S.user.id);
   if(error){ alert('저장 실패: '+error.message); return; }
   q.finding = patch.finding; q.still_wondering = patch.still_wondering;
-  if(!wasResolved){ q.resolved = true; await addSeeds(2, '🍎 열매 수확! +2 🌰'); }
+  if(!wasResolved){ q.resolved = true; await addSeeds(2, '🍎 열매 수확! +2 🌰'); harvestCelebrate(); }
   S.harvestId=null; S.harvestEdit=false;
   toast(wonder ? '🍎 수확! 아직 모르는 것도 멋진 씨앗이에요 🌱' : '🍎 수확했어요!');
   render();
@@ -5407,6 +5642,7 @@ async function waterQ(ev, qid, ownerId){
   try{
     const r=ev.currentTarget.getBoundingClientRect();
     waterAnim(r.left+r.width/2, r.top);
+    waterSplash(r.left+r.width/2, r.top);
   }catch(_){}
 
   const newBy=[...(q.watered_by||[]), S.user.id];
@@ -5859,6 +6095,14 @@ async function submitLiveQuestion(sessionId){
   toast('🚀 질문을 보냈어요!');
 }
 
+// 유튜브 URL(또는 11자리 id)에서 videoId 추출 — 거꾸로수업 video_url 임베드용
+function parseYouTubeId(url){
+  if(!url) return '';
+  const s=String(url).trim();
+  if(/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+  const m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);
+  return m?m[1]:'';
+}
 async function renderMaterials(){
   const el = $('matAreaList');
   el.innerHTML = '<div class="mat-area-empty"><div class="em">⏳</div><div>자료를 불러오는 중...</div></div>';
@@ -5903,8 +6147,10 @@ async function renderMaterials(){
     const isToday = (m) => new Date(m.created_at).toLocaleDateString('ko-KR') === todayStr;
 
     // 오늘 자료 / 이전 자료 분리
-    const todayMats = _materials.filter(isToday);
-    const earlierMats = _materials.filter(m => !isToday(m));
+    const hwMats = _materials.filter(m => m.is_homework);
+    const normalMats = _materials.filter(m => !m.is_homework);
+    const todayMats = normalMats.filter(isToday);
+    const earlierMats = normalMats.filter(m => !isToday(m));
 
     const renderCard = (m) => {
       const files = m.files || [];
@@ -5936,7 +6182,60 @@ async function renderMaterials(){
         </div>`;
     };
 
+    // 마감일 D-day 뱃지 (due_date: 'YYYY-MM-DD' 또는 타임스탬프)
+    const hwDdayBadge = (m) => {
+      if(!m.due_date) return '';
+      let ds = String(m.due_date);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(ds)) ds += 'T00:00:00';
+      const due = new Date(ds); if(isNaN(due)) return '';
+      due.setHours(0,0,0,0);
+      const now = new Date(); now.setHours(0,0,0,0);
+      const diff = Math.round((due - now) / 86400000);
+      const label = diff > 0 ? ('D-' + diff) : (diff === 0 ? 'D-DAY' : ('마감 ' + (-diff) + '일 지남'));
+      const cls = diff < 0 ? 'over' : (diff <= 1 ? 'soon' : '');
+      return `<span class="mat-hw-dday ${cls}">⏰ ${label}</span>`;
+    };
+    // 주말 과제 전용 카드 — video_url 유튜브 임베드 + '이 영상 보고 질문하기' CTA(기존 material 연결 재사용)
+    const renderHwCard = (m) => {
+      const files = m.files || [];
+      const vid = parseYouTubeId(m.video_url || '');
+      let mediaHtml = '';
+      if(vid){
+        mediaHtml = `<div class="mat-area-yt"><iframe src="https://www.youtube.com/embed/${esc(vid)}" title="YouTube 영상" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`;
+      } else {
+        mediaHtml = files.map(f => {
+          if(f.kind === 'youtube' && f.videoId){
+            return `<div class="mat-area-yt"><iframe src="https://www.youtube.com/embed/${esc(f.videoId)}" title="YouTube 영상" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`;
+          } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
+            return `<video controls playsinline class="mat-area-media" src="${esc(f.url)}"></video>`;
+          } else {
+            return `<img class="mat-area-media" src="${esc(f.url)}" alt="${esc(f.name)}" onclick="viewMatImage('${esc(f.url)}')" loading="lazy">`;
+          }
+        }).join('');
+      }
+      const myQCount = myQByMat[m.id] || 0;
+      return `
+        <div class="mat-area-card hw">
+          <div class="mat-area-card-hdr">
+            <div>
+              <div class="mat-area-card-title"><span class="mat-hw-tag">📼 주말과제</span>${esc(m.title)}</div>
+              <div class="mat-area-card-meta">🧑‍🏫 ${esc(m.teacher_name)} ${m.subject_label?'· '+esc(m.subject_label):''} · ${new Date(m.created_at).toLocaleDateString('ko-KR')}</div>
+            </div>
+            ${hwDdayBadge(m)}
+          </div>
+          ${m.description?`<div class="mat-area-card-desc">${esc(m.description)}</div>`:''}
+          ${mediaHtml?`<div class="mat-area-media-wrap">${mediaHtml}</div>`:''}
+          ${myQCount?`<div class="mat-area-card-meta" style="margin-bottom:8px">✅ 이 영상으로 ${myQCount}개 질문했어요</div>`:''}
+          <button class="mat-area-q-btn" onclick="askFromMaterial(${m.id})">
+            📼 이 영상 보고 질문하기
+          </button>
+        </div>`;
+    };
     let html = '';
+    if(hwMats.length){
+      html += `<div class="mat-area-section">📼 주말 과제 <span class="mat-area-count">${hwMats.length}</span></div>`;
+      html += hwMats.map(renderHwCard).join('');
+    }
     if(todayMats.length){
       html += `<div class="mat-area-section">📅 오늘의 자료 <span class="mat-area-count">${todayMats.length}</span></div>`;
       html += todayMats.map(renderCard).join('');
@@ -7543,6 +7842,7 @@ function applyBranding(){
 applyBranding();
 (async function init(){await restoreSession(); bumpSiteVisit();})();
 </script>
+
 <footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-06-27</span></footer>
 </body>
 </html>
