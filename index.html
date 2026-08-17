@@ -1445,6 +1445,12 @@ body[data-theme="pixel"] .guest-banner{font-family:'Jua',sans-serif}
 .guest-banner .gb-p{background:rgba(255,255,255,.78);color:#7a5200;border:1.5px solid rgba(245,166,35,.55);padding:4px 11px;font-size:var(--fs-xxs);font-weight:700;border-radius:999px;cursor:pointer;line-height:1.5}
 .guest-banner .gb-p:hover{background:#fff}
 .guest-banner .gb-p.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+/* 🌱 게스트 나무 성장 슬라이더 */
+.gb-grow{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.82);border:1.5px solid rgba(245,166,35,.55);border-radius:999px;padding:4px 12px}
+.gb-grow input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(88px,22vw,150px);height:8px;border-radius:999px;background:linear-gradient(90deg,var(--pr) var(--gpct,40%),#E8DCC4 var(--gpct,40%));outline:none;cursor:pointer}
+.gb-grow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;height:19px;border-radius:50%;background:#fff;border:3px solid var(--pd);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.gb-grow input[type=range]::-moz-range-thumb{width:19px;height:19px;border-radius:50%;background:#fff;border:3px solid var(--pd);cursor:pointer}
+.gb-grow b{font-size:var(--fs-xxs);color:#7a5200;white-space:nowrap;min-width:74px;text-align:right}
 .gb-lv{opacity:.8;font-weight:700;font-size:.92em;margin-left:2px}
 
 /* ════ 📋🗂️ 뷰 토글 · 분류 툴바 ════ */
@@ -1661,7 +1667,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 
 <!-- APP -->
 <div class="app" id="app">
-  <div class="guest-banner" id="guestBanner"><span>👀 예시 학생 둘러보기</span><span class="gb-personas"><button class="gb-p" data-p="high" onclick="switchGuestPersona('high')">🏆 질문왕<span class="gb-lv">Lv.10</span></button><button class="gb-p" data-p="mid" onclick="switchGuestPersona('mid')">🌿 보통<span class="gb-lv">Lv.5</span></button><button class="gb-p" data-p="low" onclick="switchGuestPersona('low')">🌱 시작<span class="gb-lv">Lv.2</span></button></span><button onclick="goTo('signup')">🌱 회원가입</button></div>
+  <div class="guest-banner" id="guestBanner"><span>👀 예시 학생 둘러보기</span><span class="gb-personas"><button class="gb-p" data-p="high" onclick="switchGuestPersona('high')">🏆 질문왕<span class="gb-lv">Lv.10</span></button><button class="gb-p" data-p="mid" onclick="switchGuestPersona('mid')">🌿 보통<span class="gb-lv">Lv.5</span></button><button class="gb-p" data-p="low" onclick="switchGuestPersona('low')">🌱 시작<span class="gb-lv">Lv.2</span></button></span><span class="gb-grow" title="질문을 심을수록 나무가 자라요">🌱<input type="range" id="gbGrow" min="0" max="20" value="8" oninput="setGuestGrowth(+this.value)"><b id="gbGrowVal">8개 · Lv.5</b></span><button onclick="goTo('signup')">🌱 회원가입</button></div>
   <header class="hdr"><div class="hdr-in">
     <div class="hdr-logo"><img src="assets/logo.webp" class="hn-logo" alt="해누리" style="width:28px;height:28px;margin-right:6px"><b>해누리 질문 과수원</b><span style="font-size:10px;color:var(--tl);font-weight:600;margin-left:6px">🏫 질문하는 교실</span></div>
     <div class="hdr-r">
@@ -7965,6 +7971,59 @@ function gbr(id,name,text,answer){
 function gAttach(arr,tid){ arr.forEach(function(q){ q.tree_id=tid; }); return arr; }
 
 // ── 예시 학생 3명 (상/중/하) ──────────────────────────────────────────
+/* 🌱 나무 성장 시연용 질문 풀 — 슬라이더를 끌면 이 순서대로 심긴다 */
+var GUEST_Q_POOL = [
+  {t:'식물은 왜 햇빛 쪽으로 자랄까?',                      tag:'호기심', fruit:'🌻', w:5, star:true},
+  {t:'만약 지구에 달이 없다면 밀물과 썰물은 어떻게 될까?',  tag:'만약에', fruit:'🌙', w:4},
+  {t:'소리는 진공에서 왜 전달되지 않을까?',                 tag:'왜',     fruit:'🔔', w:2},
+  {t:'같은 온도인데 쇠가 나무보다 더 차갑게 느껴지는 이유는?', tag:'비교', fruit:'🥶', w:3},
+  {t:'무지개는 왜 항상 같은 순서로 보일까?',                tag:'빛',     fruit:'🌈', w:1},
+  {t:'소금물은 왜 순수한 물보다 늦게 얼까?',                tag:'왜',     fruit:'❄️', w:2},
+  {t:'무거운 쇠배는 뜨는데 작은 못은 왜 가라앉을까?',        tag:'비교',   fruit:'⚓', w:4, star:true},
+  {t:'전압을 두 배로 하면 전류도 정확히 두 배가 될까?',      tag:'실험',   fruit:'⚡', w:2},
+  {t:'식물도 밤에는 숨을 쉴까?',                            tag:'식물',   fruit:'🌿', w:1},
+  {t:'자석의 N극과 S극은 왜 따로 나눌 수 없을까?',          tag:'왜',     fruit:'🧲', w:3},
+  {t:'우리가 마시는 물은 공룡이 마시던 물과 같은 물일까?',   tag:'호기심', fruit:'💧', w:6},
+  {t:'열은 왜 항상 뜨거운 쪽에서 차가운 쪽으로만 이동할까?', tag:'왜',    fruit:'🔥', w:2},
+  {t:'얼음이 물에 뜨는 것은 다른 물질에서도 흔한 일일까?',   tag:'비교',   fruit:'🧊', w:3},
+  {t:'만약 마찰력이 없다면 우리는 걸을 수 있을까?',          tag:'만약에', fruit:'👟', w:2},
+  {t:'사람마다 목소리가 다른 이유는 무엇일까?',              tag:'호기심', fruit:'🎤', w:1},
+  {t:'별빛은 몇 년 전의 빛일까?',                            tag:'우주',   fruit:'⭐', w:5, star:true},
+  {t:'왜 기름과 물은 섞이지 않을까?',                        tag:'왜',     fruit:'🫗', w:1},
+  {t:'우리 몸의 세포는 왜 계속 죽고 새로 생길까?',            tag:'생명',   fruit:'🧬', w:2},
+  {t:'식물의 뿌리는 어떻게 위아래를 알까?',                  tag:'식물',   fruit:'🌱', w:3},
+  {t:'같은 양의 물인데 왜 넓은 접시에서 더 빨리 마를까?',    tag:'실험',   fruit:'💨', w:2}
+];
+
+/* 슬라이더를 끌면 활성 나무의 질문 수가 바뀌고, 나무가 그만큼 자란다.
+   나무 레벨 = min(floor(질문수/2)+1, 10) 이므로 0~18개면 Lv1~Lv10 전 단계를 볼 수 있다. */
+function setGuestGrowth(n){
+  if(!S.guest) return;
+  var sub = S.activeSub, tid = curTreeId();
+  if(!sub || !tid) return;
+  var arr = [], i, d;
+  for(i=0;i<n;i++){
+    d = GUEST_Q_POOL[i % GUEST_Q_POOL.length];
+    arr.push(gq(9500+i, d.t, {
+      tags: d.tag ? [d.tag] : [], fruit: d.fruit || null,
+      water_count: d.w || 0, starred: !!d.star,
+      resolved: (i % 3 === 2),
+      phase: (i % 2 ? 'after' : 'before'),
+      tree_id: tid
+    }));
+  }
+  if(!S.questions[sub]) S.questions[sub] = {};
+  S.questions[sub][tid] = arr;
+  syncGrowLabel(n);
+  render();
+}
+function syncGrowLabel(n){
+  var sl = $('gbGrow'), out = $('gbGrowVal');
+  var lv = Math.min(Math.floor(n/2) + 1, 10);
+  if(sl){ sl.value = n; sl.style.setProperty('--gpct', (n / (+sl.max || 20) * 100) + '%'); }
+  if(out) out.textContent = n + '개 · Lv.' + lv;
+}
+
 var GUEST_PERSONAS = {
   high: { emoji:'🏆', label:'질문왕', name:'질문왕 예시', grade:'2', cls:'3', num:'7',
           seeds:86, streak:12, activeTree:'storytree', companion:'fox', season:'summer',
@@ -8097,6 +8156,8 @@ function applyGuestPersona(key){
   S.stickers=[]; S.filterTag=null; S.phaseFilter=null; S.expandedBranches=new Set();
   S.lvMemory={};
   document.querySelectorAll('.gb-p').forEach(function(b){ b.classList.toggle('on', b.dataset.p===key); });
+  /* 슬라이더를 이 학생의 실제 질문 수에 맞춘다 */
+  try{ syncGrowLabel(qsInTree(S.activeSub, curTreeId()).length); }catch(e){}
 }
 var GUEST_KEY='high';
 
