@@ -1981,6 +1981,7 @@ function renderLiveBoard(qs){
 async function toggleLiveStar(qid, cur){
   const {error}=await sb.from('questions').update({starred: !cur}).eq('id',qid);
   if(error){ toast('별표 실패: '+error.message); return; }
+  if(!cur) awardStampForQuestion(qid);
   pollLiveBoard();
 }
 async function endLiveSession(){
@@ -3082,6 +3083,54 @@ function renderQuestions(){
 // ═══════════════════════════════════════════════════════════════════
 // ⭐ 명예의 전당 — 교사가 질문에 별 토글
 // ═══════════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
+   🏅 칭찬도장판 연계 — ⭐를 누르면 도장이 자동으로 찍힌다.
+   교사가 이미 하던 행동(좋은 질문에 별표)만으로 관찰기록이 쌓이므로 입력 부담이 0이다.
+   behavior 에 질문 원문이 그대로 들어가 세특 근거로 바로 쓸 수 있다.
+   ※ 칭찬도장판 SQL을 아직 실행하지 않았어도 별표 기능이 멈추지 않도록 전부 감싼다.
+   ══════════════════════════════════════════════════════════════════════════ */
+async function awardStampForQuestion(qid){
+  try{
+    var q = (typeof allQuestions!=='undefined') ? allQuestions.find(function(x){return x.id===qid;}) : null;
+    if(!q || !q.user_id){
+      var qr = await sb.from('questions').select('id,user_id,text,question_date').eq('id',qid).maybeSingle();
+      if(qr.error || !qr.data) return;
+      q = qr.data;
+    }
+    if(!q.user_id) return;
+
+    var tag = '질문과수원 ⭐ (Q#' + qid + ')';
+    /* 같은 질문으로 이미 찍힌 도장이 있으면 건너뛴다(별표 껐다 켜도 중복 없음) */
+    var dup = await sb.from('observations').select('id').eq('lesson_note', tag).limit(1);
+    if(dup.error) return;                 /* 테이블이 없거나 권한 없음 → 조용히 통과 */
+    if(dup.data && dup.data.length) return;
+
+    var p = (typeof allProfiles!=='undefined') ? allProfiles.find(function(x){return x.id===q.user_id;}) : null;
+    if(!p){
+      var pr = await sb.from('profiles').select('id,class_no,number').eq('id',q.user_id).maybeSingle();
+      p = pr.data || {};
+    }
+    var d  = q.question_date || new Date().toISOString().slice(0,10);
+    var yy = Number(String(d).slice(0,4)) || new Date().getFullYear();
+    var mm = Number(String(d).slice(5,7)) || (new Date().getMonth()+1);
+    var txt = String(q.text||'').replace(/s+/g,' ').trim();
+    if(txt.length > 150) txt = txt.slice(0,150) + '…';
+
+    var ins = await sb.from('observations').insert({
+      student_id   : q.user_id,
+      school_year  : yy,
+      semester     : (mm>=3 && mm<=7) ? 1 : 2,
+      class_no_snap: p.class_no || null,
+      number_snap  : p.number   || null,
+      category     : 'inquiry',
+      behavior     : '「' + txt + '」라는 질문을 제기함 (교사가 좋은 질문으로 선정)',
+      lesson_note  : tag,
+      observed_on  : d
+    });
+    if(!ins.error && typeof toast==='function') toast('🏅 칭찬도장판에도 도장이 찍혔어요');
+  }catch(e){ console.warn('칭찬도장판 연계 건너뜀:', e && e.message); }
+}
+
 async function toggleStar(qid){
   const q = allQuestions.find(x => x.id === qid);
   if(!q) return;
@@ -3092,6 +3141,7 @@ async function toggleStar(qid){
     return;
   }
   q.starred = next;
+  if(next) awardStampForQuestion(qid);
   renderQuestions();
 }
 
