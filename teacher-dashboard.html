@@ -1932,7 +1932,13 @@ async function startLiveSession(){
     material_id: $('liveMaterial') && $('liveMaterial').value ? Number($('liveMaterial').value) : null,
     status:'open'
   };
-  const {data,error}=await sb.from('live_sessions').insert(payload).select().single();
+  /* live_sessions.material_id 도 자료기능_1단계.sql 로 추가되는 칸이라 같은 대비가 필요하다. */
+  let {data,error}=await sb.from('live_sessions').insert(payload).select().single();
+  if(error && isUnknownColumnError(error, ['material_id'])){
+    const lite = Object.assign({}, payload); delete lite.material_id;
+    ({data,error} = await sb.from('live_sessions').insert(lite).select().single());
+    if(!error && payload.material_id) toast('자료 연결은 빠졌어요 — 자료기능_1단계.sql 을 실행해 주세요');
+  }
   if(error){ alert('세션 시작 실패: '+error.message); return; }
   _liveSession=data; _liveStars=new Set();
   toast('🔴 라이브 세션을 시작했어요!');
@@ -4660,6 +4666,33 @@ function onMatPlanPick(){
   if(p) inp.value = planConceptOf(p.title);
 }
 
+/* ══ 아직 자료기능_1단계.sql 을 실행하지 않은 DB 대응 ══
+   PostgREST 는 모르는 컬럼이 하나라도 섞이면 insert 전체를 거절한다
+   («Could not find the 'body_text' column ... in the schema cache»).
+   그래서 새 칸을 빼고 한 번 더 시도한다. 자료 자체는 올라가야 한다. */
+const MAT_NEW_COLS = ['body_text','source_note','yt_start','yt_end'];
+
+function isUnknownColumnError(err, cols){
+  const m = String(err && err.message || '');
+  if(!/schema cache|column/i.test(m)) return false;
+  return cols.some(c => m.indexOf(c) >= 0);
+}
+
+async function insertWithFallback(table, payload, newCols){
+  let r = await sb.from(table).insert(payload);
+  if(r.error && isUnknownColumnError(r.error, newCols)){
+    const lite = Object.assign({}, payload);
+    const dropped = [];
+    newCols.forEach(c => {
+      if(lite[c] !== undefined && lite[c] !== null) dropped.push(c);
+      delete lite[c];
+    });
+    r = await sb.from(table).insert(lite);
+    if(!r.error) r.droppedCols = dropped;
+  }
+  return r;
+}
+
 async function submitMaterial(){
   const title = $('matTitle').value.trim();
   if(!title){ alert('제목을 입력해주세요'); return; }
@@ -4715,19 +4748,36 @@ async function submitMaterial(){
     is_active: true
   };
 
-  const {error} = await sb.from('lesson_materials').insert(payload);
+  const res = await insertWithFallback('lesson_materials', payload, MAT_NEW_COLS);
+  const error = res.error;
   btn.disabled = false;
   if(error){
     $('matResult').innerHTML = `<div style="color:var(--ar);font-size:12px">⚠ 저장 실패: ${esc(error.message)}</div>`;
     return;
   }
-  $('matResult').innerHTML = '<div style="color:var(--pd);font-size:12px;font-weight:700">✅ 자료가 올라갔어요! 학생들이 볼 수 있어요.</div>';
+  const _dropped = res.droppedCols || [];
+  if(_dropped.length){
+    /* 본문이 통째로 날아간 경우는 반드시 눈에 띄게 알린다. 조용히 넘기면
+       읽기자료를 올렸다고 믿은 채 수업에 들어가게 된다. */
+    const _lostBody = _dropped.indexOf('body_text') >= 0;
+    $('matResult').innerHTML =
+      '<div style="color:var(--pd);font-size:12px;font-weight:700">✅ 자료가 올라갔어요!</div>' +
+      '<div style="color:var(--ar);font-size:12px;font-weight:700;margin-top:6px;line-height:1.6">' +
+      (_lostBody ? '⚠ 다만 <b>읽기자료 본문은 저장되지 않았습니다.</b><br>' : '⚠ 영상 구간·출처는 저장되지 않았습니다.<br>') +
+      'Supabase SQL Editor 에서 <b>자료기능_1단계.sql</b> 을 한 번 실행한 뒤 다시 올려 주세요.<br>' +
+      '아래 본문 칸은 지우지 않았으니 그대로 두셔도 됩니다.</div>';
+  } else {
+    $('matResult').innerHTML = '<div style="color:var(--pd);font-size:12px;font-weight:700">✅ 자료가 올라갔어요! 학생들이 볼 수 있어요.</div>';
+  }
   $('matTitle').value = '';
   $('matDesc').value = '';
   if($('matUnit')) $('matUnit').value = '';
   if($('matPlan')) $('matPlan').value = '';
-  if($('matBody')) $('matBody').value = '';
-  if($('matSource')) $('matSource').value = '';
+  /* 새 칸이 DB 에 없어 빠진 경우에는 적어 둔 본문을 지우지 않는다 — 다시 붙여넣게 하면 안 된다. */
+  if(!_dropped.length){
+    if($('matBody')) $('matBody').value = '';
+    if($('matSource')) $('matSource').value = '';
+  }
   if($('matYtStart')) $('matYtStart').value = '';
   if($('matYtEnd')) $('matYtEnd').value = '';
   if($('matVideoUrl')) $('matVideoUrl').value = '';
