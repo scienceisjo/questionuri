@@ -481,7 +481,8 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 /* ☰ 더보기 시트 */
 .more-sheet{position:fixed;inset:0;background:rgba(20,40,30,.4);backdrop-filter:blur(3px);z-index:1200;display:none;align-items:flex-end;justify-content:center}
 .more-sheet.show{display:flex;animation:fadeIn .18s ease}
-.more-card{background:var(--card);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.18);animation:sheetUp .26s cubic-bezier(.2,.8,.2,1)}
+.more-card{background:var(--card);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.18);animation:sheetUp .26s cubic-bezier(.2,.8,.2,1);
+  max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 .more-handle{width:40px;height:4px;border-radius:3px;background:var(--bd);margin:4px auto 12px}
 .more-title{font-size:var(--fs-md);font-weight:800;color:var(--pd);margin-bottom:12px}
@@ -1744,6 +1745,21 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         <button class="more-item" onclick="openPwChange()"><span>🔑</span><b>비밀번호 변경</b><small>내 비밀번호 바꾸기</small></button>
       </div>
       <button class="more-close" onclick="closeMore()">닫기</button>
+    </div>
+  </div>
+
+  <!-- 🔑 로그인 직후 비밀번호 변경 권유 -->
+  <div class="more-sheet" id="pwAskSheet" onclick="if(event.target.id==='pwAskSheet')closePwAsk()">
+    <div class="more-card">
+      <div class="more-handle"></div>
+      <div class="more-title">🔑 비밀번호를 바꿔 둘까요?</div>
+      <p style="font-size:var(--fs-xs);color:var(--tl);text-align:center;margin:-2px 0 14px;line-height:1.6">
+        지금 비밀번호는 <b>선생님이 정해 준 것</b>이에요.<br>
+        아이디가 학년·반·번호라서, <b>같은 반 친구도 들어올 수 있어요.</b><br>
+        나만 아는 비밀번호로 바꿔 두면 안심이에요.</p>
+      <button class="more-close" onclick="pwAskGo()" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none">지금 바꾸기</button>
+      <button class="more-close" onclick="pwAskLater()" style="margin-top:8px">나중에 할래요</button>
+      <button class="more-close" onclick="pwAskNever()" style="margin-top:8px;background:none;border:none;color:var(--tl);font-size:var(--fs-xxs)">다시 묻지 않기</button>
     </div>
   </div>
 
@@ -3036,6 +3052,7 @@ async function doLogin(){
     if(!data?.user){e.textContent='로그인 처리 중 문제가 발생했어요.';e.classList.add('show');shk(e);return;}
     S.user=data.user;S.grade=g;S.cls=c;S.num=num;
     await bootstrapUser();await bumpMyLogin();goTo('dash');
+    maybeAskPw();
   }catch(err){
     hideLoading();$('lgBtn').disabled=false;
     e.textContent='오류: '+(err.message||'알 수 없는 오류');
@@ -3233,6 +3250,23 @@ function swTab(t){
 }
 function openMore(){ $('moreSheet')?.classList.add('show'); }
 // 🔑 학생 본인 비밀번호 변경
+/* 선생님이 정해 준 비밀번호를 그대로 쓰면, 아이디가 학년·반·번호라서
+   같은 반 친구가 그대로 들어올 수 있다. 그래서 로그인 직후 한 번 권한다.
+   서버에 «바꿨는지» 칸이 없으므로 이 기기에 표시만 남긴다. 강제하지 않는다. */
+function pwOkKey(){ return 'pw_ok_' + ((S.user && S.user.id) || ''); }
+function pwAsked(){ try{ return !!localStorage.getItem(pwOkKey()); }catch(e){ return false; } }
+function markPwAsked(){ try{ localStorage.setItem(pwOkKey(), '1'); }catch(e){} }
+
+function maybeAskPw(){
+  if(!S.user || S.user.id === 'guest') return;
+  if(pwAsked()) return;
+  setTimeout(function(){ $('pwAskSheet')?.classList.add('show'); }, 900);
+}
+function closePwAsk(){ $('pwAskSheet')?.classList.remove('show'); }
+function pwAskLater(){ closePwAsk(); }
+function pwAskNever(){ markPwAsked(); closePwAsk(); toast('알겠어요! ☰ 더보기에서 언제든 바꿀 수 있어요'); }
+function pwAskGo(){ closePwAsk(); openPwChange(); }
+
 function openPwChange(){
   if(guestNudge()) return;
   closeMore();
@@ -3286,6 +3320,7 @@ async function doChangePw(){
     const {error}=await sb.auth.updateUser({password:a});
     if(btn) btn.disabled=false;
     if(error){ setMsg('변경 실패: '+error.message,false); return; }
+    markPwAsked();
     setMsg('✅ 변경됐어요! 다음 로그인부터 새 비밀번호를 쓰세요.',true);
     toast('🔑 비밀번호가 변경됐어요');
     setTimeout(closePwChange, 1600);
