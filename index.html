@@ -1502,6 +1502,48 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .qtype-reason{background:rgba(92,184,110,.14);color:var(--pd);border-color:rgba(92,184,110,.32)}
 .qtype-judge{background:rgba(245,166,35,.14);color:#B06D00;border-color:rgba(245,166,35,.34)}
 .qtype-imagine{background:rgba(232,93,93,.12);color:#C24141;border-color:rgba(232,93,93,.30)}
+/* ═══ 📚 자료 시트 — 자료를 보면서 그 자리에서 질문을 적는 화면 ═══
+   탭을 바꾸지 않고 덮는다. 질문을 심어도 닫히지 않는다. */
+.live-banner-mat{display:block;width:100%;margin:8px 0 2px;padding:10px 12px;border:none;border-radius:11px;
+  background:rgba(255,255,255,.92);color:var(--pd);font-size:13.5px;font-weight:900;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.msheet{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;background:var(--bg)}
+.msheet.show{display:flex}
+.ms-top{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--card);border-bottom:1px solid var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.ms-top h3{flex:1;margin:0;font-size:14.5px;font-weight:900;color:var(--pd);line-height:1.35;
+  word-break:keep-all;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ms-x{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.06);
+  font-size:17px;cursor:pointer;color:var(--tx)}
+/* 본문 영역: 자체 스크롤. 키보드가 올라와도 여기가 줄어들 뿐 사라지지 않는다. */
+.ms-body{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 16px;min-height:80px}
+.ms-meta{font-size:11.5px;color:var(--mute);font-weight:700;margin-bottom:8px}
+.ms-src{font-size:11px;color:var(--mute);margin-top:10px;padding-top:8px;border-top:1px dashed var(--bd)}
+.ms-h2{font-size:14.5px;font-weight:900;color:var(--pd);margin:14px 0 6px}
+.ms-p{font-size:14px;line-height:1.85;color:var(--tx);margin:0 0 11px;word-break:keep-all}
+.ms-media{width:100%;border-radius:10px;margin-bottom:10px;display:block}
+/* 입력부: 항상 바닥에 붙어 있다 */
+.ms-foot{flex:0 0 auto;background:var(--card);border-top:1px solid var(--bd);padding:9px 12px 12px;
+  box-shadow:0 -3px 12px rgba(0,0,0,.07)}
+.ms-stems{display:flex;gap:5px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none}
+.ms-stems::-webkit-scrollbar{display:none}
+.ms-stems button{flex:0 0 auto;padding:5px 11px;border-radius:999px;border:1.5px solid var(--bd);
+  background:var(--card);font-size:12px;font-weight:800;color:var(--pd);cursor:pointer;white-space:nowrap}
+.ms-iw{display:flex;gap:7px}
+.ms-iw input{flex:1;min-width:0;padding:11px 13px;border-radius:11px;border:1.5px solid var(--bd);
+  background:var(--bg);font-size:15px;font-family:inherit;color:var(--tx)}
+.ms-iw button{flex:0 0 auto;padding:0 17px;border-radius:11px;border:none;background:var(--pd);
+  color:#fff;font-size:14px;font-weight:900;cursor:pointer}
+.ms-iw button:disabled{opacity:.5}
+.ms-msg{font-size:12px;font-weight:800;min-height:16px;margin-top:5px;color:var(--mute)}
+.ms-msg.err{color:var(--ar)}
+.ms-msg.ok{color:var(--pd)}
+/* 심은 질문이 아래로 쌓인다 — 시트를 닫지 않고 연속으로 적게 하는 핵심 */
+.ms-mine{margin-top:9px;padding-top:8px;border-top:1px dashed var(--bd);max-height:104px;overflow-y:auto}
+.ms-mine-t{font-size:10.5px;color:var(--mute);font-weight:800;margin-bottom:4px}
+.ms-q{font-size:12.5px;color:var(--tx);padding:4px 0;line-height:1.5;word-break:keep-all}
+.ms-q b{color:var(--pd);margin-right:4px}
+@media (max-height:520px){ .ms-stems{display:none} .ms-mine{display:none} }
 </style>
 </head>
 <body data-theme="cute">
@@ -5585,27 +5627,37 @@ async function freshUid(){
     return u ? u.id : null;
   }catch(e){ return null; }
 }
-async function addQ(){
+async function addQ(ctx){
+  /* ctx 없이 부르면 예전과 똑같이 질문 탭의 입력칸을 쓴다.
+     자료 시트는 {inp:'msInp', msg:'msMsg', btn:'msBtn', keepMaterial:true, after:fn} 을 넘긴다. */
+  ctx = ctx || {};
+  const _inpId = ctx.inp || 'qInp', _msgId = ctx.msg || 'qMsg', _btnId = ctx.btn || 'addBtn';
+  const _setMsg = (txt, cls) => { const m=$(_msgId); if(!m) return null;
+    m.textContent=txt; m.className=(_msgId==='msMsg'?'ms-msg ':'q-msg ')+(cls||''); return m; };
   if(guestNudge()) return;
-  const inp=$('qInp');const t=inp.value.trim();
+  const inp=$(_inpId); if(!inp) return;
+  const t=inp.value.trim();
   if(!t) return;
   const tagInp=$('tagInp');
-  if(tagInp.value.trim()){addPendingTag(tagInp.value);tagInp.value='';}
+  if(tagInp && tagInp.value.trim()){addPendingTag(tagInp.value);tagInp.value='';}
   const r=await chkQ(t);
-  if(!r.ok){const m=$('qMsg');m.textContent='🤔 '+r.msg;m.className='q-msg err';shk(m);return;}
+  /* 반려해도 적은 문장은 지우지 않는다 — 영상을 보고 나오는 첫 반응은 대개 평서문이라
+     여기서 자주 걸리는데, 지워 버리면 다시 쓰기 싫어진다. */
+  if(!r.ok){ const m=_setMsg('🤔 '+r.msg,'err'); if(m) shk(m); inp.focus(); return; }
 
   // 🌲 어느 나무에 달지 — pendingTreeId 우선, 없으면 현재 활성 나무
   const treeId = S.pendingTreeId || curTreeId();
   if(!treeId){
-    const m=$('qMsg');m.textContent='먼저 나무를 심어주세요 🌳';m.className='q-msg err';shk(m);return;
+    const m=_setMsg('먼저 «나무» 탭에서 나무를 심어주세요 🌳','err'); if(m) shk(m);
+    return;
   }
 
-  $('addBtn').disabled=true;
+  const _btn=$(_btnId); if(_btn) _btn.disabled=true;
   const tags=[...S.pendingTags];
   const fruit=S.pendingFruit;
 
   const uid = await freshUid();
-  if(!uid){ $('addBtn').disabled=false; const m=$('qMsg'); m.textContent='로그인이 풀렸어요. 다시 로그인해 주세요.'; m.className='q-msg err'; return; }
+  if(!uid){ if(_btn) _btn.disabled=false; _setMsg('로그인이 풀렸어요. 다시 로그인해 주세요.','err'); return; }
   const payload={
     user_id:uid, subject_id:S.activeSub, text:t,
     tags, question_date:td(),
@@ -5626,8 +5678,8 @@ async function addQ(){
   }
 
   const {data,error}=await sb.from('questions').insert(payload).select().single();
-  $('addBtn').disabled=false;
-  if(error){const m=$('qMsg');m.textContent='저장 실패: '+error.message;m.className='q-msg err';return;}
+  if(_btn) _btn.disabled=false;
+  if(error){ _setMsg('저장 실패: '+error.message,'err'); return; }
 
   if(!S.questions[S.activeSub]) S.questions[S.activeSub]={};
   if(!S.questions[S.activeSub][treeId]) S.questions[S.activeSub][treeId]=[];
@@ -5644,10 +5696,10 @@ async function addQ(){
     explore_votes:0, explore_voters:[],
   });
 
-  // 자료 연결이 있었으면 추가 보상 + 연결 해제
+  // 자료 연결이 있었으면 추가 보상. 시트에서는 연결을 유지해 연속으로 적게 한다.
   if(_pendingMaterialId){
     await addSeeds(1, '수업자료 질문 +1 🌰');
-    clearMaterialLink();
+    if(!ctx.keepMaterial) clearMaterialLink();
   }
 
   // 도토리 +1 (질문 심기 보상)
@@ -5658,11 +5710,10 @@ async function addQ(){
 
   inp.value='';S.pendingTags=[];S.pendingFruit=null;S.pendingAnon=false;S.pendingSource=null;S.pendingTreeId=null;
   renderPendingTags();renderFruitPicker();renderAnonTog();renderSourcePicker();renderTreePicker();
-  const m=$('qMsg');
-  m.textContent = (S.phase==='after') ? '🌙 수업 닫기 질문이 심어졌어요!' : '🌅 수업 열기 질문이 심어졌어요!';
-  m.className='q-msg ok';
+  const m=_setMsg((S.phase==='after') ? '🌙 수업 닫기 질문이 심어졌어요!' : '🌅 수업 열기 질문이 심어졌어요!','ok');
   mascotPop((S.phase==='after')?'멋진 닫기 질문이에요! 🌙':'좋은 질문 하나가 자랐어요! 🌱');
-  setTimeout(()=>{m.className='q-msg';},1500);
+  setTimeout(()=>{ if(m) m.className = (_msgId==='msMsg'?'ms-msg':'q-msg'); },1500);
+  if(typeof ctx.after === 'function') ctx.after(data);
   render();
 }
 
@@ -6157,9 +6208,12 @@ async function pollLiveSession(){
       const classOk = !s.target_class || Number(s.target_class)===Number(S.cls);
       return gradeOk && classOk;
     });
-    // 내가 듣는 선생님 세션을 우선
-    const mine = sess.filter(s => S.myTeacherIds && S.myTeacherIds.has(Number(s.teacher_id)));
-    const pick = (mine.length?mine:sess)[0] || null;
+    /* 내가 듣는 선생님 세션만. 예전엔 내 선생님 세션이 없으면 아무 선생님 세션이나
+       띄웠는데(mine.length?mine:sess), 배너에 자료가 실리면 남의 반 자료가 보인다.
+       참여 교사 정보를 아직 못 불러왔을 때만 예전처럼 넓게 잡는다. */
+    const known = S.myTeacherIds && S.myTeacherIds.size;
+    const mine = known ? sess.filter(s => S.myTeacherIds.has(Number(s.teacher_id))) : sess;
+    const pick = mine[0] || null;
     if(pick){
       const changed = !_liveSession || _liveSession.id!==pick.id;
       _liveSession = pick;
@@ -6178,6 +6232,7 @@ function renderLiveBanner(s){
     <div class="live-banner-hdr"><span class="live-dot"></span>🔴 지금 라이브 질문 중!${s.teacher_name?` · ${esc(s.teacher_name)} 선생님`:''}</div>
     <div class="live-banner-prompt">${escWithMath(s.prompt)}</div>
     <div class="live-banner-meta">${s.subject_label?('📚 '+esc(s.subject_label)+' · '):''}떠오른 질문을 바로 보내보세요!</div>
+    ${s.material_id?`<button class="live-banner-mat" onclick="openMatSheet(${s.material_id})">📖 오늘의 자료 열고 질문하기</button>`:''}
     <div class="live-banner-iw">
       <input id="liveInp-${s.id}" placeholder="궁금한 것을 적어보세요..." onkeydown="if(event.key==='Enter')submitLiveQuestion(${s.id})">
       <button class="live-banner-send" onclick="submitLiveQuestion(${s.id})">질문 보내기 🚀</button>
@@ -6203,6 +6258,14 @@ async function submitLiveQuestion(sessionId){
     is_anonymous:false, water_count:0, watered_by:[],
     session_id:sessionId
   };
+  /* 세션에 자료가 걸려 있으면 질문에도 잇는다. 이게 없으면 라이브로 모인 질문이
+     자료 카드의 «질문 N개» 집계에서도 단원 보드에서도 통째로 빠진다. */
+  var _liveMat = s.material_id || _pendingMaterialId || null;
+  if(_liveMat){
+    payload.material_id = _liveMat;
+    var _lm = (_materials||[]).find(function(x){ return x.id === _liveMat; });
+    if(_lm && _lm.unit) payload.unit = _lm.unit;
+  }
   if(treeId && !String(treeId).startsWith('local_')) payload.tree_id=treeId;
   const {data,error}=await sb.from('questions').insert(payload).select().single();
   if(error){ toast('보내지 못했어요: '+error.message); return; }
@@ -6214,8 +6277,8 @@ async function submitLiveQuestion(sessionId){
     S.questions[subId][tid].push({
       id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
       tags:[],fruit:null,is_anonymous:false,phase:'before',parent_id:null,self_check:null,
-      water_count:0,watered_by:[],branches:[],tree_id:tid,material_id:null,
-      unit:null,teacher_nudge:null,finding:null,still_wondering:null,explore_votes:0,explore_voters:[],
+      water_count:0,watered_by:[],branches:[],tree_id:tid,material_id:(data.material_id||null),
+      unit:(data.unit||null),teacher_nudge:null,finding:null,still_wondering:null,explore_votes:0,explore_voters:[],
     });
   }
   _liveSentIds.add(sessionId);
@@ -6223,6 +6286,22 @@ async function submitLiveQuestion(sessionId){
   const d=$('liveDone-'+sessionId); if(d) d.style.display='';
   await addSeeds(1,'🔴 라이브 질문 +1 🌰');
   toast('🚀 질문을 보냈어요!');
+}
+
+/* 임베드 URL 을 한 곳에서 만든다. 예전엔 세 군데가 맨몸 embed 라 추천영상이 그대로 떴다.
+   rel=0 은 추천을 같은 채널로 제한할 뿐 없애지는 못한다(유튜브가 허용하는 최대치).
+   start/end 는 교사가 자료에 지정한 구간(초). */
+function ytEmbedSrc(videoId, start, end){
+  var p = ['rel=0','modestbranding=1','playsinline=1','iv_load_policy=3'];
+  var s = Number(start), e = Number(end);
+  if(Number.isFinite(s) && s > 0) p.push('start=' + Math.floor(s));
+  if(Number.isFinite(e) && e > 0) p.push('end=' + Math.floor(e));
+  return 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?' + p.join('&');
+}
+function ytFrame(videoId, start, end){
+  return '<div class="mat-area-yt"><iframe src="' + esc(ytEmbedSrc(videoId, start, end)) + '"' +
+    ' title="YouTube 영상" frameborder="0" loading="lazy" allowfullscreen' +
+    ' allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe></div>';
 }
 
 // 유튜브 URL(또는 11자리 id)에서 videoId 추출 — 거꾸로수업 video_url 임베드용
@@ -6256,7 +6335,9 @@ async function renderMaterials(){
     _materials = (data||[]).filter(m => {
       const gradeOk = !m.target_grade || Number(m.target_grade) === myGrade;
       const classOk = !m.target_class || Number(m.target_class) === myClass;
-      return gradeOk && classOk;
+      /* RLS 는 is_active 만 보므로 다른 선생님 자료도 통과한다. 여기서 내 선생님으로 좁힌다. */
+      const mineOk = !(S.myTeacherIds && S.myTeacherIds.size) || S.myTeacherIds.has(Number(m.teacher_id));
+      return gradeOk && classOk && mineOk;
     });
 
     if(!_materials.length){
@@ -6286,7 +6367,7 @@ async function renderMaterials(){
       const files = m.files || [];
       const filesHtml = files.map(f => {
         if(f.kind === 'youtube' && f.videoId){
-          return `<div class="mat-area-yt"><iframe src="https://www.youtube.com/embed/${esc(f.videoId)}" title="YouTube 영상" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`;
+          return ytFrame(f.videoId, m.yt_start, m.yt_end);
         } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
           return `<video controls playsinline class="mat-area-media" src="${esc(f.url)}"></video>`;
         } else {
@@ -6306,8 +6387,8 @@ async function renderMaterials(){
           </div>
           ${m.description?`<div class="mat-area-card-desc">${esc(m.description)}</div>`:''}
           ${filesHtml?`<div class="mat-area-media-wrap">${filesHtml}</div>`:''}
-          <button class="mat-area-q-btn" onclick="askFromMaterial(${m.id})">
-            💡 이 자료를 보고 질문 떠올리기
+          <button class="mat-area-q-btn" onclick="openMatSheet(${m.id})">
+            📖 자료 보며 질문하기
           </button>
         </div>`;
     };
@@ -6331,11 +6412,11 @@ async function renderMaterials(){
       const vid = parseYouTubeId(m.video_url || '');
       let mediaHtml = '';
       if(vid){
-        mediaHtml = `<div class="mat-area-yt"><iframe src="https://www.youtube.com/embed/${esc(vid)}" title="YouTube 영상" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`;
+        mediaHtml = ytFrame(vid, m.yt_start, m.yt_end);
       } else {
         mediaHtml = files.map(f => {
           if(f.kind === 'youtube' && f.videoId){
-            return `<div class="mat-area-yt"><iframe src="https://www.youtube.com/embed/${esc(f.videoId)}" title="YouTube 영상" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`;
+            return ytFrame(f.videoId, m.yt_start, m.yt_end);
           } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
             return `<video controls playsinline class="mat-area-media" src="${esc(f.url)}"></video>`;
           } else {
@@ -6356,8 +6437,8 @@ async function renderMaterials(){
           ${m.description?`<div class="mat-area-card-desc">${esc(m.description)}</div>`:''}
           ${mediaHtml?`<div class="mat-area-media-wrap">${mediaHtml}</div>`:''}
           ${myQCount?`<div class="mat-area-card-meta" style="margin-bottom:8px">✅ 이 영상으로 ${myQCount}개 질문했어요</div>`:''}
-          <button class="mat-area-q-btn" onclick="askFromMaterial(${m.id})">
-            📼 이 영상 보고 질문하기
+          <button class="mat-area-q-btn" onclick="openMatSheet(${m.id})">
+            📼 영상 보며 질문하기
           </button>
         </div>`;
     };
@@ -6387,6 +6468,141 @@ function viewMatImage(url){
 
 // 자료를 보고 질문 작성 — 질문 탭으로 이동 + material 연결
 let _pendingMaterialId = null;
+/* ═══════════════════════════════════════════════════════════════════
+   📚 자료 시트 — 자료를 «보면서» 그 자리에서 질문을 적는다.
+   예전 askFromMaterial 은 질문 탭으로 화면을 갈아 끼워 자료가 사라졌고,
+   질문 하나를 심으면 연결까지 끊겨 두 번째 질문은 자료 탭으로 되돌아가야 했다.
+   ═══════════════════════════════════════════════════════════════════ */
+var _sheetMatId = null;
+var _sheetPlanted = [];
+var _LF = String.fromCharCode(10), _CR = String.fromCharCode(13);
+
+/* 본문 서식은 두 규칙뿐 — 빈 줄이면 문단, ## 로 시작하면 소제목.
+   마크다운 라이브러리는 넣지 않는다(단일 HTML 유지). */
+function renderBodyText(s){
+  /* 소제목은 «줄» 단위로 판정한다. 블록 단위로 보면 «## 제목» 다음 줄에 빈 줄 없이
+     본문을 쓴 경우(교사가 가장 자연스럽게 쓰는 방식) 본문까지 제목이 되어 버린다. */
+  var body = String(s||'').split(_CR).join('');
+  var blocks = body.split(_LF + _LF);
+  var out = [];
+  for(var i=0;i<blocks.length;i++){
+    var lines = blocks[i].split(_LF);
+    var buf = [];
+    var flush = function(){
+      if(!buf.length) return;
+      out.push('<p class="ms-p">' + buf.map(esc).join('<br>') + '</p>');
+      buf = [];
+    };
+    for(var k=0;k<lines.length;k++){
+      var line = lines[k].trim();
+      if(!line) continue;
+      if(line.indexOf('##') === 0){
+        flush();
+        out.push('<div class="ms-h2">' + esc(line.substring(2).trim()) + '</div>');
+      } else {
+        buf.push(line);
+      }
+    }
+    flush();
+  }
+  return out.join('');
+}
+
+async function openMatSheet(matId){
+  /* 게스트도 자료는 읽을 수 있다. 질문을 심으려 하면 addQ 가 가입을 권한다. */
+  var mat = (_materials||[]).find(function(m){ return m.id === matId; });
+  if(!mat){
+    /* 라이브 배너에서 바로 열면 «자료» 탭을 아직 안 열어 _materials 가 비어 있다. */
+    try{
+      var r = await sb.from('lesson_materials').select('*').eq('id', matId).maybeSingle();
+      if(r && r.data){ mat = r.data; _materials = (_materials||[]).concat([mat]); }
+    }catch(e){}
+  }
+  if(!mat){ toast('자료를 찾지 못했어요'); return; }
+
+  /* 자료의 과목으로 맞춰 둔다 — 질문이 엉뚱한 나무에 달리지 않게 */
+  if(mat.subject_id){
+    var ms = S.subjects.find(function(x){ return x.id === mat.subject_id; });
+    if(ms) S.activeSub = ms.id;
+  }
+  _pendingMaterialId = matId;
+  _sheetMatId = matId;
+  _sheetPlanted = [];
+
+  var ttl = $('msTitle'); if(ttl) ttl.textContent = mat.title || '자료';
+
+  var parts = [];
+  parts.push('<div class="ms-meta">🧑‍🏫 ' + esc(mat.teacher_name||'선생님') +
+    (mat.subject_label ? ' · ' + esc(mat.subject_label) : '') +
+    (mat.unit ? ' · ' + esc(mat.unit) : '') + '</div>');
+  if(mat.description) parts.push('<p class="ms-p">' + esc(mat.description) + '</p>');
+
+  /* 영상 — 주말과제는 video_url, 일반 자료는 files[] 안의 youtube */
+  var vid = parseYouTubeId(mat.video_url || '');
+  if(vid) parts.push(ytFrame(vid, mat.yt_start, mat.yt_end));
+  (mat.files||[]).forEach(function(f){
+    if(f.kind === 'youtube' && f.videoId){
+      if(!vid) parts.push(ytFrame(f.videoId, mat.yt_start, mat.yt_end));
+    } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
+      parts.push('<video controls playsinline class="ms-media" src="' + esc(f.url) + '"></video>');
+    } else {
+      parts.push('<img class="ms-media" src="' + esc(f.url) + '" alt="" loading="lazy">');
+    }
+  });
+
+  if(mat.body_text) parts.push(renderBodyText(mat.body_text));
+  if(mat.source_note) parts.push('<div class="ms-src">출처 · ' + esc(mat.source_note) + '</div>');
+
+  var body = $('msBody');
+  if(body){ body.innerHTML = parts.join(''); body.scrollTop = 0; }
+
+  var st = $('msStems');
+  if(st) st.innerHTML = QUESTION_STEMS.map(function(x){
+    return '<button onclick="useSheetStem(' + JSON.stringify(x).split('"').join('&quot;') + ')">' +
+           esc(x.trim()||x) + '</button>'; }).join('');
+
+  var inp = $('msInp'); if(inp) inp.value = '';
+  var msg = $('msMsg'); if(msg){ msg.textContent = ''; msg.className = 'ms-msg'; }
+  renderSheetPlanted();
+
+  var sheet = $('matSheet'); if(sheet) sheet.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if(window.MathJax && window.MathJax.typesetPromise){ try{ MathJax.typesetPromise([body]); }catch(e){} }
+}
+
+function closeMatSheet(){
+  var sheet = $('matSheet'); if(sheet) sheet.classList.remove('show');
+  document.body.style.overflow = '';
+  var body = $('msBody');
+  if(body) body.innerHTML = '';   /* 영상 정지 — iframe 을 지우는 게 가장 확실하다 */
+  _sheetMatId = null;
+  clearMaterialLink();
+  render();
+}
+
+function useSheetStem(s){
+  var inp = $('msInp'); if(!inp) return;
+  var cur = inp.value.replace(/\s+$/, '');
+  inp.value = (cur ? cur + ' ' : '') + s;
+  inp.focus();
+}
+
+/* 질문을 심어도 시트를 닫지 않는다. 방금 심은 것만 아래에 쌓아 보여 준다. */
+function onSheetPlanted(data){
+  if(data && data.text) _sheetPlanted.push(data.text);
+  renderSheetPlanted();
+  var inp = $('msInp'); if(inp) inp.focus();
+}
+function renderSheetPlanted(){
+  var box = $('msMine'); if(!box) return;
+  if(!_sheetPlanted.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  box.innerHTML = '<div class="ms-mine-t">이 자료로 심은 질문 ' + _sheetPlanted.length + '개</div>' +
+    _sheetPlanted.map(function(q,i){
+      return '<div class="ms-q"><b>' + (i+1) + '.</b>' + esc(q) + '</div>'; }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
 function askFromMaterial(matId){
   const mat = _materials.find(m=>m.id===matId);
   if(!mat) return;
@@ -8170,6 +8386,24 @@ function applyBranding(){
 applyBranding();
 (async function init(){await restoreSession(); bumpSiteVisit();})();
 </script>
+
+<!-- 📚 자료 시트 -->
+<div class="msheet" id="matSheet" role="dialog" aria-modal="true">
+  <div class="ms-top">
+    <h3 id="msTitle">자료</h3>
+    <button class="ms-x" onclick="closeMatSheet()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ms-body" id="msBody"></div>
+  <div class="ms-foot">
+    <div class="ms-stems" id="msStems"></div>
+    <div class="ms-iw">
+      <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter')addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
+      <button id="msBtn" onclick="addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">심기</button>
+    </div>
+    <div class="ms-msg" id="msMsg"></div>
+    <div class="ms-mine" id="msMine" style="display:none"></div>
+  </div>
+</div>
 
 <footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-06-27</span></footer>
 </body>
