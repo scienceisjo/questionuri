@@ -4656,7 +4656,12 @@ const MAT_PLAN_SEP = ' \u00B7 ';
 function planConceptOf(title){
   const s = String(title || '');
   const p = s.split(MAT_PLAN_SEP);
-  return (p.length > 1 ? p.slice(1).join(MAT_PLAN_SEP).trim() : s.trim()) || s;
+  const tail = (p.length > 1 ? p.slice(1).join(MAT_PLAN_SEP).trim() : s.trim()) || s;
+  /* 차시명 앞의 «2-7-1-1»(학년-단원-중단원-차시)은 그대로 살려 둔다.
+     학생 질문 카드에 단원 태그로 붙어서, 어느 차시 질문인지 아이들이 알아본다. */
+  const code = (String(title || '').match(/^\d+-\d+-\d+-\d+/) || [''])[0];
+  const body = tail.replace(/^\d+-\d+-\d+-\d+\s*/, '');
+  return code ? (code + ' ' + body) : body;
 }
 
 function onMatPlanPick(){
