@@ -4368,8 +4368,12 @@ async function submitBulkCreate(){
       </div>
       <div class="row">
         <div style="flex:1">
-          <label>단원 / 성취기준 (선택)</label>
-          <input type="text" id="matUnit" placeholder="예: 광합성  /  [9과12-01]  — 이 자료로 만든 질문에 자동으로 붙어요" maxlength="120">
+          <label>📚 차시 / 단원 (선택) — 이 자료로 만든 질문에 자동으로 붙어요</label>
+          <select id="matPlan" onchange="onMatPlanPick()" style="margin-bottom:6px">
+            <option value="">— 차시 고르기 (칭찬도장판에 등록한 차시) —</option>
+          </select>
+          <input type="text" id="matUnit" placeholder="직접 적어도 됩니다 — 예: 광합성  /  [9과12-01]" maxlength="120">
+          <div id="matPlanMsg" style="font-size:11px;color:var(--ink2);margin-top:4px"></div>
         </div>
       </div>
       <div style="background:rgba(93,184,110,.08);border:1px solid rgba(93,184,110,.25);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:var(--pd);line-height:1.5">
@@ -4469,6 +4473,8 @@ function openMaterials(){
   if($('matYtStart')) $('matYtStart').value = '';
   if($('matYtEnd')) $('matYtEnd').value = '';
   $('matResult').innerHTML = '';
+  if($('matPlan')) $('matPlan').value = '';
+  loadLessonPlans();
   _matPending = [];
   _matEditId = null;
   renderMatPreviews();
@@ -4609,6 +4615,51 @@ function mmssToSec(v){
   return p.reduce((acc,x)=>acc*60+Number(x), 0);
 }
 
+/* ══ 📚 차시 목록 — 칭찬도장판(stamp-board)의 lesson_plans 를 그대로 읽어 쓴다.
+   두 앱이 같은 Supabase 프로젝트를 쓰므로 차시명이 한 곳에서만 관리된다.
+   RLS 가 teacher_id = auth.uid() 로 막고 있어서 내 차시만 온다. ══ */
+let _matPlans = [];
+
+async function loadLessonPlans(){
+  const sel = $('matPlan'), msg = $('matPlanMsg');
+  if(!sel) return;
+  try{
+    const {data, error} = await sb.from('lesson_plans')
+      .select('id,title,sort_order').order('sort_order').order('id');
+    if(error) throw error;
+    _matPlans = data || [];
+  }catch(e){
+    /* 아직 4_차시명_추가.sql 을 실행하지 않았거나 권한이 없는 경우.
+       자료 올리기 자체는 막지 않는다 — 단원을 직접 적으면 된다. */
+    _matPlans = [];
+    if(msg) msg.textContent = '차시 목록을 불러오지 못했어요. 아래 칸에 직접 적어 주세요.';
+    return;
+  }
+  sel.innerHTML = '<option value="">— 차시 고르기 (칭찬도장판에 등록한 차시) —</option>' +
+    _matPlans.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('');
+  if(msg) msg.textContent = _matPlans.length
+    ? `차시 ${_matPlans.length}개 · 고르면 아래 칸이 채워집니다`
+    : '등록된 차시가 없어요. 칭찬도장판 → 📚 차시 관리에서 먼저 등록하거나, 아래 칸에 직접 적으세요.';
+}
+
+/* 차시명은 «현상형 제목 · 개념» 형태다. 화면에는 제목을 통째로 보여 주되,
+   질문에 붙는 단원 태그로는 개념만 쓴다 — 칭찬도장판이 생기부 기록에 남기는 값과 같게
+   맞춰야 두 앱의 기록이 같은 이름으로 모인다. 구분자는 공백을 낀 가운뎃점이라
+   «전압·저항»처럼 붙여 쓴 것과 섞이지 않는다. */
+const MAT_PLAN_SEP = ' \u00B7 ';
+function planConceptOf(title){
+  const s = String(title || '');
+  const p = s.split(MAT_PLAN_SEP);
+  return (p.length > 1 ? p.slice(1).join(MAT_PLAN_SEP).trim() : s.trim()) || s;
+}
+
+function onMatPlanPick(){
+  const sel = $('matPlan'), inp = $('matUnit');
+  if(!sel || !inp || !sel.value) return;
+  const p = _matPlans.find(x => String(x.id) === String(sel.value));
+  if(p) inp.value = planConceptOf(p.title);
+}
+
 async function submitMaterial(){
   const title = $('matTitle').value.trim();
   if(!title){ alert('제목을 입력해주세요'); return; }
@@ -4674,6 +4725,7 @@ async function submitMaterial(){
   $('matTitle').value = '';
   $('matDesc').value = '';
   if($('matUnit')) $('matUnit').value = '';
+  if($('matPlan')) $('matPlan').value = '';
   if($('matBody')) $('matBody').value = '';
   if($('matSource')) $('matSource').value = '';
   if($('matYtStart')) $('matYtStart').value = '';

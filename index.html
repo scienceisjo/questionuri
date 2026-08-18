@@ -7775,12 +7775,18 @@ async function confirmAS(){
   if(S.presetSel){
     // 프리셋 선택
     const p = S.presetSel;
-    id = p.id;
     nm = p.label;
     icon = p.icon;
     color = p.color;
-    // 이미 추가된 과목인지 확인
-    if(S.subjects.find(s => s.id === id)){
+    /* subjects.id 는 학교 전체에서 하나뿐인 PRIMARY KEY 다(supabase_migration.sql:68).
+       프리셋 id('science')를 그대로 쓰면 학교에서 딱 한 명만 성공하고, 두 번째 학생부터는
+       중복 키로 «과목 추가 실패» alert 이 뜬다. 한 반이 동시에 들어오는 첫 수업에서
+       그대로 터지는 자리라, 계정마다 다른 id 를 만든다. 직접 입력이 쓰는 방식과 같다. */
+    const _uid = String(S.user && S.user.id || '').split('-').join('');
+    id = p.id + '_' + (_uid ? _uid.slice(0, 12) : String(Date.now()));
+    /* 중복 확인은 이름으로 한다 — 예전에 추가한 계정은 id 가 'science' 인 채로 남아 있어서
+       id 로 비교하면 같은 과목을 두 번 넣게 된다. */
+    if(S.subjects.find(s => s.label === nm)){
       toast('이미 추가된 과목이에요');
       return;
     }
@@ -7788,6 +7794,7 @@ async function confirmAS(){
     // 직접 입력
     nm = ($('nSubNm').value || '').trim();
     if(!nm){shk(document.querySelector('.as-box'));return;}
+    if(S.subjects.find(s => s.label === nm)){ toast('이미 추가된 과목이에요'); return; }
     id = 'c_'+Date.now();
     icon = S.newSubIcon;
     color = ['#00BCD4','#795548','#607D8B','#FF5722','#3F51B5'][S.subjects.length%5];
