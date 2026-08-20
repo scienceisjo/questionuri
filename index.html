@@ -1759,7 +1759,8 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         나만 아는 비밀번호로 바꿔 두면 안심이에요.</p>
       <button class="more-close" onclick="pwAskGo()" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none">지금 바꾸기</button>
       <button class="more-close" onclick="pwAskLater()" style="margin-top:8px">나중에 할래요</button>
-      <button class="more-close" onclick="pwAskNever()" style="margin-top:8px;background:none;border:none;color:var(--tl);font-size:var(--fs-xxs)">다시 묻지 않기</button>
+      <p style="font-size:var(--fs-xxs);color:var(--tl);text-align:center;margin:10px 0 0;line-height:1.6">
+        바꾸기 전까지는 들어올 때마다 한 번씩 물어볼게요.</p>
     </div>
   </div>
 
@@ -3225,6 +3226,7 @@ async function restoreSession(){
     S.grade=String(meta.grade||'');S.cls=String(meta.class||'');
     S.num=String(meta.number||'');S.name=meta.name||'';
     await bootstrapUser();goTo('dash');
+    maybeAskPw();                                // 로그인 유지로 들어와도 한 번 물어봄
   }
 }
 
@@ -3254,17 +3256,25 @@ function openMore(){ $('moreSheet')?.classList.add('show'); }
    같은 반 친구가 그대로 들어올 수 있다. 그래서 로그인 직후 한 번 권한다.
    서버에 «바꿨는지» 칸이 없으므로 이 기기에 표시만 남긴다. 강제하지 않는다. */
 function pwOkKey(){ return 'pw_ok_' + ((S.user && S.user.id) || ''); }
-function pwAsked(){ try{ return !!localStorage.getItem(pwOkKey()); }catch(e){ return false; } }
+/* 바꿨는지 표시는 «계정»에 남긴다(user_metadata.pw_changed).
+   그래야 학교 컴퓨터에서 바꾼 것이 휴대폰에서도, 칭찬 도장판에서도 통한다.
+   예전에 이 기기에만 남겨 둔 표시도 그대로 인정한다. */
+function pwAsked(){
+  var meta = (S.user && S.user.user_metadata) || {};
+  if(meta.pw_changed) return true;
+  try{ return !!localStorage.getItem(pwOkKey()); }catch(e){ return false; }
+}
 function markPwAsked(){ try{ localStorage.setItem(pwOkKey(), '1'); }catch(e){} }
 
+/* 「나중에 할래요」를 눌러도 표시를 남기지 않는다 →
+   비밀번호를 실제로 바꾸기 전까지는 들어올 때마다 다시 뜬다. */
 function maybeAskPw(){
   if(!S.user || S.user.id === 'guest') return;
   if(pwAsked()) return;
   setTimeout(function(){ $('pwAskSheet')?.classList.add('show'); }, 900);
 }
 function closePwAsk(){ $('pwAskSheet')?.classList.remove('show'); }
-function pwAskLater(){ closePwAsk(); }
-function pwAskNever(){ markPwAsked(); closePwAsk(); toast('알겠어요! ☰ 더보기에서 언제든 바꿀 수 있어요'); }
+function pwAskLater(){ closePwAsk(); toast('알겠어요! 다음에 들어올 때 다시 물어볼게요'); }
 function pwAskGo(){ closePwAsk(); openPwChange(); }
 
 function openPwChange(){
@@ -3317,9 +3327,10 @@ async function doChangePw(){
   if(a!==b){ setMsg('두 비밀번호가 서로 달라요',false); return; }
   const btn=$('pwSaveBtn'); if(btn) btn.disabled=true; setMsg('변경 중...',true);
   try{
-    const {error}=await sb.auth.updateUser({password:a});
+    const {data:upd,error}=await sb.auth.updateUser({password:a, data:{pw_changed:true}});
     if(btn) btn.disabled=false;
     if(error){ setMsg('변경 실패: '+error.message,false); return; }
+    if(upd && upd.user) S.user = upd.user;      // 방금 남긴 표시를 바로 반영
     markPwAsked();
     setMsg('✅ 변경됐어요! 다음 로그인부터 새 비밀번호를 쓰세요.',true);
     toast('🔑 비밀번호가 변경됐어요');
