@@ -386,6 +386,32 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .mc-info-item b{color:#4A8F36}
 .mc-info-quote{background:linear-gradient(135deg,#FFF9E8,#FFFDF5);border-left:4px solid #E8C84A;padding:12px 16px;margin-bottom:10px;font-size:var(--fs-sm);color:#444;line-height:1.6;font-style:italic}
 .mc-info-quote .who{display:block;margin-top:6px;font-size:var(--fs-xs);color:#A87231;font-style:normal;font-weight:700;text-align:right}
+/* 🧺 세 바구니 */
+.qb-lead{font-size:var(--fs-sm);color:#444;line-height:1.65;text-align:center;margin-bottom:14px}
+.qb-i{background:#fff;border:2px solid #ddd;border-left-width:7px;border-radius:8px;padding:11px 13px;margin-bottom:9px}
+.qb-t{font-size:var(--fs-sm);font-weight:800;color:#333;margin-bottom:3px}
+.qb-d{font-size:var(--fs-xs);color:#555;line-height:1.55}
+.qb-e{font-size:var(--fs-xs);color:#7a6a52;background:#faf6ec;border-radius:6px;padding:5px 8px;margin-top:6px}
+.qb-h{font-size:var(--fs-xxs);color:#4A8F36;font-weight:700;margin-top:6px;line-height:1.5}
+.qb-note{font-size:var(--fs-xs);color:#555;line-height:1.6;text-align:center;background:#f4f4ef;
+  border-radius:8px;padding:10px 12px;margin-top:12px}
+/* 🆘 못 만들겠어요 */
+.stuck-i{display:flex;align-items:center;gap:10px;width:100%;background:#fff;border:2px solid #ddd;
+  border-radius:10px;padding:13px 12px;margin-bottom:8px;cursor:pointer;text-align:left;
+  font-family:inherit;font-size:var(--fs-sm);font-weight:700;color:#333;line-height:1.4}
+.stuck-i:active{transform:translateY(1px)}
+.stuck-ic{font-size:20px;flex:0 0 auto}
+.stuck-ar{margin-left:auto;color:#bbb;font-size:18px;flex:0 0 auto}
+.stuck-fix{background:#fff;border:2px solid #ddd;border-radius:10px;padding:14px}
+.stuck-fix p{font-size:var(--fs-sm);color:#333;line-height:1.75;margin:0 0 9px}
+.stuck-fix p:last-child{margin-bottom:0}
+.stuck-fix b{color:#4A8F36}
+/* 질문 탭에 항상 보이는 도움 줄 */
+.q-help{display:flex;gap:6px;margin-top:9px}
+.q-help button{flex:1;padding:9px 6px;border-radius:10px;border:1.5px solid var(--bd);
+  background:var(--card);font-family:inherit;font-size:var(--fs-xxs);font-weight:800;
+  color:var(--pd);cursor:pointer;line-height:1.35}
+.q-help button.sos{background:#FFF3E0;border-color:#F0B37E;color:#B25E13}
 .mc-info-close{width:100%;margin-top:8px;padding:12px;font-family:'Jua',sans-serif;font-size:16px;color:#fff;text-shadow:2px 2px 0 #2a2a2a;cursor:pointer;background:linear-gradient(180deg,#5BA845,#4A8F36);border:3px solid #fff;border-right-color:#357025;border-bottom-color:#357025}
 .mc-info-close:active{transform:translateY(2px)}
 
@@ -1662,6 +1688,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 
     <div class="mc-link-row">
       <button class="mc-link-btn" onclick="openMCInfo('how')">💡 질문하는<br>방법</button>
+      <button class="mc-link-btn" onclick="openBaskets()">🧺 질문의<br>세 종류</button>
       <button class="mc-link-btn" onclick="openMCInfo('quote')">📜 질문에<br>대한 명언</button>
     </div>
   </div>
@@ -1860,6 +1887,11 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
           <button class="ba" id="addBtn" onclick="addQ()">심기</button>
         </div>
         <div class="q-stems" id="qStems"></div>
+        <!-- 질문이 막힐 때 손 닿는 곳에. 옵션 안에 숨기면 정작 막힌 학생이 못 찾는다. -->
+        <div class="q-help">
+          <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
+          <button onclick="openBaskets()">🧺 질문의 세 종류</button>
+        </div>
         <button class="q-more-toggle" id="qMoreToggle" onclick="toggleQMore()" aria-expanded="false">＋ 옵션 <small>(나무·태그·열매·익명)</small></button>
         <div class="q-more" id="qMore" style="display:none">
           <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
@@ -2810,6 +2842,155 @@ const MC_QUOTES = [
 
 // 🎯 좋은 핵심 질문의 7가지 특성 (중학생 눈높이로 풀어 씀)
 // 원전: 제이 맥타이·그랜트 위긴스 『핵심 질문: 학생에게 이해의 문 열어주기』
+/* ══════════════════════════════════════════════════════════════════════════
+   🧺 세 바구니 + 🆘 질문을 못 만들겠어요
+
+   세 바구니는 OT «모둠 질문 만들기» STEP 5 의 분류를 학생용으로 옮긴 것이다.
+   원칙 그대로 — «어느 바구니가 더 낫다는 뜻이 아니다. 답을 찾는 방법이 다를 뿐».
+
+   «못 만들겠어요»는 막힌 이유를 먼저 고르게 한다. 이유마다 막히는 지점이
+   다른데 «좋은 질문이란...» 같은 설명을 똑같이 들이밀면 아무도 안 읽는다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 질문 세 바구니 — 어느 쪽이 더 낫다는 뜻이 아니다 */
+const Q_BASKETS = [
+  { ic:'📚', t:'찾아보면 아는 것',   c:'#4A90D9',
+    d:'책이나 인터넷에 이미 답이 있는 질문',
+    e:'예) 번개는 몇 볼트일까?',
+    h:'찾아본 다음 «그런데 왜?»를 하나 더 붙이면 다음 바구니로 넘어가요.' },
+  { ic:'🔬', t:'해 봐야 아는 것',     c:'#5CB86E',
+    d:'직접 재고 바꿔 봐야 답이 나오는 질문',
+    e:'예) 빨대를 오래 문지를수록 더 세게 밀어낼까?',
+    h:'수업에서 진짜로 해 볼 수 있는 질문이에요. 여기 있으면 아주 좋아요.' },
+  { ic:'🌌', t:'아직 아무도 모르는 것', c:'#8E7CC3',
+    d:'지금 과학으로도 답이 없는 질문',
+    e:'예) 우주 밖에는 무엇이 있을까?',
+    h:'버리지 마세요. 학기말에 다시 꺼내 볼 거예요.' }
+];
+
+function openBaskets(){
+  let h = '<div class="mc-info-title">🧺 질문에는 세 종류가 있어요</div>';
+  h += '<div class="qb-lead">어느 바구니가 더 낫다는 뜻이 <b>아니에요</b>.<br>답을 찾는 <b>방법이 다를 뿐</b>이에요.</div>';
+  for (let i = 0; i < Q_BASKETS.length; i++) {
+    const b = Q_BASKETS[i];
+    h += '<div class="qb-i" style="border-left-color:' + b.c + '">' +
+         '<div class="qb-t">' + b.ic + ' ' + esc(b.t) + '</div>' +
+         '<div class="qb-d">' + esc(b.d) + '</div>' +
+         '<div class="qb-e">' + esc(b.e) + '</div>' +
+         '<div class="qb-h">' + esc(b.h) + '</div>' +
+         '</div>';
+  }
+  h += '<div class="qb-note">내 질문이 어느 바구니인지 굳이 안 정해도 괜찮아요.<br>' +
+       '<b>«이건 해 봐야 알겠는데?»</b> 싶은 생각이 들었다면 그걸로 충분해요.</div>';
+  h += '<button class="mc-info-close" onclick="closeMCInfo()">닫기</button>';
+  $('mcInfoBox').innerHTML = h;
+  $('mcInfo').classList.add('show');
+}
+
+/* ── 🆘 질문을 못 만들겠어요 ────────────────────────────────────────────────
+   이유 → 처방. 처방은 «설명»이 아니라 «지금 손으로 할 수 있는 한 가지»여야 한다. */
+const STUCK = [
+  { id:'blank', ic:'😶', t:'뭘 물어야 할지 모르겠어요',
+    fix:[
+      '질문부터 만들려고 하면 원래 안 나와요. <b>먼저 본 것을 그대로 적어보세요.</b>',
+      '「빨대가 빙글빙글 돌았다」처럼 눈에 보인 그대로요.',
+      '그다음 그 문장 앞에 <b>«왜»</b>를, 뒤에 <b>«?»</b>를 붙여보세요.',
+      '→ 「<b>왜</b> 빨대가 빙글빙글 돌았<b>을까?</b>」 이러면 벌써 질문이에요.'
+    ],
+    act:'왜 ' },
+  { id:'known', ic:'🙄', t:'다 아는 것 같아요',
+    fix:[
+      '«안다»와 «설명할 수 있다»는 달라요.',
+      '아는 것 하나를 골라 <b>«그런데 왜 그렇지?»</b>를 한 번만 더 붙여보세요.',
+      '「자석은 철을 붙인다」 → 「<b>왜</b> 철만 붙고 알루미늄은 안 붙<b>을까?</b>」',
+      '한 번 더 붙이면 대부분 모르는 곳이 나와요.'
+    ],
+    act:'왜 하필 ' },
+  { id:'dumb', ic:'😳', t:'이상한 질문일까 봐 걱정돼요',
+    fix:[
+      '여기서는 <b>틀린 질문이 없어요.</b> 질문 개수로 점수 매기지 않아요.',
+      '선생님이 찾는 건 «똑똑한 질문»이 아니라 <b>«진짜 궁금한 것»</b>이에요.',
+      '정 걱정되면 <b>🕊️ 익명</b>으로 올리세요. 친구에게 이름이 안 보여요.',
+      '그래도 ⭐를 받으면 도장은 <b>정확히 본인</b>에게 갑니다.'
+    ],
+    act:null },
+  { id:'words', ic:'✍️', t:'생각은 나는데 글로 못 쓰겠어요',
+    fix:[
+      '문장을 잘 쓸 필요 없어요. <b>짧아도 돼요.</b>',
+      '아래 <b>질문 줄기</b> 버튼을 누르면 앞부분이 깔려요. 뒤만 채우면 끝이에요.',
+      '「만약 」 「어떻게 」 「~이 없다면?」 중에 하나 눌러보세요.',
+      '맞춤법은 하나도 안 봐요.'
+    ],
+    act:'만약 ' },
+  { id:'reject', ic:'🚫', t:'썼는데 «안 올라가요»',
+    fix:[
+      '막히는 곳은 딱 셋이에요.',
+      '① <b>5글자보다 짧을 때</b> — 「왜?」 두 글자는 안 돼요.',
+      '② <b>ㅇㅇ·ㅋㅋㅋ</b> 처럼 뜻이 없을 때.',
+      '③ <b>질문처럼 안 생겼을 때</b> — 문장 끝에 <b>물음표(?)</b>만 붙이면 대부분 통과해요.',
+      '쓴 글은 지워지지 않아요. 그 자리에서 고쳐서 다시 「심기」를 누르세요.'
+    ],
+    act:null },
+  { id:'small', ic:'🤏', t:'너무 사소한 것 같아요',
+    fix:[
+      '사소한 게 제일 좋은 질문일 때가 많아요.',
+      '「<b>왜 하필</b> 이 색이지?」 「왜 <b>하필</b> 이 모양이지?」',
+      '«하필»을 붙이면 아무도 안 물어본 곳이 열려요.',
+      '큰 질문보다 <b>내가 진짜 걸린 지점</b>이 훨씬 좋아요.'
+    ],
+    act:'왜 하필 ' }
+];
+
+function openStuck(){
+  let h = '<div class="mc-info-title">🆘 질문이 안 떠오를 때</div>';
+  h += '<div class="qb-lead">어디서 막혔는지 골라보세요.<br>막힌 곳마다 <b>푸는 방법이 달라요</b>.</div>';
+  for (let i = 0; i < STUCK.length; i++) {
+    h += '<button class="stuck-i" onclick="showStuck(' + i + ')">' +
+         '<span class="stuck-ic">' + STUCK[i].ic + '</span>' +
+         '<span>' + esc(STUCK[i].t) + '</span>' +
+         '<span class="stuck-ar">›</span></button>';
+  }
+  h += '<div class="qb-note">고를 게 없으면 그냥 <b>본 것을 한 줄 적는 것</b>부터 해보세요.<br>거기서 질문이 자라요.</div>';
+  h += '<button class="mc-info-close" onclick="closeMCInfo()">닫기</button>';
+  $('mcInfoBox').innerHTML = h;
+  $('mcInfo').classList.add('show');
+}
+
+function showStuck(i){
+  const s = STUCK[i];
+  if (!s) return;
+  let h = '<div class="mc-info-title">' + s.ic + ' ' + esc(s.t) + '</div>';
+  h += '<div class="stuck-fix">';
+  for (let k = 0; k < s.fix.length; k++) h += '<p>' + s.fix[k] + '</p>';
+  h += '</div>';
+  if (s.act) {
+    h += '<button class="mc-info-close" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none" ' +
+         'onclick="stuckStart(' + JSON.stringify(s.act).split('"').join('&quot;') + ')">' +
+         '«' + esc(s.act.trim()) + '» 으로 시작해보기</button>';
+  }
+  h += '<button class="mc-info-close" onclick="openStuck()">← 다른 이유 보기</button>';
+  h += '<button class="mc-info-close" onclick="closeMCInfo()">닫기</button>';
+  $('mcInfoBox').innerHTML = h;
+}
+
+/* 처방을 읽고 끝나면 소용없다. 그 자리에서 입력칸에 넣어 준다.
+   자료 시트가 열려 있으면 시트 칸에, 아니면 질문 탭 칸에. */
+function stuckStart(stem){
+  closeMCInfo();
+  const sheetOpen = $('matSheet') && $('matSheet').classList.contains('show');
+  const id = sheetOpen ? 'msInp' : 'qInp';
+  if (!sheetOpen) swTab('questions');
+  setTimeout(function(){
+    const inp = $(id);
+    if (!inp) return;
+    const cur = inp.value.replace(/\s+$/, '');
+    inp.value = (cur ? cur + ' ' : '') + stem;
+    inp.focus();
+    if (inp.setSelectionRange) { const n = inp.value.length; inp.setSelectionRange(n, n); }
+    inp.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, sheetOpen ? 60 : 260);
+}
+
 const GOOD_Q = [
   {n:1, icon:'🔓', t:'정답이 하나가 아니에요', d:'딱 떨어지는 정답 하나로 끝나지 않아요. 사람마다 다르게 답할 수 있어요.'},
   {n:2, icon:'🤔', t:'머리를 굴리게 해요', d:'그냥 외워서는 답할 수 없고, 곰곰이 생각해야 풀려요.'},
@@ -8465,6 +8646,10 @@ applyBranding();
   <div class="ms-body" id="msBody"></div>
   <div class="ms-foot">
     <div class="ms-stems" id="msStems"></div>
+    <div class="q-help" style="margin:0 0 7px">
+      <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
+      <button onclick="openBaskets()">🧺 질문의 세 종류</button>
+    </div>
     <div class="ms-iw">
       <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter')addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
       <button id="msBtn" onclick="addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">심기</button>
