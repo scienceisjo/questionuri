@@ -1613,6 +1613,18 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .qc-peer-who{font-size:10.5px;font-weight:800;color:#1976D2;margin-bottom:2px}
 .qc-peer-tx{font-size:var(--fs-xs);color:var(--tx);line-height:1.6;word-break:keep-all}
 .qc-peer-note{font-size:10px;color:var(--tl);font-weight:600;line-height:1.5;margin-top:2px}
+/* D. 다음 한 걸음 */
+.qc-next{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;
+  border-radius:11px;background:rgba(93,184,110,.07);border:1px dashed rgba(93,184,110,.45)}
+.qc-next-t{flex:1;min-width:0;font-size:var(--fs-xxs);color:var(--pd);font-weight:700;line-height:1.5;word-break:keep-all}
+.qc-next-b{flex:0 0 auto;padding:6px 11px;border-radius:9px;border:none;background:var(--pd);
+  color:#fff;font-family:inherit;font-size:var(--fs-xxs);font-weight:800;cursor:pointer;white-space:nowrap}
+.qc-next-x{flex:0 0 auto;width:22px;height:22px;border:none;background:none;color:var(--tl);
+  font-size:13px;cursor:pointer;padding:0}
+/* F. 세 바구니 고르기 */
+.q-src-q{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bd);background:#fff;
+  color:var(--tl);font-family:inherit;font-size:11px;font-weight:900;cursor:pointer;padding:0}
+.qc-src-b{padding:2px 7px;border-radius:8px;background:rgba(93,184,110,.12);color:var(--pd);font-weight:700}
 </style>
 </head>
 <body data-theme="cute">
@@ -1930,6 +1942,11 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         </div>
         <div class="q-stems" id="qStems"></div>
         <!-- 질문이 막힐 때 손 닿는 곳에. 옵션 안에 숨기면 정작 막힌 학생이 못 찾는다. -->
+        <!-- 🧺 세 바구니 — 접힘 안에 있으면 있는 줄도 모른다 -->
+        <div class="q-opt-g" style="width:100%;margin-top:9px">
+          <span>🧺 이 질문, 어느 바구니 같아요? <b style="font-weight:600;opacity:.7">안 골라도 돼요</b></span>
+          <div class="q-src-pick" id="srcPick"></div>
+        </div>
         <div class="q-help">
           <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
           <button onclick="openBaskets()">🧺 질문의 세 종류</button>
@@ -1949,10 +1966,6 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
           </div>
           <div class="tag-presets" id="tagPresets"></div>
           <div class="tag-hint">💡 태그로 질문을 분류해봐요! (Enter 또는 쉼표로 추가)</div>          <div class="q-opts q-src-g">
-            <div class="q-opt-g" style="width:100%">
-              <span>🔎 이 답, 어디서 찾을까?</span>
-              <div class="q-src-pick" id="srcPick"></div>
-            </div>
           </div>
           <div class="q-opts">
             <div class="q-opt-g">
@@ -5598,27 +5611,7 @@ function toggleAnon(){S.pendingAnon=!S.pendingAnon;renderAnonTog();}
 // ============================================================================
 // 🔎 답의 출처 선택 (정혜승 '해결' 영역: 답의 출처와 적절성 판단)
 // ============================================================================
-const SOURCE_OPTIONS=[
-  {code:'book',    emoji:'📖',    label:'교과서'},
-  {code:'exp',     emoji:'🧪',    label:'실험·관찰'},
-  {code:'search',  emoji:'🔍',    label:'자료·검색'},
-  {code:'teacher', emoji:'🧑‍🏫', label:'선생님'},
-  {code:'friend',  emoji:'👥',    label:'친구'},
-  {code:'think',   emoji:'🤔',    label:'더 생각해보기'},
-];
-const SRC_LABELS=SOURCE_OPTIONS.reduce(function(m,o){m[o.code]=o.label;return m;},{});
-function renderSourcePicker(){
-  const c=$('srcPick');if(!c) return;
-  c.innerHTML='';
-  SOURCE_OPTIONS.forEach(function(o){
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='q-src-opt'+(S.pendingSource===o.code?' sel':'');
-    b.textContent=o.emoji+' '+o.label;
-    b.onclick=function(){pickSource(o.code);};
-    c.appendChild(b);
-  });
-}
+/* SOURCE_OPTIONS · renderSourcePicker 는 아래 «세 바구니» 묶음에서 다시 정의한다 */
 function pickSource(code){
   S.pendingSource=(S.pendingSource===code)?null:code;
   renderSourcePicker();
@@ -5676,6 +5669,87 @@ function handleTagKey(e){
 // ============================================================================
 // 📋🗂️ 질문 보기 방식 (목록 / 보드) + 🧭 탐구 과정 트레일
 // ============================================================================
+/* ══════════════════════════════════════════════════════════════════════════
+   D. 카드마다 «다음 한 걸음» 한 줄
+   F. 답의 출처 6종 → 세 바구니 3종 (접힘 밖으로)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── F. 세 바구니로 고르기 ────────────────────────────────────────────────
+   기존 answer_source 컬럼 값을 그대로 쓴다. 새 컬럼을 파지 않는다.
+   6개를 3개로 줄인 이유 —
+     📖 교과서 · 🔍 자료·검색 은 «찾아보면 아는 것» 과 같은 칸이고,
+     🧑‍🏫 선생님 · 👥 친구 는 «답의 종류» 가 아니라 «누구한테 물어볼까» 라 층위가 다르다.
+   3지선다면 태블릿에서 1초에 고른다. */
+const BASKET_OPTS = [
+  { code:'search', emoji:'📚', label:'찾아보면' , full:'찾아보면 아는 것' },
+  { code:'exp',    emoji:'🔬', label:'해 봐야'  , full:'해 봐야 아는 것' },
+  { code:'think',  emoji:'🌌', label:'아직 아무도', full:'아직 아무도 모르는 것' }
+];
+/* 예전 값도 화면에서는 세 바구니로 읽어 준다. 마이그레이션 SQL 없음.
+   선생님·친구는 층위가 달라 표시하지 않는다(값은 그대로 둔다). */
+const BASKET_OF = { search:'search', book:'search', exp:'exp', think:'think' };
+
+function basketLabel(code){
+  const k = BASKET_OF[code];
+  if (!k) return '';
+  const b = BASKET_OPTS.find(x => x.code === k);
+  return b ? (b.emoji + ' ' + b.full) : '';
+}
+
+function renderSourcePicker(){
+  const c = $('srcPick'); if (!c) return;
+  c.innerHTML = '';
+  BASKET_OPTS.forEach(function(o){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'q-src-opt' + (BASKET_OF[S.pendingSource] === o.code ? ' sel' : '');
+    b.textContent = o.emoji + ' ' + o.label;
+    b.title = o.full;
+    b.onclick = function(){ pickSource(o.code); };
+    c.appendChild(b);
+  });
+  const q = document.createElement('button');
+  q.type = 'button'; q.className = 'q-src-q'; q.textContent = '?';
+  q.title = '세 바구니가 뭐예요?';
+  q.onclick = function(){ openBaskets(); };
+  c.appendChild(q);
+}
+
+/* ── D. 다음 한 걸음 ──────────────────────────────────────────────────────
+   카드 아래 버튼이 아홉 개인데 뜻은 title 속성뿐이다. 기능이 없어서가 아니라
+   «다음이 안 보여서» 멈춘다. 카드 상태를 보고 한 줄, 버튼 하나만 띄운다. */
+const _nextHidden = {};
+
+function nextStep(q){
+  if (_nextHidden[q.id]) return null;
+  if (q.resolved) {
+    return { say:'그래도 아직 모르는 게 남았나요?', btn:'🌱 남은 궁금증 적기',
+             fn:'openHarvest(' + q.id + ')' };
+  }
+  if ((q.branches || []).length) {
+    return { say:'해 볼 수 있게 좁혀볼까요? 뭘 바꾸고 뭘 볼지만 정하면 돼요.',
+             btn:'🔬 좁혀보기', fn:'openExpand(' + q.id + ')' };
+  }
+  if (q.hint) {
+    return { say:'힌트를 읽고 새로 생긴 궁금증이 있나요?',
+             btn:'🌿 하나만 붙이기', fn:'openBM(' + q.id + ')' };
+  }
+  return { say:'이 질문, 힌트 요정한테 물어볼래요?',
+           btn:'🧚 힌트 받기', fn:'openFy(' + q.id + ')' };
+}
+
+function nextStepHTML(q){
+  const n = nextStep(q);
+  if (!n) return '';
+  return '<div class="qc-next">' +
+         '<span class="qc-next-t">' + esc(n.say) + '</span>' +
+         '<button class="qc-next-b" onclick="' + n.fn + '">' + n.btn + '</button>' +
+         '<button class="qc-next-x" onclick="hideNext(' + q.id + ')" title="이 카드에서 그만 보기">✕</button>' +
+         '</div>';
+}
+
+function hideNext(qid){ _nextHidden[qid] = 1; renderQs(); }
+
 /* ── 💬 친구가 내 질문에 남긴 답 ───────────────────────────────────────────
    «고마워» 버튼과 도토리 답례는 만들지 않는다. 남에게 도토리를 주려면
    profiles UPDATE 를 타인에게 열어야 하는데(지금은 12곳 전부 자기 것만 건드린다),
@@ -5884,10 +5958,11 @@ function renderQs(){
             ${childCount[q.id]?`<span class="qc-grewinto">🌳 자란 질문 ${childCount[q.id]}</span>`:''}
             ${selfCheckCount(q)?`<span class="qc-sc-badge">🎯 좋은 질문 ${selfCheckCount(q)}/7</span>`:''}
             ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}
-            ${(q.peer_answers||[]).length?`<button class="qc-peer-b" onclick="togPeer(${q.id})">💬 친구가 남긴 답 ${q.peer_answers.length}</button>`:''}            ${q.answer_source&&SRC_LABELS[q.answer_source]?`<span class="qc-src-b" title="이 답을 어디서 찾을지">🔎 ${SRC_LABELS[q.answer_source]}</span>`:''}
+            ${(q.peer_answers||[]).length?`<button class="qc-peer-b" onclick="togPeer(${q.id})">💬 친구가 남긴 답 ${q.peer_answers.length}</button>`:''}            ${q.answer_source&&basketLabel(q.answer_source)?`<span class="qc-src-b" title="어느 바구니로 골랐는지">${basketLabel(q.answer_source)}</span>`:''}
           </div>
           ${questionTrail(q)}
           ${peerPanel(q)}
+          ${nextStepHTML(q)}
           ${q.teacher_nudge ? `
             <div class="qc-nudge">
               <div class="qc-nudge-hdr">🌿 선생님의 되묻기</div>
