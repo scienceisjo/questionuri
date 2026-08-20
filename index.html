@@ -1772,6 +1772,9 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         <button class="more-item" onclick="swMore('hall')"><span>🏅</span><b>명예의 전당</b><small>우리 반 좋은 질문</small></button>
         <button class="more-item" onclick="swMore('ach')"><span>🏆</span><b>업적</b><small>달성한 배지</small></button>
         <button class="more-item" onclick="swMore('deco')"><span>🎨</span><b>꾸미기</b><small>내 나무 꾸미기</small></button>
+        <button class="more-item" onclick="openMCInfo('seven')"><span>🎯</span><b>좋은 질문이란</b><small>7가지 특성</small></button>
+        <button class="more-item" onclick="openBaskets()"><span>🧺</span><b>질문의 세 종류</b><small>답을 찾는 방법이 달라요</small></button>
+        <button class="more-item" onclick="openMCInfo('quote')"><span>📜</span><b>질문에 대한 명언</b><small>읽어볼 만한 말들</small></button>
         <button class="more-item" onclick="openPwChange()"><span>🔑</span><b>비밀번호 변경</b><small>내 비밀번호 바꾸기</small></button>
       </div>
       <button class="more-close" onclick="closeMore()">닫기</button>
@@ -5745,17 +5748,21 @@ function togBranches(qid){
 // ============================================================================
 // 🌅🌙 수업 단계 (열기 / 닫기)
 // ============================================================================
+/* 단계를 바꿔도 이 링크는 남아야 한다 — 앱을 제일 열심히 쓰는 학생일수록 단계를 자주 누른다. */
+const PHASE_LINK = ' <a onclick="openMCInfo(&quot;seven&quot;)" style="color:var(--pr);font-weight:700;cursor:pointer;white-space:nowrap">🎯 좋은 질문이란?</a>';
 function setPhase(p){
   S.phase = p;
   document.querySelectorAll('#phaseSeg .phase-opt').forEach(b=>b.classList.toggle('on', b.dataset.phase===p));
   const head=$('qHead'), note=$('phaseNote'), inp=$('qInp');
   if(p==='after'){
     if(head) head.textContent='🌙 수업 닫기 — 새로 생긴 질문 심기';
-    if(note) note.textContent='수업이 끝났어요. 알게 된 만큼 새로 궁금해진 것은 무엇인가요? 좋은 탐구는 더 나은 질문을 낳아요 🌳';
+    /* textContent 로 대입하면 안내문 안의 «🎯 좋은 질문이란?» 링크가 통째로 사라진다.
+       단계 버튼을 한 번만 눌러도 새로고침 전까지 안 돌아왔다. */
+    if(note) note.innerHTML='수업이 끝났어요. 알게 된 만큼 새로 궁금해진 것은 무엇인가요? 좋은 탐구는 더 나은 질문을 낳아요 🌳'+PHASE_LINK;
     if(inp) inp.placeholder='수업 뒤 새로 생긴 질문을 적어보세요...';
   } else {
     if(head) head.textContent='🌅 수업 열기 — 새로운 질문 심기';
-    if(note) note.textContent='오늘 수업에서 무엇이 가장 궁금한가요? 🌱';
+    if(note) note.innerHTML='오늘 수업에서 무엇이 가장 궁금한가요? 🌱'+PHASE_LINK;
     if(inp) inp.placeholder='궁금한 것을 적어보세요... ($수식$ 가능)';
   }
 }
