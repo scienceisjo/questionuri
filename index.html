@@ -407,6 +407,35 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .stuck-fix p:last-child{margin-bottom:0}
 .stuck-fix b{color:#4A8F36}
 /* 질문 탭에 항상 보이는 도움 줄 */
+/* A. 반려 처방 */
+.rj-t{font-size:var(--fs-xs);line-height:1.6}
+.rj-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.rj-b{padding:7px 11px;border-radius:9px;border:1.5px solid var(--ar);background:#fff;
+  color:var(--ar);font-family:inherit;font-size:var(--fs-xxs);font-weight:800;cursor:pointer}
+.rj-b:active{transform:translateY(1px)}
+.rj-note{font-size:10.5px;color:var(--tl);margin-top:6px;font-weight:600}
+/* B. 묵은 질문 팝업 */
+.oq-say{font-size:11px;color:var(--tl);margin:8px 0 9px;font-weight:600;line-height:1.5}
+.oq-btns{display:flex;gap:6px}
+.oq-b{flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid var(--bd);background:#fff;
+  font-family:inherit;font-size:var(--fs-xxs);font-weight:800;color:var(--pd);cursor:pointer;line-height:1.35}
+.oq-b.go{background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border-color:transparent}
+.oq-later{width:100%;margin-top:7px;padding:8px;border:none;background:none;
+  font-family:inherit;font-size:11px;color:var(--tl);font-weight:700;cursor:pointer}
+/* C. 네 물음 */
+.up-hdr{font-size:var(--fs-xs);font-weight:800;color:var(--pd);margin:10px 0 7px}
+.up-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.up-i{display:flex;flex-direction:column;gap:3px}
+.up-i span{font-size:10.5px;font-weight:800;color:var(--tl)}
+.up-i input{padding:8px 9px;border-radius:9px;border:1.5px solid var(--bd);background:#fff;
+  font-family:inherit;font-size:var(--fs-xs);color:var(--tx);min-width:0}
+.up-hint{font-size:10.5px;color:var(--tl);font-weight:700;margin-top:9px;line-height:1.5}
+.up-draft{margin-top:9px;padding:10px 12px;border-radius:10px;background:#F4FAF5;
+  border:1.5px dashed var(--ok);font-size:var(--fs-sm);font-weight:800;color:var(--pd);line-height:1.55}
+.up-use{width:100%;margin-top:7px;padding:9px;border-radius:10px;border:none;
+  background:var(--pd);color:#fff;font-family:inherit;font-size:var(--fs-xs);font-weight:800;cursor:pointer}
+.up-use:disabled{opacity:.45;cursor:default}
+.up-note{font-size:10px;color:var(--tl);margin-top:6px;font-weight:600;line-height:1.5}
 .q-help{display:flex;gap:6px;margin-top:9px}
 .q-help button{flex:1;padding:9px 6px;border-radius:10px;border:1.5px solid var(--bd);
   background:var(--card);font-family:inherit;font-size:var(--fs-xxs);font-weight:800;
@@ -2350,6 +2379,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   <h4>📜 옛날 질문을 읽어보세요!</h4>
   <p id="oqT"></p>
   <div class="od" id="oqD"></div>
+  <div id="oqFoot"></div>
 </div>
 
 <script>
@@ -2854,6 +2884,201 @@ const MC_QUOTES = [
    «못 만들겠어요»는 막힌 이유를 먼저 고르게 한다. 이유마다 막히는 지점이
    다른데 «좋은 질문이란...» 같은 설명을 똑같이 들이밀면 아무도 안 읽는다.
    ══════════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1단계 A·B·C
+   A. 반려된 그 자리에서 원탭으로 고치기
+   B. 묵은 질문 팝업 → 다시 꺼내 다듬는 입구
+   C. 질문 키우기 «네 물음» 칸 (칩 덧붙이기 대신 초안 조립)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── A. 반려 처방 ─────────────────────────────────────────────────────────
+   chkQ 는 세 가지로 반려한다. 이유마다 푸는 법이 다른데 지금은 한 줄만 떴다.
+   처방 문구는 새로 쓰지 않았다 — 🆘 안에 이미 학생 말로 써 둔 것을 여기로 옮겼다. */
+function rejectKind(t, msg){
+  if (/짧/.test(msg)) return 'short';
+  if (/의미/.test(msg)) return 'noise';
+  return 'shape';   /* "왜~", "어떻게~" 형태로 적어봐요 */
+}
+
+/* 반려 안내를 버튼까지 담아 그린다. inpId 는 지금 쓰고 있는 입력칸. */
+function rejectHTML(kind, t, inpId){
+  var esc2 = function(s){ return esc(String(s)); };
+  var q = "'";
+  var btn = function(label, fn){
+    return '<button class="rj-b" onclick="' + fn + '">' + label + '</button>';
+  };
+  var h = '', tip = '';
+  if (kind === 'short') {
+    h = '🤔 지금 <b>' + t.length + '글자</b>예요. 한 마디만 더 붙여볼래요?';
+    tip = btn('🆘 안 떠올라요', 'openStuck()');
+  } else if (kind === 'noise') {
+    h = '😅 이건 낙서 같아요. <b>진짜 궁금한 것</b> 하나만요.';
+    tip = btn('🆘 안 떠올라요', 'openStuck()');
+  } else {
+    h = '🤔 아직 <b>질문 모양</b>이 아니에요. 틀린 게 아니에요.';
+    tip = btn('끝에 «?» 붙이기', 'rjFix(' + q + inpId + q + ',' + q + 'q' + q + ')') +
+          btn('앞에 «왜» 붙이기', 'rjFix(' + q + inpId + q + ',' + q + 'why' + q + ')') +
+          btn('왜 막혔는지 보기', 'openStuck();setTimeout(function(){showStuck(4);},60)');
+  }
+  return '<div class="rj-t">' + h + '</div>' +
+         '<div class="rj-btns">' + tip + '</div>' +
+         '<div class="rj-note">쓴 글은 안 지워져요. 그대로 고치면 돼요.</div>';
+}
+
+/* 버튼 한 번으로 고쳐 준다. 다시 «심기»는 학생이 자기 손으로 누르게 둔다. */
+function rjFix(inpId, how){
+  var inp = $(inpId); if (!inp) return;
+  var v = inp.value.trim();
+  if (!v) { inp.focus(); return; }
+  if (how === 'q') {
+    v = v.replace(/[.!]+$/, '');
+    if (v.slice(-1) !== '?') v += '?';
+  } else {
+    if (!/^왜/.test(v)) v = '왜 ' + v;
+  }
+  inp.value = v;
+  inp.focus();
+  if (inp.setSelectionRange) { var n = v.length; inp.setSelectionRange(n, n); }
+}
+
+/* ── B. 묵은 질문 팝업 ────────────────────────────────────────────────────
+   예전엔 «닫기»만 있었다. 옛 질문을 손에 쥐고도 할 수 있는 일이 없었다. */
+var _oqId = null;
+
+function oqSeenKey(){ return 'oq_seen_' + ((S.user && S.user.id) || 'x'); }
+
+function checkOldQ(){
+  if (!S.user || S.guest) return;
+  /* 하루 한 번만. 학교 공용 태블릿이라 키에 계정을 붙인다. */
+  try {
+    if (localStorage.getItem(oqSeenKey()) === td()) return;
+  } catch (e) {}
+
+  var all = allQs(S).filter(function(q){
+    return q.date && (new Date() - new Date(q.date)) / 864e5 > 7 && !q.resolved;
+  });
+  if (!all.length) return;
+
+  var o = all[Math.floor(Math.random() * all.length)];
+  _oqId = o.id;
+  $('oqT').textContent = '"' + o.text + '"';
+  $('oqD').textContent = '📅 ' + o.date;
+  var f = $('oqFoot');
+  if (f) {
+    f.innerHTML =
+      '<div class="oq-say">자꾸 다시 떠오르는 질문이 좋은 질문이에요.</div>' +
+      '<div class="oq-btns">' +
+        '<button class="oq-b go" onclick="oqGrow()">🌿 한 걸음 더</button>' +
+        '<button class="oq-b" onclick="oqHarvest()">🍎 이제 알아냈어</button>' +
+      '</div>' +
+      '<button class="oq-later" onclick="closeOQ()">나중에</button>';
+  }
+  setTimeout(function(){ $('oqp').classList.add('show'); }, 2500);
+}
+
+function closeOQ(){
+  $('oqp').classList.remove('show');
+  try { localStorage.setItem(oqSeenKey(), td()); } catch (e) {}
+}
+
+/* 팝업에서 바로 키우기 패널로 */
+function oqGrow(){
+  var id = _oqId; closeOQ();
+  if (!id) return;
+  swTab('questions');
+  setTimeout(function(){ openExpand(id); }, 320);
+}
+function oqHarvest(){
+  var id = _oqId; closeOQ();
+  if (!id) return;
+  swTab('questions');
+  setTimeout(function(){ openHarvest(id); }, 320);
+}
+
+/* ── C. 네 물음 ───────────────────────────────────────────────────────────
+   OT «질문 키우기» 의 네 물음. 원본 대본의 «두 개만 채워도 된다» 를 그대로 지킨다.
+   조립은 «명사 한두 단어» 칸에서만 한다 — 학생 문장 전체를 의문형으로 바꾸려 들면
+   「돈다을까?」 같은 게 나오고, 그런 문장이 한 번 뜨면 그 기능은 그날로 죽는다. */
+var UP_SLOTS = [
+  { k:'change',  ic:'🔧', t:'무엇을 바꿔볼까?',  ph:'예: 문지른 시간' },
+  { k:'compare', ic:'⚖️', t:'무엇과 비교할까?',  ph:'예: 안 문지른 빨대' },
+  { k:'see',     ic:'👀', t:'어떤 변화를 볼까?', ph:'예: 밀리는 정도' },
+  { k:'measure', ic:'📏', t:'무엇을 숫자로 잴까?', ph:'예: 도는 횟수' }
+];
+
+function upVal(qid, k){
+  var e = $('up-' + k + '-' + qid);
+  return e ? e.value.trim() : '';
+}
+
+/* 받침이 있으면 을/과, 없으면 를/와 */
+function josa(word, withBatchim, withoutBatchim){
+  var s = String(word || '');
+  if (!s) return withoutBatchim;
+  var c = s.charCodeAt(s.length - 1);
+  if (c < 0xAC00 || c > 0xD7A3) return withoutBatchim;   /* 한글이 아니면 기본형 */
+  return ((c - 0xAC00) % 28) ? withBatchim : withoutBatchim;
+}
+
+function upDraft(qid){
+  var ch = upVal(qid, 'change');
+  if (!ch) return '';
+  var see = upVal(qid, 'see'), me = upVal(qid, 'measure'), cp = upVal(qid, 'compare');
+  var head = ch + josa(ch, '을', '를') + ' 바꾸면 ';
+  if (see) return head + see + josa(see, '이', '가') + ' 어떻게 달라질까?';
+  if (me)  return head + me + josa(me, '이', '가') + ' 얼마나 달라질까?';
+  if (cp)  return ch + josa(ch, '을', '를') + ' 바꿔서 ' + cp + josa(cp, '과', '와') + ' 비교하면 어떻게 다를까?';
+  return '';
+}
+
+/* 칸을 칠 때마다 초안을 다시 만든다 */
+function upSync(qid){
+  var box = $('upDraft-' + qid); if (!box) return;
+  var filled = UP_SLOTS.filter(function(s){ return upVal(qid, s.k); }).length;
+  var tooLong = UP_SLOTS.some(function(s){ return upVal(qid, s.k).length > 20; });
+  var d = tooLong ? '' : upDraft(qid);
+
+  if (tooLong) {
+    box.innerHTML = '<div class="up-hint">여기엔 <b>한두 단어만</b> 적어보세요. 문장은 아래 칸에 써요.</div>';
+    return;
+  }
+  if (!upVal(qid, 'change')) {
+    box.innerHTML = '<div class="up-hint">🔧 칸부터 채우면 문장이 만들어져요.</div>';
+    return;
+  }
+  if (!d) {
+    box.innerHTML = '<div class="up-hint">👀 나 📏 나 ⚖️ 중에 하나만 더 채워보세요.</div>';
+    return;
+  }
+  box.innerHTML =
+    '<div class="up-draft">' + esc(d) + '</div>' +
+    '<button class="up-use"' + (filled >= 2 ? '' : ' disabled') +
+      ' onclick="upUse(' + qid + ')">이 문장으로 넣기</button>' +
+    '<div class="up-note">고쳐 써도 돼요. 이건 초안이에요.<br>' +
+    '다른 사람이 읽어도 무엇을 묻는지 바로 알 수 있으면 된 거예요.</div>';
+}
+
+function upUse(qid){
+  var d = upDraft(qid); if (!d) return;
+  var t = $('expText-' + qid); if (!t) return;
+  t.value = d;
+  t.focus();
+  if (t.setSelectionRange) { var n = d.length; t.setSelectionRange(n, n); }
+}
+
+/* 확장 패널에 끼워 넣을 네 칸 */
+function upPanel(qid){
+  var h = '<div class="up-hdr">🪜 두 칸만 채워도 질문이 또렷해져요</div><div class="up-grid">';
+  for (var i = 0; i < UP_SLOTS.length; i++) {
+    var s = UP_SLOTS[i];
+    h += '<label class="up-i"><span>' + s.ic + ' ' + esc(s.t) + '</span>' +
+         '<input id="up-' + s.k + '-' + qid + '" maxlength="24" placeholder="' + esc(s.ph) + '" ' +
+         'oninput="upSync(' + qid + ')"></label>';
+  }
+  h += '</div><div id="upDraft-' + qid + '"><div class="up-hint">🔧 칸부터 채우면 문장이 만들어져요.</div></div>';
+  return h;
+}
 
 /* 질문 세 바구니 — 어느 쪽이 더 낫다는 뜻이 아니다 */
 const Q_BASKETS = [
@@ -5636,9 +5861,10 @@ function renderQs(){
           <div class="qc-expand-hdr">🌿 이 질문을 <b>한 걸음 더</b> 키워볼까요?</div>
           <div class="qc-expand-scaffold">
             ${EXPAND_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
-            <div style="flex-basis:100%;font-size:10px;color:var(--tl);margin:6px 0 1px">🔬 탐구가능하게 좁히기</div>
+            <div style="flex-basis:100%;font-size:10px;color:var(--tl);margin:6px 0 1px">🔬 탐구가능하게 좁히기 <span style="opacity:.7">(칩은 뒤에 붙어요 — 아래 네 칸이 더 쉬워요)</span></div>
             ${REFINE_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
           </div>
+          ${upPanel(q.id)}
           <textarea class="qc-expand-input" id="expText-${q.id}" placeholder="여기서 더 궁금해진 점, 더 깊은 질문을 적어보세요... 🌱"></textarea>
           <div class="qc-expand-btns">
             <button class="exp-cancel" onclick="closeExpand()">취소</button>
@@ -5880,7 +6106,16 @@ async function addQ(ctx){
   const r=await chkQ(t);
   /* 반려해도 적은 문장은 지우지 않는다 — 영상을 보고 나오는 첫 반응은 대개 평서문이라
      여기서 자주 걸리는데, 지워 버리면 다시 쓰기 싫어진다. */
-  if(!r.ok){ const m=_setMsg('🤔 '+r.msg,'err'); if(m) shk(m); inp.focus(); return; }
+  if(!r.ok){
+    /* 이유마다 푸는 법이 다르다. 한 줄만 띄우면 학생은 여기서 그냥 멈춘다. */
+    const m = $(_msgId);
+    if(m){
+      m.className = (_msgId==='msMsg' ? 'ms-msg ' : 'q-msg ') + 'err';
+      m.innerHTML = rejectHTML(rejectKind(t, r.msg), t, _inpId);
+      shk(m);
+    }
+    inp.focus(); return;
+  }
 
   // 🌲 어느 나무에 달지 — pendingTreeId 우선, 없으면 현재 활성 나무
   const treeId = S.pendingTreeId || curTreeId();
@@ -8119,18 +8354,7 @@ async function delSubject(subId){
 // ============================================================================
 // 옛 질문 팝업
 // ============================================================================
-function checkOldQ(){
-  const all = allQs(S).filter(q =>
-    q.date && (new Date() - new Date(q.date))/864e5 > 14 && !q.resolved
-  );
-  if(all.length){
-    const o=all[Math.floor(Math.random()*all.length)];
-    $('oqT').textContent='"'+o.text+'"';
-    $('oqD').textContent='📅 '+o.date;
-    setTimeout(()=>$('oqp').classList.add('show'),2500);
-  }
-}
-function closeOQ(){$('oqp').classList.remove('show');}
+/* checkOldQ · closeOQ 는 아래 «1단계 A·B·C» 묶음에서 다시 정의한다 */
 
 // ============================================================================
 // INIT

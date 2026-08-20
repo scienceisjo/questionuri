@@ -635,6 +635,23 @@ body.print-report-mode .dd-overlay{display:none !important}
 .gv-chain{display:flex;align-items:center;gap:8px;font-size:12px;background:var(--surface2);border:1px solid var(--rule);border-radius:6px;padding:7px 10px}
 .gv-chain i{color:var(--pr);font-style:normal;font-weight:700}
 .gv-from{color:var(--ink2);flex:1}.gv-to{color:var(--pd);font-weight:600;flex:1}
+/* 🎯 좋은 질문 예시 모음 (교사 전용) */
+.gq-note{background:#FFF6E5;border:1px solid #E8C888;border-radius:6px;padding:10px 12px;
+  font-size:12px;color:#7A5A18;line-height:1.65;margin-bottom:14px}
+.gq-h{font-size:13.5px;color:var(--ink);margin:16px 0 8px;font-weight:800}
+.gq-h span{font-weight:600;color:var(--ink2);font-size:11.5px;margin-left:6px}
+.gq-cr{display:grid;gap:6px}
+.gq-cr-i{background:var(--surface2);border-radius:6px;padding:8px 11px}
+.gq-cr-i b{display:block;font-size:12.5px;color:var(--ink)}
+.gq-cr-i span{display:block;font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.55}
+.gq-s{border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-bottom:8px}
+.gq-s-t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.55;display:flex;gap:8px}
+.gq-l{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;
+  font-size:11px;display:grid;place-items:center;font-weight:800}
+.gq-tag{font-size:11px;color:var(--blue);font-weight:700;margin:5px 0 6px;padding-left:28px}
+.gq-p{font-size:11.5px;line-height:1.6;padding-left:28px;margin-top:2px}
+.gq-p.good{color:#2E7D46}
+.gq-p.weak{color:#9A6B1E}
 </style>
 </head>
 <body>
@@ -703,6 +720,7 @@ body.print-report-mode .dd-overlay{display:none !important}
       <span class="info" id="lastUpdate">연결 대기</span>
       <button class="btn-ghost btn-live" onclick="openLiveModal()"><span>🔴</span> 라이브 세션</button>
       <button class="btn-ghost" onclick="openMaterials()"><span>📚</span> 수업 자료</button>
+      <button class="btn-ghost" onclick="openGoodQ()"><span>🎯</span> 좋은 질문 예시</button>
       <button class="btn-ghost" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
       <button class="btn-ghost" onclick="openWeeklyReport()"><span>📄</span> 주간 리포트</button>
       <button class="btn-ghost" id="refreshBtn" onclick="loadAll()"><span class="ico">↻</span> 새로고침</button>
@@ -4332,6 +4350,15 @@ async function submitBulkCreate(){
 .mat-card-acts button:hover{border-color:var(--pr)}
 .mat-empty{padding:30px 16px;text-align:center;color:var(--ink3);font-size:12.5px}
 </style>
+<!-- 🎯 좋은 질문 예시 모음 (교사 전용) -->
+<div class="mat-modal" id="mGoodQ" onclick="if(event.target.id===&quot;mGoodQ&quot;)closeGoodQ()">
+  <div class="mat-box">
+    <h2>🎯 좋은 질문 예시 모음</h2>
+    <div id="gqBody"></div>
+    <button class="mat-btn" style="width:100%;margin-top:16px" onclick="closeGoodQ()">닫기</button>
+  </div>
+</div>
+
 <div class="mat-modal" id="mMat" onclick="if(event.target.id==='mMat')closeMaterials()">
   <div class="mat-box">
     <h2>📚 수업 자료</h2>
@@ -4731,6 +4758,89 @@ async function insertWithFallback(table, payload, newCols){
   }
   return r;
 }
+
+/* ══ 🎯 좋은 질문 예시 모음 (교사 전용) ══════════════════════════════════════
+   연수 자료 question-workshop/src/data/goodQuestionExamples.ts 를 그대로 옮겼다.
+   **학생 화면에는 두지 않는다.** OT 대본에 «첫 5분에 좋은 질문의 예를 보여 주지
+   마세요. 예를 보면 아이들은 그걸 베낍니다» 라고 못 박혀 있다.
+   교사가 수업 중에 «이런 방향» 을 잡을 때 혼자 보는 자리다. */
+const GQ_CRITERIA = [
+  { no:1, label:'실제 궁금증',      detail:'학생의 진짜 궁금증에서 출발하는가' },
+  { no:2, label:'탐구 가능성',      detail:'조사·실험·관찰·자료 분석으로 확인할 수 있는가' },
+  { no:3, label:'범위와 조건',      detail:'무엇을 바꾸고 무엇과 비교할지가 구체적인가' },
+  { no:4, label:'개념 연결과 확장', detail:'과학 개념으로 설명되고 다음 질문으로 이어지는가' }
+];
+
+const GQ_SAMPLES = [
+  { l:'A', text:'시간이란 무엇인가?',
+    tag:'근본을 건드리는 질문',
+    good:'원초적인 힘이 매우 강합니다. 누구나 한 번쯤 멈춰 서게 됩니다.',
+    weak:'탐구 질문으로 쓰기에는 범위가 너무 넓습니다.' },
+  { l:'B', text:'소리를 내는 동물은 전체의 몇 %인가요?',
+    tag:'확인 가능한 질문',
+    good:'구체적이고 자료로 확인할 수 있습니다.',
+    weak:'답을 얻는 순간 사고가 거기서 끝날 수 있습니다.' },
+  { l:'C', text:'에너지 보존 법칙에는 어긋나지 않는데, 왜 식은 커피는 다시 뜨거워지지 않는 거예요?',
+    tag:'선개념과 현상의 충돌',
+    good:'아는 것과 보는 것이 부딪칩니다. 인지갈등이 강합니다.',
+    weak:'개념 수준이 높아 비계가 필요합니다.' },
+  { l:'D', text:'성은 암수 두 개밖에 없는 건가요?',
+    tag:'전제를 흔드는 질문',
+    good:'짧지만 당연하게 여기던 전제를 흔듭니다.',
+    weak:'탐구 범위와 다룰 사례를 교사가 함께 좁혀야 합니다.' },
+  { l:'E', text:'블랙홀은 원래 보이지 않는데 어떻게 존재를 확인하나요?',
+    tag:'증거로 추론하는 질문',
+    good:'직접 볼 수 없는 것을 증거로 추론하는, 과학의 방식 자체를 묻습니다.',
+    weak:'관찰 자료를 교사가 준비해 주어야 탐구가 굴러갑니다.' },
+  { l:'F', text:'전류가 자석을 움직인다면, 반대로 자석을 움직이면 전기가 생기지 않을까?',
+    tag:'뒤집어 만든 후속 질문',
+    good:'앞선 현상을 뒤집어 새로운 가설을 만들었습니다. 질문이 창의적 행위임을 그대로 보여 줍니다.',
+    weak:'거의 그대로 탐구 질문이 됩니다. 조건만 붙이면 됩니다.' }
+];
+
+/* 학생이 막혔을 때 교사가 그 자리에서 던질 말 — 앱의 🆘 처방과 같은 축 */
+const GQ_MOVES = [
+  { w:'막연할 때',       say:'"무엇을 바꾸고 무엇을 볼지" 두 개만 정해 볼까?' },
+  { w:'찾으면 나올 때',  say:'찾아본 다음에 "그런데 왜?"를 하나만 더 붙여 보자.' },
+  { w:'너무 넓을 때',    say:'우리 교실에서 확인할 수 있는 크기로 줄이면?' },
+  { w:'답을 아는 척할 때', say:'그럼 왜 그런지 다른 사람한테 설명해 볼래?' },
+  { w:'아무 말도 없을 때', say:'질문 말고, 방금 본 것을 한 줄만 그대로 적어 보자.' }
+];
+
+function openGoodQ(){
+  let h = '<div class="gq-note">📌 <b>학생 화면에는 이 목록이 없습니다.</b> ' +
+          '예를 먼저 보면 아이들은 그걸 베낍니다 — 선생님 진행 대본 그대로입니다. ' +
+          '여기 있는 건 수업 중에 방향을 잡으실 때 혼자 보시는 용도입니다.</div>';
+
+  h += '<h4 class="gq-h">네 가지 관찰 렌즈 <span>점수가 아니라 렌즈로 씁니다</span></h4>';
+  h += '<div class="gq-cr">';
+  GQ_CRITERIA.forEach(c => {
+    h += '<div class="gq-cr-i"><b>' + c.no + '. ' + esc(c.label) + '</b>' +
+         '<span>' + esc(c.detail) + '</span></div>';
+  });
+  h += '</div>';
+
+  h += '<h4 class="gq-h">질문 여섯 개 <span>「취미는 과학」에서 뽑은 것</span></h4>';
+  GQ_SAMPLES.forEach(s => {
+    h += '<div class="gq-s">' +
+         '<div class="gq-s-t"><span class="gq-l">' + s.l + '</span>' + esc(s.text) + '</div>' +
+         '<div class="gq-tag">' + esc(s.tag) + '</div>' +
+         '<div class="gq-p good">○ ' + esc(s.good) + '</div>' +
+         '<div class="gq-p weak">△ ' + esc(s.weak) + '</div>' +
+         '</div>';
+  });
+
+  h += '<h4 class="gq-h">막힌 학생에게 던질 말 <span>앱의 🆘 처방과 같은 축</span></h4>';
+  h += '<div class="gq-cr">';
+  GQ_MOVES.forEach(m => {
+    h += '<div class="gq-cr-i"><b>' + esc(m.w) + '</b><span>“' + esc(m.say) + '”</span></div>';
+  });
+  h += '</div>';
+
+  $('gqBody').innerHTML = h;
+  $('mGoodQ').classList.add('show');
+}
+function closeGoodQ(){ $('mGoodQ').classList.remove('show'); }
 
 async function submitMaterial(){
   const title = $('matTitle').value.trim();
