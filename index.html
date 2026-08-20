@@ -1603,6 +1603,16 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .ms-q{font-size:12.5px;color:var(--tx);padding:4px 0;line-height:1.5;word-break:keep-all}
 .ms-q b{color:var(--pd);margin-right:4px}
 @media (max-height:520px){ .ms-stems{display:none} .ms-mine{display:none} }
+/* 💬 친구가 남긴 답 */
+.qc-peer-b{padding:2px 8px;border-radius:8px;border:1.5px solid #90CAF9;background:#E3F2FD;
+  color:#1565C0;font-family:inherit;font-size:inherit;font-weight:800;cursor:pointer}
+.qc-peer-wrap{margin-top:8px;padding:10px 12px;border-radius:12px;
+  background:rgba(33,150,243,.05);border:1px solid rgba(33,150,243,.2)}
+.qc-peer-hd{font-size:var(--fs-xxs);font-weight:800;color:#1565C0;margin-bottom:7px}
+.qc-peer-i{background:#fff;border-radius:9px;border-left:3px solid #64B5F6;padding:8px 10px;margin-bottom:6px}
+.qc-peer-who{font-size:10.5px;font-weight:800;color:#1976D2;margin-bottom:2px}
+.qc-peer-tx{font-size:var(--fs-xs);color:var(--tx);line-height:1.6;word-break:keep-all}
+.qc-peer-note{font-size:10px;color:var(--tl);font-weight:600;line-height:1.5;margin-top:2px}
 </style>
 </head>
 <body data-theme="cute">
@@ -3599,6 +3609,23 @@ async function bootstrapUser(){
     });
     qIds.push(q.id);
   });
+  /* 💬 친구가 내 질문에 남긴 답.
+     예전엔 friend 나무 모달(openFrView)에서만 불러와서, 친구가 답을 달아도
+     답한 친구만 도토리를 받고 정작 물어본 나는 그런 일이 있었는지도 몰랐다. */
+  if(qIds.length){
+    try{
+      const {data:pa} = await sb.from('peer_answers')
+        .select('*').in('question_id', qIds).order('created_at',{ascending:true});
+      const byQ = {};
+      (pa||[]).forEach(a=>{ (byQ[a.question_id] = byQ[a.question_id] || []).push(a); });
+      Object.values(S.questions).forEach(treesMap=>{
+        Object.values(treesMap).forEach(arr=>{
+          arr.forEach(q=>{ q.peer_answers = byQ[q.id] || []; });
+        });
+      });
+    }catch(e){ /* peer_answers 테이블이 없을 수 있다 — 조용히 넘어간다 */ }
+  }
+
   // 꼬리질문 로드
   if(qIds.length){
     const {data:brs}=await sb.from('branches').select('*').in('question_id',qIds).order('created_at',{ascending:true});
@@ -5649,6 +5676,29 @@ function handleTagKey(e){
 // ============================================================================
 // 📋🗂️ 질문 보기 방식 (목록 / 보드) + 🧭 탐구 과정 트레일
 // ============================================================================
+/* ── 💬 친구가 내 질문에 남긴 답 ───────────────────────────────────────────
+   «고마워» 버튼과 도토리 답례는 만들지 않는다. 남에게 도토리를 주려면
+   profiles UPDATE 를 타인에게 열어야 하는데(지금은 12곳 전부 자기 것만 건드린다),
+   350명 환경에서 그 문을 여는 건 얻는 것에 비해 비싸다.
+   답이 «도착»하기만 해도, 물어본 쪽이 처음으로 뭔가를 받는다. */
+const _peerOpen = {};
+function togPeer(qid){
+  _peerOpen[qid] = !_peerOpen[qid];
+  renderQs();
+}
+function peerPanel(q){
+  const pa = q.peer_answers || [];
+  if (!pa.length || !_peerOpen[q.id]) return '';
+  let h = '<div class="qc-peer-wrap"><div class="qc-peer-hd">💬 친구가 남긴 답 ' + pa.length + '개</div>';
+  pa.forEach(a => {
+    h += '<div class="qc-peer-i"><div class="qc-peer-who">' +
+         esc(a.author_name || '친구') + '</div>' +
+         '<div class="qc-peer-tx">' + esc(a.text || '') + '</div></div>';
+  });
+  h += '<div class="qc-peer-note">읽고 나서 새로 생긴 궁금증이 있으면 🌿로 이어서 심어보세요.</div></div>';
+  return h;
+}
+
 function setQView(v){ S.qView=v; S.editId=null; renderQs(); }
 function setBoardGroup(g){ S.boardGroup=g; document.querySelectorAll('.bg-opt').forEach(b=>b.classList.toggle('on',b.dataset.g===g)); renderQs(); }
 
@@ -5719,6 +5769,7 @@ function boardCard(q,childCount,parentText){
       ${sc?`<span class="qc-sc-badge">🎯${sc}/7</span>`:''}
       ${childCount[q.id]?`<span class="qc-grewinto">🌳${childCount[q.id]}</span>`:''}
       ${q.answer_text||q.answer_files?`<span style="color:#1976D2">💬</span>`:''}
+      ${(q.peer_answers||[]).length?`<span style="color:#2196F3;font-weight:700">💬${q.peer_answers.length}</span>`:''}
     </div>
     ${questionTrail(q)}
     <div class="bcard-a">
@@ -5832,9 +5883,11 @@ function renderQs(){
             ${brCount?`<span>🌿 ${brCount}</span>`:''}
             ${childCount[q.id]?`<span class="qc-grewinto">🌳 자란 질문 ${childCount[q.id]}</span>`:''}
             ${selfCheckCount(q)?`<span class="qc-sc-badge">🎯 좋은 질문 ${selfCheckCount(q)}/7</span>`:''}
-            ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}            ${q.answer_source&&SRC_LABELS[q.answer_source]?`<span class="qc-src-b" title="이 답을 어디서 찾을지">🔎 ${SRC_LABELS[q.answer_source]}</span>`:''}
+            ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}
+            ${(q.peer_answers||[]).length?`<button class="qc-peer-b" onclick="togPeer(${q.id})">💬 친구가 남긴 답 ${q.peer_answers.length}</button>`:''}            ${q.answer_source&&SRC_LABELS[q.answer_source]?`<span class="qc-src-b" title="이 답을 어디서 찾을지">🔎 ${SRC_LABELS[q.answer_source]}</span>`:''}
           </div>
           ${questionTrail(q)}
+          ${peerPanel(q)}
           ${q.teacher_nudge ? `
             <div class="qc-nudge">
               <div class="qc-nudge-hdr">🌿 선생님의 되묻기</div>
