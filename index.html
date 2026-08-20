@@ -845,6 +845,9 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .mat-area-media-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:var(--sp-2)}
 .mat-area-media{width:100%;max-height:360px;object-fit:contain;border-radius:10px;border:1px solid var(--bd);background:#000}
 img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
+.mat-link-open{display:block;text-align:center;padding:12px 14px;margin-bottom:10px;border-radius:11px;
+  border:1.5px solid var(--bd);background:var(--card);color:var(--pd);font-size:var(--fs-sm);
+  font-weight:800;text-decoration:none;word-break:break-all}
 .mat-area-yt{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:#000}
 .mat-area-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .mat-area-q-btn{width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-sm);font-weight:700;cursor:pointer;border:none;transition:all .2s;box-shadow:0 3px 10px rgba(93,184,110,.25)}
@@ -6344,6 +6347,13 @@ function ytEmbedSrc(videoId, start, end){
   if(Number.isFinite(e) && e > 0) p.push('end=' + Math.floor(e));
   return 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?' + p.join('&');
 }
+/* 유튜브가 아닌 링크(OneDrive 공유·기사 등)는 새 탭으로 여는 버튼으로 붙인다.
+   앱 안에 iframe 으로 넣으면 로그인 요구·X-Frame-Options 때문에 대부분 빈 화면이 된다. */
+function matLinkBtn(f){
+  var nm = esc(f.name || '링크');
+  return '<a class="mat-link-open" href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' +
+         '🔗 ' + nm + ' 열기 <span style="opacity:.6">↗</span></a>';
+}
 function ytFrame(videoId, start, end){
   return '<div class="mat-area-yt"><iframe src="' + esc(ytEmbedSrc(videoId, start, end)) + '"' +
     ' title="YouTube 영상" frameborder="0" loading="lazy" allowfullscreen' +
@@ -6414,6 +6424,8 @@ async function renderMaterials(){
       const filesHtml = files.map(f => {
         if(f.kind === 'youtube' && f.videoId){
           return ytFrame(f.videoId, m.yt_start, m.yt_end);
+        } else if(f.kind === 'link'){
+          return matLinkBtn(f);
         } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
           return `<video controls playsinline class="mat-area-media" src="${esc(f.url)}"></video>`;
         } else {
@@ -6463,6 +6475,8 @@ async function renderMaterials(){
         mediaHtml = files.map(f => {
           if(f.kind === 'youtube' && f.videoId){
             return ytFrame(f.videoId, m.yt_start, m.yt_end);
+          } else if(f.kind === 'link'){
+            return matLinkBtn(f);
           } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
             return `<video controls playsinline class="mat-area-media" src="${esc(f.url)}"></video>`;
           } else {
@@ -6589,6 +6603,8 @@ async function openMatSheet(matId){
   (mat.files||[]).forEach(function(f){
     if(f.kind === 'youtube' && f.videoId){
       if(!vid) parts.push(ytFrame(f.videoId, mat.yt_start, mat.yt_end));
+    } else if(f.kind === 'link'){
+      parts.push(matLinkBtn(f));
     } else if(f.kind === 'video' || (f.type||'').startsWith('video/')){
       parts.push('<video controls playsinline class="ms-media" src="' + esc(f.url) + '"></video>');
     } else {

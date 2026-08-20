@@ -4405,9 +4405,9 @@ async function submitBulkCreate(){
       </div>
       <div class="row">
         <div style="flex:1">
-          <label>▶️ 유튜브 링크 (선택) — 용량 걱정 없이 임베드</label>
+          <label>🔗 링크 (선택) — 여러 개 넣을 수 있어요 · 유튜브는 바로 재생됩니다</label>
           <div style="display:flex;gap:8px;align-items:stretch">
-            <input type="text" id="matYtUrl" placeholder="유튜브 주소 붙여넣기 (youtu.be/… 또는 watch?v=…)" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addYoutubeMat();}">
+            <textarea id="matYtUrl" rows="2" placeholder="유튜브·OneDrive·기사 주소 붙여넣기&#10;한 줄에 하나씩, 여러 개를 한꺼번에 붙여넣어도 됩니다" style="flex:1;resize:vertical;font-family:inherit;font-size:13px;line-height:1.5" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addYoutubeMat();}"></textarea>
             <button type="button" class="mat-btn" onclick="addYoutubeMat()" style="white-space:nowrap;padding:0 16px">＋ 추가</button>
           </div>
           <div id="matYtMsg" style="font-size:11.5px;margin-top:4px;min-height:14px;color:var(--ar)"></div>
@@ -4547,7 +4547,7 @@ function renderMatPreviews(){
   if(!_matPending.length){ el.innerHTML = ''; return; }
   el.innerHTML = _matPending.map((f,i) => `
     <div class="mat-prev">
-      ${f.preview ? `<img src="${f.preview}" alt="">` : `<div style="width:90px;height:68px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--surface2)">${f.kind==='video'?'🎬':'📄'}</div>`}
+      ${f.preview ? `<img src="${f.preview}" alt="">` : `<div style="width:90px;height:68px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--surface2)">${f.kind==='video'?'🎬':(f.kind==='link'?'🔗':'📄')}</div>`}
       <div class="nm">${esc(f.name)}</div>
       <div class="rm" onclick="removeMatFile(${i})">×</div>
     </div>
@@ -4571,22 +4571,56 @@ function parseYouTubeId(url){
   if(/^[\w-]{11}$/.test(url)) return url; // ID만 붙여넣은 경우
   return null;
 }
+/* 링크 여러 개를 한 번에 받는다. 예전엔 유튜브 주소 하나만 받아서
+   OneDrive 공유 링크·기사 주소는 아예 거부됐다.
+   유튜브면 임베드로 재생하고, 나머지는 «열기» 링크로 붙인다. */
+function linkLabel(url){
+  try{
+    var h = new URL(url).hostname.replace(/^www\./, '');
+    if(/sharepoint\.com$|1drv\.ms$|onedrive\.live\.com$/.test(h)) return 'OneDrive 링크';
+    if(/drive\.google\.com$|docs\.google\.com$/.test(h))          return 'Google 드라이브';
+    if(/padlet\.com$/.test(h))                                     return 'Padlet';
+    return h;
+  }catch(e){ return '링크'; }
+}
+
 function addYoutubeMat(){
-  const inp = $('matYtUrl'), msg = $('matYtMsg');
-  const id = parseYouTubeId(inp ? inp.value : '');
-  const setMsg=(t,ok)=>{ if(msg){ msg.textContent=t; msg.style.color = ok ? 'var(--pd)' : 'var(--ar)'; } };
-  if(!id){ setMsg('올바른 유튜브 주소가 아니에요. 영상 링크를 붙여넣어 주세요.', false); return; }
-  if(_matPending.some(f => f.kind==='youtube' && f.videoId===id)){ setMsg('이미 추가된 영상이에요.', false); return; }
-  _matPending.push({
-    kind:'youtube',
-    videoId:id,
-    url:`https://www.youtube.com/watch?v=${id}`,
-    name:'YouTube 영상',
-    type:'youtube',
-    preview:`https://img.youtube.com/vi/${id}/mqdefault.jpg`
+  var inp = $('matYtUrl'), msg = $('matYtMsg');
+  var setMsg = function(txt, ok){ if(msg){ msg.textContent = txt; msg.style.color = ok ? 'var(--pd)' : 'var(--ar)'; } };
+  var raw = (inp ? inp.value : '') || '';
+
+  /* 줄바꿈·공백·쉼표로 여러 개를 한 번에 붙여넣을 수 있게 */
+  var parts = raw.split(/[\s,]+/).filter(function(s){ return s.length > 3; });
+  if(!parts.length){ setMsg('주소를 붙여넣어 주세요.', false); return; }
+
+  var added = 0, dup = 0, bad = 0;
+  parts.forEach(function(u){
+    var vid = parseYouTubeId(u);
+    if(vid){
+      if(_matPending.some(function(f){ return f.kind === 'youtube' && f.videoId === vid; })){ dup++; return; }
+      _matPending.push({
+        kind: 'youtube', videoId: vid,
+        url: 'https://www.youtube.com/watch?v=' + vid,
+        name: 'YouTube 영상', type: 'youtube',
+        preview: 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg'
+      });
+      added++; return;
+    }
+    /* 유튜브가 아닌 일반 링크 */
+    var url = u;
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try{ new URL(url); }catch(e){ bad++; return; }
+    if(_matPending.some(function(f){ return f.kind === 'link' && f.url === url; })){ dup++; return; }
+    _matPending.push({ kind: 'link', url: url, name: linkLabel(url), type: 'link', preview: null });
+    added++;
   });
-  setMsg('✅ 유튜브 영상이 추가됐어요.', true);
-  if(inp) inp.value='';
+
+  var m = [];
+  if(added) m.push('✅ ' + added + '개 추가');
+  if(dup)   m.push('이미 있는 것 ' + dup + '개');
+  if(bad)   m.push('주소가 아닌 것 ' + bad + '개');
+  setMsg(m.join(' · ') || '추가된 게 없어요.', added > 0);
+  if(added && inp) inp.value = '';
   renderMatPreviews();
 }
 
@@ -4719,12 +4753,17 @@ async function submitMaterial(){
 
   // 파일 업로드 (유튜브 링크는 업로드 없이 그대로 저장 — 용량 0)
   const uploaded = [];
-  const fileItems = _matPending.filter(f => f.kind !== 'youtube');
+  const fileItems = _matPending.filter(f => f.kind !== 'youtube' && f.kind !== 'link');
   let done = 0;
   for(let i=0;i<_matPending.length;i++){
     const item = _matPending[i];
     if(item.kind === 'youtube'){
       uploaded.push({ kind:'youtube', videoId:item.videoId, url:item.url, name:item.name||'YouTube 영상', type:'youtube' });
+      continue;
+    }
+    /* 일반 링크(OneDrive·기사 등)는 올릴 파일이 없다. 주소만 그대로 저장한다. */
+    if(item.kind === 'link'){
+      uploaded.push({ kind:'link', url:item.url, name:item.name||'링크', type:'link' });
       continue;
     }
     done++;
