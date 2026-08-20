@@ -1580,7 +1580,15 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .ms-src{font-size:11px;color:var(--mute);margin-top:10px;padding-top:8px;border-top:1px dashed var(--bd)}
 .ms-h2{font-size:14.5px;font-weight:900;color:var(--pd);margin:14px 0 6px}
 .ms-p{font-size:14px;line-height:1.85;color:var(--tx);margin:0 0 11px;word-break:keep-all}
-.ms-media{width:100%;border-radius:10px;margin-bottom:10px;display:block}
+/* 16:9 사진 한 장이 화면을 다 먹어 질문 칸이 아래로 밀려나던 문제.
+   자료는 «보는 것»이고 질문 칸은 «쓰는 것»이라, 둘 다 한 화면에 있어야 한다. */
+.ms-media{width:100%;max-height:34dvh;object-fit:contain;border-radius:10px;
+  margin-bottom:10px;display:block;background:rgba(0,0,0,.03)}
+.ms-body .mat-area-yt{aspect-ratio:auto;height:34dvh;max-height:34dvh}
+@media (min-width:700px){
+  .ms-media{max-height:44dvh}
+  .ms-body .mat-area-yt{height:44dvh;max-height:44dvh}
+}
 /* 입력부: 항상 바닥에 붙어 있다 */
 .ms-foot{flex:0 0 auto;background:var(--card);border-top:1px solid var(--bd);padding:9px 12px 12px;
   box-shadow:0 -3px 12px rgba(0,0,0,.07)}
@@ -1588,10 +1596,11 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .ms-stems::-webkit-scrollbar{display:none}
 .ms-stems button{flex:0 0 auto;padding:5px 11px;border-radius:999px;border:1.5px solid var(--bd);
   background:var(--card);font-size:12px;font-weight:800;color:var(--pd);cursor:pointer;white-space:nowrap}
+.ms-ask{font-size:var(--fs-xxs);font-weight:800;color:var(--pd);margin-bottom:5px}
 .ms-iw{display:flex;gap:7px}
-.ms-iw input{flex:1;min-width:0;padding:11px 13px;border-radius:11px;border:1.5px solid var(--bd);
+.ms-iw input{flex:1;min-width:0;padding:14px 14px;border-radius:12px;border:2px solid var(--pr);
   background:var(--bg);font-size:15px;font-family:inherit;color:var(--tx)}
-.ms-iw button{flex:0 0 auto;padding:0 17px;border-radius:11px;border:none;background:var(--pd);
+.ms-iw button{flex:0 0 auto;padding:0 18px;border-radius:12px;border:none;background:var(--pd);
   color:#fff;font-size:14px;font-weight:900;cursor:pointer}
 .ms-iw button:disabled{opacity:.5}
 .ms-msg{font-size:12px;font-weight:800;min-height:16px;margin-top:5px;color:var(--mute)}
@@ -1602,7 +1611,22 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .ms-mine-t{font-size:10.5px;color:var(--mute);font-weight:800;margin-bottom:4px}
 .ms-q{font-size:12.5px;color:var(--tx);padding:4px 0;line-height:1.5;word-break:keep-all}
 .ms-q b{color:var(--pd);margin-right:4px}
-@media (max-height:520px){ .ms-stems{display:none} .ms-mine{display:none} }
+/* 눕힌 화면: 쓰는 칸을 살리려고 곁가지를 접는다. 사진은 조금 스크롤해서 본다. */
+@media (max-height:520px){
+  .ms-stems{display:none}
+  .ms-mine{display:none}
+  .ms-msg{min-height:0}
+  .ms-ask{display:none}
+  .ms-foot{padding:7px 12px 9px}
+  .ms-iw input{padding:11px 13px}
+}
+/* 좁고 긴 휴대폰: 사진을 더 줄이고 쓰는 칸을 살린다 */
+@media (max-width:430px){
+  .ms-media{max-height:28dvh}
+  .ms-body .mat-area-yt{height:28dvh;max-height:28dvh}
+  .ms-body{padding:10px 12px 12px}
+  .ms-mine{max-height:74px}
+}
 /* 💬 친구가 남긴 답 */
 .qc-peer-b{padding:2px 8px;border-radius:8px;border:1.5px solid #90CAF9;background:#E3F2FD;
   color:#1565C0;font-family:inherit;font-size:inherit;font-weight:800;cursor:pointer}
@@ -1808,7 +1832,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
     <button class="tn on" data-tab="tree" onclick="swTab('tree')"><span>🌳</span>나무</button>
     <button class="tn" data-tab="questions" onclick="swTab('questions')"><span>❓</span>질문</button>
     <button class="tn" data-tab="forest" onclick="swTab('forest')"><span>🌲</span>우리반 숲</button>
-    <button class="tn" data-tab="shop" onclick="swTab('shop')"><span>🌰</span>상점</button>
+    <button class="tn" data-tab="materials" onclick="swTab('materials')"><span>📚</span>자료</button>
     <button class="tn" id="moreTab" onclick="openMore()"><span>☰</span>더보기</button>
   </div></div>
 
@@ -1818,7 +1842,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
       <div class="more-handle"></div>
       <div class="more-title">더보기</div>
       <div class="more-grid">
-        <button class="more-item" onclick="swMore('materials')"><span>📚</span><b>오늘의 자료</b><small>선생님이 올린 자료</small></button>
+        <button class="more-item" onclick="swMore('shop')"><span>🌰</span><b>상점</b><small>도토리로 꾸미기</small></button>
         <button class="more-item" onclick="swMore('growth')"><span>📈</span><b>나의 성장</b><small>내 질문의 변화</small></button>
         <button class="more-item" onclick="swMore('hall')"><span>🏅</span><b>명예의 전당</b><small>우리 반 좋은 질문</small></button>
         <button class="more-item" onclick="swMore('ach')"><span>🏆</span><b>업적</b><small>달성한 배지</small></button>
@@ -3687,7 +3711,8 @@ async function restoreSession(){
 // ============================================================================
 function swTab(t){
   S.tab=t;
-  const SECONDARY=['materials','growth','hall','ach','deco'];
+  /* 하단바에 자리가 다섯뿐이라 매 수업 쓰는 «자료» 를 올리고, 가끔 쓰는 «상점» 을 더보기로 내렸다. */
+  const SECONDARY=['shop','growth','hall','ach','deco'];
   document.querySelectorAll('.tn').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   // 보조 탭이면 하단바의 '더보기'를 활성화
   const moreBtn=$('moreTab'); if(moreBtn) moreBtn.classList.toggle('on', SECONDARY.includes(t));
@@ -9009,6 +9034,7 @@ applyBranding();
       <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
       <button onclick="openBaskets()">🧺 질문의 세 종류</button>
     </div>
+    <div class="ms-ask">✍️ 여기에 질문을 적어요</div>
     <div class="ms-iw">
       <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter')addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
       <button id="msBtn" onclick="addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">심기</button>
