@@ -5067,16 +5067,40 @@ async function loadMaterials(){
   }
 }
 
+/* RLS 는 update·delete 를 막을 때 «오류» 를 내지 않는다. 조건에 맞는 행이 0개인 것처럼
+   처리해서 성공으로 끝나고 아무것도 안 바뀐다. 그래서 .select() 로 실제로 몇 행이
+   처리됐는지 받아 보고, 0 이면 이유를 알려 준다. */
 async function toggleMaterial(id, active){
-  const {error} = await sb.from('lesson_materials').update({is_active:active}).eq('id', id);
-  if(error){ alert('변경 실패: '+error.message); return; }
+  const {data, error} = await sb.from('lesson_materials')
+    .update({is_active:active}).eq('id', id).select('id');
+  if(error){ alert('변경 실패: ' + error.message); return; }
+  if(!data || !data.length){ await notTeacherAlert('숨기기/공개'); return; }
   loadMaterials();
+}
+
+/* 0행이 처리됐을 때 — 원인은 거의 항상 «지금 계정이 교사가 아님» 이다 */
+async function notTeacherAlert(what){
+  const me = await whoAmI();
+  paintWhoAmI();
+  if(me.why === 'no-session'){
+    alert('로그인이 풀렸어요.\n새로고침한 뒤 교사 계정으로 다시 로그인해 주세요.');
+  } else if(me.why === 'not-teacher'){
+    alert(what + ' 권한이 없습니다.\n\n지금 로그인된 계정: ' + (me.email || '(알 수 없음)') +
+          '\n이 계정은 교사가 아닙니다.\n\n세 앱(질문 과수원 학생·교사, 칭찬도장판)이 로그인을 함께 씁니다.' +
+          '\n같은 브라우저에서 학생 계정으로 로그인하면 이 화면도 그 계정으로 바뀝니다.' +
+          '\n\n오른쪽 위 로그아웃 후 교사 계정으로 다시 로그인해 주세요.');
+  } else {
+    alert(what + '이(가) 처리되지 않았어요.\n이미 지워졌거나 권한이 없는 자료일 수 있어요.\n새로고침 후 다시 확인해 주세요.');
+  }
 }
 
 async function deleteMaterial(id){
   if(!confirm('이 자료를 삭제할까요?\n(연결된 학생 질문은 유지되지만 자료 연결이 끊어져요)')) return;
-  const {error} = await sb.from('lesson_materials').delete().eq('id', id);
-  if(error){ alert('삭제 실패: '+error.message); return; }
+  /* .select() 를 붙여야 실제로 지워진 행을 돌려받는다. 안 붙이면 RLS 가 막아도
+     error 가 null 이라 «성공했는데 그대로» 인 상태가 된다. */
+  const {data, error} = await sb.from('lesson_materials').delete().eq('id', id).select('id');
+  if(error){ alert('삭제 실패: ' + error.message); return; }
+  if(!data || !data.length){ await notTeacherAlert('삭제'); return; }
   loadMaterials();
 }
 
