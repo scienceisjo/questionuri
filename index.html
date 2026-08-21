@@ -1649,6 +1649,18 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .q-src-q{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--bd);background:#fff;
   color:var(--tl);font-family:inherit;font-size:11px;font-weight:900;cursor:pointer;padding:0}
 .qc-src-b{padding:2px 7px;border-radius:8px;background:rgba(93,184,110,.12);color:var(--pd);font-weight:700}
+/* 📚 차시 고르기 */
+.mu-hd{font-size:var(--fs-xs);font-weight:800;color:var(--pd);margin:2px 0 7px}
+.mu-hd span{font-weight:600;color:var(--tl);font-size:.86em;margin-left:5px}
+.mu-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.mu-c{padding:8px 12px;border-radius:999px;border:1.5px solid var(--bd);background:var(--card);
+  font-family:inherit;font-size:var(--fs-xs);font-weight:800;color:var(--tl);cursor:pointer;
+  min-height:var(--touch-md,38px)}
+.mu-c b{font-weight:900;opacity:.65;margin-left:2px}
+.mu-c.on{background:var(--pd);border-color:var(--pd);color:#fff}
+.mu-c.on b{opacity:.85}
+.mu-now{font-size:var(--fs-xs);font-weight:800;color:var(--pd);background:rgba(93,184,110,.1);
+  border-radius:9px;padding:8px 11px;margin-bottom:10px;word-break:keep-all;line-height:1.5}
 </style>
 </head>
 <body data-theme="cute">
@@ -3168,17 +3180,19 @@ const STUCK = [
   { id:'blank', ic:'😶', t:'뭘 물어야 할지 모르겠어요',
     fix:[
       '질문부터 만들려고 하면 원래 안 나와요. <b>먼저 본 것을 그대로 적어보세요.</b>',
-      '「빨대가 빙글빙글 돌았다」처럼 눈에 보인 그대로요.',
+      '「○○이 △△했다」처럼, 눈에 보인 그대로 한 줄이면 돼요.',
       '그다음 그 문장 앞에 <b>«왜»</b>를, 뒤에 <b>«?»</b>를 붙여보세요.',
-      '→ 「<b>왜</b> 빨대가 빙글빙글 돌았<b>을까?</b>」 이러면 벌써 질문이에요.'
+      '→ 「<b>왜</b> ○○이 △△했<b>을까?</b>」 이러면 벌써 질문이에요.',
+      '<b>가장 이상했던 순간</b> 하나만 고르면 더 쉬워요.'
     ],
     act:'왜 ' },
   { id:'known', ic:'🙄', t:'다 아는 것 같아요',
     fix:[
       '«안다»와 «설명할 수 있다»는 달라요.',
       '아는 것 하나를 골라 <b>«그런데 왜 그렇지?»</b>를 한 번만 더 붙여보세요.',
-      '「자석은 철을 붙인다」 → 「<b>왜</b> 철만 붙고 알루미늄은 안 붙<b>을까?</b>」',
-      '한 번 더 붙이면 대부분 모르는 곳이 나와요.'
+      '「A는 B다」를 알면 → 「<b>왜</b> A만 그렇고 C는 안 그럴<b>까?</b>」',
+      '한 번 더 붙이면 대부분 모르는 곳이 나와요.',
+      '아는 걸 <b>친구에게 설명한다고 생각</b>하면 막히는 데가 보여요.'
     ],
     act:'왜 하필 ' },
   { id:'dumb', ic:'😳', t:'이상한 질문일까 봐 걱정돼요',
@@ -3209,7 +3223,7 @@ const STUCK = [
   { id:'small', ic:'🤏', t:'너무 사소한 것 같아요',
     fix:[
       '사소한 게 제일 좋은 질문일 때가 많아요.',
-      '「<b>왜 하필</b> 이 색이지?」 「왜 <b>하필</b> 이 모양이지?」',
+      '「<b>왜 하필</b> 이렇게 됐지?」 「왜 <b>하필</b> 이만큼이지?」',
       '«하필»을 붙이면 아무도 안 물어본 곳이 열려요.',
       '큰 질문보다 <b>내가 진짜 걸린 지점</b>이 훨씬 좋아요.'
     ],
@@ -5775,6 +5789,67 @@ function nextStepHTML(q){
 
 function hideNext(qid){ _nextHidden[qid] = 1; renderQs(); }
 
+/* ── 📚 차시로 골라 보기 ───────────────────────────────────────────────────
+   반마다 수업 날짜가 달라서 «오늘 올린 것» 으로 묶으면 매 반마다 다시 올려야 했다.
+   올라온 자료를 차시(unit)로 묶어 두고, 선생님이 «2-7-1-1 누르세요» 하면 된다.
+   차시명은 «2-7-1-1 마찰 전기와 전기력» 형태라 앞의 코드로 정렬하면 수업 순서가 된다. */
+let _matUnit = null;   // null = 전체
+
+function unitCode(u){
+  const m = String(u || '').match(/^\d+-\d+-\d+-\d+/);
+  return m ? m[0] : '';
+}
+function unitShort(u){
+  const c = unitCode(u);
+  return c || (String(u || '').slice(0, 10) || '기타');
+}
+
+/* 자료들을 차시별로 묶는다. 차시가 없는 자료는 «기타» 로 */
+function matUnits(list){
+  const map = {};
+  list.forEach(m => {
+    const key = m.unit || '';
+    if (!map[key]) map[key] = { unit: key, n: 0, latest: m.created_at };
+    map[key].n++;
+    if (m.created_at > map[key].latest) map[key].latest = m.created_at;
+  });
+  const arr = Object.values(map);
+  /* 차시 코드가 있으면 코드순(=수업 순서), 없으면 뒤로 */
+  arr.sort((a, b) => {
+    const ca = unitCode(a.unit), cb = unitCode(b.unit);
+    if (ca && cb) return ca.localeCompare(cb, 'en', { numeric: true });
+    if (ca) return -1;
+    if (cb) return 1;
+    return String(b.latest).localeCompare(String(a.latest));
+  });
+  return arr;
+}
+
+function pickMatUnit(u){
+  _matUnit = (_matUnit === u) ? null : u;
+  renderMaterials();
+}
+
+function unitChipsHTML(list){
+  const units = matUnits(list);
+  if (units.length <= 1) return '';   /* 한 종류뿐이면 고를 것이 없다 */
+  let h = '<div class="mu-hd">📚 어느 차시를 볼까요? <span>선생님이 알려 주신 번호를 누르세요</span></div>';
+  h += '<div class="mu-chips">';
+  h += '<button class="mu-c' + (_matUnit === null ? ' on' : '') + '" onclick="pickMatUnit(null)">전체 ' + list.length + '</button>';
+  units.forEach(u => {
+    const label = u.unit ? esc(unitShort(u.unit)) : '기타';
+    h += '<button class="mu-c' + (_matUnit === u.unit ? ' on' : '') +
+         '" onclick="pickMatUnit(' + JSON.stringify(u.unit).split('"').join('&quot;') + ')" ' +
+         'title="' + esc(u.unit || '차시 없음') + '">' + label + ' <b>' + u.n + '</b></button>';
+  });
+  h += '</div>';
+  if (_matUnit !== null) {
+    const cur = units.find(x => x.unit === _matUnit);
+    if (cur && cur.unit) h += '<div class="mu-now">' + esc(cur.unit) + '</div>';
+  }
+  return h;
+}
+
 /* ── 💬 친구가 내 질문에 남긴 답 ───────────────────────────────────────────
    «고마워» 버튼과 도토리 답례는 만들지 않는다. 남에게 도토리를 주려면
    profiles UPDATE 를 타인에게 열어야 하는데(지금은 12곳 전부 자기 것만 건드린다),
@@ -7079,17 +7154,30 @@ async function renderMaterials(){
         </div>`;
     };
     let html = '';
+    /* 차시 칩 — 반마다 수업 날짜가 달라 «오늘» 로는 묶이지 않는다 */
+    html += unitChipsHTML(_materials);
     if(hwMats.length){
       html += `<div class="mat-area-section">📼 주말 과제 <span class="mat-area-count">${hwMats.length}</span></div>`;
       html += hwMats.map(renderHwCard).join('');
     }
-    if(todayMats.length){
-      html += `<div class="mat-area-section">📅 오늘의 자료 <span class="mat-area-count">${todayMats.length}</span></div>`;
-      html += todayMats.map(renderCard).join('');
-    }
-    if(earlierMats.length){
-      html += `<div class="mat-area-section">🗂️ 이전 자료 <span class="mat-area-count">${earlierMats.length}</span></div>`;
-      html += earlierMats.map(renderCard).join('');
+    if(_matUnit !== null){
+      /* 차시를 고른 상태 — 그 차시만 보여 준다 */
+      const picked = normalMats.filter(m => (m.unit || '') === _matUnit);
+      if(picked.length){
+        html += `<div class="mat-area-section">📚 이 차시 자료 <span class="mat-area-count">${picked.length}</span></div>`;
+        html += picked.map(renderCard).join('');
+      } else {
+        html += '<div class="mat-area-empty"><div class="em">📭</div><div>이 차시에는 아직 자료가 없어요</div></div>';
+      }
+    } else {
+      if(todayMats.length){
+        html += `<div class="mat-area-section">📅 오늘 올라온 자료 <span class="mat-area-count">${todayMats.length}</span></div>`;
+        html += todayMats.map(renderCard).join('');
+      }
+      if(earlierMats.length){
+        html += `<div class="mat-area-section">🗂️ 지난 자료 <span class="mat-area-count">${earlierMats.length}</span></div>`;
+        html += earlierMats.map(renderCard).join('');
+      }
     }
     el.innerHTML = html;
   }catch(e){
