@@ -911,7 +911,7 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 /* 질문 작성 시 자료 연결 배너 */
 .mat-link-banner{background:linear-gradient(135deg,rgba(33,150,243,.1),rgba(93,184,110,.08));border:1.5px solid rgba(33,150,243,.25);border-radius:10px;padding:8px 12px;font-size:var(--fs-xs);color:var(--pd);margin-bottom:8px;line-height:1.4}
 
-/* 오늘의 자료 섹션 구분 + NEW 강조 */
+/* 자료 섹션 구분 + NEW 강조 */
 .mat-area-section{font-size:var(--fs-sm);font-weight:700;color:var(--pd);margin:var(--sp-3) 0 var(--sp-2);display:flex;align-items:center;gap:8px}
 .mat-area-section:first-child{margin-top:0}
 .mat-area-count{background:rgba(93,184,110,.12);color:var(--pr);padding:2px 9px;border-radius:10px;font-size:var(--fs-xxs);font-weight:700}
@@ -1987,8 +1987,8 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
     <!-- 📚 수업자료 탭 -->
     <div class="tp" id="tp-materials"><div class="tp-inner"><div class="mat-area">
       <div class="mat-area-hdr">
-        <h2 class="mat-area-title">📚 오늘의 자료</h2>
-        <p class="mat-area-sub">선생님이 올린 자료를 보고 떠오른 질문을 적어보세요! 질문하면 나무에 열매가 열려요 🍎</p>
+        <h2 class="mat-area-title">📚 자료</h2>
+        <p class="mat-area-sub">선생님이 알려 주신 <b>차시 번호</b>를 누르면 그 시간 자료만 볼 수 있어요. 자료를 보고 떠오른 질문을 적으면 나무에 열매가 열려요 🍎</p>
       </div>
       <div class="mat-area-list" id="matAreaList">
         <div class="mat-area-empty"><div class="em">📭</div><div>아직 올라온 수업 자료가 없어요</div></div>
@@ -7507,7 +7507,7 @@ function renderLiveBanner(s){
     <div class="live-banner-hdr"><span class="live-dot"></span>🔴 지금 라이브 질문 중!${s.teacher_name?` · ${esc(s.teacher_name)} 선생님`:''}</div>
     <div class="live-banner-prompt">${escWithMath(s.prompt)}</div>
     <div class="live-banner-meta">${s.subject_label?('📚 '+esc(s.subject_label)+' · '):''}떠오른 질문을 바로 보내보세요!</div>
-    ${s.material_id?`<button class="live-banner-mat" onclick="openMatSheet(${s.material_id})">📖 오늘의 자료 열고 질문하기</button>`:''}
+    ${s.material_id?`<button class="live-banner-mat" onclick="openMatSheet(${s.material_id})">📖 지금 자료 열고 질문하기</button>`:''}
     <div class="live-banner-iw">
       <input id="liveInp-${s.id}" placeholder="궁금한 것을 적어보세요..." onkeydown="if(event.key==='Enter')submitLiveQuestion(${s.id})">
       <button class="live-banner-send" onclick="submitLiveQuestion(${s.id})">질문 보내기 🚀</button>
