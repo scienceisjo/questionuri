@@ -1661,6 +1661,23 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .mu-c.on b{opacity:.85}
 .mu-now{font-size:var(--fs-xs);font-weight:800;color:var(--pd);background:rgba(93,184,110,.1);
   border-radius:9px;padding:8px 11px;margin-bottom:10px;word-break:keep-all;line-height:1.5}
+/* 🏷️ 선생님 도장 — 왜 좋았는지가 보여야 다음에 따라 할 수 있다 */
+.qc-stamp{margin-top:8px;padding:9px 12px;border-radius:12px;
+  border:1.5px solid var(--sc);background:color-mix(in srgb,var(--sc) 9%,transparent)}
+.qc-stamp-hd{font-size:var(--fs-xxs);font-weight:800;color:var(--sc);opacity:.85;margin-bottom:3px}
+.qc-stamp-b{display:flex;align-items:center;gap:8px}
+.qc-stamp-e{font-size:20px;line-height:1}
+.qc-stamp-t{flex:1;min-width:0;font-size:var(--fs-sm);font-weight:800;color:var(--sc);
+  line-height:1.45;word-break:keep-all}
+/* 🌱 하루 제한 안내 */
+.q-quota{font-size:var(--fs-xxs);font-weight:800;color:var(--pd);background:rgba(93,184,110,.1);
+  border-radius:9px;padding:7px 11px;margin-bottom:7px;line-height:1.5;word-break:keep-all}
+.q-quota.done{color:#8a6100;background:rgba(240,180,60,.14)}
+.q-msg.qf,.ms-msg.qf{text-align:left;line-height:1.6;padding:10px 12px;border-radius:11px;
+  background:rgba(240,180,60,.1);border:1.5px solid rgba(240,180,60,.4)}
+.qf-t{font-size:var(--fs-sm);font-weight:800;color:#8a6100;margin-bottom:5px}
+.qf-b{font-size:var(--fs-xxs);font-weight:600;color:var(--tx);line-height:1.65}
+.qf-n{font-size:var(--fs-xxs);font-weight:600;color:var(--tl);margin-top:6px;opacity:.9}
 </style>
 </head>
 <body data-theme="cute">
@@ -1973,7 +1990,8 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         <p class="phase-note" id="phaseNote">오늘 수업에서 무엇이 가장 궁금한가요? 🌱 <a onclick="openMCInfo('seven')" style="color:var(--pr);font-weight:700;cursor:pointer;white-space:nowrap">🎯 좋은 질문이란?</a></p>
         <div id="matLinkBanner" class="mat-link-banner" style="display:none"></div>
         <div class="q-iw">
-          <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter')addQ()">
+          <div class="q-quota" id="qQuota" style="display:none"></div>
+          <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ()">
           <button class="ba" id="addBtn" onclick="addQ()">심기</button>
         </div>
         <div class="q-stems" id="qStems"></div>
@@ -2776,8 +2794,9 @@ function qsInTree(subId, treeId){
 }
 // 현재 활성 과목의 현재 활성 나무 ID 반환
 function curTreeId(){
-  const list = S.trees[S.activeSub] || [];
-  return S.activeTreeId[S.activeSub] || list[0]?.id || null;
+  /* 화면에 남아 있지만 DB 에는 없는 나무를 가리키면 저장이 통째로 실패한다.
+     여기서 한 번 걸러 두면 모든 호출부가 같이 안전해진다. (safeTreeId 는 아래 정의) */
+  return safeTreeId(S.activeSub);
 }
 
 function totalQs(s){return allQs(s).length;}
@@ -3653,6 +3672,7 @@ async function bootstrapUser(){
       finding: q.finding||null,
       still_wondering: q.still_wondering||null,
       teacher_nudge: q.teacher_nudge||null,
+      teacher_stamp: q.teacher_stamp||null,
       unit: q.unit||null,
       explore_votes: q.explore_votes||0,
       explore_voters: q.explore_voters||[],
@@ -3675,6 +3695,7 @@ async function bootstrapUser(){
         });
       });
     }catch(e){ /* peer_answers 테이블이 없을 수 있다 — 조용히 넘어간다 */ }
+    fetchQuota();   /* 오늘 남은 개수 (기다리지 않는다) */
   }
 
   // 꼬리질문 로드
@@ -5850,6 +5871,27 @@ function unitChipsHTML(list){
   return h;
 }
 
+/* ── 🏷️ 선생님 도장 ───────────────────────────────────────────────────────
+   선생님이 질문 하나에 «한 번 탭» 으로 남기는 피드백. «좋아요» 가 아니라
+   «뭐가 좋았는지» 를 말해 주기 때문에, 다음 질문을 만들 때 그대로 따라 할 수
+   있다. 값은 교사 대시보드에서 teacher_stamp 컬럼에 저장한다. */
+const STAMP_MSG = {
+  observe : {e:'👀', s:'본 것을 정확히 적었어요',          c:'#2E7D32'},
+  testable: {e:'🎯', s:'이건 확인해볼 수 있는 질문이에요',  c:'#1565C0'},
+  unknown : {e:'🤔', s:'선생님도 몰라요. 같이 찾아봐요',    c:'#6A4FBF'},
+  connect : {e:'🔗', s:'지난 시간이랑 이어졌어요',          c:'#00838F'},
+  onemore : {e:'🌱', s:'한 걸음만 더 가볼까요?',            c:'#EF6C00'},
+  pick    : {e:'⭐', s:'수업에서 다룰게요',                 c:'#C62828'}
+};
+function stampHTML(q){
+  const st = q && q.teacher_stamp ? STAMP_MSG[q.teacher_stamp] : null;
+  if(!st) return '';
+  return '<div class="qc-stamp" style="--sc:' + st.c + '">' +
+         '<div class="qc-stamp-hd">🏷️ 선생님 도장</div>' +
+         '<div class="qc-stamp-b"><span class="qc-stamp-e">' + st.e + '</span>' +
+         '<span class="qc-stamp-t">' + esc(st.s) + '</span></div></div>';
+}
+
 /* ── 💬 친구가 내 질문에 남긴 답 ───────────────────────────────────────────
    «고마워» 버튼과 도토리 답례는 만들지 않는다. 남에게 도토리를 주려면
    profiles UPDATE 를 타인에게 열어야 하는데(지금은 12곳 전부 자기 것만 건드린다),
@@ -6062,6 +6104,7 @@ function renderQs(){
           </div>
           ${questionTrail(q)}
           ${peerPanel(q)}
+          ${stampHTML(q)}
           ${nextStepHTML(q)}
           ${q.teacher_nudge ? `
             <div class="qc-nudge">
@@ -6318,6 +6361,222 @@ async function freshUid(){
     return u ? u.id : null;
   }catch(e){ return null; }
 }
+/* ══ 🌱 하루 제한 ═══════════════════════════════════════════════════════════
+   숫자는 앱에 없다. 서버(app_limits)가 들고 있고 my_daily_quota() 가 같이 내려 준다.
+   교사가 SQL 한 줄로 바꾸면 재배포 없이 바뀐다.  (7_하루제한.sql)
+
+   왜 서버가 세는가
+     · 삭제하면 클라이언트 count 는 줄어든다. 나무를 베면 그 질문이 통째로 사라져서
+       «새 나무 → 8개 → 베기» 를 돌면 무한히 심을 수 있다. daily_counts 는 안 줄어든다.
+     · 태블릿과 폰을 같이 쓰면 각자 자기 스냅샷만 봐서 두 배가 된다.
+     · 날짜. td() 는 UTC 라 오전 9시(1교시 중)에 날이 바뀐다. 서버는 KST 로 센다.
+
+   못 세면 통과시킨다(fail-open). 와이파이가 한 번 튀었다고 교실 30명이
+   «질문을 심을 수 없어요» 를 보는 쪽이, 그날 누가 9개 심는 것보다 훨씬 나쁘다. */
+let _quotaBusy = false;
+let _addQBusy  = false;   /* addQ 재진입 잠금 (Enter 자동반복 대비) */
+
+async function fetchQuota(){
+  if(S.guest || !S.user) return null;
+  if(_quotaBusy) return S.quota;
+  _quotaBusy = true;
+  try{
+    const {data, error} = await sb.rpc('my_daily_quota');
+    if(error) throw error;
+    const r = Array.isArray(data) ? data[0] : data;
+    if(!r) throw new Error('empty');
+    S.quota = { ok:true, day:r.kst_day,
+      planted:r.planted|0, after:r.planted_after|0, grown:r.grown|0,
+      seeds:r.seeds|0, newCap:r.new_per_day|0, seedCap:r.seeds_per_day|0 };
+  }catch(e){
+    /* 7_하루제한.sql 을 아직 안 돌렸거나 네트워크가 튄 경우 — 제한을 걸지 않는다 */
+    S.quota = { ok:false };
+  }finally{ _quotaBusy = false; }
+  renderQuota();
+  return S.quota;
+}
+
+/* 남은 개수를 «상시로» 띄우지 않는다. 질문을 더 하게 만들려고 만든 앱의 맨 위에
+   남은 개수가 늘 붙어 있으면, 학생이 제일 먼저 배우는 건 «아껴 써야 한다» 다.
+   2개 이하로 줄었을 때만 알려 준다. */
+function renderQuota(){
+  const q = S.quota;
+  let html = '', done = false;
+  if(q && q.ok && q.newCap > 0){
+    const left = Math.max(0, q.newCap - q.planted);
+    if(left === 0){ html = '🌳 오늘의 새 질문을 다 심었어요 — 이제 <b>키울</b> 시간이에요 🌿'; done = true; }
+    else if(left === 1) html = '🌱 오늘의 <b>마지막</b> 새 질문 1개 — 가장 궁금한 걸로 골라요';
+    else if(left === 2) html = '🌱 오늘 심을 수 있는 새 질문 <b>2개</b> 남았어요';
+  }
+  ['qQuota','msQuota'].forEach(function(id){
+    const el = $(id); if(!el) return;
+    el.innerHTML = html;
+    el.className = 'q-quota' + (done ? ' done' : '');
+    el.style.display = html ? '' : 'none';
+  });
+}
+
+/* 게이트 — 막아야 하면 true */
+function quotaBlocked(){
+  const q = S.quota;
+  if(!q || !q.ok || q.newCap <= 0) return false;   /* 못 셌으면 통과 */
+  if(q.planted < q.newCap) return false;
+  /* «🌙 수업 닫기» 는 성장 리포트가 학생에게 직접 시키는 일이다(renderGrowthReport).
+     열기에서 상한을 다 쓴 학생을 앱이 자기가 시켜 놓고 막으면 안 된다.
+     하루에 딱 한 개는 상한 밖으로 빼 준다. */
+  if(S.phase === 'after' && q.after === 0) return false;
+  return true;
+}
+
+function quotaFullHTML(){
+  const cap = (S.quota && S.quota.newCap) || 0;
+  return '<div class="qf-t">🌳 오늘 심을 새 질문 ' + cap + '개를 다 썼어요. 오늘 궁금한 게 참 많았네요!</div>' +
+         '<div class="qf-b">새 씨앗은 <b>내일</b> 다시 생겨요. 지금 적은 문장은 지우지 마세요 — ' +
+         '오늘 심은 질문 아래에 이어 붙이면 그게 <b>«키우기»</b>예요 🌿<br>' +
+         '질문 카드의 <b>🌿+</b> 를 누르면 돼요.</div>' +
+         '<div class="qf-n">🌙 «수업 닫기» 질문 한 개는 따로 남겨 뒀어요. ' +
+         '결석해서 밀렸다면 선생님께 말하세요.</div>';
+}
+
+function showQuotaFull(msgId){
+  const m = $(msgId); if(!m) return;
+  m.innerHTML = quotaFullHTML();
+  m.className = (msgId === 'msMsg' ? 'ms-msg ' : 'q-msg ') + 'err qf';
+  m.style.display = '';
+  if(typeof shk === 'function') shk(m);
+}
+
+/* ── 🔁 중복 질문 ─────────────────────────────────────────────────────────
+   중2가 실제로 하는 도배는 «왜 그럴까?» 붙여넣기, 「…?1」「…?2」, 한 글자 바꾸기다.
+   그런데 「왜 구리는 전기가 통할까?」와 「왜 고무는 전기가 안 통할까?」는 정당하게
+   비슷하다. 글자 2-gram Dice 계수로 가른다 — 앞의 도배 쌍은 1.00, 뒤의 정당한 쌍은
+   0.53 이라 0.82 에서 넉넉히 갈린다. 라이브러리 없이 순수 JS 로 돈다. */
+function normQ(s){
+  return String(s || '').toLowerCase()
+    .split('').filter(function(c){ return ' \t\n.,!?~·…"\'`()[]{}<>:;-_/\\'.indexOf(c) < 0; }).join('')
+    .replace(/[0-9]+$/, '');        /* 끝에 붙인 번호는 무시 — 「…?1」「…?2」 대응 */
+}
+function _bigrams(s){
+  const out = [];
+  for(let i = 0; i < s.length - 1; i++) out.push(s.slice(i, i + 2));
+  return out.length ? out : (s ? [s] : []);
+}
+function diceSim(a, b){
+  const A = _bigrams(a), B = _bigrams(b);
+  if(!A.length || !B.length) return (a === b && a) ? 1 : 0;
+  const m = {};
+  A.forEach(function(g){ m[g] = (m[g] || 0) + 1; });
+  let hit = 0;
+  B.forEach(function(g){ if(m[g] > 0){ m[g]--; hit++; } });
+  return 2 * hit / (A.length + B.length);
+}
+function myRecentQs(n){
+  const all = [];
+  const byS = S.questions || {};
+  Object.keys(byS).forEach(function(sub){
+    Object.keys(byS[sub] || {}).forEach(function(tid){
+      (byS[sub][tid] || []).forEach(function(q){ all.push(q); });
+    });
+  });
+  return all.slice(-(n || 60));      /* 한 학기면 수백 개가 쌓인다 — 최근 것만 본다 */
+}
+function findDupQ(text){
+  const n = normQ(text);
+  if(n.length < 3) return null;
+  const recent = myRecentQs(60);
+  for(let i = recent.length - 1; i >= 0; i--){
+    const q = recent[i];
+    const m = normQ(q.text);
+    if(!m) continue;
+    if(m === n || diceSim(n, m) >= 0.82) return q;
+  }
+  return null;
+}
+function dupHTML(q){
+  const t = (typeof esc === 'function') ? esc(q.text) : q.text;
+  return '<div class="qf-t">🔁 이미 비슷한 질문을 심었어요</div>' +
+         '<div class="qf-b">「' + t + '」<br>' +
+         '같은 질문을 또 심는 대신, 그 질문을 <b>키워</b> 보면 어때요? ' +
+         '질문 카드의 <b>🌿+</b> 를 누르면 «그래서 만약 ~라면?» 처럼 한 걸음 더 갈 수 있어요 🌿</div>' +
+         '<div class="qf-n">정말 다른 질문이라면 조금 더 구체적으로 적어 주세요.</div>';
+}
+function showDup(msgId, q){
+  const m = $(msgId); if(!m) return;
+  m.innerHTML = dupHTML(q);
+  m.className = (msgId === 'msMsg' ? 'ms-msg ' : 'q-msg ') + 'err qf';
+  m.style.display = '';
+  if(typeof shk === 'function') shk(m);
+}
+
+/* ── 🌲 나무 자가 복구 ────────────────────────────────────────────────────
+   «tree_id 외래키» 오류로 질문이 안 올라가는 일이 있었다. 화면에는 나무가
+   보이는데 DB 에는 그 행이 없는 상태 — 다른 기기에서 그 나무를 베었거나,
+   로그인 때 만든 나무가 실패해 임시 나무로 남았을 때 그렇게 된다.
+   학생은 «나무 탭에서 나무를 심으세요» 라는 말만 보고 뭘 해야 할지 모른다.
+   그래서 (1) 쓰기 전에 확인하고 (2) 없으면 말없이 만들어 주고
+   (3) 그래도 걸리면 나무 없이 한 번 더 저장한다. 질문을 잃지 않는 게 먼저다. */
+function treeExists(subId, id){
+  if(id == null) return false;
+  return (S.trees[subId] || []).some(function(x){ return String(x.id) === String(id); });
+}
+
+/* 이 과목에 실제로 쓸 수 있는 나무 id. 없으면 null */
+function safeTreeId(subId){
+  const list = S.trees[subId] || [];
+  const want = S.activeTreeId[subId];
+  if(treeExists(subId, want)) return want;
+  const first = list[0] && list[0].id;
+  if(first != null){ S.activeTreeId[subId] = first; return first; }
+  return null;
+}
+
+/* 나무가 하나도 없으면 조용히 하나 만들어 준다 */
+async function ensureTree(subId){
+  let id = safeTreeId(subId);
+  if(id != null && !String(id).startsWith('local_')) return id;
+  try{
+    const {data:newT, error} = await sb.from('trees').insert({
+      user_id:S.user.id, subject_id:subId, name:'나의 첫 나무', icon:'🌳', sort_order:1
+    }).select().single();
+    if(error || !newT) return id;      /* 실패해도 막지 않는다 — tree_id 없이 저장된다 */
+    S.trees[subId] = (S.trees[subId] || []).filter(function(x){
+      return !String(x.id).startsWith('local_');
+    });
+    S.trees[subId].unshift({id:newT.id, name:newT.name, icon:newT.icon,
+                            sort_order:newT.sort_order, subject_id:subId});
+    S.activeTreeId[subId] = newT.id;
+    if(!S.questions[subId] || Array.isArray(S.questions[subId])) S.questions[subId] = {};
+    if(!S.questions[subId][newT.id]) S.questions[subId][newT.id] = [];
+    return newT.id;
+  }catch(e){ return id; }
+}
+
+/* 저장이 나무 때문에 막혔는지 */
+function isTreeError(err){
+  const m = String(err && err.message || '');
+  return m.indexOf('tree_id') >= 0 ||
+         m.toLowerCase().indexOf('foreign key') >= 0 ||
+         m.indexOf('23503') >= 0;
+}
+
+/* DB 기준으로 나무 목록을 다시 맞춘다 (지워진 나무를 화면에서 치운다) */
+async function reloadTrees(){
+  try{
+    const {data} = await sb.from('trees').select('*')
+      .eq('user_id', S.user.id).order('sort_order', {ascending:true});
+    if(!data) return;
+    const next = {};
+    data.forEach(function(x){
+      (next[x.subject_id] = next[x.subject_id] || []).push({
+        id:x.id, name:x.name, icon:x.icon, sort_order:x.sort_order, subject_id:x.subject_id});
+    });
+    S.trees = next;
+    Object.keys(S.activeTreeId || {}).forEach(function(sub){
+      if(!treeExists(sub, S.activeTreeId[sub])) S.activeTreeId[sub] = (next[sub] && next[sub][0]) ? next[sub][0].id : null;
+    });
+  }catch(e){}
+}
+
 async function addQ(ctx){
   /* ctx 없이 부르면 예전과 똑같이 질문 탭의 입력칸을 쓴다.
      자료 시트는 {inp:'msInp', msg:'msMsg', btn:'msBtn', keepMaterial:true, after:fn} 을 넘긴다. */
@@ -6345,19 +6604,33 @@ async function addQ(ctx){
     inp.focus(); return;
   }
 
-  // 🌲 어느 나무에 달지 — pendingTreeId 우선, 없으면 현재 활성 나무
-  const treeId = S.pendingTreeId || curTreeId();
-  if(!treeId){
-    const m=_setMsg('먼저 «나무» 탭에서 나무를 심어주세요 🌳','err'); if(m) shk(m);
-    return;
+  /* 🌲 어느 나무에 달지 — 화면에 남아 있는 «없는 나무» 를 걸러낸다.
+     예전에는 여기서 «나무 탭에서 나무를 심어주세요» 라고만 하고 끝냈는데,
+     학생 입장에서는 나무가 멀쩡히 보이는데 그런 말이 나와 손을 들 수밖에 없었다. */
+  let treeId = S.pendingTreeId;
+  if(!treeExists(S.activeSub, treeId)) treeId = safeTreeId(S.activeSub);
+  if(treeId == null || String(treeId).startsWith('local_')){
+    treeId = await ensureTree(S.activeSub);   /* 없으면 말없이 만들어 준다 */
   }
 
+  /* 하루 제한 — 서버가 판정한다. 새로고침·다른 기기·삭제 우회에 다 면역이다. */
+  await fetchQuota();
+  if(quotaBlocked()){ showQuotaFull(_msgId); inp.focus(); return; }
+
+  /* 같은 질문 또 심기 — «왜 그럴까?» 붙여넣기가 여기서 걸린다 */
+  const _dup = findDupQ(t);
+  if(_dup){ showDup(_msgId, _dup); inp.focus(); return; }
+
+  /* Enter 를 꾹 누르면 초당 25~30회 발사된다. RPC 왕복 동안 전부 통과하므로
+     화면 잠금(_btn.disabled)만으로는 못 막는다. 모듈 스코프 락이 필요하다. */
+  if(_addQBusy) return;
+  _addQBusy = true;
   const _btn=$(_btnId); if(_btn) _btn.disabled=true;
   const tags=[...S.pendingTags];
   const fruit=S.pendingFruit;
 
   const uid = await freshUid();
-  if(!uid){ if(_btn) _btn.disabled=false; _setMsg('로그인이 풀렸어요. 다시 로그인해 주세요.','err'); return; }
+  if(!uid){ _addQBusy=false; if(_btn) _btn.disabled=false; _setMsg('로그인이 풀렸어요. 다시 로그인해 주세요.','err'); return; }
   const payload={
     user_id:uid, subject_id:S.activeSub, text:t,
     tags, question_date:td(),
@@ -6377,9 +6650,23 @@ async function addQ(ctx){
     if(_mat && _mat.unit) payload.unit = _mat.unit;
   }
 
-  const {data,error}=await sb.from('questions').insert(payload).select().single();
+  let {data,error}=await sb.from('questions').insert(payload).select().single();
+  /* 나무가 DB 에서 사라졌는데 화면엔 남아 있던 경우 — 질문을 잃지 않게
+     나무 없이 한 번 더 저장하고, 나무 목록을 조용히 다시 맞춘다. */
+  if(error && isTreeError(error)){
+    delete payload.tree_id;
+    const retry = await sb.from('questions').insert(payload).select().single();
+    data = retry.data; error = retry.error;
+    if(!error){ reloadTrees(); }
+  }
+  _addQBusy=false;
   if(_btn) _btn.disabled=false;
-  if(error){ _setMsg('저장 실패: '+error.message,'err'); return; }
+  if(error){
+    _setMsg(isTreeError(error)
+      ? '나무 정보가 꼬였어요. 새로고침하면 고쳐질 거예요 🌳'
+      : '저장 실패: '+error.message, 'err');
+    return;
+  }
 
   if(!S.questions[S.activeSub]) S.questions[S.activeSub]={};
   if(!S.questions[S.activeSub][treeId]) S.questions[S.activeSub][treeId]=[];
@@ -6391,7 +6678,7 @@ async function addQ(ctx){
     water_count:0, watered_by:[], branches:[],
     tree_id: treeId,
     material_id: data.material_id||null,
-    unit: data.unit||null, teacher_nudge:null,
+    unit: data.unit||null, teacher_nudge:null, teacher_stamp:null,
     finding:null, still_wondering:null,
     explore_votes:0, explore_voters:[],
   });
@@ -6404,6 +6691,7 @@ async function addQ(ctx){
 
   // 도토리 +1 (질문 심기 보상)
   await addSeeds(1, '질문 심기 +1 🌰');
+  fetchQuota();   /* 남은 개수 갱신 (기다리지 않는다) */
 
   // 활성 나무를 방금 달린 나무로 전환
   S.activeTreeId[S.activeSub] = treeId;
@@ -6417,10 +6705,16 @@ async function addQ(ctx){
   render();
 }
 
+/* 질문 «형태»(왜·어떻게·?) 검사는 없앴다.
+   디벗 한글 입력기가 깨져 영어만 찍히거나 글자가 뭉개지는 학생이 있는데,
+   그 아이들에게 「"왜~" 형태로 적어봐요」는 스스로 고칠 수 없는 벽이었다.
+   질문다운지는 선생님이 보면 되고, 도배는 하루 상한(8개)과 중복 검사가 막는다.
+   ^[a-z]+$ 도 뺐다 — 입력기가 깨지면 정확히 그 모양이 나온다. */
 async function chkQ(t){
-  if(t.length<5) return {ok:false,msg:'너무 짧아요!'};
-  if(/^[ㄱ-ㅎㅋㅎ]+$|^[a-z]+$|^[0-9]+$|^(.)\1{3,}$|^[ㅠㅜ]+$|^[ㅡ]+$|^ㅋㅋ+$/i.test(t)) return {ok:false,msg:'의미 있는 질문을 적어주세요! 🌱'};
-  if(!/왜|어떻게|무엇|뭐|언제|어디|누가|얼마|차이|이유|원리|관계|영향|결과|과정|방법|가능|할까|일까|인가|인지|는지|을까|ㄹ까|나요|세요|까요|\?/.test(t)) return {ok:false,msg:'"왜~", "어떻게~" 형태로 적어봐요 🌿'};
+  if(t.length<3) return {ok:false,msg:'조금만 더 적어볼까요?'};
+  /* 진짜 아무 뜻 없는 것만 거른다 */
+  if(/^[ㄱ-ㅎ]+$|^[0-9]+$|^(.)\1{3,}$|^[ㅠㅜ]+$|^[ㅡ]+$|^ㅋㅋ+$/i.test(t))
+    return {ok:false,msg:'글자가 이상하게 들어갔어요. 다시 적어볼까요? 🌱'};
   return {ok:true};
 }
 
@@ -6473,6 +6767,8 @@ async function togRes(id){
   const {error}=await sb.from('questions').update({resolved:false}).eq('id',id).eq('user_id',S.user.id);
   if(error){alert('저장 실패: '+error.message);return;}
   q.resolved=false;
+  /* 준 걸 되돌린다. 이게 없으면 [🍎 → ○ → 저장] 3클릭에 +2 가 무한 반복된다. */
+  await addSeeds(-2, '수확을 되돌렸어요 (🌰 -2)');
   render();
 }
 
@@ -6806,12 +7102,31 @@ async function delBr(brId, qid){
 // ============================================================================
 // 🌰 도토리(포인트) 시스템
 // ============================================================================
+/* 도토리는 «줄 때» 만 있고 «되돌릴 때» 회수가 없었다. 그래서 수확을 해제했다
+   다시 저장하면 +2 가 무한히 나왔다(3클릭). 지급을 서버로 옮겨 하루 상한을
+   서버가 자른다 — 어떤 되돌리기 루프를 돌려도 하루 총량을 못 넘는다.
+   n 이 음수면 회수. 서버가 없으면(SQL 미실행) 옛 방식으로 돈다. */
 async function addSeeds(n, msg){
   if(S.guest) return;
-  S.seeds+=n;
-  if(msg) toast(msg);
-  if(S.user) await sb.from('profiles').update({seeds:S.seeds}).eq('id',S.user.id);
-  $('seedsCnt').textContent=S.seeds;
+  if(!S.user){ S.seeds+=n; if(msg) toast(msg); return; }
+  try{
+    const {data,error} = await sb.rpc('award_seeds', {p_n:n});
+    if(error) throw error;
+    const r = Array.isArray(data) ? data[0] : data;
+    if(!r) throw new Error('empty');
+    const granted = r.granted|0;
+    S.seeds = r.seeds_total|0;
+    if(S.quota){ S.quota.seeds = r.seeds_today|0; S.quota.seedCap = r.cap|0; }
+    if(granted !== 0 && msg) toast(msg);
+    else if(granted === 0 && n > 0)
+      toast('🌰 오늘 받을 수 있는 도토리 ' + (r.cap|0) + '개를 다 모았어요 — 내일 또 만나요!');
+  }catch(e){
+    /* 7_하루제한.sql 을 아직 안 돌렸거나 네트워크가 튄 경우 — 수업을 막지 않는다 */
+    S.seeds = Math.max(0, S.seeds + n);
+    if(msg) toast(msg);
+    try{ await sb.from('profiles').update({seeds:S.seeds}).eq('id',S.user.id); }catch(_){}
+  }
+  $('seedsCnt') && ($('seedsCnt').textContent=S.seeds);
   $('seedsBal') && ($('seedsBal').textContent=S.seeds);
 }
 
@@ -6952,6 +7267,12 @@ async function submitLiveQuestion(sessionId){
   let treeId = null;
   if(subId && S.trees[subId] && S.trees[subId][0]) treeId = S.trees[subId][0].id;
   else if(S.activeSub && S.trees[S.activeSub] && S.trees[S.activeSub][0]){ subId=S.activeSub; treeId=S.trees[S.activeSub][0].id; }
+  /* 라이브만 chkQ 를 안 거치고 있었다 — 5글자 검사도 의문사 검사도 없었다. */
+  const _r = await chkQ(t);
+  if(!_r.ok){ toast(_r.msg); return; }
+  const _d = findDupQ(t);
+  if(_d){ toast('🔁 이미 비슷한 질문을 심었어요'); return; }
+
   const payload={
     user_id:uid, subject_id:subId, text:t,
     tags:[], question_date:td(), phase:'before',
@@ -6978,7 +7299,7 @@ async function submitLiveQuestion(sessionId){
       id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
       tags:[],fruit:null,is_anonymous:false,phase:'before',parent_id:null,self_check:null,
       water_count:0,watered_by:[],branches:[],tree_id:tid,material_id:(data.material_id||null),
-      unit:(data.unit||null),teacher_nudge:null,finding:null,still_wondering:null,explore_votes:0,explore_voters:[],
+      unit:(data.unit||null),teacher_nudge:null,teacher_stamp:null,finding:null,still_wondering:null,explore_votes:0,explore_voters:[],
     });
   }
   _liveSentIds.add(sessionId);
@@ -8899,7 +9220,7 @@ function gq(id,text,o){
     water_count:0, watered_by:[], fruit_x:null, fruit_y:null,
     tree_id:null, starred:false, branches:[], material_id:null,
     answer_text:null, answer_files:null, finding:null, still_wondering:null,
-    teacher_nudge:null, unit:null
+    teacher_nudge:null, teacher_stamp:null, unit:null
   }, o||{});
 }
 // 꼬리질문 1개
@@ -9122,9 +9443,10 @@ applyBranding();
       <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
       <button onclick="openBaskets()">🧺 질문의 세 종류</button>
     </div>
+    <div class="q-quota" id="msQuota" style="display:none"></div>
     <div class="ms-ask">✍️ 여기에 질문을 적어요</div>
     <div class="ms-iw">
-      <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter')addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
+      <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
       <button id="msBtn" onclick="addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">심기</button>
     </div>
     <div class="ms-msg" id="msMsg"></div>
