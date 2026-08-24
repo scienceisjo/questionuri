@@ -1687,6 +1687,19 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   background:#fff;font-family:inherit;font-size:var(--fs-xxs);font-weight:800;
   color:var(--tl);cursor:pointer;min-height:var(--touch-md,38px)}
 .ime-b.on{background:var(--pd);border-color:var(--pd);color:#fff}
+/* ⌨️ 키보드가 이상해요 */
+.q-help .kbd{border-color:rgba(124,111,217,.4);color:#6A5ACD}
+.q-help .kbd.hot{background:#6A5ACD;border-color:#6A5ACD;color:#fff;
+  animation:kbdPulse 1.1s ease-in-out infinite}
+@keyframes kbdPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.kbd-ok{margin:2px 0 12px;padding:11px 13px;border-radius:12px;
+  background:rgba(93,184,110,.12);border:1.5px solid rgba(93,184,110,.4);
+  font-size:var(--fs-xs);font-weight:600;color:var(--tx);line-height:1.65;word-break:keep-all}
+.kbd-ok b{color:var(--pd)}
+.kbd-ex{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.04);
+  font-size:var(--fs-xxs);font-weight:700;color:var(--tl);line-height:1.6}
+.kbd-ex span{display:block;margin-top:5px;font-size:var(--fs-sm);color:#B3261E;
+  word-break:break-all;font-weight:800}
 </style>
 </head>
 <body data-theme="cute">
@@ -2012,6 +2025,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         </div>
         <div class="q-help">
           <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
+          <button class="kbd" onclick="openKbd()">⌨️ 키보드가 이상해요</button>
           <button onclick="openBaskets()">🧺 질문의 세 종류</button>
         </div>
         <button class="q-more-toggle" id="qMoreToggle" onclick="toggleQMore()" aria-expanded="false">＋ 옵션 <small>(나무·태그·열매·익명)</small></button>
@@ -3224,6 +3238,82 @@ const STUCK = [
     ],
     act:'왜 하필 ' }
 ];
+
+/* ── ⌨️ 「선생님 키보드가 이상해요!」 ────────────────────────────────────
+   Surface Go 3 의 한글 입력기가 모드를 잃으면 아이들이 «내가 잘못했나» 하고 멈춘다.
+   그래서 이 시트의 첫 줄은 «고치는 법» 이 아니라 «그냥 써도 된다» 여야 한다.
+   실제로 전각·반각은 자동으로 고쳐지고, 한영전환은 심을 때 물어봐 준다. */
+const KBD = [
+  { ic:'🔤', t:'영어만 쳐져요',
+    ex:'dho qkfeork ehfRk?',
+    fix:[
+      '<b>Windows 키</b> + <b>Space</b> 를 같이 눌러 보세요. 이게 제일 잘 돼요.',
+      '오른쪽 <b>Alt</b> 키가 «한/영» 키예요. 한 번 눌러 보세요.',
+      '그래도 안 되면 <b>그냥 그대로 쓰고 심으세요.</b>',
+      '심을 때 「이걸 쓰려던 거예요?」 하고 <b>한글로 바꿔서 보여줘요</b> 🌱'
+    ] },
+  { ic:'🧩', t:'ㅎㅏㄴㄱㅡㄹ 처럼 따로따로 써져요',
+    ex:'ﾡￜﾵﾼￆﾩﾷￜ',
+    fix:[
+      '<b>그냥 쓰세요.</b> 심을 때 글자가 <b>저절로 합쳐져요</b>.',
+      '「깃털이 무슨 영향을 줬을까?」 처럼 원래대로 저장돼요.',
+      '고치고 싶으면 «한/영» 키를 한 번 눌렀다가 다시 눌러 보세요.'
+    ] },
+  { ic:'🔠', t:'영어가 넓게 써지고 띄어쓰기가 이상해요',
+    ex:'ｐｕｓｈ　ｅａｃｈ',
+    fix:[
+      '<b>이것도 그냥 쓰세요.</b> 심을 때 자동으로 고쳐져요.',
+      '고치려면 «한/영» 키를 눌렀다가 다시 눌러 보세요.'
+    ] },
+  { ic:'〰️', t:'밑줄이 쳐지면서 안 넘어가요',
+    fix:[
+      '아직 <b>글자를 만드는 중</b>이라 그래요.',
+      '<b>Space</b> 를 한 번 누르면 확정돼요.',
+      '아니면 입력칸 <b>바깥을 한 번 톡</b> 누르세요.'
+    ] },
+  { ic:'🧊', t:'글씨가 갑자기 안 써져요',
+    fix:[
+      '입력칸 <b>바깥을 눌렀다가 다시</b> 입력칸을 눌러 보세요.',
+      '그래도 안 되면 <b>Windows 키 + Space</b> 를 눌러 보세요.',
+      '계속 그러면 <b>선생님께 말하세요.</b> 여러분 잘못이 아니에요.'
+    ] }
+];
+
+/* 깨진 입력이 실제로 들어왔을 때만 잠깐 눈에 띄게 한다 */
+function flashKbdBtn(){
+  document.querySelectorAll('.q-help .kbd').forEach(function(b){
+    b.classList.add('hot');
+    setTimeout(function(){ b.classList.remove('hot'); }, 6000);
+  });
+}
+
+function openKbd(){
+  let h = '<div class="mc-info-title">⌨️ 키보드가 이상해요!</div>';
+  h += '<div class="kbd-ok">🌱 <b>고장난 채로 써도 괜찮아요.</b><br>앱이 알아서 한글로 고쳐 주거나, 「이걸 쓰려던 거예요?」 하고 물어봐요.</div>';
+  h += '<div class="qb-lead">어떤 모습인지 골라보세요.</div>';
+  for(let i = 0; i < KBD.length; i++){
+    h += '<button class="stuck-i" onclick="showKbd(' + i + ')">' +
+         '<span class="stuck-ic">' + KBD[i].ic + '</span>' +
+         '<span>' + esc(KBD[i].t) + '</span>' +
+         '<span class="stuck-ar">›</span></button>';
+  }
+  h += '<div class="qb-note">태블릿이 고장난 거예요. <b>여러분이 잘못한 게 아니에요.</b></div>';
+  h += '<button class="mc-info-close" onclick="closeMCInfo()">닫기</button>';
+  $('mcInfoBox').innerHTML = h;
+  $('mcInfo').classList.add('show');
+}
+
+function showKbd(i){
+  const s = KBD[i]; if(!s) return;
+  let h = '<div class="mc-info-title">' + s.ic + ' ' + esc(s.t) + '</div>';
+  if(s.ex) h += '<div class="kbd-ex">이런 모습이에요<br><span>' + esc(s.ex) + '</span></div>';
+  h += '<div class="stuck-fix">';
+  for(let k = 0; k < s.fix.length; k++) h += '<p>' + s.fix[k] + '</p>';
+  h += '</div>';
+  h += '<button class="mc-info-close" onclick="openKbd()">← 다른 증상 보기</button>';
+  h += '<button class="mc-info-close" onclick="closeMCInfo()">닫기</button>';
+  $('mcInfoBox').innerHTML = h;
+}
 
 function openStuck(){
   let h = '<div class="mc-info-title">🆘 질문이 안 떠오를 때</div>';
@@ -6752,9 +6842,12 @@ async function addQ(ctx){
   if(t !== _raw) inp.value = t;
   if(!t) return;
 
+  /* 깨진 모드였으면 도움 버튼을 반짝여 준다 — 다음엔 스스로 찾아가게 */
+  if(imeBroken(_raw)) flashKbdBtn();
+
   /* 한영전환이 안 된 글은 되돌릴 수 있지만 «진짜 영어» 일 수도 있다 — 물어본다 */
   const _ko = maybeKorean(t);
-  if(_ko && _imeKeep !== t){ showImeAsk(_msgId, _inpId, _ko.text); return; }
+  if(_ko && _imeKeep !== t){ flashKbdBtn(); showImeAsk(_msgId, _inpId, _ko.text); return; }
   const tagInp=$('tagInp');
   if(tagInp && tagInp.value.trim()){addPendingTag(tagInp.value);tagInp.value='';}
   const r=await chkQ(t);
@@ -9608,6 +9701,7 @@ applyBranding();
     <div class="ms-stems" id="msStems"></div>
     <div class="q-help" style="margin:0 0 7px">
       <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
+      <button class="kbd" onclick="openKbd()">⌨️ 키보드가 이상해요</button>
       <button onclick="openBaskets()">🧺 질문의 세 종류</button>
     </div>
     <div class="q-quota" id="msQuota" style="display:none"></div>
