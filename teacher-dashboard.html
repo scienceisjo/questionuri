@@ -724,6 +724,22 @@ body.print-report-mode .dd-overlay{display:none !important}
 .st-cur{margin-top:12px;padding:8px 11px;border-radius:7px;font-size:12.5px;font-weight:600;
   color:var(--sc);background:color-mix(in srgb,var(--sc) 10%,transparent);
   border-left:3px solid var(--sc)}
+/* 🔧 깨진 질문 되살리기 */
+.rp-top{padding:12px 14px;background:var(--surface2);border:1px solid var(--rule);
+  border-radius:9px;margin-bottom:12px;font-size:13px;color:var(--ink2)}
+.rp-top b{color:var(--ink)}
+.rp-acts{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.rp-row{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;margin-bottom:7px;
+  border:1px solid var(--rule);border-radius:9px;background:var(--surface);cursor:pointer}
+.rp-row.on{border-color:var(--pr);background:color-mix(in srgb,var(--pr) 5%,transparent)}
+.rp-row input{margin-top:3px;flex:none;width:16px;height:16px;cursor:pointer}
+.rp-main{flex:1;min-width:0}
+.rp-meta{font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;margin-bottom:5px}
+.rp-kind{display:inline-block;padding:1px 7px;border-radius:999px;margin-right:7px;font-weight:700}
+.rp-kind.auto{background:#E8F5E9;color:#2E7D32}
+.rp-kind.ask{background:#FFF3E0;color:#EF6C00}
+.rp-raw{font-size:12.5px;color:var(--ink3);word-break:break-all;line-height:1.5}
+.rp-fix{font-size:14px;color:var(--ink);font-weight:700;margin-top:3px;line-height:1.5;word-break:keep-all}
 </style>
 </head>
 <body>
@@ -843,6 +859,7 @@ body.print-report-mode .dd-overlay{display:none !important}
       <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">🎯 자가체크</button>
       <button class="vm-tab" data-view="board" onclick="switchView('board')">🗂️ 질문 보드</button>
       <button class="vm-tab" data-view="stamp" onclick="switchView('stamp')">⚡ 빠른 피드백</button>
+      <button class="vm-tab" data-view="repair" onclick="switchView('repair')">🔧 깨진 질문</button>
       <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
     </div>
 
@@ -1127,6 +1144,21 @@ body.print-report-mode .dd-overlay{display:none !important}
           <span class="sub">질문 한 장씩 넘기며 <b>숫자키 1~6</b> 으로 도장 · 학생 화면에 바로 보입니다 · 위 필터(학년·반·기간)가 함께 적용됩니다</span>
         </div>
         <div class="section-body" id="stampBody"></div>
+      </div>
+    </div>
+    <!-- ═════════ VIEW: 깨진 질문 되살리기 ═════════ -->
+    <div class="view-body" id="viewRepair" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>🔧 깨진 질문 되살리기</h2>
+          <span class="sub">태블릿 한글 입력기가 고장 났을 때 저장된 질문을 원래대로 되돌립니다 · <b>전체 질문</b>을 검사합니다(위 필터와 무관)</span>
+          <div style="margin-left:auto">
+            <button class="st-nav primary" onclick="rpScan()">🔍 검사하기</button>
+          </div>
+        </div>
+        <div class="section-body" id="repairBody">
+          <div class="empty-row" style="padding:34px">«🔍 검사하기» 를 누르면 깨진 질문을 찾습니다.</div>
+        </div>
       </div>
     </div>
     <!-- ═════════ VIEW: 성장·리포트 ═════════ -->
@@ -2391,6 +2423,234 @@ document.addEventListener('keydown', function(ev){
   }
 });
 
+/* ══ ⌨️ 깨진 입력 되살리기 ═══════════════════════════════════════════════════
+   Surface Go 3 의 윈도우 한글 IME 가 모드를 잃어버리면 세 가지로 깨진다.
+
+     ① 전각(全角)      ｐｕｓｈ　ｅａｃｈ        U+FF01~FF5E, 전각공백 U+3000
+     ② 반각 자모       ﾡￜﾵﾼￆﾩﾷￜ              U+FFA0~FFDC, 자모가 안 합쳐짐
+     ③ 한영전환 실패    dho qkfeork tjfh        자판 신호는 맞고 변환만 안 됨
+
+   ①②는 «무엇을 쳤는지» 가 확정적이라 조용히 고친다.
+   ③은 학생이 진짜 영어를 쓰려던 걸 수도 있어서 **반드시 물어본다**.
+       (짧은 영어 단어는 우연히 완벽한 한글이 된다: the→솓, and→뭉, she→녿)
+
+   원문은 버리지 않는다 — 잘못 고쳤을 때 되돌릴 수 있어야 한다. */
+
+/* ── ①② 전각·반각 되살리기 ──────────────────────────────────────────────── */
+const _JL = 'ᄀᄁᄂᄃᄄᄅᄆᄇᄈᄉᄊᄋᄌᄍᄎᄏᄐᄑᄒ';        /* 초성 U+1100~ */
+const _JV = 'ᅡᅢᅣᅤᅥᅦᅧᅨᅩᅪᅫᅬᅭᅮᅯᅰᅱᅲᅳᅴᅵ';      /* 중성 U+1161~ */
+const _JT = 'ᆨᆩᆪᆫᆬᆭᆮᆯᆰᆱᆲᆳᆴᆵᆶᆷᆸᆹᆺᆻᆼᆽᆾᆿᇀᇁᇂ'; /* 종성 U+11A8~ */
+const _VMERGE = {'ᅩᅡ':'ᅪ','ᅩᅢ':'ᅫ','ᅩᅵ':'ᅬ','ᅮᅥ':'ᅯ','ᅮᅦ':'ᅰ','ᅮᅵ':'ᅱ','ᅳᅵ':'ᅴ'};
+const _TMERGE = {'ᆨᆺ':'ᆪ','ᆫᆽ':'ᆬ','ᆫᇂ':'ᆭ','ᆯᆨ':'ᆰ','ᆯᆷ':'ᆱ','ᆯᆸ':'ᆲ',
+                 'ᆯᆺ':'ᆳ','ᆯᇀ':'ᆴ','ᆯᇁ':'ᆵ','ᆯᇂ':'ᆶ','ᆸᆺ':'ᆹ'};
+/* 초성으로 온 자음을 종성으로 옮길 때의 짝 */
+const _L2T = {'ᄀ':'ᆨ','ᄁ':'ᆩ','ᄂ':'ᆫ','ᄃ':'ᆮ','ᄅ':'ᆯ','ᄆ':'ᆷ','ᄇ':'ᆸ','ᄉ':'ᆺ',
+              'ᄊ':'ᆻ','ᄋ':'ᆼ','ᄌ':'ᆽ','ᄎ':'ᆾ','ᄏ':'ᆿ','ᄐ':'ᇀ','ᄑ':'ᇁ','ᄒ':'ᇂ'};
+
+function _isSyl(c){ const o=c.charCodeAt(0); return o>=0xAC00 && o<=0xD7A3; }
+function _split(c){
+  const i = c.charCodeAt(0) - 0xAC00;
+  return { l:_JL[Math.floor(i/588)], v:_JV[Math.floor((i%588)/28)], t:(i%28)?_JT[i%28-1]:'' };
+}
+function _join(l, v, t){
+  return String.fromCharCode(0xAC00 + (_JL.indexOf(l)*21 + _JV.indexOf(v))*28 + (t ? _JT.indexOf(t)+1 : 0));
+}
+
+/* 전각 영문·전각 공백·반각 자모를 정상 한글/ASCII 로 */
+function fixWidth(src){
+  let s = String(src || '').normalize('NFKC');
+  const out = [];
+  for(const ch of s){
+    const prev = out.length ? out[out.length-1] : '';
+    if(prev && _isSyl(prev)){
+      const p = _split(prev);
+      if(!p.t && _JV.indexOf(ch) >= 0){                  /* 주 + ᅥ → 줘 */
+        const nv = _VMERGE[p.v + ch];
+        if(nv){ out[out.length-1] = _join(p.l, nv, ''); continue; }
+      }
+      if(!p.t && _L2T[ch]){                              /* 기 + ᄉ → 깃 */
+        out[out.length-1] = _join(p.l, p.v, _L2T[ch]); continue;
+      }
+      if(p.t && _L2T[ch]){                               /* 겹받침 앉 값 */
+        const nt = _TMERGE[p.t + _L2T[ch]];
+        if(nt){ out[out.length-1] = _join(p.l, p.v, nt); continue; }
+      }
+    }
+    out.push(ch);
+  }
+  return out.join('');
+}
+
+/* ── ③ 영어로 쳐진 한글 되돌리기 ────────────────────────────────────────── */
+const _QK = {q:'ᄇ',w:'ᄌ',e:'ᄃ',r:'ᄀ',t:'ᄉ',y:'ᅭ',u:'ᅧ',i:'ᅣ',o:'ᅢ',p:'ᅦ',
+             a:'ᄆ',s:'ᄂ',d:'ᄋ',f:'ᄅ',g:'ᄒ',h:'ᅩ',j:'ᅥ',k:'ᅡ',l:'ᅵ',
+             z:'ᄏ',x:'ᄐ',c:'ᄎ',v:'ᄑ',b:'ᅲ',n:'ᅮ',m:'ᅳ',
+             Q:'ᄈ',W:'ᄍ',E:'ᄄ',R:'ᄁ',T:'ᄊ',O:'ᅤ',P:'ᅨ'};
+(function(){ for(const k in _QK){ const U=k.toUpperCase(); if(!(U in _QK)) _QK[U]=_QK[k]; } })();
+
+/* 자모 묶음을 음절로. {text, made, orphan} */
+function _assemble(buf){
+  const out = []; let made = 0, orphan = 0, i = 0;
+  while(i < buf.length){
+    const c = buf[i];
+    if(_JL.indexOf(c) >= 0 && i+1 < buf.length && _JV.indexOf(buf[i+1]) >= 0){
+      const l = c; i++;
+      let v = buf[i]; i++;
+      if(i < buf.length && _VMERGE[v + buf[i]]){ v = _VMERGE[v + buf[i]]; i++; }
+      let t = '';
+      if(i < buf.length && _L2T[buf[i]]){
+        /* 다음이 모음이면 그건 다음 글자의 초성이다 */
+        if(!(i+1 < buf.length && _JV.indexOf(buf[i+1]) >= 0)){
+          t = _L2T[buf[i]]; i++;
+          if(i < buf.length && _L2T[buf[i]] && _TMERGE[t + _L2T[buf[i]]] &&
+             !(i+1 < buf.length && _JV.indexOf(buf[i+1]) >= 0)){
+            t = _TMERGE[t + _L2T[buf[i]]]; i++;
+          }
+        }
+      }
+      out.push(_join(l, v, t)); made++;
+    } else { out.push(c); orphan++; i++; }
+  }
+  return { text: out.join(''), made: made, orphan: orphan };
+}
+
+function qwertyToHan(src){
+  const s = String(src || '');
+  let out = '', buf = [], made = 0, orphan = 0;
+  const flush = () => { const r = _assemble(buf); out += r.text; made += r.made; orphan += r.orphan; buf = []; };
+  for(const ch of s){
+    if(_QK[ch]) buf.push(_QK[ch]);
+    else { flush(); out += ch; }
+  }
+  flush();
+  return { text: out, made: made, orphan: orphan };
+}
+
+/* 되돌렸을 때 «온전한 음절» 비율. 한국어를 영어로 친 글은 1.00,
+   진짜 영어 문장은 0.67 이하로 나온다(실측 25개 문장 기준). */
+function hanScore(s){
+  const r = qwertyToHan(s);
+  const total = r.made + r.orphan;
+  return total ? r.made / total : 0;
+}
+
+/* 영어로 쳐진 한글일 가능성이 «높을 때만» 알려 준다.
+   글자수 6 미만은 보지 않는다 — the→솓, and→뭉 처럼 짧은 단어가 우연히 맞는다. */
+const IME_MIN_LEN = 6, IME_MIN_SCORE = 0.85;
+function maybeKorean(src){
+  const s = String(src || '');
+  const letters = (s.match(/[A-Za-z]/g) || []).length;
+  if(letters < IME_MIN_LEN) return null;
+  if(letters / s.length < 0.6) return null;          /* 한글이 섞여 있으면 의도한 영어다 */
+  const sc = hanScore(s);
+  if(sc < IME_MIN_SCORE) return null;
+  const r = qwertyToHan(s);
+  if(r.text === s) return null;
+  return { text: r.text, score: sc };
+}
+
+/* 입력이 깨진 모드였는지 (안내 문구용) */
+function imeBroken(src){
+  const s = String(src || '');
+  if(/[ﾠ-ￜ]/.test(s)) return 'jamo';           /* 반각 자모 */
+  if(/[！-～　]/.test(s)) return 'wide';     /* 전각 */
+  return null;
+}
+
+/* ══ 🔧 깨진 질문 되살리기 ═════════════════════════════════════════════════
+   Surface Go 3 의 IME 가 모드를 잃으면 학생 질문이 깨진 채로 저장된다.
+     ﾡￜﾵﾼￆﾩﾷￜ …          반각 자모  → 규칙이 확정적이라 그냥 고치면 된다
+     ｐｕｓｈ　ｅａｃｈ        전각      → 마찬가지
+     dho qkfeork tjfh     한영전환 실패 → «진짜 영어» 일 수 있어 선생님이 판단한다
+   원문을 덮어쓰기 전에 반드시 눈으로 보고 고르게 한다. */
+let _rpList = [], _rpPick = {};
+
+function rpScan(){
+  const qs = allQuestions || [];
+  _rpList = []; _rpPick = {};
+  qs.forEach(q => {
+    const raw = String(q.text || '');
+    if(!raw) return;
+    const w = fixWidth(raw);
+    if(w !== raw){
+      _rpList.push({id:q.id, user_id:q.user_id, raw:raw, fixed:w, kind:(imeBroken(raw)==='wide'?'전각':'반각 자모'), auto:true});
+      _rpPick[q.id] = true;          /* 확정적이라 기본 선택 */
+      return;
+    }
+    const ko = maybeKorean(raw);
+    if(ko){
+      _rpList.push({id:q.id, user_id:q.user_id, raw:raw, fixed:ko.text, kind:'한영전환 실패', auto:false, score:ko.score});
+      _rpPick[q.id] = false;         /* 진짜 영어일 수 있다 — 선생님이 켠다 */
+    }
+  });
+  renderRepair();
+}
+
+function rpToggle(id){ _rpPick[id] = !_rpPick[id]; renderRepair(); }
+function rpAll(on, kind){
+  _rpList.forEach(r => { if(!kind || r.kind === kind) _rpPick[r.id] = on; });
+  renderRepair();
+}
+
+function renderRepair(){
+  const box = $('repairBody'); if(!box) return;
+  if(!_rpList.length){
+    box.innerHTML = '<div class="empty-row" style="padding:34px">✅ 깨진 질문이 없습니다.<br>' +
+      '<span style="font-size:12px;color:var(--ink3)">위 필터와 상관없이 전체 질문을 검사합니다. ' +
+      '아직 안 눌러 보셨다면 «🔍 검사하기» 를 누르세요.</span></div>';
+    return;
+  }
+  const pm = profileMap();
+  const n = Object.keys(_rpPick).filter(k => _rpPick[k]).length;
+  const auto = _rpList.filter(r => r.auto).length, ask = _rpList.length - auto;
+
+  let h = '<div class="rp-top">' +
+    '<b>' + _rpList.length + '건</b> 발견 — 전각·반각 <b>' + auto + '</b>건(확실), 한영전환 <b>' + ask + '</b>건(확인 필요)' +
+    '<div class="rp-acts">' +
+      '<button class="st-nav" onclick="rpAll(true)">전부 선택</button>' +
+      '<button class="st-nav" onclick="rpAll(false)">전부 해제</button>' +
+      '<button class="st-nav" onclick="rpAll(true,&quot;한영전환 실패&quot;)">한영전환만 선택</button>' +
+      '<button class="st-nav primary" onclick="rpApply()">✅ 선택한 ' + n + '건 고치기</button>' +
+    '</div></div>';
+
+  h += _rpList.map(r => {
+    const p = pm[r.user_id];
+    const who = p ? esc(whoLabel(p)) : '?';
+    const on = _rpPick[r.id];
+    return '<label class="rp-row' + (on ? ' on' : '') + '">' +
+      '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="rpToggle(' + r.id + ')">' +
+      '<div class="rp-main">' +
+        '<div class="rp-meta"><span class="rp-kind ' + (r.auto ? 'auto' : 'ask') + '">' + r.kind + '</span>' + who +
+          (r.score ? ' <span style="opacity:.6">확신도 ' + r.score.toFixed(2) + '</span>' : '') + '</div>' +
+        '<div class="rp-raw">' + esc(r.raw) + '</div>' +
+        '<div class="rp-fix">→ ' + esc(r.fixed) + '</div>' +
+      '</div></label>';
+  }).join('');
+  box.innerHTML = h;
+}
+
+async function rpApply(){
+  const todo = _rpList.filter(r => _rpPick[r.id]);
+  if(!todo.length){ alert('고칠 항목을 선택해 주세요.'); return; }
+  if(!confirm('선택한 ' + todo.length + '건을 고칠까요?\n\n· 전각·반각은 규칙이 확실합니다\n' +
+              '· 한영전환 건은 화면에 보이는 결과 그대로 저장됩니다\n\n원래 글로 되돌릴 수는 없습니다.')) return;
+
+  let ok = 0, fail = 0, denied = 0;
+  for(const r of todo){
+    const {data, error} = await sb.from('questions')
+      .update({text: r.fixed}).eq('id', r.id).select('id');
+    if(error){ fail++; continue; }
+    if(!data || !data.length){ denied++; continue; }
+    ok++;
+    const q = (allQuestions || []).find(x => x.id === r.id);
+    if(q) q.text = r.fixed;
+  }
+  if(denied){ await notTeacherAlert('질문 고치기'); }
+  else alert('✅ ' + ok + '건을 고쳤어요.' + (fail ? '\n❌ 실패 ' + fail + '건' : ''));
+  rpScan();
+  applyFilters();
+}
+
 let _boardMode = 'board';
 let _boardUnit = null;       // null = 전체, 아니면 단원 키('__none__' 포함)
 let _mapNodeKeys = [];       // 마인드맵 노드 인덱스 → 단원 키
@@ -2627,6 +2887,7 @@ function switchView(view){
   $('viewSelfcheck').style.display = view === 'selfcheck' ? '' : 'none';
   $('viewBoard').style.display = view === 'board' ? '' : 'none';
   $('viewStamp').style.display = view === 'stamp' ? '' : 'none';
+  $('viewRepair').style.display = view === 'repair' ? '' : 'none';
   $('viewGrowth').style.display = view === 'growth' ? '' : 'none';
   /* 빠른 피드백에 들어올 때만 처음으로 되돌린다. 필터를 바꿔도 보던 자리를 지킨다. */
   if(view === 'stamp'){ _stIdx = 0; _stDone = 0; }
