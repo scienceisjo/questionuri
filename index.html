@@ -2974,9 +2974,11 @@ const MC_QUOTES = [
    chkQ 는 세 가지로 반려한다. 이유마다 푸는 법이 다른데 지금은 한 줄만 떴다.
    처방 문구는 새로 쓰지 않았다 — 🆘 안에 이미 학생 말로 써 둔 것을 여기로 옮겼다. */
 function rejectKind(t, msg){
-  if (/짧/.test(msg)) return 'short';
-  if (/의미/.test(msg)) return 'noise';
-  return 'shape';   /* "왜~", "어떻게~" 형태로 적어봐요 */
+  /* chkQ 가 «질문 모양»(왜·어떻게·?) 을 더 이상 안 따진다 — 디벗 입력기가 깨진
+     학생은 스스로 고칠 수 없는 벽이었다. 그래서 남은 거절 사유는 둘뿐이다.
+     여기 분류를 안 바꾸면 둘 다 «shape» 로 떨어져서, 없앤 그 화면이 다시 나온다. */
+  if (/짧|더 적어/.test(msg)) return 'short';
+  return 'noise';
 }
 
 /* 반려 안내를 버튼까지 담아 그린다. inpId 는 지금 쓰고 있는 입력칸. */
@@ -2990,14 +2992,10 @@ function rejectHTML(kind, t, inpId){
   if (kind === 'short') {
     h = '🤔 지금 <b>' + t.length + '글자</b>예요. 한 마디만 더 붙여볼래요?';
     tip = btn('🆘 안 떠올라요', 'openStuck()');
-  } else if (kind === 'noise') {
-    h = '😅 이건 낙서 같아요. <b>진짜 궁금한 것</b> 하나만요.';
-    tip = btn('🆘 안 떠올라요', 'openStuck()');
   } else {
-    h = '🤔 아직 <b>질문 모양</b>이 아니에요. 틀린 게 아니에요.';
-    tip = btn('끝에 «?» 붙이기', 'rjFix(' + q + inpId + q + ',' + q + 'q' + q + ')') +
-          btn('앞에 «왜» 붙이기', 'rjFix(' + q + inpId + q + ',' + q + 'why' + q + ')') +
-          btn('왜 막혔는지 보기', 'openStuck();setTimeout(function(){showStuck(4);},60)');
+    /* 낙서·입력기 깨짐. «틀렸다» 가 아니라 «다시 한 번» 으로 말한다. */
+    h = '😅 글자가 이상하게 들어갔어요. <b>다시 한 번</b> 적어볼래요?';
+    tip = btn('🆘 안 떠올라요', 'openStuck()');
   }
   return '<div class="rj-t">' + h + '</div>' +
          '<div class="rj-btns">' + tip + '</div>' +
