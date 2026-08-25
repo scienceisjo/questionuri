@@ -2536,7 +2536,11 @@ function hanScore(s){
 
 /* 영어로 쳐진 한글일 가능성이 «높을 때만» 알려 준다.
    글자수 6 미만은 보지 않는다 — the→솓, and→뭉 처럼 짧은 단어가 우연히 맞는다. */
-const IME_MIN_LEN = 6, IME_MIN_SCORE = 0.85;
+/* 임계값 근거 — 실측 (진짜 영어 29문장 vs 영어로 친 한글 8문장)
+     진짜 영어      최고 0.67  (electricity and magnetism)
+     영어로 친 한글  최저 0.83  (오타 있는 실제 학생 문장)
+   0.75 면 양쪽 다 0건. 0.85 로 조였더니 오타 있는 한글을 놓쳤다. */
+const IME_MIN_LEN = 6, IME_MIN_SCORE = 0.75;
 function maybeKorean(src){
   const s = String(src || '');
   const letters = (s.match(/[A-Za-z]/g) || []).length;
