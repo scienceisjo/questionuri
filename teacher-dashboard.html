@@ -740,6 +740,8 @@ body.print-report-mode .dd-overlay{display:none !important}
 .rp-kind.ask{background:#FFF3E0;color:#EF6C00}
 .rp-raw{font-size:12.5px;color:var(--ink3);word-break:break-all;line-height:1.5}
 .rp-fix{font-size:14px;color:var(--ink);font-weight:700;margin-top:3px;line-height:1.5;word-break:keep-all}
+.dd-q-ctrl-btn.danger{color:#B3261E;border-color:#F0B4AE}
+.dd-q-ctrl-btn.danger:hover{background:#FDECEA}
 </style>
 </head>
 <body>
@@ -2312,6 +2314,19 @@ async function stUndo(){
   toast(L.prev ? '이전 도장으로 되돌렸어요' : '도장을 취소했어요');
   renderStampView();
 }
+/* 빠른 피드백에서 바로 지우기 — 남발된 질문은 대개 여기서 눈에 띈다 */
+async function stDelete(){
+  const id = _stQueue[_stIdx];
+  if(id == null) return;
+  const q = qById(id);
+  await delQuestion(id, q && q.text);
+  if(!qById(id)){                       /* 실제로 지워졌으면 큐에서도 빼고 다음 장 */
+    _stQueue.splice(_stIdx, 1);
+    if(_stIdx >= _stQueue.length) _stIdx = Math.max(0, _stQueue.length - 1);
+    renderStampView();
+  }
+}
+
 async function stClear(){
   const id = _stQueue[_stIdx];
   if(id == null) return;
@@ -2391,6 +2406,7 @@ function renderStampView(){
   h += '<div class="st-foot">' +
        '<button class="st-nav" onclick="stGo(-1)" ' + (_stIdx === 0 ? 'disabled' : '') + '>← 이전</button>' +
        '<button class="st-nav" onclick="stNext()">건너뛰기 (Space)</button>' +
+       '<button class="st-nav danger" onclick="stDelete()">🧹 지우기</button>' +
        (st ? '<button class="st-nav danger" onclick="stClear()">✕ 이 도장 취소</button>' : '') +
        (_stLast ? '<button class="st-nav danger" onclick="stUndo()">↩ 방금 찍은 것 취소' +
                   (STAMP_BY[_stLast.key] ? ' (' + STAMP_BY[_stLast.key].e + ')' : '') + '</button>' : '') +
@@ -2567,6 +2583,74 @@ function imeBroken(src){
      ｐｕｓｈ　ｅａｃｈ        전각      → 마찬가지
      dho qkfeork tjfh     한영전환 실패 → «진짜 영어» 일 수 있어 선생님이 판단한다
    원문을 덮어쓰기 전에 반드시 눈으로 보고 고르게 한다. */
+/* ══ 🧹 질문 지우기 · 도토리 되돌리기 ══════════════════════════════════════
+   1주일 써 보니 «남발된 질문» 을 치울 방법이 없었다. questions 에 교사용
+   DELETE 정책 자체가 없었기 때문(8_교사권한_차시제한.sql 에서 추가).
+
+   나무 «성장 단계» 는 따로 되돌릴 것이 없다 — 저장된 값이 아니라
+   질문 수에서 계산된다(lv = min(floor(질문수/2)+1, 10)). 질문을 지우면
+   나무가 저절로 작아진다. 이미 써버린 도토리만 따로 손보면 된다. */
+async function delQuestion(id, txt){
+  const NL = String.fromCharCode(10);   /* 줄바꿈 — 이스케이프를 안 써서 안전하다 */
+  const q = qById(id);
+  const short = (txt || (q && q.text) || '').slice(0, 40);
+  const ask = [
+    '이 질문을 지울까요?', '',
+    '「' + short + '」', '',
+    '· 되살릴 수 없습니다',
+    '· 학생 나무가 그만큼 작아집니다',
+    '· 무엇을 지웠는지는 기록에 남습니다'
+  ].join(NL);
+  if(!confirm(ask)) return;
+
+  const take = confirm([
+    '이 질문으로 받은 도토리도 되가져올까요?', '',
+    '확인 = 도토리 1개 회수 (남발한 경우)',
+    '취소 = 도토리는 그대로 (실수로 지우는 경우)'
+  ].join(NL));
+
+  try{
+    const {data, error} = await sb.rpc('teacher_delete_question',
+                                       {p_id: id, p_reclaim_seeds: take ? 1 : 0});
+    if(error) throw error;
+    const r = Array.isArray(data) ? data[0] : data;
+    /* 메모리에서도 치운다 — 안 하면 화면에 남아 있다 */
+    [allQuestions, filteredQuestions, currentDrilldown && currentDrilldown.questions]
+      .forEach(arr => { if(!arr) return;
+        const i = arr.findIndex(x => x.id === id); if(i >= 0) arr.splice(i, 1); });
+    toast('🧹 지웠어요' + (take ? ' (🌰 −1)' : '') +
+          (r && r.seeds_after != null ? ' · 남은 도토리 ' + r.seeds_after : ''));
+    applyFilters();
+  }catch(e){
+    const m = String(e && e.message || '');
+    if(m.indexOf('teacher_delete_question') >= 0 || m.indexOf('does not exist') >= 0 ||
+       m.indexOf('schema cache') >= 0){
+      alert(['아직 준비가 안 됐어요.', '',
+             'Supabase → SQL Editor 에서',
+             '8_교사권한_차시제한.sql 을 한 번 실행해 주세요.'].join(NL));
+    } else alert('삭제 실패: ' + m);
+  }
+}
+/* 도토리 직접 조정 — 이미 상점에서 써버린 뒤에도 잔액을 깎을 수 있다 */
+async function adjustSeeds(studentId, studentName){
+  const NL = String.fromCharCode(10);
+  const msg = [
+    '🌰 도토리 조정 — ' + (studentName || '학생'), '',
+    '더할 만큼은 그냥 숫자, 뺄 만큼은 −를 붙여 주세요.',
+    '예)  -5   또는   3'
+  ].join(NL);
+  const s = prompt(msg, '-1');
+  if(s === null) return;
+  const n = parseInt(String(s).trim(), 10);
+  if(!n){ if(String(s).trim()) alert('숫자를 넣어 주세요'); return; }
+  try{
+    const {data, error} = await sb.rpc('teacher_adjust_seeds',
+                                       {p_student: studentId, p_delta: n});
+    if(error) throw error;
+    alert('🌰 도토리를 ' + (n > 0 ? '+' + n : n) + ' 했어요.' + NL + '남은 도토리: ' + data);
+  }catch(e){ alert('실패: ' + (e && e.message || e)); }
+}
+
 let _rpList = [], _rpPick = {};
 
 function rpScan(){
@@ -4297,6 +4381,7 @@ function filterDDQs(mode){
         <div class="dd-q-ctrl">
           <button class="dd-q-ctrl-btn" onclick="toggleQEd('nudge',${q.id})">🌿 되묻기${q.teacher_nudge?' ✓':''}</button>
           <button class="dd-q-ctrl-btn" onclick="toggleQEd('unit',${q.id})">📑 단원${q.unit?' ✓':''}</button>
+          <button class="dd-q-ctrl-btn danger" onclick="delQuestion(${q.id})">🧹 지우기</button>
         </div>
         <div class="dd-q-editor" id="nudgeEd-${q.id}" style="display:none">
           <textarea id="nudgeTx-${q.id}" placeholder="답이 아니라 '더 깊은 질문'으로 되물어 보세요. 예: 좋은 질문! 그럼 ~라면 어떻게 될까?">${esc(q.teacher_nudge||'')}</textarea>

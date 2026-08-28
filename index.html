@@ -5880,6 +5880,36 @@ function nextStepHTML(q){
 
 function hideNext(qid){ _nextHidden[qid] = 1; renderQs(); }
 
+/* ── 📚 차시당 제한 ───────────────────────────────────────────────────────
+   하루 총량은 «그날 전체» 를 막는 그물, 차시당은 «한 시간에 몰아치는 것» 을
+   막는 그물이다. 자료를 보고 심는 질문에는 그 자료의 차시(unit)가 붙는다.
+   차시가 없는 질문(그냥 심기)은 하루 총량만 적용된다.
+   서버가 센다 — 지우고 다시 심어도 총량은 그대로라 우회가 무의미하다. */
+async function unitBlocked(unit){
+  const cap = (S.quota && S.quota.ok) ? (S.quota.unitCap|0) : 0;
+  if(!unit || cap <= 0) return null;
+  try{
+    const {data, error} = await sb.rpc('my_unit_count', {p_unit: unit});
+    if(error) return null;                 /* 못 세면 통과 — 수업을 막지 않는다 */
+    const n = (typeof data === 'number') ? data : (data && data[0]) || 0;
+    return (n >= cap) ? {n:n, cap:cap} : null;
+  }catch(e){ return null; }
+}
+
+function showUnitFull(msgId, unit, info){
+  const m = $(msgId); if(!m) return;
+  const code = (typeof unitShort === 'function') ? unitShort(unit) : unit;
+  m.innerHTML =
+    '<div class="qf-t">📚 이 차시에는 ' + info.cap + '개까지예요</div>' +
+    '<div class="qf-b"><b>' + esc(code) + '</b> 에 이미 ' + info.n + '개를 심었어요.<br>' +
+      '새로 심는 대신, <b>가장 궁금한 질문 하나를 키워</b> 보면 어때요? ' +
+      '질문 카드의 <b>🌿+</b> 를 누르면 한 걸음 더 갈 수 있어요.</div>' +
+    '<div class="qf-n">다른 차시 자료에는 새로 심을 수 있어요.</div>';
+  m.className = (msgId === 'msMsg' ? 'ms-msg ' : 'q-msg ') + 'err qf';
+  m.style.display = '';
+  if(typeof shk === 'function') shk(m);
+}
+
 /* ── 📚 차시로 골라 보기 ───────────────────────────────────────────────────
    반마다 수업 날짜가 달라서 «오늘 올린 것» 으로 묶으면 매 반마다 다시 올려야 했다.
    올라온 자료를 차시(unit)로 묶어 두고, 선생님이 «2-7-1-1 누르세요» 하면 된다.
@@ -6457,7 +6487,8 @@ async function fetchQuota(){
     if(!r) throw new Error('empty');
     S.quota = { ok:true, day:r.kst_day,
       planted:r.planted|0, after:r.planted_after|0, grown:r.grown|0,
-      seeds:r.seeds|0, newCap:r.new_per_day|0, seedCap:r.seeds_per_day|0 };
+      seeds:r.seeds|0, newCap:r.new_per_day|0, seedCap:r.seeds_per_day|0,
+      unitCap:(r.per_unit != null ? r.per_unit|0 : 0) };
   }catch(e){
     /* 7_하루제한.sql 을 아직 안 돌렸거나 네트워크가 튄 경우 — 제한을 걸지 않는다 */
     S.quota = { ok:false };
@@ -6880,6 +6911,12 @@ async function addQ(ctx){
   /* 하루 제한 — 서버가 판정한다. 새로고침·다른 기기·삭제 우회에 다 면역이다. */
   await fetchQuota();
   if(quotaBlocked()){ showQuotaFull(_msgId); inp.focus(); return; }
+
+  /* 차시당 제한 — 자료를 보고 심는 질문에는 그 자료의 차시가 붙는다 */
+  const _mat0  = _pendingMaterialId ? (_materials||[]).find(m => m.id === _pendingMaterialId) : null;
+  const _unit0 = (_mat0 && _mat0.unit) ? _mat0.unit : null;
+  const _uFull = await unitBlocked(_unit0);
+  if(_uFull){ showUnitFull(_msgId, _unit0, _uFull); inp.focus(); return; }
 
   /* 같은 질문 또 심기 — «왜 그럴까?» 붙여넣기가 여기서 걸린다 */
   const _dup = findDupQ(t);
