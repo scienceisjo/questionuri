@@ -2129,7 +2129,9 @@ function renderLiveBoard(qs){
   const pm = (typeof profileMap==='function') ? profileMap() : {};
   board.innerHTML = qs.map(q=>{
     const p=pm[q.user_id];
-    const who = q.is_anonymous ? '🕊 익명' : whoLabel(p);
+    /* ⚠️ 이 화면은 전자칠판에 그대로 뜬다. 실명·번호를 띄우면 교실 뒤에서도
+       전교생 학번이 읽힌다. 반까지만 — 누구인지는 대시보드에서 본다. */
+    const who = q.is_anonymous ? '🕊 익명' : (p ? p.grade + '-' + p.class_no : '');
     const starred = q.starred;
     return `<div class="live-qcard${starred?' starred':''}">
       <div class="live-qcard-txt">${esc(q.text)}</div>
@@ -2632,6 +2634,25 @@ async function delQuestion(id, txt){
   }
 }
 /* 도토리 직접 조정 — 이미 상점에서 써버린 뒤에도 잔액을 깎을 수 있다 */
+/* 질문을 잘못 지웠거나 결석 보충인 학생에게 오늘 «심을 칸» 을 돌려준다.
+   teacher_refund_slot RPC 는 만들어 놨는데 부르는 곳이 없었다. */
+async function refundSlot(studentId, studentName){
+  const NL = String.fromCharCode(10);
+  const s = prompt([
+    '🌱 오늘 심을 칸 돌려주기 — ' + (studentName || '학생'), '',
+    '몇 칸을 돌려줄까요? (보통 1)'
+  ].join(NL), '1');
+  if(s === null) return;
+  const n = parseInt(String(s).trim(), 10);
+  if(!n || n < 1){ if(String(s).trim()) alert('1 이상 숫자를 넣어 주세요'); return; }
+  try{
+    const {data, error} = await sb.rpc('teacher_refund_slot',
+                                       {p_student: studentId, p_n: n});
+    if(error) throw error;
+    alert('🌱 ' + n + '칸 돌려줬어요.' + NL + '오늘 심은 것으로 세는 수: ' + data);
+  }catch(e){ alert('실패: ' + (e && e.message || e)); }
+}
+
 async function adjustSeeds(studentId, studentName){
   const NL = String.fromCharCode(10);
   const msg = [
