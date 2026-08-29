@@ -3894,12 +3894,40 @@ async function joinByCode(){
     const {error:uerr}=await sb.from('profiles').update({teacher_ids:arr, teacher_id:arr.length?arr[0]:null}).eq('id',S.user.id);
     if(uerr){ S.myTeacherIds.delete(tid); setMsg('참여 실패: '+uerr.message,false); return; }
     if(!(S.teacherList||[]).find(x=>Number(x.id)===tid)) (S.teacherList=S.teacherList||[]).push(t);
-    setMsg(`✅ ${t.name} 선생님 수업에 참여했어요!`,true);
+    /* 그 선생님 과목으로 옮겨 준다 — 안 하면 질문이 «통합» 에 쌓여서
+       선생님이 과목으로 걸렀을 때 하나도 안 보인다. */
+    const _sid = await ensureTeacherSubject(t);
+    setMsg(`✅ ${t.name} 선생님 수업에 참여했어요!` + (_sid ? ` (${t.subject_label||''} 과목으로 이동)` : ''),true);
     toast(`${t.name} 선생님 수업에 참여했어요!`);
-    renderSubTabs();
+    renderSubTabs(); render();
     setTimeout(()=>{ closeJoinClass(); if($('matAreaList')) renderMaterials(); }, 1200);
   }catch(err){ if(btn) btn.disabled=false; setMsg('오류: '+(err.message||''),false); }
 }
+/* 선생님 코드로 참여하면 그 선생님 과목을 만들어 주고 그 과목으로 옮긴다.
+   이게 없으면 학생 질문이 «통합» 에 쌓이고, 교사가 과목으로 걸러도 안 나온다. */
+async function ensureTeacherSubject(t){
+  if(!t || !t.subject_id) return null;
+  const label = t.subject_label || t.subject_id;
+  /* 이미 같은 이름의 과목이 있으면 그걸 쓴다 (id 는 계정마다 달라서 이름으로 본다) */
+  const has = (S.subjects || []).find(s => s.label === label);
+  if(has){ S.activeSub = has.id; return has.id; }
+  const uid = await freshUid();
+  if(!uid) return null;
+  /* subjects.id 는 학교 전체에서 하나뿐인 PK 라 계정마다 다른 id 를 만든다 */
+  const id = t.subject_id + '_' + String(uid).split('-').join('').slice(0, 12);
+  const row = { id: id, user_id: uid, label: label,
+                icon: t.subject_icon || '📚', color: '#5DB86E',
+                sort_order: (S.subjects || []).length + 1 };
+  const {error} = await sb.from('subjects').insert(row);
+  if(error && String(error.message||'').indexOf('duplicate') < 0) return null;
+  if(!S.subjects) S.subjects = [];
+  if(!S.subjects.find(s => s.id === id)) S.subjects.push(row);
+  if(!S.questions[id]) S.questions[id] = {};
+  S.activeSub = id;
+  try{ await sb.from('profiles').update({active_sub:id}).eq('id', uid); }catch(e){}
+  return id;
+}
+
 async function doChangePw(){
   const a=$('pwNew').value, b=$('pwNew2').value, m=$('pwMsg');
   const setMsg=(t,ok)=>{ if(m){ m.textContent=t; m.style.color=ok?'#2D6A3E':'#d9534f'; } };
@@ -9134,6 +9162,8 @@ async function confirmAS(){
        프리셋 id('science')를 그대로 쓰면 학교에서 딱 한 명만 성공하고, 두 번째 학생부터는
        중복 키로 «과목 추가 실패» alert 이 뜬다. 한 반이 동시에 들어오는 첫 수업에서
        그대로 터지는 자리라, 계정마다 다른 id 를 만든다. 직접 입력이 쓰는 방식과 같다. */
+    /* 여기서는 «겹치지 않는 문자열» 이면 충분해서 낡은 값이어도 상관없다.
+       실제 저장은 아래에서 freshUid() 로 다시 확인한 값을 쓴다. */
     const _uid = String(S.user && S.user.id || '').split('-').join('');
     id = p.id + '_' + (_uid ? _uid.slice(0, 12) : String(Date.now()));
     /* 중복 확인은 이름으로 한다 — 예전에 추가한 계정은 id 가 'science' 인 채로 남아 있어서
@@ -9152,11 +9182,16 @@ async function confirmAS(){
     color = ['#00BCD4','#795548','#607D8B','#FF5722','#3F51B5'][S.subjects.length%5];
   }
 
-  const {error}=await sb.from('subjects').insert({id, user_id:S.user.id, label:nm, icon, color, sort_order:S.subjects.length+1});
+  /* ⚠️ S.user.id 를 그대로 쓰면 안 된다. 토큰이 갱신되거나 다른 탭에서 다시
+     로그인하면 낡은 값이 되고, subjects 정책 with check (auth.uid() = user_id) 에
+     걸려 «new row violates row-level security policy» 가 뜬다. */
+  const uid = await freshUid();
+  if(!uid){ alert('로그인이 풀렸어요. 새로고침 후 다시 해주세요.'); return; }
+  const {error}=await sb.from('subjects').insert({id, user_id:uid, label:nm, icon, color, sort_order:S.subjects.length+1});
   if(error){alert('과목 추가 실패: '+error.message);return;}
-  S.subjects.push({id, user_id:S.user.id, label:nm, icon, color, sort_order:S.subjects.length+1});
+  S.subjects.push({id, user_id:uid, label:nm, icon, color, sort_order:S.subjects.length+1});
   S.activeSub=id;
-  await sb.from('profiles').update({active_sub:id}).eq('id',S.user.id);
+  await sb.from('profiles').update({active_sub:id}).eq('id',uid);
 
   // 🌲 새 과목에 첫 번째 나무 자동 생성
   const {data:newT, error:terr} = await sb.from('trees').insert({
