@@ -755,6 +755,11 @@ body.print-report-mode .dd-overlay{display:none !important}
 .auto{cursor:pointer;font-weight:700}
 .auto.hit{color:#2E7D32;background:#E8F5E9;border-radius:5px;padding:2px 8px}
 .auto.off{color:var(--ink3);opacity:.7}
+/* 🧹 표에서 바로 지우기 — 평소엔 눈에 안 띄고, 올리면 빨개진다 */
+.row-del{background:none;border:none;font-size:14px;cursor:pointer;padding:2px 5px;
+  border-radius:5px;opacity:.28;transition:opacity .12s,background .12s}
+tr:hover .row-del{opacity:.7}
+.row-del:hover{opacity:1;background:#FDECEA}
 </style>
 </head>
 <body>
@@ -1069,6 +1074,7 @@ body.print-report-mode .dd-overlay{display:none !important}
               <th>상태</th>
               <th>⭐</th>
               <th>날짜</th>
+              <th title="질문 지우기"></th>
             </tr></thead>
             <tbody id="questionBody"></tbody>
           </table>
@@ -3923,7 +3929,7 @@ function renderQuestions(){
   allBranches.forEach(b=>brByQ[b.question_id]=(brByQ[b.question_id]||0)+1);
 
   const body=$('questionBody');
-  if(!qs.length){ body.innerHTML='<tr><td colspan="8" class="empty-row">질문이 없습니다</td></tr>'; return; }
+  if(!qs.length){ body.innerHTML='<tr><td colspan="10" class="empty-row">질문이 없습니다</td></tr>'; return; }
 
   body.innerHTML = qs.map(q=>{
     const p=pm[q.user_id];
@@ -3945,6 +3951,7 @@ function renderQuestions(){
       <td>${status}</td>
       <td><button onclick="toggleStar(${q.id})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:2px 4px;transition:transform .15s" title="${starred?'⭐ 해제':'⭐ 명예의 전당에 올리기'}">${starred?'⭐':'☆'}</button></td>
       <td>${q.question_date||''}</td>
+      <td><button class="row-del" onclick="delQuestion(${q.id})" title="이 질문 지우기">🧹</button></td>
     </tr>`;
   }).join('');
 }
