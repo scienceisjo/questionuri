@@ -1700,6 +1700,118 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   font-size:var(--fs-xxs);font-weight:700;color:var(--tl);line-height:1.6}
 .kbd-ex span{display:block;margin-top:5px;font-size:var(--fs-sm);color:#B3261E;
   word-break:break-all;font-weight:800}
+/* ══ ✨ 질문 다듬기 ═══════════════════════════════════════════════════════ */
+.qc-was{font-size:11.5px;color:var(--tl);margin:4px 0 2px;padding:5px 9px;background:var(--bg2,#F7F7F4);
+  border-left:3px solid var(--line,#E5E3DC);border-radius:0 6px 6px 0;line-height:1.5}
+.qc-was span{font-weight:800;opacity:.75;margin-right:5px}
+.qc-pick-b{color:#E8A33D}
+.qc-rf-badge{color:#2E7D32;font-weight:700}
+.qc-solved-b{color:#6A4FBF;font-weight:800}
+.qb-rf.done{background:#E8F5E9;border-color:#A5D6A7}
+.qb-solve.done{background:#EDE7F6;border-color:#B39DDB}
+.qb-pick.on{background:#FFF3E0;border-color:#F0B357}
+.qc-refine{margin-top:10px;padding:14px;border:1.5px solid #CFE8D4;border-radius:12px;background:#FBFEFB}
+.rf-hdr{font-size:14.5px;font-weight:800;color:#2E7D32;margin-bottom:3px}
+.rf-sub{font-size:11.5px;color:var(--tl);margin-bottom:11px;line-height:1.55}
+.rf-orig{font-size:12.5px;color:var(--tx);background:#fff;border:1px solid var(--line,#E5E3DC);
+  border-radius:8px;padding:9px 11px;margin-bottom:11px;line-height:1.55}
+.rf-orig-l{display:inline-block;font-size:10px;font-weight:800;color:var(--tl);
+  background:var(--bg2,#F2F1EC);border-radius:4px;padding:1px 6px;margin-right:7px}
+.rf-tools{background:#fff;border:1px solid #DCEEDF;border-radius:9px;padding:9px 10px;margin-bottom:11px}
+.rf-tools-h{font-size:11px;font-weight:800;color:#2E7D32;margin-bottom:7px}
+.rf-tool{display:flex;gap:8px;align-items:flex-start;padding:4px 0}
+.rf-tool-n{flex:none;width:17px;height:17px;border-radius:50%;background:#E8F5E9;color:#2E7D32;
+  font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.rf-tool b{display:block;font-size:12px;color:var(--tx);font-weight:700}
+.rf-tool small{display:block;font-size:10.5px;color:var(--tl);line-height:1.45;margin-top:1px}
+.rf-text{width:100%;min-height:74px;padding:11px;border:1.5px solid #A5D6A7;border-radius:9px;
+  font-size:13.5px;font-family:inherit;line-height:1.6;resize:vertical;background:#fff}
+.rf-text:focus{outline:none;border-color:#4CAF50}
+.rf-hint{font-size:10.5px;color:var(--tl);text-align:right;margin:3px 2px 11px;min-height:13px}
+.rf-chks-h{font-size:11.5px;font-weight:800;color:var(--tx);margin-bottom:7px}
+.rf-chks-h small{font-weight:600;color:var(--tl);font-size:10px}
+.rf-chks{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.rf-chk{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid var(--line,#E5E3DC);
+  border-radius:8px;background:#fff;cursor:pointer;transition:border-color .12s,background .12s}
+.rf-chk:hover{border-color:#A5D6A7}
+.rf-chk.on{border-color:#4CAF50;background:#F1F8F2}
+.rf-box{flex:none;width:17px;height:17px;border:1.5px solid var(--line,#D8D5CC);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;margin-top:1px}
+.rf-chk.on .rf-box{background:#4CAF50;border-color:#4CAF50}
+.rf-chk-l b{display:block;font-size:12px;font-weight:700;color:var(--tx)}
+.rf-chk-l small{display:block;font-size:10.5px;color:var(--tl);line-height:1.45;margin-top:1px}
+.rf-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.rf-count{font-size:12px;font-weight:800;color:var(--tl)}
+.rf-count.good{color:#2E7D32}
+.rf-btns{display:flex;gap:6px;flex-wrap:wrap}
+.rf-cancel,.rf-undo{padding:8px 13px;border-radius:8px;border:1px solid var(--line,#E5E3DC);
+  background:#fff;font-size:12px;font-weight:700;color:var(--tl);cursor:pointer;font-family:inherit}
+.rf-save{padding:8px 15px;border-radius:8px;border:none;background:#4CAF50;color:#fff;
+  font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.rf-save:hover{background:#43A047}
+/* ══ 🔬 스스로 해결하기 ═══════════════════════════════════════════════════ */
+.qc-solve{margin-top:10px;padding:14px;border:1.5px solid #D6CCEC;border-radius:12px;background:#FCFBFE}
+.sv-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sv-hdr span{font-size:14.5px;font-weight:800;color:#5E35B1}
+.sv-x{background:none;border:none;font-size:14px;color:var(--tl);cursor:pointer;padding:2px 6px}
+.sv-dots{display:flex;align-items:center;gap:0;margin-bottom:9px}
+.sv-dot{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line,#E5E3DC);
+  background:#fff;font-size:11px;font-weight:800;color:var(--tl);cursor:pointer;font-family:inherit}
+.sv-dot.done{background:#EDE7F6;border-color:#B39DDB;color:#5E35B1}
+.sv-dot.on{background:#5E35B1;border-color:#5E35B1;color:#fff}
+.sv-dline{flex:1;height:1.5px;background:var(--line,#E5E3DC)}
+.sv-step{font-size:13px;font-weight:800;color:#5E35B1;margin-bottom:10px}
+.sv-warn{font-size:11.5px;font-weight:700;color:#B71C1C;background:#FFEBEE;border-radius:8px;
+  padding:8px 11px;margin-bottom:10px;line-height:1.5}
+.sv-ok{font-size:11.5px;font-weight:700;color:#2E7D32;background:#E8F5E9;border-radius:8px;
+  padding:8px 11px;margin-bottom:10px;line-height:1.5}
+.sv-q{font-size:13px;font-weight:700;color:var(--tx);background:#fff;border:1px solid #D6CCEC;
+  border-radius:8px;padding:9px 11px;margin-bottom:11px;line-height:1.55}
+.sv-l{font-size:12px;font-weight:800;color:var(--tx);margin:11px 0 5px}
+.sv-l small{font-weight:600;color:var(--tl);font-size:10.5px}
+.sv-hows{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px}
+.sv-how{padding:8px 10px;border:1.5px solid var(--line,#E5E3DC);border-radius:9px;background:#fff;cursor:pointer}
+.sv-how:hover{border-color:#B39DDB}
+.sv-how.on{border-color:#7E57C2;background:#F3EFFB}
+.sv-how b{display:block;font-size:12.5px;color:var(--tx)}
+.sv-how small{display:block;font-size:10px;color:var(--tl);margin-top:1px}
+.sv-in{width:100%;padding:9px 11px;border:1.5px solid var(--line,#E5E3DC);border-radius:8px;
+  font-size:12.5px;font-family:inherit;background:#fff}
+.sv-ta{width:100%;min-height:56px;padding:9px 11px;border:1.5px solid var(--line,#E5E3DC);
+  border-radius:8px;font-size:12.5px;font-family:inherit;line-height:1.6;resize:vertical;background:#fff}
+.sv-ta.tall{min-height:120px}
+.sv-in:focus,.sv-ta:focus{outline:none;border-color:#7E57C2}
+.sv-prompt{width:100%;min-height:230px;padding:11px;border:1.5px solid #B39DDB;border-radius:9px;
+  font-size:12px;font-family:inherit;line-height:1.65;resize:vertical;background:#fff;color:var(--tx)}
+.sv-tip{font-size:11px;color:var(--tl);background:var(--bg2,#F7F7F4);border-radius:7px;
+  padding:7px 10px;margin-top:8px;line-height:1.55}
+.sv-vs{display:flex;gap:6px;flex-wrap:wrap}
+.sv-v{padding:8px 13px;border-radius:999px;border:1.5px solid var(--line,#E5E3DC);background:#fff;
+  font-size:12px;font-weight:700;color:var(--tl);cursor:pointer;font-family:inherit}
+.sv-v.on{border-color:#7E57C2;background:#F3EFFB;color:#5E35B1}
+.sv-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:13px;justify-content:flex-end}
+.sv-back,.sv-ghost{padding:9px 13px;border-radius:8px;border:1px solid var(--line,#E5E3DC);background:#fff;
+  font-size:12px;font-weight:700;color:var(--tl);cursor:pointer;font-family:inherit}
+.sv-copy{padding:9px 14px;border-radius:8px;border:1.5px solid #7E57C2;background:#fff;
+  font-size:12px;font-weight:800;color:#5E35B1;cursor:pointer;font-family:inherit}
+.sv-next,.sv-done{padding:9px 16px;border-radius:8px;border:none;background:#5E35B1;color:#fff;
+  font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.sv-next:hover,.sv-done:hover{background:#4527A0}
+.sv-done{background:#2E7D32}
+.sv-done:hover{background:#1B5E20}
+/* ══ ✨ 한 끗 차이 · 질문 유형 예시 ═════════════════════════════════════ */
+.gq-ex{margin-top:5px;font-size:11px;color:var(--tl);font-style:italic}
+.ba-item{margin-bottom:13px;padding:11px;border:1px solid var(--line,#E5E3DC);border-radius:10px;background:#fff}
+.ba-tag{font-size:10.5px;font-weight:800;color:#5E35B1;margin-bottom:7px}
+.ba-b,.ba-a{font-size:12.5px;line-height:1.55;padding:7px 9px;border-radius:7px;margin-bottom:5px}
+.ba-b{background:var(--bg2,#F5F4F0);color:var(--tl)}
+.ba-a{background:#F1F8F2;color:var(--tx);font-weight:600;margin-bottom:0}
+.ba-b span,.ba-a span{display:inline-block;font-size:9.5px;font-weight:800;border-radius:4px;
+  padding:1px 6px;margin-right:6px;vertical-align:1px}
+.ba-b span{background:#E0DED6;color:#6B675C}
+.ba-a span{background:#4CAF50;color:#fff}
+.rf-link{color:#5E35B1;font-weight:800;cursor:pointer;font-size:10.5px;margin-left:4px}
+.rf-link:hover{text-decoration:underline}
 </style>
 </head>
 <body data-theme="cute">
@@ -1813,6 +1925,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
     <button class="mc-rank-btn" onclick="openMCRank()">🏆 우리 학교 랭킹 보기</button>
 
     <div class="mc-link-row">
+      <button class="mc-link-btn" onclick="openMCInfo('ba')">✨ 한 끗<br>차이</button>
       <button class="mc-link-btn" onclick="openMCInfo('how')">💡 질문하는<br>방법</button>
       <button class="mc-link-btn" onclick="openBaskets()">🧺 질문의<br>세 종류</button>
       <button class="mc-link-btn" onclick="openMCInfo('quote')">📜 질문에<br>대한 명언</button>
@@ -1900,6 +2013,9 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
         <button class="more-item" onclick="swMore('deco')"><span>🎨</span><b>꾸미기</b><small>내 나무 꾸미기</small></button>
         <button class="more-item" onclick="openMCInfo('seven')"><span>🎯</span><b>좋은 질문이란</b><small>7가지 특성</small></button>
         <button class="more-item" onclick="openBaskets()"><span>🧺</span><b>질문의 세 종류</b><small>답을 찾는 방법이 달라요</small></button>
+        <button class="more-item" onclick="openMCInfo('inq')"><span>✅</span><b>풀 수 있는 질문인가</b><small>탐구 체크리스트 6</small></button>
+        <button class="more-item" onclick="openMCInfo('kind')"><span>🏷️</span><b>질문의 네 종류</b><small>분석·비판·적용·상상</small></button>
+        <button class="more-item" onclick="openMCInfo('ba')"><span>✨</span><b>한 끗 차이</b><small>우리 반 진짜 예시</small></button>
         <button class="more-item" onclick="openMCInfo('quote')"><span>📜</span><b>질문에 대한 명언</b><small>읽어볼 만한 말들</small></button>
         <button class="more-item" onclick="openPwChange()"><span>🔑</span><b>비밀번호 변경</b><small>내 비밀번호 바꾸기</small></button>
       </div>
@@ -2542,6 +2658,9 @@ const S = {
   phaseFilter:null,        // 질문 목록 단계 필터: null | 'before' | 'after'
   expandParentId:null,     // 🌿 지금 '키우는 중'인 원본 질문 id (인라인 확장 작성기)
   checkId:null,            // 🎯 지금 자가체크 중인 질문 id
+  refineId:null,           // ✨ 지금 다듬는 중인 질문 id
+  solveId:null,            // 🔬 지금 해결하는 중인 질문 id
+  solveStep:1,             //    해결 단계 1~5
   harvestId:null,          // 🍎 지금 '수확(해결)' 기록 중인 질문 id
   harvestEdit:false,       // 🍎 수확 패널이 '기록 수정' 모드인지(이미 해결됨)
   lvMemory:{},             // 🎉 나무별 마지막 레벨(레벨업 연출 감지용)
@@ -2571,6 +2690,71 @@ const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','
 const EXPAND_PROMPTS = ['그래서 만약 ~라면?','왜 꼭 그래야 할까?','다른 경우에도 그럴까?','반대로 생각하면?','이건 무엇과 연결될까?','한 단계 더 들어가면?'];
 // 🔬 질문 정교화(좁히기) 비계 — 탐구가능하도록 질문을 다듬는 출발 문구(정혜승 '평가' 영역)
 const REFINE_PROMPTS = ['무엇을 바꾸고 무엇을 볼까?','어디·언제로 좁히면?','무엇과 비교하면?','어떻게 측정·조사할까?','숫자로 나타내면?','한 가지 조건만 바꾼다면?'];
+/* ══ 🧰 질문 업그레이드 도구상자 ═══════════════════════════════════════════
+   연수 자료의 «제목 다듬기» 6단계.  원문 순서를 그대로 지켰다 —
+   낱말 찾기 → 범위 좁히기 → 탐구 가능한 형태 → 탐구 목적 → 완성.
+   3번(본 것 넣기)만 우리 반 데이터를 보고 넣었다. 690개 중 절반 넘게가
+   «왜 캔이 움직일까?» 에서 멈춰 있었는데, 그 자리를 벗어나게 하는 한 수가
+   관찰을 질문 안에 집어넣는 것이었다. */
+const UP_STEPS = [
+  {n:1, ic:'🔑', t:'중요한 낱말 찾기',   d:'이 질문에서 진짜 핵심인 낱말은 뭘까? 그것만 남기고 덜어내요.'},
+  {n:2, ic:'🔎', t:'범위 좁히기',       d:'«모든 물질» 말고 «알루미늄 캔과 휴지» 처럼 딱 집어요.'},
+  {n:3, ic:'👀', t:'본 것 넣기',        d:'내가 관찰한 걸 질문 안에 넣어요. «안 닿았는데», «비비기 전에는» 처럼.'},
+  {n:4, ic:'🧪', t:'확인 방법 드러내기', d:'비교할지 관찰할지 실험할지 조사할지가 질문에 보이게 해요.'},
+  {n:5, ic:'🔀', t:'바꿀 것 정하기',    d:'무엇 하나만 바꿔볼지 정해요. «털 대신 머리카락으로» 처럼.'},
+  {n:6, ic:'✂️', t:'짧고 또렷하게',      d:'한 문장으로. 읽는 사람이 무엇을 알고 싶은지 바로 알게.'},
+];
+
+/* ══ ✅ 질문 점검 체크리스트 ══════════════════════════════════════════════
+   연수 «탐구 과제 체크리스트» 6항목.  원문은 ○ / △ / 재검토 3단계인데
+   중2 에게는 판단이 하나 더 늘 뿐이라 ○ 만 남기고 개수로 보여준다. */
+const INQ_CHECK = [
+  {n:1, ic:'🎯', t:'무엇을 알고 싶은지 분명한가', d:'누가 읽어도 무엇을 알아내려는지 바로 보이나요?'},
+  {n:2, ic:'📦', t:'필요한 것을 구할 수 있는가',   d:'재료나 자료를 실제로 구하거나 잴 수 있나요?'},
+  {n:3, ic:'🔬', t:'관찰·조사·실험·비교로 되나',   d:'넷 중 하나로라도 직접 확인할 수 있나요?'},
+  {n:4, ic:'⏱️', t:'수업 시간 안에 되는가',        d:'며칠씩 걸리지 않고 이번 시간에 해볼 만한가요?'},
+  {n:5, ic:'🔗', t:'배운 개념과 이어지는가',       d:'수업에서 배운 개념이나 원리로 설명이 되나요?'},
+  {n:6, ic:'📊', t:'정리해서 보여줄 수 있는가',    d:'표·그림·글로 결과를 남길 수 있나요?'},
+];
+
+/* ══ 🏷️ 질문의 네 종류 ═════════════════════════════════════════════════════
+   연수 «질문 유형2 — 분석·비판·적용·상상» (중학교 수준).
+   초등은 수렴/확산 둘로 나누지만 중학교는 이 네 가지를 쓴다. */
+const Q_KIND = [
+  {k:'analyze', ic:'🔍', t:'분석', d:'무엇 때문인지 쪼개어 따져보는 질문',      ex:'왜 알루미늄은 서 있는데 휴지는 바로 눕을까?'},
+  {k:'critic',  ic:'⚖️', t:'비판', d:'정말 그런지, 다른 설명은 없는지 따지는 질문', ex:'정말 마찰 때문일까? 다른 이유는 없을까?'},
+  {k:'apply',   ic:'🔧', t:'적용', d:'배운 것을 다른 데 써먹어 보는 질문',      ex:'이 원리로 먼지를 모을 수 있을까?'},
+  {k:'imagine', ic:'💭', t:'상상', d:'«만약 ~라면» 으로 조건을 바꿔보는 질문',   ex:'만약 물속에서 하면 어떻게 될까?'},
+];
+
+/* ══ 🔬 확인 방법 — 해결하기 1단계에서 고른다 ════════════════════════════ */
+const SOLVE_HOW = [
+  {k:'exp', ic:'🧪', t:'실험', d:'직접 해보고 결과를 본다'},
+  {k:'obs', ic:'👀', t:'관찰', d:'자세히 보고 기록한다'},
+  {k:'cmp', ic:'📊', t:'비교', d:'둘을 나란히 놓고 견준다'},
+  {k:'src', ic:'📚', t:'조사', d:'책·인터넷에서 찾는다'},
+];
+const PICK_MAX = 2;   /* 한 차시에 남기는 대표 질문 수 */
+/* ══ ✨ 다듬기 전 / 후 — 우리 학교 2학년이 실제로 쓴 질문 ══════════════════
+   2026-08 마찰전기 차시에서 나온 690개를 유형별로 갈라 짝지은 것이다.
+   왼쪽도 우리 반, 오른쪽도 우리 반이다. 그게 이 표의 힘이다. */
+const BEFORE_AFTER = [
+  {tag:'👀 본 것 넣기',
+   b:'왜 캔이 움직일까?',
+   a:'털가죽에 비비기 전에는 캔이 안 따라오는데, 왜 비빈 후에는 따라올까?'},
+  {tag:'🔀 바꿀 것 정하기',
+   b:'다른 물체로도 되나요',
+   a:'털 대신 다른 물체로 빨대를 비비면 실험 결과가 바뀔까?'},
+  {tag:'📏 숫자로',
+   b:'많이 문지르면 잘 올라오나?',
+   a:'더 많이 비비면 그만큼 더 멀리서도 캔을 끌어올 수 있을까?'},
+  {tag:'📊 견주기',
+   b:'왜 일어날까?',
+   a:'왜 알루미늄 호일은 서 있는데 휴지는 바로 눕을까?'},
+  {tag:'💭 예상을 밝히기',
+   b:'왜 빨대가 밀리나요',
+   a:'캔과 빨대는 끌어당기니까 빨대끼리도 끌어당길 줄 알았는데, 왜 서로 밀어낼까?'},
+];
 // 🪜 질문 만들기 비계 — 막막할 때 탭하면 입력칸에 깔리는 문장 시작틀
 const QUESTION_STEMS = ['왜 ','만약 ','어떻게 ','정말 ','무엇이 ','~와 ~는 어떻게 다를까?','~이 없다면?','왜 하필 '];
 
@@ -3502,6 +3686,31 @@ function openMCInfo(kind){
       ${GOOD_Q.map(g=>`<div class="gq-item"><div class="gq-h"><span class="gq-ic">${g.icon}</span><b>${g.n}. ${g.t}</b></div><div class="gq-d">${g.d}</div></div>`).join('')}
       <div class="gq-src">📖 제이 맥타이·그랜트 위긴스 『핵심 질문: 학생에게 이해의 문 열어주기』</div>
       <button class="mc-info-close" onclick="closeMCInfo()">알겠어요! 🌱</button>`;
+  } else if(kind === 'inq'){
+    /* 연수 «탐구 과제 체크리스트» — 좋은 질문인가(가치)와 «풀 수 있는가»(실행)는
+       다른 물음이다. 7가지 특성은 앞의 것, 이 6가지는 뒤의 것을 본다. */
+    box.innerHTML = `
+      <div class="mc-info-title">✅ 이 질문, 풀 수 있는 질문일까?</div>
+      <p class="gq-intro">7가지 특성이 <b>좋은 질문인가</b>를 본다면, 이 6가지는 <b>내가 정말 풀 수 있는가</b>를 봐요. 넷 이상 걸리면 바로 탐구할 수 있어요.</p>
+      ${INQ_CHECK.map(x=>`<div class="gq-item"><div class="gq-h"><span class="gq-ic">${x.ic}</span><b>${x.n}. ${esc(x.t)}</b></div><div class="gq-d">${esc(x.d)}</div></div>`).join('')}
+      <div class="gq-src">📖 서울특별시교육청 「학생 질문 중심 수업·평가」 — 탐구 과제 체크리스트</div>
+      <button class="mc-info-close" onclick="closeMCInfo()">알겠어요! ✅</button>`;
+  } else if(kind === 'kind'){
+    box.innerHTML = `
+      <div class="mc-info-title">🏷️ 질문에도 종류가 있어요</div>
+      <p class="gq-intro">중학교에서는 질문을 네 갈래로 봐요. <b>내 질문이 어느 쪽인지</b> 알면, 어느 쪽이 부족한지도 보여요.</p>
+      ${Q_KIND.map(k=>`<div class="gq-item"><div class="gq-h"><span class="gq-ic">${k.ic}</span><b>${esc(k.t)}</b></div><div class="gq-d">${esc(k.d)}<div class="gq-ex">예) ${esc(k.ex)}</div></div></div>`).join('')}
+      <div class="gq-src">📖 정혜승 외(2024) 「학생 질문 교육 내용 체계」 — 중학교 수준 질문 유형</div>
+      <button class="mc-info-close" onclick="closeMCInfo()">알겠어요! 🏷️</button>`;
+  } else if(kind === 'ba'){
+    box.innerHTML = `
+      <div class="mc-info-title">✨ 한 끗 차이</div>
+      <p class="gq-intro">아래는 전부 <b>우리 학교 2학년이 실제로 쓴 질문</b>이에요. 왼쪽도 우리 반, 오른쪽도 우리 반. 딱 한 군데만 고쳤어요.</p>
+      ${BEFORE_AFTER.map(x=>`<div class="ba-item"><div class="ba-tag">${x.tag}</div>
+        <div class="ba-b"><span>그냥</span>${esc(x.b)}</div>
+        <div class="ba-a"><span>한 끗 더</span>${esc(x.a)}</div></div>`).join('')}
+      <div class="gq-src">🌳 2026년 8월 · 마찰전기 차시에 심긴 690개에서</div>
+      <button class="mc-info-close" onclick="closeMCInfo()">나도 해볼래요! ✨</button>`;
   } else if(kind === 'how'){
     box.innerHTML = `
       <div class="mc-info-title">💡 좋은 질문 만드는 법</div>
@@ -3742,6 +3951,13 @@ async function bootstrapUser(){
       unit: q.unit||null,
       explore_votes: q.explore_votes||0,
       explore_voters: q.explore_voters||[],
+      /* ✨🔬 다듬기·해결 — 서버에 칸이 아직 없으면 undefined 라 그냥 null 이 된다.
+         9번 SQL 을 안 돌린 프로젝트에서도 앱이 깨지지 않게. */
+      refined_text: q.refined_text||null,
+      refine_check: q.refine_check||null,
+      refined_at: q.refined_at||null,
+      is_picked: q.is_picked||false,
+      solve: q.solve||null,
       branches:[],
     });
     qIds.push(q.id);
@@ -6217,7 +6433,8 @@ function renderQs(){
       d.innerHTML=`<div class="qc-in">
         <div style="flex:1;min-width:0">
           ${q.parent_id&&parentText[q.id]?`<div class="qc-grewfrom" title="이 질문에서 자랐어요">🌱 <span>${esc(parentText[q.id])}</span> 에서 자란 질문</div>`:''}
-          <div class="qc-t" data-math="1"><span class="qc-phase ph-${q.phase||'before'}" title="${q.phase==='after'?'수업 닫기 질문':'수업 열기 질문'}">${q.phase==='after'?'🌙':'🌅'}</span> <span class="qtype qtype-${qt.cls}" title="질문 유형: ${qt.label}">${qt.icon} ${qt.label}</span> ${escWithMath(q.text)} <span class="qc-fr" title="이 질문의 열매">${frEmoji}</span></div>
+          <div class="qc-t" data-math="1"><span class="qc-phase ph-${q.phase||'before'}" title="${q.phase==='after'?'수업 닫기 질문':'수업 열기 질문'}">${q.phase==='after'?'🌙':'🌅'}</span> <span class="qtype qtype-${qt.cls}" title="질문 유형: ${qt.label}">${qt.icon} ${qt.label}</span> ${q.is_picked?'<span class="qc-pick-b" title="이 차시의 대표 질문">⭐</span> ':''}${escWithMath(qShow(q))} <span class="qc-fr" title="이 질문의 열매">${frEmoji}</span></div>
+          ${isRefined(q)?`<div class="qc-was" title="다듬기 전 원본"><span>✨ 다듬기 전</span> ${escWithMath(q.text)}</div>`:''}
           ${tagHtml?`<div class="qc-tags">${tagHtml}</div>`:''}
           <div class="qc-d">
             <span>📅 ${q.date||''}</span>
@@ -6227,6 +6444,8 @@ function renderQs(){
             ${brCount?`<span>🌿 ${brCount}</span>`:''}
             ${childCount[q.id]?`<span class="qc-grewinto">🌳 자란 질문 ${childCount[q.id]}</span>`:''}
             ${selfCheckCount(q)?`<span class="qc-sc-badge">🎯 좋은 질문 ${selfCheckCount(q)}/7</span>`:''}
+            ${isRefined(q)?`<span class="qc-rf-badge" title="탐구 가능성 점검">✅ 통과 ${refineCount(q)}/6</span>`:''}
+            ${q.solve&&(q.solve.answer||'').trim()?'<span class="qc-solved-b">🔬 해결 완료</span>':''}
             ${q.answer_text||q.answer_files?'<span style="color:#1976D2;font-weight:700">💬 답변완료</span>':''}
             ${(q.peer_answers||[]).length?`<button class="qc-peer-b" onclick="togPeer(${q.id})">💬 친구가 남긴 답 ${q.peer_answers.length}</button>`:''}            ${q.answer_source&&basketLabel(q.answer_source)?`<span class="qc-src-b" title="어느 바구니로 골랐는지">${basketLabel(q.answer_source)}</span>`:''}
           </div>
@@ -6244,6 +6463,9 @@ function renderQs(){
         <div class="qc-a">
           <button class="qb qb-grow" onclick="openExpand(${q.id})" title="이 질문 키우기 — 더 깊은 질문으로">🌿+</button>
           <button class="qb qb-check" onclick="openSelfCheck(${q.id})" title="좋은 질문 자가체크">🎯</button>
+          <button class="qb qb-rf${isRefined(q)?' done':''}" onclick="openRefine(${q.id})" title="질문 다듬기 — 탐구할 수 있는 질문으로">✨</button>
+          <button class="qb qb-solve${q.solve&&(q.solve.answer||'').trim()?' done':''}" onclick="openSolve(${q.id})" title="스스로 해결하기">🔬</button>
+          ${q.unit?`<button class="qb qb-pick${q.is_picked?' on':''}" onclick="togglePick(${q.id})" title="이 차시의 대표 질문으로 고르기 (차시당 ${PICK_MAX}개)">⭐</button>`:''}
           <button class="qb qb-f" onclick="openFy(${q.id})" title="AI 힌트">🧚</button>
           <button class="qb qb-br" onclick="openBM(${q.id})" title="꼬리질문">🌿</button>
           <button class="qb qb-e" onclick="openFrPick(${q.id})" title="열매 모양">🍎</button>
@@ -6273,6 +6495,12 @@ function renderQs(){
 
       ${/* 🎯 좋은 질문 자가체크 */
         S.checkId===q.id ? renderSelfCheckPanel(q) : ''}
+
+      ${/* ✨ 질문 다듬기 */
+        S.refineId===q.id ? renderRefinePanel(q) : ''}
+
+      ${/* 🔬 스스로 해결하기 */
+        S.solveId===q.id ? renderSolvePanel(q) : ''}
 
       ${/* 🍎 수확(해결) 기록 패널 */
         S.harvestId===q.id ? renderHarvestPanel(q) : ''}
@@ -6430,6 +6658,7 @@ async function submitExpand(parentId){
     tags:data.tags||[], fruit:data.fruit_emoji||null, is_anonymous:false,
     phase:'after', parent_id:parentId,
     self_check:null, water_count:0, watered_by:[], branches:[], tree_id:treeId, material_id:null,
+    refined_text:null, refine_check:null, refined_at:null, is_picked:false, solve:null,
   });
   S.activeTreeId[S.activeSub]=treeId;
   S.expandParentId=null;
@@ -9451,6 +9680,436 @@ function renderHarvestPanel(q){
         <button class="hv-save" onclick="saveHarvest(${q.id})">${editing ? '💾 기록 저장' : '🍎 수확하기'}</button>
       </div>
     </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ✨ 질문 다듬기
+
+   원본(text)은 절대 지우지 않는다. 다듬은 것은 refined_text 에 따로 담는다.
+   «전 / 후» 를 나란히 보는 것 자체가 이 활동의 배움이라서다.
+   화면 어디서든 다듬은 게 있으면 그걸 먼저 보여주되, 원본을 접어서 남긴다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 지금 보여줄 질문 글 — 다듬었으면 다듬은 것 */
+function qShow(q){ return (q && (q.refined_text || q.text)) || ''; }
+function isRefined(q){ return !!(q && (q.refined_text||'').trim()); }
+function refineCount(q){
+  const c = (q && q.refine_check) || {};
+  let n = 0; INQ_CHECK.forEach(function(x){ if(c[x.n]) n++; });
+  return n;
+}
+
+function openRefine(qid){
+  S.qView = 'list';
+  S.refineId = (S.refineId === qid ? null : qid);
+  S.checkId = null; S.expandParentId = null; S.solveId = null;
+  renderQs();
+  if(S.refineId) setTimeout(function(){ $('rfText-'+qid) && $('rfText-'+qid).focus(); }, 60);
+}
+function closeRefine(){ S.refineId = null; renderQs(); }
+
+function rfToggle(qid, n){
+  const el = $('rfChk-'+qid+'-'+n); if(!el) return;
+  el.classList.toggle('on');
+  const box = el.querySelector('.rf-box');
+  if(box) box.textContent = el.classList.contains('on') ? '✓' : '';
+  rfPaint(qid);
+}
+
+/* 몇 개 걸렸는지 · 얼마나 달라졌는지를 실시간으로 */
+function rfPaint(qid){
+  let n = 0;
+  INQ_CHECK.forEach(function(x){
+    const el = $('rfChk-'+qid+'-'+x.n);
+    if(el && el.classList.contains('on')) n++;
+  });
+  const c = $('rfCount-'+qid);
+  if(c){
+    c.textContent = '통과 ' + n + '/6';
+    c.className = 'rf-count' + (n >= 4 ? ' good' : '');
+  }
+  const ta = $('rfText-'+qid);
+  const hint = $('rfHint-'+qid);
+  if(ta && hint){
+    const v = (ta.value||'').trim();
+    const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+    const orig = (q && q.text || '').trim();
+    if(!v) hint.textContent = '';
+    else if(v === orig) hint.textContent = '아직 원본 그대로예요';
+    else hint.textContent = '원본보다 ' + (v.length - orig.length >= 0 ? '+' : '') + (v.length - orig.length) + '자';
+  }
+}
+
+async function saveRefine(qid){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  if(!q) return;
+  const ta = $('rfText-'+qid);
+  const v = ((ta && ta.value) || '').trim();
+  if(v.length < 5){ toast('다듬은 질문을 적어주세요 🌱'); return; }
+  if(v === (q.text||'').trim()){ toast('원본과 똑같아요. 한 군데라도 바꿔볼까요?'); return; }
+  const chk = {};
+  INQ_CHECK.forEach(function(x){
+    const el = $('rfChk-'+qid+'-'+x.n);
+    if(el && el.classList.contains('on')) chk[x.n] = true;
+  });
+  const patch = { refined_text: v, refine_check: chk, refined_at: new Date().toISOString() };
+  if(!S.guest){
+    const r = await sb.from('questions').update(patch).eq('id', qid).select('id');
+    if(r.error){ toast('저장 실패: ' + r.error.message); return; }
+    if(!r.data || !r.data.length){ toast('저장되지 않았어요. 새로고침 후 다시 해주세요.'); return; }
+  }
+  q.refined_text = v; q.refine_check = chk; q.refined_at = patch.refined_at;
+  S.refineId = null;
+  const n = refineCount(q);
+  toast(n >= 4 ? ('✨ 다듬었어요! 통과 ' + n + '/6 — 이제 해결하러 갈 수 있어요')
+                : ('✨ 다듬었어요! 통과 ' + n + '/6'));
+  render();
+}
+
+/* 다듬기를 되돌린다 — 원본으로 */
+async function undoRefine(qid){
+  if(!confirm('다듬기 전으로 되돌릴까요? 다듬은 글은 지워집니다.')) return;
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  if(!q) return;
+  if(!S.guest){
+    const r = await sb.from('questions').update({refined_text:null, refine_check:null, refined_at:null})
+      .eq('id', qid).select('id');
+    if(r.error){ toast('되돌리기 실패: ' + r.error.message); return; }
+  }
+  q.refined_text = null; q.refine_check = null; q.refined_at = null;
+  S.refineId = null; toast('원본으로 되돌렸어요'); render();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   🔬 스스로 해결하기 — 5단계
+
+   설계의 한 가지 고집: «AI 에게 먼저 묻기» 를 구조적으로 막는다.
+   2단계(프롬프트)는 1단계를 채우기 전에는 열리지 않는다. 버튼을 흐리게
+   두는 정도가 아니라 아예 다음 화면이 안 나온다.
+
+   왜 이렇게까지 하나 —
+   연수 자료(서울시교육청)의 «AI 활용 질문 중심 문제 해결 모형» 은
+   질문 생성 → 질문 조정 → 답 찾기 → 답 평가·통합 순서고, AI 는
+   «정보 제공자가 아니라 탐구 질문을 조정하는 거울» 로 규정된다.
+   먼저 물어보면 거울이 아니라 정답지가 된다.
+
+   그리고 프롬프트를 «자동으로» 만들되 «보여주고 고치게» 한다.
+   자기가 쓴 예상과 이유가 프롬프트 안에 그대로 들어가 있는 걸 보는 순간이
+   이 활동에서 제일 중요한 장면이다. 내 생각이 질문이 되어 나간다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const _SNL = String.fromCharCode(10);   /* 프롬프트 줄바꿈 */
+let _solveDraft = {};                   /* {qid: {...}} 저장 전 임시 */
+
+function solveDraft(q){
+  if(!_solveDraft[q.id]){
+    const s = q.solve || {};
+    _solveDraft[q.id] = {
+      how: (s.how || []).slice(), change: s.change || '', guess: s.guess || '',
+      why: s.why || '', known: s.known || '', prompt: s.prompt || '', ai: s.ai || '',
+      verdict: s.verdict || '', source: s.source || '', unclear: s.unclear || '',
+      answer: s.answer || '', newq: s.newq || ''
+    };
+  }
+  return _solveDraft[q.id];
+}
+
+function openSolve(qid){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  if(!q) return;
+  if(S.solveId === qid){ S.solveId = null; renderQs(); return; }
+  if(!isRefined(q)){
+    if(!confirm('아직 다듬지 않은 질문이에요.' + _SNL +
+                '먼저 ✨ 다듬기를 하면 훨씬 풀기 쉬워져요.' + _SNL + _SNL +
+                '그래도 바로 해결하러 갈까요?')) { openRefine(qid); return; }
+  }
+  S.qView = 'list'; S.solveId = qid; S.checkId = null;
+  S.expandParentId = null; S.refineId = null;
+  const d = solveDraft(q);
+  S.solveStep = (d.answer||'').trim() ? 5 : ((d.ai||'').trim() ? 4 : ((d.prompt||'').trim() ? 3 : 1));
+  renderQs();
+}
+function closeSolve(){ S.solveId = null; renderQs(); }
+
+/* 화면에 있는 값을 임시 저장소로 걷어온다 — 단계를 옮기기 전에 항상 부른다 */
+function solveHarvest(qid){
+  const d = _solveDraft[qid]; if(!d) return;
+  const g = function(id){ const e = $(id + '-' + qid); return e ? e.value : null; };
+  const map = {change:'svChange', guess:'svGuess', why:'svWhy', known:'svKnown',
+               prompt:'svPrompt', ai:'svAi', source:'svSource', unclear:'svUnclear',
+               answer:'svAnswer', newq:'svNewq'};
+  Object.keys(map).forEach(function(k){ const v = g(map[k]); if(v !== null) d[k] = v; });
+}
+
+function solveGo(qid, step){
+  solveHarvest(qid);
+  const d = _solveDraft[qid] || {};
+  if(step >= 2 && !(d.how||[]).length){ toast('먼저 «어떻게 확인할지» 를 골라주세요 🔬'); return; }
+  if(step >= 2 && !(d.guess||'').trim()){ toast('내 예상을 먼저 적어주세요. 틀려도 괜찮아요 🌱'); return; }
+  if(step === 2 && !(d.prompt||'').trim()){
+    const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+    if(q) d.prompt = buildPrompt(q, d);
+  }
+  S.solveStep = step; renderQs();
+  setTimeout(function(){ const el = $('svPanel-'+qid); el && el.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 40);
+}
+
+function solveHowToggle(qid, k){
+  const d = _solveDraft[qid]; if(!d) return;
+  const i = d.how.indexOf(k);
+  if(i >= 0) d.how.splice(i, 1); else d.how.push(k);
+  const el = $('svHow-' + qid + '-' + k);
+  if(el) el.classList.toggle('on', d.how.indexOf(k) >= 0);
+}
+
+/* ══ 프롬프트 만들기 ══════════════════════════════════════════════════════
+   답을 «주지 말라» 고 먼저 못 박는다. 그 다음 내 예상을 짚어달라고 한다.
+   마지막 두 줄(확실하지 않은 부분 · 더 찾아볼 곳)이 연수의 «답의 출처와
+   적절성 판단하기» 를 학생 손에 돌려주는 장치다. */
+function buildPrompt(q, d){
+  const hows = (d.how||[]).map(function(k){
+    const h = SOLVE_HOW.find(function(x){ return x.k === k; }); return h ? h.t : '';
+  }).filter(Boolean).join(' · ');
+  const L = [];
+  L.push('나는 중학교 2학년 학생이야. 과학 수업에서 내가 만든 질문을 스스로 풀어보는 중이야.');
+  L.push('');
+  L.push('【내 질문】');
+  L.push(qShow(q).trim());
+  L.push('');
+  L.push('【내가 확인하려는 방법】');
+  L.push(hows || '아직 못 정했어');
+  if((d.change||'').trim()) L.push('바꿔볼 것: ' + d.change.trim());
+  L.push('');
+  L.push('【내 예상】');
+  L.push((d.guess||'').trim() || '아직 잘 모르겠어');
+  if((d.why||'').trim()) L.push('그렇게 생각한 이유: ' + d.why.trim());
+  if((d.known||'').trim()){ L.push(''); L.push('【내가 이미 아는 것】'); L.push(d.known.trim()); }
+  L.push('');
+  L.push('【이렇게 답해줘】');
+  L.push('1. 정답부터 말하지 마. 내 예상에서 맞는 부분과 어긋난 부분을 먼저 짚어줘.');
+  L.push('2. 내가 직접 확인해볼 수 있는 방법을 알려줘.');
+  L.push('3. 중학교 2학년이 아는 말로 설명해줘. 어려운 낱말을 쓰면 뜻도 같이 알려줘.');
+  L.push('4. 네 설명 중에 확실하지 않은 부분이 있으면 솔직히 말해줘.');
+  L.push('5. 내가 한 번 더 확인해볼 곳(교과서 단원 이름이나 검색어)을 알려줘.');
+  return L.join(_SNL);
+}
+
+function solveRebuild(qid){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const d = _solveDraft[qid]; if(!q || !d) return;
+  d.prompt = buildPrompt(q, d);
+  const el = $('svPrompt-' + qid); if(el) el.value = d.prompt;
+  toast('프롬프트를 다시 만들었어요');
+}
+
+async function solveCopy(qid){
+  const el = $('svPrompt-' + qid); if(!el) return;
+  try{ await navigator.clipboard.writeText(el.value); toast('📋 복사했어요! AI 에 붙여넣으세요'); }
+  catch(e){ el.select(); document.execCommand('copy'); toast('📋 복사했어요!'); }
+}
+
+async function saveSolve(qid, done){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  if(!q) return;
+  solveHarvest(qid);
+  const d = _solveDraft[qid] || {};
+  if(done && !(d.answer||'').trim()){ toast('최종 답안을 내 말로 적어주세요 ✍️'); return; }
+  const solve = {
+    how:d.how, change:d.change, guess:d.guess, why:d.why, known:d.known,
+    prompt:d.prompt, ai:d.ai, verdict:d.verdict, source:d.source,
+    unclear:d.unclear, answer:d.answer, newq:d.newq,
+    saved_at: new Date().toISOString()
+  };
+  if(!S.guest){
+    const r = await sb.from('questions').update({solve: solve}).eq('id', qid).select('id');
+    if(r.error){ toast('저장 실패: ' + r.error.message); return; }
+    if(!r.data || !r.data.length){ toast('저장되지 않았어요. 새로고침 후 다시 해주세요.'); return; }
+  }
+  q.solve = solve;
+  if(done){
+    S.solveId = null;
+    toast('🔬 해결 완료! 잘했어요');
+    if((d.newq||'').trim()) setTimeout(function(){ toast('🌱 새로 생긴 질문은 «키우기» 로 심어보세요'); }, 1600);
+    render();
+  } else {
+    toast('💾 여기까지 저장했어요');
+  }
+}
+
+function svVerdict(qid, v){
+  const d = _solveDraft[qid]; if(!d) return;
+  d.verdict = v;
+  ['same','diff','half'].forEach(function(k){
+    const el = $('svV-' + qid + '-' + k); if(el) el.classList.toggle('on', k === v);
+  });
+}
+
+/* ══ 화면 ═════════════════════════════════════════════════════════════════ */
+function renderSolvePanel(q){
+  const d = solveDraft(q);
+  const step = S.solveStep || 1;
+  const dots = [1,2,3,4,5].map(function(i){
+    const cls = i === step ? ' on' : (i < step ? ' done' : '');
+    return '<button class="sv-dot' + cls + '" onclick="solveGo(' + q.id + ',' + i + ')">' + i + '</button>';
+  }).join('<span class="sv-dline"></span>');
+  let body = '';
+
+  if(step === 1){
+    const hows = SOLVE_HOW.map(function(h){
+      const on = d.how.indexOf(h.k) >= 0 ? ' on' : '';
+      return '<div class="sv-how' + on + '" id="svHow-' + q.id + '-' + h.k + '" onclick="solveHowToggle(' + q.id + ',\'' + h.k + '\')">' +
+             '<b>' + h.ic + ' ' + h.t + '</b><small>' + esc(h.d) + '</small></div>';
+    }).join('');
+    body =
+      '<div class="sv-warn">🚫 아직 AI 에게 묻지 않아요. <b>먼저 내 머리로</b> 생각해봐요.</div>' +
+      '<div class="sv-q">' + esc(qShow(q)) + '</div>' +
+      '<div class="sv-l">① 어떻게 확인할 수 있을까? <small>(여러 개 골라도 돼요)</small></div>' +
+      '<div class="sv-hows">' + hows + '</div>' +
+      '<div class="sv-l">② 무엇 하나를 바꿔볼까?</div>' +
+      '<input class="sv-in" id="svChange-' + q.id + '" value="' + esc(d.change) + '" placeholder="예) 털 대신 머리카락으로 비벼본다">' +
+      '<div class="sv-l">③ 내 예상은? <small>(틀려도 괜찮아요. 이게 제일 중요해요)</small></div>' +
+      '<textarea class="sv-ta" id="svGuess-' + q.id + '" placeholder="나는 ○○일 것 같다...">' + esc(d.guess) + '</textarea>' +
+      '<div class="sv-l">④ 왜 그렇게 생각해?</div>' +
+      '<textarea class="sv-ta" id="svWhy-' + q.id + '" placeholder="왜냐하면...">' + esc(d.why) + '</textarea>' +
+      '<div class="sv-l">⑤ 이것에 대해 내가 이미 아는 것 <small>(없으면 비워도 돼요)</small></div>' +
+      '<textarea class="sv-ta" id="svKnown-' + q.id + '" placeholder="수업에서 배운 것, 전에 본 것...">' + esc(d.known) + '</textarea>' +
+      '<div class="sv-btns"><button class="sv-next" onclick="solveGo(' + q.id + ',2)">다 적었어요 → 프롬프트 만들기 ✍️</button></div>';
+  }
+
+  else if(step === 2){
+    body =
+      '<div class="sv-ok">✍️ 내가 쓴 생각으로 <b>프롬프트가 만들어졌어요</b>. 읽어보고 고쳐도 돼요.</div>' +
+      '<textarea class="sv-prompt" id="svPrompt-' + q.id + '">' + esc(d.prompt || buildPrompt(q, d)) + '</textarea>' +
+      '<div class="sv-tip">💡 «정답부터 말하지 마» 가 맨 앞에 있는 걸 봤나요? 그래야 AI 가 <b>답지</b>가 아니라 <b>도우미</b>가 돼요.</div>' +
+      '<div class="sv-btns">' +
+        '<button class="sv-back" onclick="solveGo(' + q.id + ',1)">← 고치기</button>' +
+        '<button class="sv-ghost" onclick="solveRebuild(' + q.id + ')">↻ 다시 만들기</button>' +
+        '<button class="sv-copy" onclick="solveCopy(' + q.id + ')">📋 복사</button>' +
+        '<button class="sv-next" onclick="solveGo(' + q.id + ',3)">AI 에 물어봤어요 →</button>' +
+      '</div>';
+  }
+
+  else if(step === 3){
+    body =
+      '<div class="sv-l">AI 가 답한 걸 <b>그대로</b> 붙여넣으세요</div>' +
+      '<textarea class="sv-ta tall" id="svAi-' + q.id + '" placeholder="AI 답변 붙여넣기...">' + esc(d.ai) + '</textarea>' +
+      '<div class="sv-tip">📌 이걸 그대로 베끼면 안 돼요. 다음 단계에서 <b>따져볼</b> 거예요.</div>' +
+      '<div class="sv-btns">' +
+        '<button class="sv-back" onclick="solveGo(' + q.id + ',2)">← 프롬프트</button>' +
+        '<button class="sv-ghost" onclick="saveSolve(' + q.id + ',false)">💾 잠깐 저장</button>' +
+        '<button class="sv-next" onclick="solveGo(' + q.id + ',4)">따져보기 →</button>' +
+      '</div>';
+  }
+
+  else if(step === 4){
+    const V = [{k:'same', t:'👍 거의 맞았다'}, {k:'half', t:'🤔 반만 맞았다'}, {k:'diff', t:'😮 많이 달랐다'}];
+    const vs = V.map(function(v){
+      const on = d.verdict === v.k ? ' on' : '';
+      return '<button class="sv-v' + on + '" id="svV-' + q.id + '-' + v.k + '" onclick="svVerdict(' + q.id + ',\'' + v.k + '\')">' + v.t + '</button>';
+    }).join('');
+    body =
+      '<div class="sv-l">① 내 예상과 견주면?</div>' +
+      '<div class="sv-vs">' + vs + '</div>' +
+      '<div class="sv-l">② <b>한 군데 더</b> 확인했어? <small>(교과서 쪽수, 책, 다른 사이트, 직접 해보기…)</small></div>' +
+      '<input class="sv-in" id="svSource-' + q.id + '" value="' + esc(d.source) + '" placeholder="예) 교과서 128쪽에서 확인했다">' +
+      '<div class="sv-l">③ AI 말 중에 아직 이해 안 되는 것</div>' +
+      '<textarea class="sv-ta" id="svUnclear-' + q.id + '" placeholder="모르겠는 부분을 적어두면 선생님이 봐요">' + esc(d.unclear) + '</textarea>' +
+      '<div class="sv-tip">🌫 «못 찾았어» 도 답이에요. 모르는 걸 아는 게 과학의 시작이에요.</div>' +
+      '<div class="sv-btns">' +
+        '<button class="sv-back" onclick="solveGo(' + q.id + ',3)">← AI 답</button>' +
+        '<button class="sv-next" onclick="solveGo(' + q.id + ',5)">최종 답안 쓰기 →</button>' +
+      '</div>';
+  }
+
+  else {
+    body =
+      '<div class="sv-q">' + esc(qShow(q)) + '</div>' +
+      '<div class="sv-l">✍️ 이 질문의 답을 <b>내 말로</b> 적어요 <small>(AI 말 베끼기 금지)</small></div>' +
+      '<textarea class="sv-ta tall" id="svAnswer-' + q.id + '" placeholder="내가 알아낸 것은...">' + esc(d.answer) + '</textarea>' +
+      '<div class="sv-l">🌱 풀고 나니 <b>새로 생긴 질문</b>이 있나요?</div>' +
+      '<input class="sv-in" id="svNewq-' + q.id + '" value="' + esc(d.newq) + '" placeholder="그럼 이건 어떻게 될까...">' +
+      '<div class="sv-btns">' +
+        '<button class="sv-back" onclick="solveGo(' + q.id + ',4)">← 따져보기</button>' +
+        '<button class="sv-done" onclick="saveSolve(' + q.id + ',true)">🔬 해결 완료!</button>' +
+      '</div>';
+  }
+
+  const TITLE = ['나 혼자 먼저', '프롬프트 만들기', 'AI 에게 묻기', '따져보기', '최종 답안'];
+  return '<div class="qc-solve" id="svPanel-' + q.id + '">' +
+    '<div class="sv-hdr"><span>🔬 스스로 해결하기</span>' +
+      '<button class="sv-x" onclick="closeSolve()">✕</button></div>' +
+    '<div class="sv-dots">' + dots + '</div>' +
+    '<div class="sv-step">' + step + '. ' + TITLE[step-1] + '</div>' +
+    body + '</div>';
+}
+
+function renderRefinePanel(q){
+  const cur = (q.refined_text || q.text || '');
+  const chk = q.refine_check || {};
+  const tools = UP_STEPS.map(function(s){
+    return '<div class="rf-tool"><span class="rf-tool-n">' + s.n + '</span>' +
+           '<div><b>' + s.ic + ' ' + esc(s.t) + '</b><small>' + esc(s.d) + '</small></div></div>';
+  }).join('');
+  const checks = INQ_CHECK.map(function(x){
+    const on = chk[x.n] ? ' on' : '';
+    return '<div class="rf-chk' + on + '" id="rfChk-' + q.id + '-' + x.n + '" onclick="rfToggle(' + q.id + ',' + x.n + ')">' +
+           '<div class="rf-box">' + (chk[x.n] ? '✓' : '') + '</div>' +
+           '<div class="rf-chk-l"><b>' + x.ic + ' ' + esc(x.t) + '</b><small>' + esc(x.d) + '</small></div></div>';
+  }).join('');
+  const n = refineCount(q);
+  return '<div class="qc-refine">' +
+    '<div class="rf-hdr">✨ 질문 다듬기</div>' +
+    '<div class="rf-sub">원본은 지워지지 않아요. <b>전과 후를 나란히</b> 남깁니다.</div>' +
+    '<div class="rf-orig"><span class="rf-orig-l">원본</span>' + esc(q.text||'') + '</div>' +
+    '<div class="rf-tools"><div class="rf-tools-h">🧰 이 여섯 가지 중 <b>하나만</b> 골라 고쳐도 좋아요 ' +
+      '<a class="rf-link" onclick="openMCInfo(&#39;ba&#39;)">✨ 한 끗 차이 예시</a></div>' + tools + '</div>' +
+    '<textarea class="rf-text" id="rfText-' + q.id + '" oninput="rfPaint(' + q.id + ')" ' +
+      'placeholder="다듬은 질문을 적어요...">' + esc(cur) + '</textarea>' +
+    '<div class="rf-hint" id="rfHint-' + q.id + '"></div>' +
+    '<div class="rf-chks-h">✅ 다듬은 질문을 점검해요 <small>(연수 «탐구 과제 체크리스트»)</small></div>' +
+    '<div class="rf-chks">' + checks + '</div>' +
+    '<div class="rf-foot">' +
+      '<span class="rf-count' + (n>=4?' good':'') + '" id="rfCount-' + q.id + '">통과 ' + n + '/6</span>' +
+      '<div class="rf-btns">' +
+        (isRefined(q) ? '<button class="rf-undo" onclick="undoRefine(' + q.id + ')">↩ 원본으로</button>' : '') +
+        '<button class="rf-cancel" onclick="closeRefine()">닫기</button>' +
+        '<button class="rf-save" onclick="saveRefine(' + q.id + ')">✨ 다듬어 저장</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ⭐ 차시별 대표 질문 — 한 차시에 2개까지
+
+   3개 심고 → 다듬고 → 2개만 남긴다. 남은 2개가 수업에서 해결할 질문이다.
+   서버에도 같은 제한이 걸려 있다(pick_guard). 두 기기로 동시에 눌러도 막힌다.
+   ══════════════════════════════════════════════════════════════════════════ */
+function pickedInUnit(unit){
+  if(!unit) return [];
+  return qsInSub(S.activeSub).filter(function(x){ return x.is_picked && (x.unit||'') === unit; });
+}
+
+async function togglePick(qid){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  if(!q) return;
+  if(!q.unit){ toast('차시가 붙은 질문만 대표로 고를 수 있어요'); return; }
+  const want = !q.is_picked;
+  if(want && pickedInUnit(q.unit).length >= PICK_MAX){
+    toast('이 차시는 이미 ' + PICK_MAX + '개예요. 하나를 먼저 빼주세요 ⭐');
+    return;
+  }
+  if(want && !isRefined(q)){
+    if(!confirm('아직 다듬지 않은 질문이에요.\n그래도 대표로 고를까요?')) return;
+  }
+  if(!S.guest){
+    const r = await sb.from('questions').update({is_picked: want}).eq('id', qid).select('id');
+    if(r.error){ toast(r.error.message.indexOf('2개까지') >= 0 ? '한 차시에 2개까지예요 ⭐' : ('실패: ' + r.error.message)); return; }
+    if(!r.data || !r.data.length){ toast('저장되지 않았어요. 새로고침 후 다시 해주세요.'); return; }
+  }
+  q.is_picked = want;
+  toast(want ? '⭐ 이 차시의 대표 질문으로 골랐어요' : '대표에서 뺐어요');
+  render();
 }
 
 function renderSelfCheckPanel(q){

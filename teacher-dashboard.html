@@ -760,6 +760,42 @@ body.print-report-mode .dd-overlay{display:none !important}
   border-radius:5px;opacity:.28;transition:opacity .12s,background .12s}
 tr:hover .row-del{opacity:.7}
 .row-del:hover{opacity:1;background:#FDECEA}
+/* ══ ⭐ 대표 질문 ═══════════════════════════════════════════════════════ */
+.pk-unit{margin-bottom:22px}
+.pk-unit-h{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:800;color:var(--pr);
+  padding:0 0 8px;border-bottom:1.5px solid var(--rule);margin-bottom:10px}
+.pk-unit-n{font-size:11px;font-weight:700;color:var(--ink3);margin-left:auto}
+.pk-card{border:1px solid var(--rule);border-radius:10px;background:var(--surface);margin-bottom:8px;overflow:hidden}
+.pk-card.open{border-color:var(--pr)}
+.pk-top{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;cursor:pointer}
+.pk-top:hover{background:var(--bg2,#FAFAF7)}
+.pk-who{flex:none;width:96px;font-size:11.5px;font-weight:700;color:var(--ink2);padding-top:2px}
+.pk-qs{flex:1;min-width:0}
+.pk-was{font-size:11px;color:var(--ink3);text-decoration:line-through;opacity:.65;margin-bottom:3px;line-height:1.5}
+.pk-now{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.55}
+.pk-now.plain{font-weight:600}
+.pk-nodiff{font-size:10.5px;color:#C62828;font-weight:700;margin-top:3px}
+.pk-badges{flex:none;display:flex;align-items:center;gap:5px}
+.pk-b{font-size:10.5px;font-weight:800;border-radius:5px;padding:3px 7px;white-space:nowrap}
+.pk-b.ok{background:#E8F5E9;color:#2E7D32}
+.pk-b.sv{background:#EDE7F6;color:#5E35B1}
+.pk-b.no{background:var(--bg2,#F2F1EC);color:var(--ink3)}
+.pk-caret{font-size:9px;color:var(--ink3);margin-left:2px}
+.pk-body{padding:4px 14px 14px;border-top:1px solid var(--rule);background:var(--bg2,#FBFBF8)}
+.pk-none{font-size:12px;color:var(--ink3);padding:12px 0}
+.pk-stage{font-size:10.5px;font-weight:800;color:var(--pr);margin:13px 0 7px;letter-spacing:.02em}
+.pk-row{display:flex;gap:10px;padding:5px 0;align-items:flex-start}
+.pk-l{flex:none;width:92px;font-size:11px;font-weight:700;color:var(--ink3);padding-top:1px}
+.pk-v{flex:1;min-width:0;font-size:12.5px;color:var(--ink);line-height:1.6}
+.pk-row.hi .pk-v{background:#FFF8E1;border-radius:6px;padding:5px 9px}
+.pk-row.ans .pk-v{background:#E8F5E9;border-radius:6px;padding:7px 10px;font-weight:600}
+.pk-row.src .pk-v{color:#1565C0;font-weight:600}
+.pk-row.unk .pk-v{color:#C62828}
+.pk-row.new .pk-v{color:#2E7D32;font-weight:600}
+.pk-det{margin:5px 0}
+.pk-det summary{font-size:11.5px;font-weight:700;color:var(--ink2);cursor:pointer;padding:5px 0}
+.pk-ai{font-size:11.5px;color:var(--ink2);line-height:1.65;background:var(--surface);
+  border:1px solid var(--rule);border-radius:8px;padding:10px 12px;max-height:280px;overflow:auto}
 </style>
 </head>
 <body>
@@ -879,6 +915,7 @@ tr:hover .row-del{opacity:.7}
       <button class="vm-tab" data-view="students" onclick="switchView('students')">👩‍🎓 학생별 보기</button>
       <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">🎯 자가체크</button>
       <button class="vm-tab" data-view="board" onclick="switchView('board')">🗂️ 질문 보드</button>
+      <button class="vm-tab" data-view="picked" onclick="switchView('picked')">⭐ 대표 질문</button>
       <button class="vm-tab" data-view="stamp" onclick="switchView('stamp')">⚡ 빠른 피드백</button>
       <button class="vm-tab" data-view="repair" onclick="switchView('repair')">🔧 깨진 질문</button>
       <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
@@ -1169,6 +1206,20 @@ tr:hover .row-del{opacity:.7}
       </div>
     </div>
     <!-- ═════════ VIEW: 깨진 질문 되살리기 ═════════ -->
+    <!-- ═════════ VIEW: 대표 질문 ═════════ -->
+    <div class="view-body" id="viewPicked" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>⭐ 차시별 대표 질문</h2>
+          <span class="sub">학생이 다듬어서 <b>차시당 2개</b>로 남긴 질문 · 이걸로 수업합니다 · 카드를 누르면 해결 과정이 열려요</span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="st-nav" onclick="pkExportCSV()">📥 CSV</button>
+            <button class="st-nav primary" onclick="pkBoard()">📺 수업용 크게</button>
+          </div>
+        </div>
+        <div class="section-body" id="pickedBody"></div>
+      </div>
+    </div>
     <div class="view-body" id="viewRepair" style="display:none">
       <div class="section">
         <div class="section-hdr">
@@ -1806,6 +1857,9 @@ function applyFilters(){
   } else if(activeView === 'board'){
     renderAlerts();
     renderBoardView();
+  } else if(activeView === 'picked'){
+    renderAlerts();
+    renderPicked();
   } else if(activeView === 'stamp'){
     renderAlerts();
     stBuild(false);
@@ -1890,10 +1944,10 @@ function exportQuestionsCSV(){
   if(!filteredQuestions.length){ alert('내보낼 질문이 없어요. 필터를 확인하세요.'); return; }
   const pm={}; allProfiles.forEach(p=>pm[p.id]=p);
   const brByQ={}; allBranches.forEach(b=>{ brByQ[b.question_id]=(brByQ[b.question_id]||0)+1; });
-  const rows=[['학년','반','번호','이름','질문','단원','단계','상태','알아낸것','아직모르는것','탐구투표','선생님되묻기','물','꼬리질문','자가체크충족','자가체크근거','작성일']];
+  const rows=[['학년','반','번호','이름','질문','다듬은질문','대표','해결','단원','단계','상태','알아낸것','아직모르는것','탐구투표','선생님되묻기','물','꼬리질문','자가체크충족','자가체크근거','작성일']];
   filteredQuestions.forEach(q=>{
     const p=pm[q.user_id]||{};
-    rows.push([p.grade,p.class_no,p.number,p.name,q.text,q.unit||'',(q.phase==='after'?'수업후':'수업전'),qStatus(q),q.finding||'',q.still_wondering||'',q.explore_votes||0,q.teacher_nudge||'',q.water_count||0,brByQ[q.id]||0,scCount(q),scText(q),(q.created_at||'').slice(0,10)]);
+    rows.push([p.grade,p.class_no,p.number,p.name,q.text,q.refined_text||'',(q.is_picked?'⭐':''),((q.solve&&(q.solve.answer||'').trim())?'해결':''),q.unit||'',(q.phase==='after'?'수업후':'수업전'),qStatus(q),q.finding||'',q.still_wondering||'',q.explore_votes||0,q.teacher_nudge||'',q.water_count||0,brByQ[q.id]||0,scCount(q),scText(q),(q.created_at||'').slice(0,10)]);
   });
   downloadCSV(`해누리_질문상세_${today()}.csv`, rows);
 }
@@ -3094,6 +3148,173 @@ function printStudentPortfolio(){
 // ═══════════════════════════════════════════════════════════════════
 let currentView = 'default';
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ⭐ 차시별 대표 질문 · 🔬 해결 과정 들여다보기
+
+   학생 앱에서 «3개 심고 → 다듬고 → 2개 남기기» 를 하면 그 2개가 여기 모인다.
+   수업은 이 화면을 띄워놓고 한다.
+
+   해결 과정을 통째로 펼쳐 보이는 이유 — 최종 답안만 보면 베꼈는지 아닌지
+   알 수가 없다. «예상 → AI 답 → 최종 답» 이 나란히 있어야 그 사이에서
+   생각이 움직였는지가 보인다. 세특 근거도 거기서 나온다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let _pkOpen = {};      /* 펼쳐 둔 카드 */
+const SOLVE_HOW_T = {exp:'🧪 실험', obs:'👀 관찰', cmp:'📊 비교', src:'📚 조사'};
+const VERDICT_T   = {same:'👍 거의 맞았다', half:'🤔 반만 맞았다', diff:'😮 많이 달랐다'};
+
+function pkRefineCount(q){
+  const c = q.refine_check || {};
+  return Object.keys(c).filter(function(k){ return c[k]; }).length;
+}
+function pkSolved(q){ return !!(q.solve && (q.solve.answer||'').trim()); }
+
+/* 지금 필터에 걸린 것 중 대표 질문만, 차시 → 학급 순으로 */
+function pkList(){
+  return (filteredQuestions || []).filter(function(q){ return q.is_picked; });
+}
+
+function pkToggle(id){ _pkOpen[id] = !_pkOpen[id]; renderPicked(); }
+
+function renderPicked(){
+  const box = $('pickedBody'); if(!box) return;
+  const qs = pkList();
+  if(!qs.length){
+    box.innerHTML = '<div class="empty-row" style="padding:34px;line-height:1.7">' +
+      '아직 대표 질문이 없어요.<br><span style="font-size:12px;opacity:.75">' +
+      '학생이 질문 카드의 <b>⭐</b> 를 눌러 차시당 2개를 고르면 여기 모입니다.</span></div>';
+    return;
+  }
+  const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
+  const byUnit = {};
+  qs.forEach(function(q){ const u = q.unit || '(차시 없음)'; (byUnit[u] = byUnit[u] || []).push(q); });
+  const units = Object.keys(byUnit).sort(function(a,b){ return a.localeCompare(b,'en',{numeric:true}); });
+
+  let h = '';
+  units.forEach(function(u){
+    const list = byUnit[u].slice().sort(function(a,b){
+      const A = pm[a.user_id]||{}, B = pm[b.user_id]||{};
+      return (A.grade-B.grade) || (A.class_no-B.class_no) || (A.number-B.number);
+    });
+    const done = list.filter(pkSolved).length;
+    h += '<div class="pk-unit"><div class="pk-unit-h">📑 ' + esc(u) +
+         '<span class="pk-unit-n">' + list.length + '개 · 해결 ' + done + '</span></div>';
+    list.forEach(function(q){
+      const p = pm[q.user_id] || {};
+      const who = (p.grade||'?') + '-' + (p.class_no||'?') + ' ' + esc(p.name||'');
+      const open = _pkOpen[q.id];
+      h += '<div class="pk-card' + (open?' open':'') + '">' +
+           '<div class="pk-top" onclick="pkToggle(' + q.id + ')">' +
+             '<div class="pk-who">' + who + '</div>' +
+             '<div class="pk-qs">' +
+               (q.refined_text ? ('<div class="pk-was">' + esc(q.text||'') + '</div>' +
+                                  '<div class="pk-now">✨ ' + esc(q.refined_text) + '</div>')
+                               : ('<div class="pk-now plain">' + esc(q.text||'') + '</div>' +
+                                  '<div class="pk-nodiff">아직 안 다듬음</div>')) +
+             '</div>' +
+             '<div class="pk-badges">' +
+               (q.refined_text ? '<span class="pk-b ok">✅ ' + pkRefineCount(q) + '/6</span>' : '') +
+               (pkSolved(q) ? '<span class="pk-b sv">🔬 해결</span>' : '<span class="pk-b no">미해결</span>') +
+               '<span class="pk-caret">' + (open?'▲':'▼') + '</span>' +
+             '</div>' +
+           '</div>' +
+           (open ? pkDetail(q) : '') +
+           '</div>';
+    });
+    h += '</div>';
+  });
+  box.innerHTML = h;
+}
+
+/* 해결 과정 펼치기 — 예상과 최종 답을 나란히 두는 게 핵심 */
+function pkDetail(q){
+  const s = q.solve || {};
+  if(!s.guess && !s.answer && !s.ai){
+    return '<div class="pk-body"><div class="pk-none">아직 해결을 시작하지 않았어요.</div></div>';
+  }
+  const hows = (s.how||[]).map(function(k){ return SOLVE_HOW_T[k] || k; }).join(' · ');
+  const row = function(l, v, cls){
+    if(!(v||'').trim()) return '';
+    return '<div class="pk-row' + (cls?' '+cls:'') + '"><div class="pk-l">' + l + '</div>' +
+           '<div class="pk-v">' + esc(v).split(String.fromCharCode(10)).join('<br>') + '</div></div>';
+  };
+  let h = '<div class="pk-body">';
+  h += '<div class="pk-stage">1 · 나 혼자 먼저</div>';
+  if(hows) h += row('확인 방법', hows);
+  h += row('바꿀 것', s.change);
+  h += row('내 예상', s.guess, 'hi');
+  h += row('그 이유', s.why);
+  h += row('아는 것', s.known);
+  if((s.ai||'').trim()){
+    h += '<div class="pk-stage">2~3 · AI 에게 묻기</div>';
+    h += '<details class="pk-det"><summary>AI 답 보기 (' + String(s.ai).length + '자)</summary>' +
+         '<div class="pk-ai">' + esc(s.ai).split(String.fromCharCode(10)).join('<br>') + '</div></details>';
+    if((s.prompt||'').trim())
+      h += '<details class="pk-det"><summary>학생이 보낸 프롬프트 보기</summary>' +
+           '<div class="pk-ai">' + esc(s.prompt).split(String.fromCharCode(10)).join('<br>') + '</div></details>';
+  }
+  if(s.verdict || s.source || s.unclear){
+    h += '<div class="pk-stage">4 · 따져보기</div>';
+    if(s.verdict) h += row('예상과 비교', VERDICT_T[s.verdict] || s.verdict);
+    h += row('한 군데 더 확인', s.source, 'src');
+    h += row('아직 모르는 것', s.unclear, 'unk');
+  }
+  if((s.answer||'').trim()){
+    h += '<div class="pk-stage">5 · 최종 답안</div>';
+    h += row('내 말로', s.answer, 'ans');
+    h += row('새로 생긴 질문', s.newq, 'new');
+  }
+  return h + '</div>';
+}
+
+/* 📺 전자칠판용 — 이름 빼고 질문만 크게. 실명이 교실 앞에 뜨면 안 된다. */
+function pkBoard(){
+  const qs = pkList();
+  if(!qs.length){ alert('대표 질문이 없어요.'); return; }
+  const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
+  const byUnit = {};
+  qs.forEach(function(q){ const u = q.unit || '(차시 없음)'; (byUnit[u] = byUnit[u] || []).push(q); });
+  let h = '<html><head><meta charset="utf-8"><title>오늘 풀 질문</title><style>' +
+    'body{margin:0;padding:40px;background:#12100E;color:#F5F3EE;font-family:Pretendard,system-ui,sans-serif}' +
+    'h1{font-size:26px;margin:0 0 28px;color:#F0B357}' +
+    '.u{font-size:15px;color:#8E877A;margin:26px 0 10px;font-weight:700}' +
+    '.q{font-size:30px;line-height:1.5;margin:0 0 18px;padding:20px 26px;background:#1D1A16;' +
+    '  border-left:5px solid #F0B357;border-radius:0 12px 12px 0}' +
+    '.c{font-size:14px;color:#8E877A;margin-top:8px}' +
+    '</style></head><body><h1>⭐ 오늘 우리가 풀 질문</h1>';
+  Object.keys(byUnit).sort(function(a,b){ return a.localeCompare(b,'en',{numeric:true}); })
+    .forEach(function(u){
+      h += '<div class="u">📑 ' + esc(u) + '</div>';
+      byUnit[u].forEach(function(q){
+        const p = pm[q.user_id] || {};
+        h += '<div class="q">' + esc(q.refined_text || q.text || '') +
+             '<div class="c">' + (p.grade||'?') + '-' + (p.class_no||'?') + ' 반 친구</div></div>';
+      });
+    });
+  h += '</body></html>';
+  const w = window.open('', '_blank');
+  if(!w){ alert('팝업이 막혔어요. 주소창 오른쪽에서 허용해주세요.'); return; }
+  w.document.write(h); w.document.close();
+}
+
+function pkExportCSV(){
+  const qs = pkList();
+  if(!qs.length){ alert('대표 질문이 없어요.'); return; }
+  const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
+  const rows = [['학년','반','번호','이름','차시','원본질문','다듬은질문','점검통과',
+                 '확인방법','바꿀것','내예상','그이유','예상과비교','한군데더확인',
+                 '아직모르는것','최종답안','새질문']];
+  qs.forEach(function(q){
+    const p = pm[q.user_id] || {}, s = q.solve || {};
+    rows.push([p.grade, p.class_no, p.number, p.name, q.unit||'',
+      q.text||'', q.refined_text||'', q.refined_text ? (pkRefineCount(q)+'/6') : '',
+      (s.how||[]).map(function(k){ return SOLVE_HOW_T[k]||k; }).join(' '),
+      s.change||'', s.guess||'', s.why||'', VERDICT_T[s.verdict]||'', s.source||'',
+      s.unclear||'', s.answer||'', s.newq||'']);
+  });
+  downloadCSV('해누리_대표질문_해결과정_' + today() + '.csv', rows);
+}
+
 function switchView(view){
   currentView = view;
   // 탭 활성화
@@ -3105,10 +3326,12 @@ function switchView(view){
   $('viewSelfcheck').style.display = view === 'selfcheck' ? '' : 'none';
   $('viewBoard').style.display = view === 'board' ? '' : 'none';
   $('viewStamp').style.display = view === 'stamp' ? '' : 'none';
+  $('viewPicked').style.display = view === 'picked' ? '' : 'none';
   $('viewRepair').style.display = view === 'repair' ? '' : 'none';
   $('viewGrowth').style.display = view === 'growth' ? '' : 'none';
   /* 빠른 피드백에 들어올 때만 처음으로 되돌린다. 필터를 바꿔도 보던 자리를 지킨다. */
   if(view === 'stamp'){ _stIdx = 0; _stDone = 0; }
+  if(view === 'picked'){ _pkOpen = {}; }
   // 알림 섹션은 모든 뷰에서 표시
   applyFilters();
 }
