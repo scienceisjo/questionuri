@@ -2252,19 +2252,6 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 </div>
 
 <!-- AI 요정 모달 -->
-<div class="mdl" id="mFy" onclick="closeFy()">
-  <div class="fy-box mdl-box" onclick="event.stopPropagation()">
-    <div class="fy-hdr">
-      <div class="fy-info"><img class="fy-mascot" src="assets/fy-mascot.webp" alt=""><div><div class="fy-nm">힌트 요정</div><div class="fy-sub">AI 탐구 도우미</div></div></div>
-      <button class="fy-x" onclick="closeFy()">✕</button>
-    </div>
-    <div class="fy-body">
-      <div class="fy-q"><div class="fy-ql">질문</div><div class="fy-qt" id="fyQ"></div></div>
-      <div class="fy-resp" id="fyR"><div class="fy-thk"><span>🌿</span><span>생각중...</span></div></div>
-    </div>
-  </div>
-</div>
-
 <!-- 과목 추가 모달 -->
 <div class="mdl" id="mAS" onclick="closeAS()">
   <div class="as-box mdl-box" onclick="event.stopPropagation()" style="max-width:460px">
@@ -6104,12 +6091,14 @@ function nextStep(q){
     return { say:'해 볼 수 있게 좁혀볼까요? 뭘 바꾸고 뭘 볼지만 정하면 돼요.',
              btn:'🔬 좁혀보기', fn:'openExpand(' + q.id + ')' };
   }
-  if (q.hint) {
-    return { say:'힌트를 읽고 새로 생긴 궁금증이 있나요?',
-             btn:'🌿 하나만 붙이기', fn:'openBM(' + q.id + ')' };
+  /* 예전엔 여기서 AI 힌트를 권했다. 힌트는 «답을 향해» 가는 길이라
+     질문 자체는 그대로 남았다. 이제는 질문을 고치는 쪽으로 보낸다. */
+  if (isRefined(q)) {
+    return { say:'다듬었으면 이제 풀어볼까요?',
+             btn:'🔬 해결하러 가기', fn:'openSolve(' + q.id + ')' };
   }
-  return { say:'이 질문, 힌트 요정한테 물어볼래요?',
-           btn:'🧚 힌트 받기', fn:'openFy(' + q.id + ')' };
+  return { say:'이 질문, 한 끗만 고치면 훨씬 풀기 쉬워져요.',
+           btn:'✨ 다듬기', fn:'openRefine(' + q.id + ')' };
 }
 
 function nextStepHTML(q){
@@ -6268,7 +6257,6 @@ function questionTrail(q){
   const steps=[];
   steps.push(`<span class="tstep done">🌱 심음</span>`);
   if(q.water_count) steps.push(`<span class="tstep">💧 물 ${q.water_count}</span>`);
-  if(q.hint) steps.push(`<span class="tstep">🧚 힌트</span>`);
   if((q.branches||[]).length) steps.push(`<span class="tstep">🌿 꼬리 ${q.branches.length}</span>`);
   if(selfCheckCount(q)) steps.push(`<span class="tstep">🎯 ${selfCheckCount(q)}/7</span>`);
   if(hasChildren(q)) steps.push(`<span class="tstep grow">🌿 확장</span>`);
@@ -6466,7 +6454,6 @@ function renderQs(){
           <button class="qb qb-rf${isRefined(q)?' done':''}" onclick="openRefine(${q.id})" title="질문 다듬기 — 탐구할 수 있는 질문으로">✨</button>
           <button class="qb qb-solve${q.solve&&(q.solve.answer||'').trim()?' done':''}" onclick="openSolve(${q.id})" title="스스로 해결하기">🔬</button>
           ${q.unit?`<button class="qb qb-pick${q.is_picked?' on':''}" onclick="togglePick(${q.id})" title="이 차시의 대표 질문으로 고르기 (차시당 ${PICK_MAX}개)">⭐</button>`:''}
-          <button class="qb qb-f" onclick="openFy(${q.id})" title="AI 힌트">🧚</button>
           <button class="qb qb-br" onclick="openBM(${q.id})" title="꼬리질문">🌿</button>
           <button class="qb qb-e" onclick="openFrPick(${q.id})" title="열매 모양">🍎</button>
           <button class="qb qb-e" onclick="S.editId=${q.id};renderQs()" title="수정">✏️</button>
@@ -8610,28 +8597,11 @@ function miniTree(prof, data, lv){
   return s;
 }
 
-// ============================================================================
-// AI 요정
-// ============================================================================
-async function openFy(id){
-  const q=qsInSub(S.activeSub).find(x=>x.id===id);
-  if(!q) return;
-  $('fyQ').textContent=q.text;
-  $('mFy').classList.add('show');
-  if(q.hint){$('fyR').textContent=q.hint;return;}
-  $('fyR').innerHTML='<div class="fy-thk"><span>🌿</span><span>생각중...</span></div>';
-  try{
-    const {data,error}=await sb.functions.invoke('ai-hint',{body:{question:q.text}});
-    if(error) throw error;
-    const hint=data?.hint||'교과서에서 핵심 개념을 찾아보고 "왜 그럴까?"를 파고들어봐! 🌿';
-    $('fyR').textContent=hint;
-    await sb.from('questions').update({hint}).eq('id',id).eq('user_id',S.user.id);
-    q.hint=hint;
-  }catch(err){
-    setTimeout(()=>{$('fyR').textContent='교과서에서 핵심 개념을 찾아보고 "왜 그럴까?"를 파고들어봐! 🌿';},800);
-  }
-}
-function closeFy(){$('mFy').classList.remove('show');}
+/* 🧚 AI 힌트 요정 — 걷어냈다 (2026-08).
+   ai-hint Edge Function 을 달지 않은 상태라 눌러도 «생각중...» 에서 멈췄고,
+   힌트는 «답을 향해» 가는 길이라 질문 자체는 그대로 남는다는 문제도 있었다.
+   그 자리는 ✨ 다듬기가 대신한다 — nextStep() 참고.
+   questions.hint 컬럼과 지난 힌트 데이터는 지우지 않고 그냥 둔다. */
 
 // ============================================================================
 // ============================================================================
