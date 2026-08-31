@@ -1812,6 +1812,19 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .ba-a span{background:#4CAF50;color:#fff}
 .rf-link{color:#5E35B1;font-weight:800;cursor:pointer;font-size:10.5px;margin-left:4px}
 .rf-link:hover{text-decoration:underline}
+/* ══ 🔬 내 말로 쓰게 만드는 장치 ═════════════════════════════════════ */
+.sv-req{display:inline-block;font-size:9.5px;font-weight:800;color:#fff;background:#C62828;
+  border-radius:4px;padding:1px 6px;vertical-align:1.5px;margin:0 2px}
+.sv-hide{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:#5E35B1;
+  background:#F3EFFB;border:1px dashed #B39DDB;border-radius:8px;padding:9px 11px;
+  margin:13px 0 3px;line-height:1.55}
+.sv-peek{margin-left:auto;padding:5px 11px;border-radius:7px;border:1px solid #B39DDB;
+  background:#fff;font-size:11px;font-weight:700;color:#5E35B1;cursor:pointer;font-family:inherit}
+.sv-peek:hover{background:#EDE7F6}
+.qc-ans-nudge{font-size:11.5px;color:var(--tl);background:var(--bg2,#F7F7F4);border-radius:8px;
+  padding:9px 11px;margin-bottom:8px;line-height:1.6}
+.qc-ans-nudge button{border:1px solid #B39DDB;background:#fff;border-radius:6px;padding:3px 9px;
+  font-size:11px;font-weight:800;color:#5E35B1;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body data-theme="cute">
@@ -6534,6 +6547,7 @@ function renderQs(){
         </button>
         <div id="ansArea-${q.id}" style="display:none">
           <div class="qc-ans-form">
+            <div class="qc-ans-nudge">💡 <b>바로 답을 적기 전에</b> — <button onclick="openSolve(${q.id})">🔬 스스로 해결하기</button> 를 거치면 내가 예상하고, 확인하고, 내 말로 쓰는 자리가 있어요.</div>
             <textarea class="qc-ans-input" id="ansText-${q.id}" placeholder="답변을 적어보세요... 이미지나 그림도 첨부할 수 있어요!" oninput="if(!_answerState[${q.id}])_answerState[${q.id}]={text:'',pendingFiles:[]};_answerState[${q.id}].text=this.value">${q.answer_text ? esc(q.answer_text) : ''}</textarea>
             <div class="qc-ans-btns">
               <button class="qc-ans-btn" onclick="triggerFileUpload(${q.id})" title="이미지·PDF">📎 파일</button>
@@ -6810,6 +6824,24 @@ function _bigrams(s){
   for(let i = 0; i < s.length - 1; i++) out.push(s.slice(i, i + 2));
   return out.length ? out : (s ? [s] : []);
 }
+/* 내 글의 두 글자 조각 중 몇 %가 상대 글 안에 있나.
+   Dice 는 길이가 다르면 낮게 나와서 «한 문단만 잘라 붙인 복붙» 을 놓친다.
+   (실측: 잘라 붙인 복붙 Dice 0.70, 한 문장 복붙 0.35 — 둘 다 새어 나갔다)
+   포함율은 길이에 안 흔들린다. 같은 표본에서 복붙 0.93~1.00,
+   제 말로 쓴 글 0.19~0.52 로 깨끗하게 갈렸다. */
+function containedIn(a, b){
+  const ga = qGrams(a), gb = qGrams(b);
+  if(!ga.size) return 0;
+  let hit = 0;
+  ga.forEach(function(x){ if(gb.has(x)) hit++; });
+  return hit / ga.size;
+}
+function qGrams(s){
+  const n = normQ(s), g = new Set();
+  for(let i = 0; i < n.length - 1; i++) g.add(n.slice(i, i + 2));
+  return g;
+}
+
 function diceSim(a, b){
   const A = _bigrams(a), B = _bigrams(b);
   if(!A.length || !B.length) return (a === b && a) ? 1 : 0;
@@ -9778,6 +9810,7 @@ function solveDraft(q){
       how: (s.how || []).slice(), change: s.change || '', guess: s.guess || '',
       why: s.why || '', known: s.known || '', prompt: s.prompt || '', ai: s.ai || '',
       verdict: s.verdict || '', source: s.source || '', unclear: s.unclear || '',
+      tried: s.tried || '', result: s.result || '', peeked: s.peeked || 0,
       answer: s.answer || '', newq: s.newq || ''
     };
   }
@@ -9807,7 +9840,7 @@ function solveHarvest(qid){
   const g = function(id){ const e = $(id + '-' + qid); return e ? e.value : null; };
   const map = {change:'svChange', guess:'svGuess', why:'svWhy', known:'svKnown',
                prompt:'svPrompt', ai:'svAi', source:'svSource', unclear:'svUnclear',
-               answer:'svAnswer', newq:'svNewq'};
+               result:'svResult', answer:'svAnswer', newq:'svNewq'};
   Object.keys(map).forEach(function(k){ const v = g(map[k]); if(v !== null) d[k] = v; });
 }
 
@@ -9883,11 +9916,30 @@ async function saveSolve(qid, done){
   if(!q) return;
   solveHarvest(qid);
   const d = _solveDraft[qid] || {};
-  if(done && !(d.answer||'').trim()){ toast('최종 답안을 내 말로 적어주세요 ✍️'); return; }
+  if(done){
+    const ans = (d.answer || '').trim();
+    if(!ans){ toast('최종 답안을 내 말로 적어주세요 ✍️'); return; }
+    if(ans.length < 15){ toast('조금만 더 자세히 적어볼까요? ✍️'); return; }
+    /* «한 군데 더 확인» — 선생님이 정한 규칙이다. AI 말만으로는 끝나지 않는다. */
+    if(!(d.source || '').trim()){
+      toast('AI 말은 한 군데 더 확인해야 해요. 4단계로 돌아가서 적어주세요 📚');
+      S.solveStep = 4; renderQs(); return;
+    }
+    /* 베낌 검사 — «내 글이 AI 글 안에 얼마나 들어 있나» 로 본다.
+       0.80 은 실측으로 정했다: 복붙 네 가지(그대로·잘라내기·말투만·한 문장)가
+       0.93~1.00, 제 말로 쓴 글 세 가지가 0.19~0.52 였다. 사이가 넓어서
+       애매하게 걸리는 일이 잘 없다. */
+    const ai = (d.ai || '').trim();
+    if(ai && containedIn(ans, ai) >= 0.80){
+      toast('AI 가 쓴 문장을 거의 그대로 옮겼어요. 창을 덮고 네 말로 다시 써볼래? 🙈');
+      return;
+    }
+  }
   const solve = {
     how:d.how, change:d.change, guess:d.guess, why:d.why, known:d.known,
     prompt:d.prompt, ai:d.ai, verdict:d.verdict, source:d.source,
-    unclear:d.unclear, answer:d.answer, newq:d.newq,
+    unclear:d.unclear, tried:d.tried, result:d.result, peeked:d.peeked,
+    answer:d.answer, newq:d.newq,
     saved_at: new Date().toISOString()
   };
   if(!S.guest){
@@ -9904,6 +9956,30 @@ async function saveSolve(qid, done){
   } else {
     toast('💾 여기까지 저장했어요');
   }
+}
+
+/* 1단계에서 세운 계획을 진짜 했는지 되묻는다 */
+function svTried(qid, v){
+  const d = _solveDraft[qid]; if(!d) return;
+  d.tried = v;
+  ['yes','no'].forEach(function(k){
+    const el = $('svT-' + qid + '-' + k); if(el) el.classList.toggle('on', k === v);
+  });
+  const L = $('svResL-' + qid), R = $('svResult-' + qid);
+  const show = (v === 'yes') ? '' : 'none';
+  if(L) L.style.display = show;
+  if(R) R.style.display = show;
+}
+
+/* 몰래 보기 — 막지 않는다. 다만 몇 번 봤는지가 남고 선생님도 본다.
+   막으면 다른 탭에서 볼 뿐이다. 보는 걸 «세는» 쪽이 실제로 덜 보게 만든다. */
+function svPeek(qid){
+  const d = _solveDraft[qid]; if(!d) return;
+  if(!(d.ai || '').trim()){ toast('AI 답을 아직 안 붙여넣었어요'); return; }
+  d.peeked = (d.peeked | 0) + 1;
+  alert('AI 가 한 말' + _SNL + _SNL + d.ai + _SNL + _SNL +
+        '— 이제 창을 닫고, 읽은 걸 떠올려서 «내 말로» 써보세요. (' + d.peeked + '번째)');
+  renderQs();
 }
 
 function svVerdict(qid, v){
@@ -9980,7 +10056,7 @@ function renderSolvePanel(q){
     body =
       '<div class="sv-l">① 내 예상과 견주면?</div>' +
       '<div class="sv-vs">' + vs + '</div>' +
-      '<div class="sv-l">② <b>한 군데 더</b> 확인했어? <small>(교과서 쪽수, 책, 다른 사이트, 직접 해보기…)</small></div>' +
+      '<div class="sv-l">② <b>한 군데 더</b> 확인했어? <span class="sv-req">꼭 필요해요</span> <small>(교과서 쪽수, 책, 다른 사이트, 직접 해보기…)</small></div>' +
       '<input class="sv-in" id="svSource-' + q.id + '" value="' + esc(d.source) + '" placeholder="예) 교과서 128쪽에서 확인했다">' +
       '<div class="sv-l">③ AI 말 중에 아직 이해 안 되는 것</div>' +
       '<textarea class="sv-ta" id="svUnclear-' + q.id + '" placeholder="모르겠는 부분을 적어두면 선생님이 봐요">' + esc(d.unclear) + '</textarea>' +
@@ -9992,9 +10068,29 @@ function renderSolvePanel(q){
   }
 
   else {
+    /* AI 답은 여기서 화면에 없다. 3~4단계에서 이미 읽었다.
+       기억해서 다시 쓰는 그 순간이 이 활동에서 진짜 배우는 자리다.
+       그래도 봐야겠으면 볼 수 있게는 해둔다 — 다만 봤다는 사실이 남는다.
+       벽을 세우기보다, 보는 게 «공짜가 아니게» 만드는 쪽이 오래 간다. */
+    const plan = (d.change || '').trim();
+    const T = [{k:'yes', t:'✅ 해봤어요'}, {k:'no', t:'⏳ 아직 못 해봤어요'}];
+    const ts = T.map(function(x){
+      const on = d.tried === x.k ? ' on' : '';
+      return '<button class="sv-v' + on + '" id="svT-' + q.id + '-' + x.k + '" onclick="svTried(' + q.id + ',\'' + x.k + '\')">' + x.t + '</button>';
+    }).join('');
     body =
       '<div class="sv-q">' + esc(qShow(q)) + '</div>' +
-      '<div class="sv-l">✍️ 이 질문의 답을 <b>내 말로</b> 적어요 <small>(AI 말 베끼기 금지)</small></div>' +
+      (plan
+        ? ('<div class="sv-l">① 1단계에서 <b>「' + esc(plan) + '」</b> 라고 했죠. 진짜 해봤나요?</div>' +
+           '<div class="sv-vs">' + ts + '</div>' +
+           '<div class="sv-l" id="svResL-' + q.id + '" style="' + (d.tried === 'yes' ? '' : 'display:none') + '">무슨 일이 일어났나요?</div>' +
+           '<textarea class="sv-ta" id="svResult-' + q.id + '" style="' + (d.tried === 'yes' ? '' : 'display:none') + '" ' +
+             'placeholder="해보니까...">' + esc(d.result) + '</textarea>')
+        : '') +
+      '<div class="sv-hide">🙈 AI 답은 지금 안 보여요. <b>읽은 걸 떠올려서</b> 내 말로 쓰세요.' +
+        '<button class="sv-peek" onclick="svPeek(' + q.id + ')">' +
+          (d.peeked ? '👀 ' + d.peeked + '번 봤어요' : '몰래 보기') + '</button></div>' +
+      '<div class="sv-l">' + (plan ? '②' : '①') + ' ✍️ 이 질문의 답을 <b>내 말로</b> <span class="sv-req">꼭 필요해요</span></div>' +
       '<textarea class="sv-ta tall" id="svAnswer-' + q.id + '" placeholder="내가 알아낸 것은...">' + esc(d.answer) + '</textarea>' +
       '<div class="sv-l">🌱 풀고 나니 <b>새로 생긴 질문</b>이 있나요?</div>' +
       '<input class="sv-in" id="svNewq-' + q.id + '" value="' + esc(d.newq) + '" placeholder="그럼 이건 어떻게 될까...">' +
