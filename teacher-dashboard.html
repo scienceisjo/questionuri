@@ -798,6 +798,21 @@ tr:hover .row-del{opacity:.7}
   border:1px solid var(--rule);border-radius:8px;padding:10px 12px;max-height:280px;overflow:auto}
 .pk-b.st{background:#ECEFF1;color:#37474F}
 .pk-row.stuck .pk-v{background:#ECEFF1;border-radius:6px;padding:7px 10px;color:#37474F}
+/* ══ 📊 접어 둔 그래프 ═════════════════════════════════════════════════ */
+.fold{margin-top:26px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.fold>summary{list-style:none;cursor:pointer;padding:14px 18px;font-size:13px;font-weight:800;
+  color:var(--ink2);display:flex;align-items:center;gap:9px}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::before{content:'▸';font-size:11px;color:var(--ink3);transition:transform .15s}
+.fold[open]>summary::before{transform:rotate(90deg)}
+.fold>summary:hover{color:var(--pr)}
+.fold-n{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--ink3)}
+.fold>div{padding:0 14px 16px}
+/* ══ 표·도장 화면의 다듬기 표시 ═══════════════════════════════════════ */
+.tbl-was{margin-top:4px;font-size:10.5px;color:var(--ink3);opacity:.8;line-height:1.5}
+.tb{display:inline-block;margin-right:4px;font-size:12px;vertical-align:1px}
+.st-was{margin-top:9px;font-size:12px;color:var(--ink3);opacity:.85;line-height:1.55}
+.pk-row.peek .pk-v{color:#C62828;font-weight:700}
 </style>
 </head>
 <body>
@@ -895,6 +910,11 @@ tr:hover .row-del{opacity:.7}
         <option value="">해결 여부 전체</option>
         <option value="resolved">해결만</option>
         <option value="open">미해결만</option>
+        <option value="refined">✨ 다듬은 것만</option>
+        <option value="unrefined">✨ 아직 안 다듬은 것</option>
+        <option value="picked">⭐ 대표 질문만</option>
+        <option value="solved">🔬 해결한 것만</option>
+        <option value="stuck">🌫 막힌 것만</option>
       </select>
       <select id="fAnon" onchange="applyFilters()">
         <option value="">익명 여부 전체</option>
@@ -938,41 +958,6 @@ tr:hover .row-del{opacity:.7}
     <!-- SUMMARY -->
     <div class="summary" id="summary"></div>
 
-    <!-- ROW 1: 시계열 + 히트맵 -->
-    <div class="grid grid-2">
-      <div class="section">
-        <div class="section-hdr">
-          <h2><span class="num">01</span> 📈 30일 활동 추이</h2>
-          <span class="sub">Daily · Questions / Resolved / Waters</span>
-        </div>
-        <div class="section-body pad">
-          <canvas id="timeChart" class="chart-canvas"></canvas>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-hdr">
-          <h2><span class="num">02</span> 🔥 요일 × 주차 참여도</h2>
-          <span class="sub">Heatmap · Last 8 weeks</span>
-        </div>
-        <div class="section-body">
-          <div class="heatmap-wrap">
-            <div class="heatmap" id="heatmap"></div>
-            <div class="hm-legend">
-              <span>적음</span>
-              <div class="hm-legend-scale">
-                <div class="hm-legend-sw hm-cell h0"></div>
-                <div class="hm-legend-sw hm-cell h1"></div>
-                <div class="hm-legend-sw hm-cell h2"></div>
-                <div class="hm-legend-sw hm-cell h3"></div>
-                <div class="hm-legend-sw hm-cell h4"></div>
-                <div class="hm-legend-sw hm-cell h5"></div>
-              </div>
-              <span>많음</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ROW 2: 공감/협력 지표 TOP -->
     <div class="grid grid-4">
@@ -1129,6 +1114,44 @@ tr:hover .row-del{opacity:.7}
         </div></div>
       </div>
     </div>
+    <!-- 📊 가끔 보는 것 — 접어 둔다 -->
+    <details class="fold" id="foldStats" ontoggle="foldStats(this)">
+      <summary>📊 활동 추이 · 참여도 그래프 <span class="fold-n">가끔 보는 것</span></summary>
+      <div class="grid grid-2" style="margin-top:14px">
+        <div class="section">
+          <div class="section-hdr">
+            <h2>📈 30일 활동 추이</h2>
+            <span class="sub">Daily · Questions / Resolved / Waters</span>
+          </div>
+          <div class="section-body pad">
+            <canvas id="timeChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-hdr">
+            <h2>🔥 요일 × 주차 참여도</h2>
+            <span class="sub">Heatmap · Last 8 weeks</span>
+          </div>
+          <div class="section-body">
+            <div class="heatmap-wrap">
+              <div class="heatmap" id="heatmap"></div>
+              <div class="hm-legend">
+                <span>적음</span>
+                <div class="hm-legend-scale">
+                  <div class="hm-legend-sw hm-cell h0"></div>
+                  <div class="hm-legend-sw hm-cell h1"></div>
+                  <div class="hm-legend-sw hm-cell h2"></div>
+                  <div class="hm-legend-sw hm-cell h3"></div>
+                  <div class="hm-legend-sw hm-cell h4"></div>
+                  <div class="hm-legend-sw hm-cell h5"></div>
+                </div>
+                <span>많음</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
     </div><!-- /viewDefault -->
 
     <!-- ═════════ VIEW: 과목별 보기 ═════════ -->
@@ -1771,6 +1794,12 @@ function applyFilters(){
   // 해결 상태 필터
   if(stF === 'resolved') qs = qs.filter(q => q.resolved);
   else if(stF === 'open') qs = qs.filter(q => !q.resolved);
+  /* ✨🔬 학생 앱에 새로 생긴 갈래들 */
+  else if(stF === 'refined')   qs = qs.filter(q => (q.refined_text||'').trim());
+  else if(stF === 'unrefined') qs = qs.filter(q => !(q.refined_text||'').trim());
+  else if(stF === 'picked')    qs = qs.filter(q => q.is_picked);
+  else if(stF === 'solved')    qs = qs.filter(q => q.solve && (q.solve.answer||'').trim());
+  else if(stF === 'stuck')     qs = qs.filter(q => q.solve && q.solve.stuck);
 
   // 익명 여부 필터
   if(anF === 'anon') qs = qs.filter(q => q.is_anonymous);
@@ -1834,8 +1863,8 @@ function applyFilters(){
   if(activeView === 'default'){
     renderSummary();
     renderAlerts();
-    renderTimeChart();
-    renderHeatmap();
+    /* 접혀 있으면 그리지 않는다 — 필터 바꿀 때마다 헛일을 하지 않게 */
+    if($('foldStats') && $('foldStats').open){ renderTimeChart(); renderHeatmap(); }
     renderTopLists();
     renderWordcloud();
     renderCategories();
@@ -2500,7 +2529,11 @@ function renderStampView(){
        (q.resolved ? '<span>🍎 해결</span>' : '') +
        (q.water_count ? '<span>💧' + q.water_count + '</span>' : '') +
        '</div>';
-  h += '<div class="st-q">' + esc(q.text || '') + '</div>';
+  /* 학생이 다듬었으면 다듬은 것에 도장을 찍어야 한다. 원본에 찍으면
+     «고치기 전» 을 평가하는 셈이 된다. 원본은 아래에 작게 남긴다. */
+  h += '<div class="st-q">' + esc(q.refined_text || q.text || '') + '</div>';
+  if((q.refined_text||'').trim())
+    h += '<div class="st-was">✨ 다듬기 전 · ' + esc(q.text || '') + '</div>';
   if(st) h += '<div class="st-cur" style="--sc:' + st.c + '">🏷️ 지금 찍힌 도장: <b>' +
               st.e + ' ' + esc(st.t) + '</b> — 아래에서 바꾸거나 «✕ 도장 취소»</div>';
   if(q.teacher_nudge) h += '<div class="st-nudge">🌿 내 되묻기: ' + esc(q.teacher_nudge) + '</div>';
@@ -3257,6 +3290,7 @@ function pkDetail(q){
   h += row('아는 것', s.known);
   if((s.ai||'').trim()){
     h += '<div class="pk-stage">2~3 · AI 에게 묻기</div>';
+    if(s.peeked) h += row('몰래 본 횟수', s.peeked + '번', 'peek');
     h += '<details class="pk-det"><summary>AI 답 보기 (' + String(s.ai).length + '자)</summary>' +
          '<div class="pk-ai">' + esc(s.ai).split(String.fromCharCode(10)).join('<br>') + '</div></details>';
     if((s.prompt||'').trim())
@@ -3544,6 +3578,13 @@ function renderStudentsView(){
 // ═══════════════════════════════════════════════════════════════════
 // SUMMARY CARDS
 // ═══════════════════════════════════════════════════════════════════
+/* 📊 접어 둔 그래프 — 접힌 채로는 캔버스 크기가 0 이라 Chart.js 가 찌그러진다.
+   열리는 순간에 다시 그린다. 접혀 있을 때는 그릴 필요도 없다. */
+function foldStats(el){
+  if(!el || !el.open) return;
+  try{ renderTimeChart(); renderHeatmap(); }catch(e){}
+}
+
 function renderSummary(){
   const totalStudents = filteredStudents.length;
   const totalQs = filteredQuestions.length;
@@ -3554,6 +3595,13 @@ function renderSummary(){
   const avgQ = totalStudents ? (totalQs/totalStudents).toFixed(1) : '0';
   const pct = totalQs ? Math.round(100*totalR/totalQs) : 0;
   const anonPct = totalQs ? Math.round(100*totalA/totalQs) : 0;
+  /* ✨🔬 학생 앱에 새로 생긴 것들. 첫 화면에서 «몇 명이 어디까지 갔나» 가 보여야
+     수업 중에 판단이 된다. 막힘 수를 따로 세는 이유 — 그게 다음 수업 주제다. */
+  const nRef = filteredQuestions.filter(q => (q.refined_text||"").trim()).length;
+  const nPick = filteredQuestions.filter(q => q.is_picked).length;
+  const nSol = filteredQuestions.filter(q => q.solve && (q.solve.answer||"").trim()).length;
+  const nStk = filteredQuestions.filter(q => q.solve && q.solve.stuck).length;
+  const refPct = totalQs ? Math.round(100*nRef/totalQs) : 0;
 
   $('summary').innerHTML = `
     <div class="scard" data-accent="green">
@@ -3575,6 +3623,16 @@ function renderSummary(){
       <div class="scard-lbl"><span class="dot"></span>Empathy · Waters</div>
       <div class="scard-val">${totalW}<span class="sub">💧</span></div>
       <div class="scard-meta">반 친구들과 공감한 수</div>
+    </div>
+    <div class="scard" data-accent="green">
+      <div class="scard-lbl"><span class="dot"></span>Refined ✨</div>
+      <div class="scard-val">${nRef}<span class="sub">/${refPct}%</span></div>
+      <div class="scard-meta">다듬은 질문 · 대표 <span class="delta">${nPick}</span>개</div>
+    </div>
+    <div class="scard" data-accent="purple">
+      <div class="scard-lbl"><span class="dot"></span>Solved 🔬</div>
+      <div class="scard-val">${nSol}<span class="sub">개</span></div>
+      <div class="scard-meta">🌫 막힘 <span class="delta">${nStk}</span>개 · 여기가 다음 수업감</div>
     </div>
     <div class="scard" data-accent="purple">
       <div class="scard-lbl"><span class="dot"></span>Anonymous</div>
@@ -4164,6 +4222,16 @@ function sortAndRenderStudents(){
 // ═══════════════════════════════════════════════════════════════════
 // QUESTIONS TABLE
 // ═══════════════════════════════════════════════════════════════════
+/* 표에서 한눈에 — 다듬음 ✨ / 대표 ⭐ / 해결 🔬 / 막힘 🌫 */
+function qBadges(q){
+  let h = "";
+  if(q.is_picked) h += '<span class="tb pick">⭐</span>';
+  if((q.refined_text||"").trim()) h += '<span class="tb ref">✨</span>';
+  if(q.solve && q.solve.stuck) h += '<span class="tb stk">🌫</span>';
+  else if(q.solve && (q.solve.answer||"").trim()) h += '<span class="tb sol">🔬</span>';
+  return h;
+}
+
 function renderQuestions(){
   const qs = filteredQuestions.slice(0,100);
   $('questionCount').textContent = filteredQuestions.length+'개';
@@ -4189,7 +4257,7 @@ function renderQuestions(){
     return `<tr>
       <td>${name}</td>
       <td>${sub}</td>
-      <td style="white-space:normal;max-width:320px;word-break:break-word">${esc(q.text)}</td>
+      <td style="white-space:normal;max-width:320px;word-break:break-word">${qBadges(q)}${esc(q.refined_text || q.text)}${q.refined_text ? `<div class="tbl-was">✨ 전 · ${esc(q.text)}</div>` : ""}</td>
       <td>${tags||'—'}</td>
       <td style="color:var(--blue);font-weight:600">${q.water_count?'💧'+q.water_count:'—'}</td>
       <td style="color:var(--pr);font-weight:600">${brByQ[q.id]?'🌿'+brByQ[q.id]:'—'}</td>

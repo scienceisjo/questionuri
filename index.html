@@ -1861,6 +1861,30 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .sv-stuck-go{padding:9px 15px;border-radius:8px;border:none;background:#546E7A;color:#fff;
   font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
 .sv-stuck-go:hover{background:#455A64}
+/* ══ ✨ 다듬기 가이드 · 평가 프롬프트 ═══════════════════════════════════ */
+.rf-free{font-size:11.5px;color:#8A5A00;background:#FFF8E9;border:1px solid #F0D48A;
+  border-radius:9px;padding:10px 12px;margin-bottom:11px;line-height:1.6}
+.rf-ready{margin-top:7px;padding-top:7px;border-top:1px dashed #E5C97A;color:#2E7D32}
+.rf-guide{background:#fff;border:1px solid var(--line,#E5E3DC);border-radius:9px;
+  padding:11px 12px;margin-bottom:11px}
+.rf-guide-h{font-size:11.5px;font-weight:800;color:#2E7D32;margin-bottom:7px}
+.rf-guide-h.bad{color:#C62828;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line,#E5E3DC)}
+.rf-g{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--tl);
+  line-height:1.6;padding:3px 0}
+.rf-g>span{flex:none;width:16px;height:16px;border-radius:50%;background:#E8F5E9;color:#2E7D32;
+  font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.rf-g.bad>span{background:#FFEBEE;color:#C62828}
+.rf-g b{color:var(--tx)}
+.rf-ask{background:#FBFAFE;border:1px dashed #B39DDB;border-radius:9px;
+  padding:11px 12px;margin-bottom:12px}
+.rf-ask-t{font-size:11.5px;color:#5E35B1;line-height:1.6;margin-bottom:9px}
+.rf-ask-t small{color:var(--tl);font-size:10.5px}
+.rf-ask-b{width:100%;padding:9px;border-radius:8px;border:1.5px solid #7E57C2;background:#fff;
+  font-size:12px;font-weight:800;color:#5E35B1;cursor:pointer;font-family:inherit}
+.rf-ask-b:hover{background:#F3EFFB}
+.rf-prompt{width:100%;min-height:170px;margin-top:9px;padding:10px;border:1px solid #B39DDB;
+  border-radius:8px;font-size:11.5px;font-family:inherit;line-height:1.65;
+  background:#fff;color:var(--tx);resize:vertical}
 </style>
 </head>
 <body data-theme="cute">
@@ -6471,7 +6495,7 @@ function renderQs(){
         <div style="flex:1;min-width:0">
           ${q.parent_id&&parentText[q.id]?`<div class="qc-grewfrom" title="이 질문에서 자랐어요">🌱 <span>${esc(parentText[q.id])}</span> 에서 자란 질문</div>`:''}
           <div class="qc-t" data-math="1"><span class="qc-phase ph-${q.phase||'before'}" title="${q.phase==='after'?'수업 닫기 질문':'수업 열기 질문'}">${q.phase==='after'?'🌙':'🌅'}</span> <span class="qtype qtype-${qt.cls}" title="질문 유형: ${qt.label}">${qt.icon} ${qt.label}</span> ${q.is_picked?'<span class="qc-pick-b" title="이 차시의 대표 질문">⭐</span> ':''}${escWithMath(qShow(q))} <span class="qc-fr" title="이 질문의 열매">${frEmoji}</span></div>
-          ${isRefined(q)?`<div class="qc-was" title="다듬기 전 원본"><span>✨ 다듬기 전</span> ${escWithMath(q.text)}</div>`:''}
+          ${isRefined(q)?`<div class="qc-was" title="다듬기 전 원본"><span>✨ 다듬기 전</span> ${escWithMath(dispFix(q.text))}</div>`:''}
           ${tagHtml?`<div class="qc-tags">${tagHtml}</div>`:''}
           <div class="qc-d">
             <span>📅 ${q.date||''}</span>
@@ -9787,7 +9811,14 @@ function renderHarvestPanel(q){
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* 지금 보여줄 질문 글 — 다듬었으면 다듬은 것 */
-function qShow(q){ return (q && (q.refined_text || q.text)) || ''; }
+/* 화면에 내보내는 질문 글은 언제나 여기를 지난다.
+   태블릿 자판이 고장 난 채로 저장된 질문이 깨져 보이지 않게, 전각·반각을
+   되살려서 내보낸다. 저장된 원본은 건드리지 않는다 — 보여줄 때만 고친다.
+   (dispFix 는 아래 renderRefinePanel 근처에 있다) */
+function qShow(q){
+  const s = (q && (q.refined_text || q.text)) || '';
+  return (typeof dispFix === 'function') ? dispFix(s) : s;
+}
 function isRefined(q){ return !!(q && (q.refined_text||'').trim()); }
 function refineCount(q){
   const c = (q && q.refine_check) || {};
@@ -10360,8 +10391,98 @@ function renderSolvePanel(q){
     body + '</div>';
 }
 
+/* ══ ④ 화면에 «넣는» 글도 되살려서 보여준다 ══════════════════════════════
+   입력칸은 focusout 에서 고치지만, 이미 깨진 채로 저장된 질문은 화면에
+   그대로 나온다. 다듬으라고 보여주는 글이 깨져 있으면 다듬을 수가 없다.
+   전각·반각만 되살린다 — 영타 한글은 «진짜 영어» 일 수 있어서 함부로
+   바꾸면 안 되고, 그건 학생에게 물어봐야 한다. */
+function dispFix(s){
+  try{ return fixWidth(String(s == null ? '' : s)); }
+  catch(e){ return String(s == null ? '' : s); }
+}
+
+/* 이미 손볼 데가 없어 보이는 질문인가 — «다듬지 마라» 가 아니라
+   «안 고쳐도 괜찮다» 고 말해 주려는 것이다. 그래서 기준을 느슨하게 잡는다. */
+function looksReady(text){
+  const s = String(text || '').replace(/\s/g, '');
+  if(s.length < 14) return false;
+  const obs  = /(안닿|닿지않|비비기전|전에는|후에는|하필|인데|않은데|아닌데|없는데|왼쪽|오른쪽|가까이|멀리|보다|생각했는데|줄알)/.test(s);
+  const test = /(말고|대신|다른|바꾸|더많이|많이|오래|얼마나|어디까지|해도|여도|하면|견주|비교)/.test(s);
+  return obs && test;
+}
+
+/* ══ ③ 자기 질문 평가 프롬프트 ═══════════════════════════════════════════
+   통일된 문구를 쓰지 않는 이유 —
+   6개를 다 켠 아이와 하나도 못 켠 아이에게 같은 걸 물으면 둘 다 헛돈다.
+   그래서 «내가 못 채운 항목» 을 프롬프트의 과녁으로 삼는다.
+   그리고 제일 중요한 줄은 «정답을 알려주지 마» 다. 이게 없으면 AI 가
+   과학 질문에 답해 버려서, 다듬기 활동 자체가 사라진다. */
+function buildRefinePrompt(q){
+  const orig = dispFix(q.text || '');
+  const ta = $('rfText-' + q.id);
+  const now = ((ta && ta.value) || q.refined_text || '').trim();
+  const on = [], off = [];
+  INQ_CHECK.forEach(function(x){
+    const el = $('rfChk-' + q.id + '-' + x.n);
+    const checked = el ? el.classList.contains('on') : !!((q.refine_check||{})[x.n]);
+    (checked ? on : off).push(x.t);
+  });
+
+  const L = [];
+  L.push('나는 중학교 2학년이야. 과학 수업에서 내가 만든 질문을 더 좋은 질문으로 고치는 중이야.');
+  L.push('답을 찾는 중이 아니라 «질문 자체» 를 고치는 중이야.');
+  L.push('');
+  L.push('【내가 처음 쓴 질문】');
+  L.push(orig);
+  if(now && now !== orig){
+    L.push('');
+    L.push('【내가 고쳐 쓴 질문】');
+    L.push(now);
+  }
+  L.push('');
+  L.push('【내가 스스로 점검한 결과】');
+  L.push('되는 것 같다 : ' + (on.length ? on.join(' / ') : '(하나도 없음)'));
+  L.push('아직 안 되는 것 : ' + (off.length ? off.join(' / ') : '(없음 — 여섯 개 다 된다고 봤어)'));
+  L.push('');
+  L.push('【이렇게 봐줘】');
+
+  /* 상황마다 부탁이 달라진다 */
+  if(!now || now === orig){
+    L.push('1. 나는 아직 한 글자도 못 고쳤어. 어디부터 손대면 좋을지 한 군데만 짚어줘.');
+  } else {
+    L.push('1. 처음 것과 고친 것을 견줘서, 정말 나아졌는지 말해줘. 안 나아졌으면 안 나아졌다고 해줘.');
+  }
+
+  if(off.length === 0){
+    L.push('2. 나는 여섯 개가 다 된다고 봤어. 깐깐하게 따져줘 — 정말 다 되는지, 내가 너무 후하게 본 건 없는지.');
+  } else if(on.length === 0){
+    L.push('2. 나는 하나도 못 채웠어. 여섯 개 중 «제일 쉽게 채울 수 있는 것» 하나만 골라서 그것만 알려줘.');
+  } else {
+    L.push('2. 내가 «되는 것 같다» 고 한 것 중에 사실은 아닌 게 있으면 짚어줘.');
+    L.push('3. «아직 안 되는 것» 을 채우려면 어떻게 고치면 될지, 고친 예를 1~2개만 보여줘.');
+  }
+
+  L.push('');
+  L.push('【꼭 지켜줘】');
+  L.push('· 내 질문의 <답>은 알려주지 마. 나는 질문을 고치는 중이야.');
+  L.push('· 고친 예를 줄 때는 내가 쓴 문장을 살려서 한 군데만 바꿔줘. 완전히 새로 쓰지 마.');
+  L.push('· 중학교 2학년이 아는 말로. 어려운 낱말을 쓰면 뜻도 같이 알려줘.');
+  L.push('· 길게 쓰지 마. 짧게.');
+  return L.join(_SNL).split('<').join('「').split('>').join('」');
+}
+
+async function refineCopyPrompt(qid){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  if(!q) return;
+  const txt = buildRefinePrompt(q);
+  const box = $('rfPrompt-' + qid);
+  if(box){ box.value = txt; box.style.display = ''; }
+  try{ await navigator.clipboard.writeText(txt); toast('📋 복사했어요! AI 에 붙여넣으세요'); }
+  catch(e){ if(box){ box.select(); document.execCommand('copy'); } toast('📋 복사했어요!'); }
+}
+
 function renderRefinePanel(q){
-  const cur = (q.refined_text || q.text || '');
+  const cur = dispFix(q.refined_text || q.text || '');
   const chk = q.refine_check || {};
   const tools = UP_STEPS.map(function(s){
     return '<div class="rf-tool"><span class="rf-tool-n">' + s.n + '</span>' +
@@ -10374,10 +10495,27 @@ function renderRefinePanel(q){
            '<div class="rf-chk-l"><b>' + x.ic + ' ' + esc(x.t) + '</b><small>' + esc(x.d) + '</small></div></div>';
   }).join('');
   const n = refineCount(q);
+  const ready = looksReady(q.refined_text || q.text);
   return '<div class="qc-refine">' +
     '<div class="rf-hdr">✨ 질문 다듬기</div>' +
     '<div class="rf-sub">원본은 지워지지 않아요. <b>전과 후를 나란히</b> 남깁니다.</div>' +
-    '<div class="rf-orig"><span class="rf-orig-l">원본</span>' + esc(q.text||'') + '</div>' +
+    /* ② 안 다듬어도 된다는 걸 맨 위에서 말해 준다. 아래에 도구가 잔뜩 있으면
+       «다 해야 하나» 싶어지는데, 이 활동은 그런 게 아니다. */
+    '<div class="rf-free">💡 <b>꼭 다듬지 않아도 돼요.</b> 이미 좋은 질문이면 그대로 두고 바로 풀어도 됩니다.' +
+      (ready ? '<div class="rf-ready">🌟 이 질문은 <b>이미 좋아 보여요</b> — 관찰도 들어 있고 해볼 수도 있어요. 그냥 두셔도 좋아요.</div>' : '') +
+    '</div>' +
+    '<div class="rf-orig"><span class="rf-orig-l">원본</span>' + esc(dispFix(q.text||'')) + '</div>' +
+    /* ① 가이드라인 — 도구 목록만 있으면 «뭘 먼저 하지» 에서 멈춘다 */
+    '<div class="rf-guide">' +
+      '<div class="rf-guide-h">📌 이렇게 해보세요</div>' +
+      '<div class="rf-g"><span>1</span>내 질문을 <b>소리 내어</b> 읽어봐요. 읽다가 «어? 이게 무슨 말이지» 하는 데가 고칠 곳이에요.</div>' +
+      '<div class="rf-g"><span>2</span>아래 여섯 가지 중 <b>딱 하나만</b> 골라요. 다 하려고 하면 오히려 나빠져요.</div>' +
+      '<div class="rf-g"><span>3</span>고친 뒤에 다시 읽어봐요. <b>친구가 읽어도</b> 무엇을 알고 싶은지 보이면 된 거예요.</div>' +
+      '<div class="rf-guide-h bad">🚫 이건 피해요</div>' +
+      '<div class="rf-g bad"><span>✕</span><b>길게 쓰기</b> — 길다고 좋은 질문이 아니에요. 오히려 짧아질 수도 있어요.</div>' +
+      '<div class="rf-g bad"><span>✕</span><b>한 번에 여러 개 묻기</b> — «왜 A이고 또 B일까?» 는 두 질문이에요. 하나만.</div>' +
+      '<div class="rf-g bad"><span>✕</span><b>어려운 말 넣기</b> — 아는 말로 써야 내가 풀 수 있어요.</div>' +
+    '</div>' +
     '<div class="rf-tools"><div class="rf-tools-h">🧰 이 여섯 가지 중 <b>하나만</b> 골라 고쳐도 좋아요 ' +
       '<a class="rf-link" onclick="openMCInfo(&#39;ba&#39;)">✨ 한 끗 차이 예시</a></div>' + tools + '</div>' +
     '<textarea class="rf-text" id="rfText-' + q.id + '" oninput="rfPaint(' + q.id + ')" ' +
@@ -10385,11 +10523,19 @@ function renderRefinePanel(q){
     '<div class="rf-hint" id="rfHint-' + q.id + '"></div>' +
     '<div class="rf-chks-h">✅ 다듬은 질문을 점검해요 <small>(연수 «탐구 과제 체크리스트»)</small></div>' +
     '<div class="rf-chks">' + checks + '</div>' +
+    /* ③ 스스로 점검한 결과를 그대로 실어 AI 에게 «봐 달라» 고 한다.
+       체크 상태에 따라 부탁이 달라지므로 누를 때마다 새로 만든다. */
+    '<div class="rf-ask">' +
+      '<div class="rf-ask-t">🤖 <b>내 질문이 괜찮은지 봐 달라</b>고 AI 에게 물어볼 수 있어요.' +
+        '<br><small>내가 체크한 것에 맞춰 프롬프트가 만들어져요. <b>답은 안 알려주고</b> 질문만 봐 달라고 되어 있어요.</small></div>' +
+      '<button class="rf-ask-b" onclick="refineCopyPrompt(' + q.id + ')">📋 평가 프롬프트 만들어 복사하기</button>' +
+      '<textarea class="rf-prompt" id="rfPrompt-' + q.id + '" style="display:none" readonly></textarea>' +
+    '</div>' +
     '<div class="rf-foot">' +
       '<span class="rf-count' + (n>=4?' good':'') + '" id="rfCount-' + q.id + '">통과 ' + n + '/6</span>' +
       '<div class="rf-btns">' +
         (isRefined(q) ? '<button class="rf-undo" onclick="undoRefine(' + q.id + ')">↩ 원본으로</button>' : '') +
-        '<button class="rf-cancel" onclick="closeRefine()">닫기</button>' +
+        '<button class="rf-cancel" onclick="closeRefine()">이대로 둘래요</button>' +
         '<button class="rf-save" onclick="saveRefine(' + q.id + ')">✨ 다듬어 저장</button>' +
       '</div>' +
     '</div>' +
