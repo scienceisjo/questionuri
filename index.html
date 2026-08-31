@@ -1838,6 +1838,16 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .ic-yes:hover{background:#D8931F}
 .ic-no{padding:7px 13px;border-radius:7px;border:1px solid var(--line,#E5E3DC);background:#fff;
   font-size:12px;font-weight:700;color:var(--tl);cursor:pointer;font-family:inherit}
+/* ══ 🔬 ②번 칸 적는 법 ═══════════════════════════════════════════════ */
+.sv-help{background:#fff;border:1px solid var(--line,#E5E3DC);border-radius:9px;
+  padding:10px 12px;margin:0 0 7px;line-height:1.55}
+.svh-t{font-size:11.5px;font-weight:700;color:var(--tx);margin-bottom:7px}
+.svh-r{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--tl);padding:2.5px 0}
+.svh-r>span{flex:none;width:56px;font-weight:800;color:#5E35B1;font-size:10.5px;padding-top:1px}
+.svh-r b{color:var(--tx)}
+.svh-n{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line,#E5E3DC);
+  font-size:11px;color:var(--tl);line-height:1.6}
+.svh-n b{color:#5E35B1}
 </style>
 </head>
 <body data-theme="cute">
@@ -9938,6 +9948,7 @@ function solveHowToggle(qid, k){
   const ask = svChangeAsk(d.how);
   const L = $('svChL-' + qid); if(L) L.textContent = ask.l;
   const I = $('svChange-' + qid); if(I) I.placeholder = ask.p;
+  const H = $('svChH-' + qid); if(H) H.innerHTML = ask.help;
 }
 
 /* ══ 프롬프트 만들기 ══════════════════════════════════════════════════════
@@ -10039,15 +10050,56 @@ async function saveSolve(qid, done){
    «무엇을 바꿀까» 가 언제나 제일 쓸모 있는 물음이라서다. */
 function svChangeAsk(how){
   const h = how || [];
-  if(h.indexOf('exp') >= 0)
-    return {l:'무엇 하나를 바꿔볼까?', p:'예) 털 대신 머리카락으로 비벼본다', k:'바꿔볼 것'};
-  if(h.indexOf('cmp') >= 0)
-    return {l:'무엇과 무엇을 견줄까?', p:'예) 알루미늄 호일과 휴지를 나란히 놓고 본다', k:'견줄 것'};
-  if(h.indexOf('obs') >= 0)
-    return {l:'무엇을 자세히 볼까?', p:'예) 빨대를 뗄 때 호일이 눕는 속도를 본다', k:'볼 것'};
-  if(h.indexOf('src') >= 0)
-    return {l:'어디서 찾아볼까?', p:'예) 교과서 전기 단원 · 「대전열」 로 검색', k:'찾아볼 곳'};
-  return {l:'무엇을 해볼까?', p:'확인 방법을 먼저 고르면 여기가 바뀌어요', k:'해볼 것'};
+  /* 설명은 «칸 세 개» 꼴로 보여준다. 줄글로 쓰면 안 읽는다. */
+  const row = function(a, b){ return '<div class="svh-r"><span>' + a + '</span>' + b + '</div>'; };
+
+  if(h.indexOf('exp') >= 0) return {
+    l:'무엇 하나를 바꿔볼까?', k:'바꿔볼 것',
+    p:'예) 털 대신 머리카락으로 비벼본다',
+    help:
+      '<div class="svh-t">🔬 실험은 <b>하나만 바꾸고 나머지는 그대로</b> 두는 거예요.</div>' +
+      row('바꾸는 것', '딱 <b>하나만</b> — 털 → 머리카락') +
+      row('보는 것',   '그래서 뭐가 달라지나 — 캔이 따라오는지') +
+      row('그대로',    '나머지는 건드리지 않기 — 빨대 종류, 비빈 횟수, 거리') +
+      '<div class="svh-n">💡 <b>바꿀 게 딱히 없는 질문</b>이면 대신 이걸 적어요 —<br>' +
+      '「무엇을 <b>똑같이 맞춰야</b> 공평한 실험이 될까?」</div>'
+  };
+
+  if(h.indexOf('cmp') >= 0) return {
+    l:'무엇과 무엇을 견줄까?', k:'견줄 것',
+    p:'예) 알루미늄 호일과 휴지를 나란히 놓고 본다',
+    help:
+      '<div class="svh-t">📊 견주려면 <b>어떤 점에서</b> 견줄지가 있어야 해요.</div>' +
+      row('견줄 둘', '알루미늄 호일 ↔ 휴지') +
+      row('견줄 점', '얼마나 오래 서 있나 (한 가지만!)') +
+      '<div class="svh-n">💡 둘을 <b>나란히 같은 조건</b>에 놓아야 견줄 수 있어요.</div>'
+  };
+
+  if(h.indexOf('obs') >= 0) return {
+    l:'무엇을 자세히 볼까?', k:'볼 것',
+    p:'예) 빨대를 뗀 직후에 호일이 눕는 데 걸리는 시간',
+    help:
+      '<div class="svh-t">👀 <b>언제, 어디를</b> 볼지 정해두면 놓치지 않아요.</div>' +
+      row('볼 곳',   '빨대를 뗀 직후의 호일') +
+      row('볼 점',   '눕는 데 걸리는 시간 · 움직이는 방향') +
+      '<div class="svh-n">💡 <b>숫자로 적을 수 있으면</b> 제일 좋아요 — 몇 초, 몇 cm.</div>'
+  };
+
+  if(h.indexOf('src') >= 0) return {
+    l:'어디서 찾아볼까?', k:'찾아볼 곳',
+    p:'예) 교과서 전기 단원 · 「대전열」 로 검색',
+    help:
+      '<div class="svh-t">📚 <b>찾을 낱말</b>을 정해두면 훨씬 빨라요.</div>' +
+      row('찾을 곳', '교과서 전기 단원 · 과학 사전') +
+      row('검색어',  '대전열 · 정전기 유도 (짧은 낱말로)') +
+      '<div class="svh-n">💡 <b>두 군데 이상</b>에서 같은 말이 나오는지 보세요.</div>'
+  };
+
+  return {
+    l:'무엇을 해볼까?', k:'해볼 것',
+    p:'확인 방법을 먼저 고르면 여기가 바뀌어요',
+    help:'<div class="svh-t">👆 위에서 <b>확인 방법을 먼저 고르면</b> 여기에 적는 법이 나와요.</div>'
+  };
 }
 
 function svTried(qid, v){
@@ -10104,6 +10156,7 @@ function renderSolvePanel(q){
       '<div class="sv-l">① 어떻게 확인할 수 있을까? <small>(여러 개 골라도 돼요)</small></div>' +
       '<div class="sv-hows">' + hows + '</div>' +
       '<div class="sv-l">② <span id="svChL-' + q.id + '">' + esc(_ask.l) + '</span> <small>(이 질문에 해당 없으면 비워도 돼요)</small></div>' +
+      '<div class="sv-help" id="svChH-' + q.id + '">' + _ask.help + '</div>' +
       '<input class="sv-in" id="svChange-' + q.id + '" value="' + esc(d.change) + '" placeholder="' + esc(_ask.p) + '">' +
       '<div class="sv-l">③ 내 예상은? <small>(틀려도 괜찮아요. 이게 제일 중요해요)</small></div>' +
       '<textarea class="sv-ta" id="svGuess-' + q.id + '" placeholder="나는 ○○일 것 같다...">' + esc(d.guess) + '</textarea>' +
