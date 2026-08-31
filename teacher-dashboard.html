@@ -796,6 +796,8 @@ tr:hover .row-del{opacity:.7}
 .pk-det summary{font-size:11.5px;font-weight:700;color:var(--ink2);cursor:pointer;padding:5px 0}
 .pk-ai{font-size:11.5px;color:var(--ink2);line-height:1.65;background:var(--surface);
   border:1px solid var(--rule);border-radius:8px;padding:10px 12px;max-height:280px;overflow:auto}
+.pk-b.st{background:#ECEFF1;color:#37474F}
+.pk-row.stuck .pk-v{background:#ECEFF1;border-radius:6px;padding:7px 10px;color:#37474F}
 </style>
 </head>
 <body>
@@ -3168,6 +3170,10 @@ function pkRefineCount(q){
   return Object.keys(c).filter(function(k){ return c[k]; }).length;
 }
 function pkSolved(q){ return !!(q.solve && (q.solve.answer||'').trim()); }
+/* 🌫 막힌 채로 마친 것도 «끝낸 것» 이다. 오히려 이쪽이 더 볼 값어치가 있다 —
+   여러 명이 같은 데서 막혔으면 그게 다음 수업 주제다. */
+function pkStuck(q){ return !!(q.solve && q.solve.stuck); }
+function pkDone(q){ return pkSolved(q) || pkStuck(q); }
 
 /* 지금 필터에 걸린 것 중 대표 질문만, 차시 → 학급 순으로 */
 function pkList(){
@@ -3197,8 +3203,10 @@ function renderPicked(){
       return (A.grade-B.grade) || (A.class_no-B.class_no) || (A.number-B.number);
     });
     const done = list.filter(pkSolved).length;
+    const stuck = list.filter(pkStuck).length;
     h += '<div class="pk-unit"><div class="pk-unit-h">📑 ' + esc(u) +
-         '<span class="pk-unit-n">' + list.length + '개 · 해결 ' + done + '</span></div>';
+         '<span class="pk-unit-n">' + list.length + '개 · 해결 ' + done +
+         (stuck ? ' · 🌫 막힘 ' + stuck : '') + '</span></div>';
     list.forEach(function(q){
       const p = pm[q.user_id] || {};
       const who = (p.grade||'?') + '-' + (p.class_no||'?') + ' ' + esc(p.name||'');
@@ -3214,7 +3222,9 @@ function renderPicked(){
              '</div>' +
              '<div class="pk-badges">' +
                (q.refined_text ? '<span class="pk-b ok">✅ ' + pkRefineCount(q) + '/6</span>' : '') +
-               (pkSolved(q) ? '<span class="pk-b sv">🔬 해결</span>' : '<span class="pk-b no">미해결</span>') +
+               (pkStuck(q) ? '<span class="pk-b st">🌫 막힘</span>'
+                 : pkSolved(q) ? '<span class="pk-b sv">🔬 해결</span>'
+                 : '<span class="pk-b no">미해결</span>') +
                '<span class="pk-caret">' + (open?'▲':'▼') + '</span>' +
              '</div>' +
            '</div>' +
@@ -3253,15 +3263,26 @@ function pkDetail(q){
       h += '<details class="pk-det"><summary>학생이 보낸 프롬프트 보기</summary>' +
            '<div class="pk-ai">' + esc(s.prompt).split(String.fromCharCode(10)).join('<br>') + '</div></details>';
   }
+  if((s.ai2||'').trim()){
+    h += '<div class="pk-stage">🔁 다시 물어봄</div>';
+    h += row('막혔던 곳', s.unclear, 'unk');
+    h += '<details class="pk-det"><summary>2차 답 보기 (' + String(s.ai2).length + '자)</summary>' +
+         '<div class="pk-ai">' + esc(s.ai2).split(String.fromCharCode(10)).join('<br>') + '</div></details>';
+  }
   if(s.verdict || s.source || s.unclear){
     h += '<div class="pk-stage">4 · 따져보기</div>';
     if(s.verdict) h += row('예상과 비교', VERDICT_T[s.verdict] || s.verdict);
     h += row('한 군데 더 확인', s.source, 'src');
     h += row('아직 모르는 것', s.unclear, 'unk');
   }
+  if(s.stuck){
+    /* 막힌 채로 마친 것 — 여기를 읽는 게 교사에게 제일 값지다 */
+    h += '<div class="pk-stage">🌫 여기서 막힘</div>';
+    h += row('어디까지', s.stuckWhere, 'stuck');
+  }
   if((s.answer||'').trim()){
     h += '<div class="pk-stage">5 · 최종 답안</div>';
-    h += row('내 말로', s.answer, 'ans');
+    h += row('친구에게', s.answer, 'ans');
     h += row('새로 생긴 질문', s.newq, 'new');
   }
   return h + '</div>';
@@ -3303,14 +3324,15 @@ function pkExportCSV(){
   const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
   const rows = [['학년','반','번호','이름','차시','원본질문','다듬은질문','점검통과',
                  '확인방법','바꿀것','내예상','그이유','예상과비교','한군데더확인',
-                 '아직모르는것','최종답안','새질문']];
+                 '아직모르는것','되묻기답','막힘','어디까지','최종답안','새질문']];
   qs.forEach(function(q){
     const p = pm[q.user_id] || {}, s = q.solve || {};
     rows.push([p.grade, p.class_no, p.number, p.name, q.unit||'',
       q.text||'', q.refined_text||'', q.refined_text ? (pkRefineCount(q)+'/6') : '',
       (s.how||[]).map(function(k){ return SOLVE_HOW_T[k]||k; }).join(' '),
       s.change||'', s.guess||'', s.why||'', VERDICT_T[s.verdict]||'', s.source||'',
-      s.unclear||'', s.answer||'', s.newq||'']);
+      s.unclear||'', s.ai2||'', (s.stuck?'🌫':''), s.stuckWhere||'',
+      s.answer||'', s.newq||'']);
   });
   downloadCSV('해누리_대표질문_해결과정_' + today() + '.csv', rows);
 }

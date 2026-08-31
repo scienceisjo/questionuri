@@ -1848,6 +1848,19 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .svh-n{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line,#E5E3DC);
   font-size:11px;color:var(--tl);line-height:1.6}
 .svh-n b{color:#5E35B1}
+/* ══ 🔁 되묻기 · 🌫 못 찾았어요 ═══════════════════════════════════════ */
+.sv-again{margin-top:11px;padding:11px;border:1px dashed #B39DDB;border-radius:9px;background:#FBFAFE}
+.sv-again-t{font-size:11.5px;color:#5E35B1;line-height:1.55;margin-bottom:8px}
+.sv-again-b{width:100%;padding:9px;border-radius:8px;border:1.5px solid #7E57C2;background:#fff;
+  font-size:12px;font-weight:800;color:#5E35B1;cursor:pointer;font-family:inherit}
+.sv-again-b:hover{background:#F3EFFB}
+.sv-prompt.sm{min-height:150px;font-size:11.5px;margin-top:9px}
+.sv-btns.tight{margin-top:7px}
+.sv-stuck{margin-top:12px;padding:12px;border:1.5px solid #90A4AE;border-radius:10px;background:#F5F7F8}
+.sv-stuck-t{font-size:12.5px;color:#37474F;line-height:1.6;margin-bottom:4px}
+.sv-stuck-go{padding:9px 15px;border-radius:8px;border:none;background:#546E7A;color:#fff;
+  font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.sv-stuck-go:hover{background:#455A64}
 </style>
 </head>
 <body data-theme="cute">
@@ -9892,6 +9905,8 @@ function solveDraft(q){
       why: s.why || '', known: s.known || '', prompt: s.prompt || '', ai: s.ai || '',
       verdict: s.verdict || '', source: s.source || '', unclear: s.unclear || '',
       tried: s.tried || '', result: s.result || '', peeked: s.peeked || 0,
+      ai2: s.ai2 || '', prompt2: s.prompt2 || '',
+      stuck: s.stuck || 0, stuckWhere: s.stuckWhere || '',
       answer: s.answer || '', newq: s.newq || ''
     };
   }
@@ -9921,7 +9936,8 @@ function solveHarvest(qid){
   const g = function(id){ const e = $(id + '-' + qid); return e ? e.value : null; };
   const map = {change:'svChange', guess:'svGuess', why:'svWhy', known:'svKnown',
                prompt:'svPrompt', ai:'svAi', source:'svSource', unclear:'svUnclear',
-               result:'svResult', answer:'svAnswer', newq:'svNewq'};
+               result:'svResult', ai2:'svAi2', prompt2:'svPrompt2',
+               stuckWhere:'svStuckW', answer:'svAnswer', newq:'svNewq'};
   Object.keys(map).forEach(function(k){ const v = g(map[k]); if(v !== null) d[k] = v; });
 }
 
@@ -10002,10 +10018,17 @@ async function saveSolve(qid, done){
   if(!q) return;
   solveHarvest(qid);
   const d = _solveDraft[qid] || {};
-  if(done){
+  if(done && d.stuck){
+    /* 🌫 막힌 채로 마치는 길 — 답안도 출처도 묻지 않는다.
+       대신 «어디까지 갔는지» 만 받는다. 그게 다음 수업의 재료가 된다. */
+    if((d.stuckWhere || '').trim().length < 10){
+      toast('어디까지 찾아봤는지만 적어주세요. 그게 중요해요 🌫'); return;
+    }
+  }
+  else if(done){
     const ans = (d.answer || '').trim();
-    if(!ans){ toast('최종 답안을 내 말로 적어주세요 ✍️'); return; }
-    if(ans.length < 15){ toast('조금만 더 자세히 적어볼까요? ✍️'); return; }
+    if(!ans){ toast('친구에게 설명하듯 적어주세요 🗣'); return; }
+    if(ans.length < 15){ toast('조금만 더 자세히 말해볼까요? 🗣'); return; }
     /* «한 군데 더 확인» — 선생님이 정한 규칙이다. AI 말만으로는 끝나지 않는다. */
     if(!(d.source || '').trim()){
       toast('AI 말은 한 군데 더 확인해야 해요. 4단계로 돌아가서 적어주세요 📚');
@@ -10025,6 +10048,7 @@ async function saveSolve(qid, done){
     how:d.how, change:d.change, guess:d.guess, why:d.why, known:d.known,
     prompt:d.prompt, ai:d.ai, verdict:d.verdict, source:d.source,
     unclear:d.unclear, tried:d.tried, result:d.result, peeked:d.peeked,
+    ai2:d.ai2, prompt2:d.prompt2, stuck:d.stuck, stuckWhere:d.stuckWhere,
     answer:d.answer, newq:d.newq,
     saved_at: new Date().toISOString()
   };
@@ -10036,7 +10060,8 @@ async function saveSolve(qid, done){
   q.solve = solve;
   if(done){
     S.solveId = null;
-    toast('🔬 해결 완료! 잘했어요');
+    toast(d.stuck ? '🌫 여기까지 기록했어요. 모르는 걸 아는 것도 큰 거예요'
+                  : '🔬 해결 완료! 잘했어요');
     if((d.newq||'').trim()) setTimeout(function(){ toast('🌱 새로 생긴 질문은 «키우기» 로 심어보세요'); }, 1600);
     render();
   } else {
@@ -10125,6 +10150,55 @@ function svPeek(qid){
   renderQs();
 }
 
+/* 🌫 막힌 채로 끝내기를 켜고 끈다 */
+function svStuck(qid, on){
+  const d = _solveDraft[qid]; if(!d) return;
+  solveHarvest(qid);
+  d.stuck = on ? 1 : 0;
+  renderQs();
+  if(on) setTimeout(function(){ const e = $('svStuckW-' + qid); e && e.focus(); }, 60);
+}
+
+/* 🔁 2차 프롬프트 — 1차 답과 «내가 모르겠는 것» 을 같이 실어 보낸다.
+   그냥 «다시 설명해줘» 라고 하면 AI 는 같은 말을 길게 늘일 뿐이다.
+   어디서 막혔는지를 짚어 줘야 다른 각도로 답한다. */
+function buildPrompt2(q, d){
+  const L = [];
+  L.push('아까 이 질문을 물어봤어.');
+  L.push('');
+  L.push('【내 질문】');
+  L.push(qShow(q).trim());
+  L.push('');
+  L.push('【네가 해준 답】');
+  L.push((d.ai || '').trim() || '(없음)');
+  L.push('');
+  L.push('【그런데 이게 아직 이해가 안 돼】');
+  L.push((d.unclear || '').trim() || '전체적으로 어려웠어');
+  L.push('');
+  L.push('【이렇게 다시 알려줘】');
+  L.push('1. 아까와 <b>다른 방법</b>으로 설명해줘. 같은 말을 길게 늘이지 말고.');
+  L.push('2. 중학교 2학년이 아는 것에 <b>빗대어</b> 설명해줘.');
+  L.push('3. 내가 뭘 잘못 알고 있어서 막힌 건지 짚어줘.');
+  L.push('4. 이걸 이해했는지 확인할 수 있는 질문을 하나 내줘.');
+  return L.join(_SNL).split('<b>').join('').split('</b>').join('');
+}
+
+function solveAgain(qid){
+  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const d = _solveDraft[qid]; if(!q || !d) return;
+  solveHarvest(qid);
+  if(!(d.ai || '').trim()){ toast('먼저 3단계에서 AI 답을 붙여넣어 주세요'); return; }
+  d.prompt2 = buildPrompt2(q, d);
+  renderQs();
+  toast('🔁 다시 물어볼 프롬프트를 만들었어요');
+}
+
+async function solveCopy2(qid){
+  const el = $('svPrompt2-' + qid); if(!el) return;
+  try{ await navigator.clipboard.writeText(el.value); toast('📋 복사했어요!'); }
+  catch(e){ el.select(); document.execCommand('copy'); toast('📋 복사했어요!'); }
+}
+
 function svVerdict(qid, v){
   const d = _solveDraft[qid]; if(!d) return;
   d.verdict = v;
@@ -10204,8 +10278,21 @@ function renderSolvePanel(q){
       '<div class="sv-l">② <b>한 군데 더</b> 확인했어? <span class="sv-req">꼭 필요해요</span> <small>(교과서 쪽수, 책, 다른 사이트, 직접 해보기…)</small></div>' +
       '<input class="sv-in" id="svSource-' + q.id + '" value="' + esc(d.source) + '" placeholder="예) 교과서 128쪽에서 확인했다">' +
       '<div class="sv-l">③ AI 말 중에 아직 이해 안 되는 것</div>' +
-      '<textarea class="sv-ta" id="svUnclear-' + q.id + '" placeholder="모르겠는 부분을 적어두면 선생님이 봐요">' + esc(d.unclear) + '</textarea>' +
-      '<div class="sv-tip">🌫 «못 찾았어» 도 답이에요. 모르는 걸 아는 게 과학의 시작이에요.</div>' +
+      '<textarea class="sv-ta" id="svUnclear-' + q.id + '" ' +
+        'placeholder="모르겠는 부분을 적어두면 선생님이 봐요">' + esc(d.unclear) + '</textarea>' +
+      /* 🔁 되묻기 — 여기 적은 걸 그대로 2차 프롬프트로 만들어 준다.
+         한 번 묻고 끝내면 AI 는 답지, 되물으면 대화 상대가 된다. */
+      '<div class="sv-again">' +
+        '<div class="sv-again-t">🔁 <b>모르겠는 게 있으면 다시 물어보세요.</b> 한 번에 알아듣는 사람은 없어요.</div>' +
+        '<button class="sv-again-b" onclick="solveAgain(' + q.id + ')">🔁 이걸로 다시 물어볼 프롬프트 만들기</button>' +
+        ((d.prompt2 || '').trim() ?
+          ('<textarea class="sv-prompt sm" id="svPrompt2-' + q.id + '">' + esc(d.prompt2) + '</textarea>' +
+           '<div class="sv-btns tight"><button class="sv-copy" onclick="solveCopy2(' + q.id + ')">📋 복사</button></div>' +
+           '<div class="sv-l">🔁 다시 물어본 답</div>' +
+           '<textarea class="sv-ta" id="svAi2-' + q.id + '" placeholder="두 번째 답을 붙여넣기...">' + esc(d.ai2) + '</textarea>')
+          : '') +
+      '</div>' +
+      '<div class="sv-tip">🌫 끝내 «못 찾았어» 여도 괜찮아요. 다음 화면에 그렇게 끝내는 길이 있어요.</div>' +
       '<div class="sv-btns">' +
         '<button class="sv-back" onclick="solveGo(' + q.id + ',3)">← AI 답</button>' +
         '<button class="sv-next" onclick="solveGo(' + q.id + ',5)">최종 답안 쓰기 →</button>' +
@@ -10235,13 +10322,32 @@ function renderSolvePanel(q){
       '<div class="sv-hide">🙈 AI 답은 지금 안 보여요. <b>읽은 걸 떠올려서</b> 내 말로 쓰세요.' +
         '<button class="sv-peek" onclick="svPeek(' + q.id + ')">' +
           (d.peeked ? '👀 ' + d.peeked + '번 봤어요' : '몰래 보기') + '</button></div>' +
-      '<div class="sv-l">' + (plan ? '②' : '①') + ' ✍️ 이 질문의 답을 <b>내 말로</b> <span class="sv-req">꼭 필요해요</span></div>' +
-      '<textarea class="sv-ta tall" id="svAnswer-' + q.id + '" placeholder="내가 알아낸 것은...">' + esc(d.answer) + '</textarea>' +
+      /* «내 말로» 는 중2에게 막연하다. «친구가 물으면 뭐라고 할래» 는 입이 떨어진다. */
+      '<div class="sv-l">' + (plan ? '②' : '①') + ' 🗣 친구가 <b>「그래서 답이 뭔데?」</b> 하고 물으면 뭐라고 말할래?' +
+        ' <span class="sv-req">꼭 필요해요</span></div>' +
+      '<textarea class="sv-ta tall" id="svAnswer-' + q.id + '" ' +
+        'placeholder="야, 그건 말이야...">' + esc(d.answer) + '</textarea>' +
+      '<div class="sv-tip">💡 <b>말하듯이</b> 쓰면 돼요. 설명이 안 되면 아직 내 것이 안 된 거예요.</div>' +
       '<div class="sv-l">🌱 풀고 나니 <b>새로 생긴 질문</b>이 있나요?</div>' +
       '<input class="sv-in" id="svNewq-' + q.id + '" value="' + esc(d.newq) + '" placeholder="그럼 이건 어떻게 될까...">' +
+      /* 🌫 막힌 채로 끝내는 길. 이 문이 없으면 애들은 모른다고 쓰는 대신 지어낸다. */
+      (d.stuck ?
+        ('<div class="sv-stuck open">' +
+           '<div class="sv-stuck-t">🌫 <b>괜찮아요.</b> 모르는 걸 아는 것도 결과예요.</div>' +
+           '<div class="sv-l">어디까지 찾아봤어? <span class="sv-req">이건 꼭</span></div>' +
+           '<textarea class="sv-ta" id="svStuckW-' + q.id + '" ' +
+             'placeholder="예) 교과서 128쪽까지 봤는데 대전열 얘기가 없었다. AI 는 ○○라는데 무슨 말인지 모르겠다.">' +
+             esc(d.stuckWhere) + '</textarea>' +
+           '<div class="sv-btns tight">' +
+             '<button class="sv-back" onclick="svStuck(' + q.id + ',0)">아니야, 답 쓸래</button>' +
+             '<button class="sv-stuck-go" onclick="saveSolve(' + q.id + ',true)">🌫 여기까지로 마치기</button>' +
+           '</div>' +
+         '</div>')
+        : '') +
       '<div class="sv-btns">' +
         '<button class="sv-back" onclick="solveGo(' + q.id + ',4)">← 따져보기</button>' +
-        '<button class="sv-done" onclick="saveSolve(' + q.id + ',true)">🔬 해결 완료!</button>' +
+        (d.stuck ? '' : '<button class="sv-ghost" onclick="svStuck(' + q.id + ',1)">🌫 아직 못 찾았어요</button>') +
+        (d.stuck ? '' : '<button class="sv-done" onclick="saveSolve(' + q.id + ',true)">🔬 해결 완료!</button>') +
       '</div>';
   }
 
