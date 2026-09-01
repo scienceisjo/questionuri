@@ -1890,6 +1890,18 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   background:rgba(93,184,110,.16);border-radius:5px;padding:2px 7px;margin-right:5px;white-space:nowrap}
 .filter-chip.sub-chip{background:rgba(93,184,110,.10);border-color:rgba(93,184,110,.3);font-weight:700}
 .filter-chip.sub-chip.on{background:var(--pr);border-color:var(--pr);color:#fff}
+/* ══ 🌳 나무 칩 · 💾 임시저장 표시 ═════════════════════════════════════ */
+.filter-chip.tree-chip{background:rgba(240,179,87,.12);border-color:rgba(232,163,61,.35);font-weight:700}
+.filter-chip.tree-chip.on{background:#E8A33D;border-color:#E8A33D;color:#fff}
+.sv-saved{font-size:10.5px;font-weight:700;color:#2E7D32;opacity:0;transition:opacity .2s}
+.sv-saved.on{opacity:1}
+.rf-saved{font-size:10.5px;font-weight:700;color:#2E7D32;opacity:0;transition:opacity .2s;margin-left:auto}
+.rf-saved.on{opacity:1}
+.rf-restore{font-size:11.5px;color:#8A5A00;background:#FFF8E9;border:1px solid #F0D48A;
+  border-radius:8px;padding:9px 11px;margin-bottom:10px;line-height:1.6;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rf-restore button{padding:6px 11px;border-radius:6px;border:1px solid #E8A33D;background:#fff;
+  font-size:11px;font-weight:800;color:#8A5A00;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body data-theme="cute">
@@ -2723,6 +2735,7 @@ const S = {
   phaseFilter:null,        // 질문 목록 단계 필터: null | 'before' | 'after'
   expandParentId:null,     // 🌿 지금 '키우는 중'인 원본 질문 id (인라인 확장 작성기)
   subFilter:null,          // 📚 질문 목록의 과목 필터 (과목 «이름»)
+  treeFilter:null,         // 🌳 나무 필터 ('subId||treeId')
   checkId:null,            // 🎯 지금 자가체크 중인 질문 id
   refineId:null,           // ✨ 지금 다듬는 중인 질문 id
   solveId:null,            // 🔬 지금 해결하는 중인 질문 id
@@ -5472,12 +5485,27 @@ function subIconOf(subId){
 function allMyQs(){
   const out = [];
   Object.keys(S.questions || {}).forEach(function(subId){
-    qsInSub(subId).forEach(function(q){
-      q._sub = subId;                 /* 원본에 표시만 남긴다(복사하면 물주기가 깨진다) */
-      out.push(q);
+    const map = S.questions[subId];
+    if(!map) return;
+    if(Array.isArray(map)){          /* 구버전 — 나무가 없던 시절 */
+      map.forEach(function(q){ q._sub = subId; q._tree = null; out.push(q); });
+      return;
+    }
+    Object.keys(map).forEach(function(treeId){
+      (map[treeId] || []).forEach(function(q){
+        q._sub = subId;              /* 원본에 표시만 남긴다(복사하면 물주기가 깨진다) */
+        q._tree = treeId;
+        out.push(q);
+      });
     });
   });
   return out;
+}
+
+/* 지금 걸러진 질문들이 어느 나무에 있나 — 나무 칩용 */
+function treeInfoOf(subId, treeId){
+  const tr = (S.trees[subId] || []).find(function(x){ return String(x.id) === String(treeId); });
+  return { name: (tr && tr.name) || '나무', icon: (tr && tr.icon) || '🌳' };
 }
 
 /* 질문이 하나라도 있는 과목 이름들 */
@@ -6502,16 +6530,43 @@ function renderQs(){
     const all = document.createElement('button');
     all.className = 'filter-chip sub-chip' + (S.subFilter===null?' on':'');
     all.textContent = '📚 전체 ' + allMyQs().length;
-    all.onclick = function(){ S.subFilter = null; renderQs(); };
+    all.onclick = function(){ S.subFilter = null; S.treeFilter = null; renderQs(); };
     fr.appendChild(all);
     _subs.forEach(function(s){
       const b = document.createElement('button');
       b.className = 'filter-chip sub-chip' + (S.subFilter===s.label?' on':'');
       b.textContent = (s.icon||'📚') + ' ' + s.label + ' ' + s.n;
-      b.onclick = function(){ S.subFilter = (S.subFilter===s.label ? null : s.label); renderQs(); };
+      b.onclick = function(){ S.subFilter = (S.subFilter===s.label ? null : s.label); S.treeFilter = null; renderQs(); };
       fr.appendChild(b);
     });
   }
+
+  /* 🌳 나무 칩 — 지금 보이는 질문들이 걸쳐 있는 나무가 둘 이상일 때만.
+     과목으로 좁힌 뒤 다시 나무로 좁힐 수 있어야 «전기나무만» 볼 수 있다. */
+  const _trees = {};
+  qs.forEach(function(q){
+    if(q._tree == null) return;
+    const k = q._sub + '||' + q._tree;
+    if(!_trees[k]) _trees[k] = Object.assign({key:k, n:0}, treeInfoOf(q._sub, q._tree));
+    _trees[k].n++;
+  });
+  const _tl = Object.keys(_trees).map(function(k){ return _trees[k]; })
+                    .sort(function(a,b){ return b.n - a.n; });
+  if(_tl.length > 1){
+    const all = document.createElement('button');
+    all.className = 'filter-chip tree-chip' + (S.treeFilter===null?' on':'');
+    all.textContent = '🌳 나무 전체';
+    all.onclick = function(){ S.treeFilter = null; renderQs(); };
+    fr.appendChild(all);
+    _tl.forEach(function(x){
+      const b = document.createElement('button');
+      b.className = 'filter-chip tree-chip' + (S.treeFilter===x.key?' on':'');
+      b.textContent = x.icon + ' ' + x.name + ' ' + x.n;
+      b.onclick = function(){ S.treeFilter = (S.treeFilter===x.key ? null : x.key); renderQs(); };
+      fr.appendChild(b);
+    });
+  }
+  if(S.treeFilter) qs = qs.filter(function(q){ return (q._sub + '||' + q._tree) === S.treeFilter; });
 
   // 🌅🌙 단계 필터 칩
   const beforeN=qs.filter(q=>(q.phase||'before')==='before').length;
@@ -9937,6 +9992,7 @@ function refineCount(q){
 function openRefine(qid){
   S.qView = 'list';
   S.refineId = (S.refineId === qid ? null : qid);
+  _rfRestored = null;      /* 다시 열 때마다 되살림 안내를 새로 판단한다 */
   S.checkId = null; S.expandParentId = null; S.solveId = null;
   renderQs();
   if(S.refineId) setTimeout(function(){ $('rfText-'+qid) && $('rfText-'+qid).focus(); }, 60);
@@ -9949,6 +10005,7 @@ function rfToggle(qid, n){
   const box = el.querySelector('.rf-box');
   if(box) box.textContent = el.classList.contains('on') ? '✓' : '';
   rfPaint(qid);
+  refineTouch(qid);
 }
 
 /* 몇 개 걸렸는지 · 얼마나 달라졌는지를 실시간으로 */
@@ -10016,6 +10073,7 @@ async function saveRefine(qid){
     if(!r.data || !r.data.length){ toast('저장되지 않았어요. 새로고침 후 다시 해주세요.'); return; }
   }
   q.refined_text = v; q.refine_check = chk; q.refined_at = patch.refined_at;
+  draftDrop('refine', qid);      /* 제대로 저장됐으니 임시본은 버린다 */
   S.refineId = null;
   const n = refineCount(q);
   toast(n >= 4 ? ('✨ 다듬었어요! 통과 ' + n + '/6 — 이제 해결하러 갈 수 있어요')
@@ -10092,6 +10150,14 @@ function openSolve(qid){
 function closeSolve(){ S.solveId = null; renderQs(); }
 
 /* 화면에 있는 값을 임시 저장소로 걷어온다 — 단계를 옮기기 전에 항상 부른다 */
+/* 해결 패널 안에서 뭐든 치면 자동 저장을 예약한다 */
+document.addEventListener('input', function(e){
+  const p = e.target && e.target.closest && e.target.closest('.qc-solve');
+  if(p && S.solveId != null) solveTouch(S.solveId);
+  const r = e.target && e.target.closest && e.target.closest('.qc-refine');
+  if(r && S.refineId != null) refineTouch(S.refineId);
+});
+
 function solveHarvest(qid){
   const d = _solveDraft[qid]; if(!d) return;
   const g = function(id){ const e = $(id + '-' + qid); return e ? e.value : null; };
@@ -10174,7 +10240,7 @@ async function solveCopy(qid){
   catch(e){ el.select(); document.execCommand('copy'); toast('📋 복사했어요!'); }
 }
 
-async function saveSolve(qid, done){
+async function saveSolve(qid, done, quiet){
   const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
   if(!q) return;
   solveHarvest(qid);
@@ -10221,12 +10287,13 @@ async function saveSolve(qid, done){
   q.solve = solve;
   if(done){
     S.solveId = null;
+    clearTimeout(_draftTimer);     /* 끝냈으니 예약된 자동 저장은 취소 */
     toast(d.stuck ? '🌫 여기까지 기록했어요. 모르는 걸 아는 것도 큰 거예요'
                   : '🔬 해결 완료! 잘했어요');
     if((d.newq||'').trim()) setTimeout(function(){ toast('🌱 새로 생긴 질문은 «키우기» 로 심어보세요'); }, 1600);
     render();
   } else {
-    toast('💾 여기까지 저장했어요');
+    if(!quiet) toast('💾 여기까지 저장했어요');
   }
 }
 
@@ -10422,7 +10489,6 @@ function renderSolvePanel(q){
       '<div class="sv-tip">📌 이걸 그대로 베끼면 안 돼요. 다음 단계에서 <b>따져볼</b> 거예요.</div>' +
       '<div class="sv-btns">' +
         '<button class="sv-back" onclick="solveGo(' + q.id + ',2)">← 프롬프트</button>' +
-        '<button class="sv-ghost" onclick="saveSolve(' + q.id + ',false)">💾 잠깐 저장</button>' +
         '<button class="sv-next" onclick="solveGo(' + q.id + ',4)">따져보기 →</button>' +
       '</div>';
   }
@@ -10512,9 +10578,13 @@ function renderSolvePanel(q){
       '</div>';
   }
 
+  /* 어느 단계에서든 임시저장 — 수업이 언제 끝날지 모른다 */
+  body = body.split('<div class="sv-btns">').join(
+    '<div class="sv-btns"><button class="sv-ghost" onclick="saveSolve(' + q.id + ',false)">💾 임시저장</button>');
   const TITLE = ['나 혼자 먼저', '프롬프트 만들기', 'AI 에게 묻기', '따져보기', '최종 답안'];
   return '<div class="qc-solve" id="svPanel-' + q.id + '">' +
     '<div class="sv-hdr"><span>🔬 스스로 해결하기</span>' +
+      '<span class="sv-saved" id="svSaved-' + q.id + '"></span>' +
       '<button class="sv-x" onclick="closeSolve()">✕</button></div>' +
     '<div class="sv-dots">' + dots + '</div>' +
     '<div class="sv-step">' + step + '. ' + TITLE[step-1] + '</div>' +
@@ -10611,6 +10681,97 @@ async function refineCopyPrompt(qid){
   catch(e){ if(box){ box.select(); document.execCommand('copy'); } toast('📋 복사했어요!'); }
 }
 
+/* ══ 💾 임시저장 ══════════════════════════════════════════════════════════
+   «쓰다가 수업이 끝났어요» 가 제일 흔한 상황이다. 버튼만 두면 누르는 걸
+   잊으니, 손을 멈추면 알아서 저장한다.
+
+   해결하기는 서버(questions.solve)에 담는다 — 칸이 이미 있고, 그래야
+   태블릿을 바꿔도 이어진다.
+   다듬기·답변은 서버에 «미완성» 을 담을 칸이 없어서 이 브라우저에만 둔다.
+   지워져도 손해가 크지 않은 것들이라 그 정도면 된다. */
+const DRAFT_NS = 'qt_draft_v1';
+let _draftTimer = null;
+
+function draftKey(kind, qid){
+  const uid = (S.user && S.user.id) || 'guest';
+  return DRAFT_NS + ':' + uid + ':' + kind + ':' + qid;
+}
+function draftPut(kind, qid, obj){
+  try{ localStorage.setItem(draftKey(kind,qid), JSON.stringify({at:Date.now(), v:obj})); }catch(e){}
+}
+function draftGet(kind, qid){
+  try{
+    const r = JSON.parse(localStorage.getItem(draftKey(kind,qid)) || 'null');
+    return r && r.v ? r : null;
+  }catch(e){ return null; }
+}
+function draftDrop(kind, qid){ try{ localStorage.removeItem(draftKey(kind,qid)); }catch(e){} }
+
+function draftAgo(ms){
+  const s = Math.max(0, Math.round((Date.now() - ms)/1000));
+  if(s < 60) return '방금';
+  if(s < 3600) return Math.round(s/60) + '분 전';
+  if(s < 86400) return Math.round(s/3600) + '시간 전';
+  return Math.round(s/86400) + '일 전';
+}
+
+function draftMark(id, txt){
+  const el = $(id); if(!el) return;
+  el.textContent = txt;
+  el.classList.add('on');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('on'); }, 2600);
+}
+
+/* ── 🔬 해결하기: 손을 멈추면 서버로 ─────────────────────────────────── */
+function solveTouch(qid){
+  clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(function(){ solveAutoSave(qid); }, 4000);
+}
+async function solveAutoSave(qid){
+  if(!_solveDraft[qid]) return;
+  if(S.solveId !== qid) return;             /* 화면을 떠났으면 그만 */
+  try{
+    await saveSolve(qid, false, true);       /* 조용히 */
+    draftMark('svSaved-' + qid, '💾 임시저장됨 · 방금');
+  }catch(e){}
+}
+
+let _rfRestored = null;   /* 이번에 되살림 안내를 이미 처리한 질문 id */
+
+/* 임시저장분을 화면에 얹는다 */
+function refineRestore(qid){
+  const d = draftGet('refine', qid); if(!d) return;
+  const ta = $('rfText-' + qid); if(ta) ta.value = (d.v.text || '');
+  INQ_CHECK.forEach(function(x){
+    const el = $('rfChk-' + qid + '-' + x.n); if(!el) return;
+    const on = !!(d.v.chk || {})[x.n];
+    el.classList.toggle('on', on);
+    const box = el.querySelector('.rf-box'); if(box) box.textContent = on ? '✓' : '';
+  });
+  rfPaint(qid);
+  _rfRestored = qid;
+  const bar = $('rfRestore-' + qid); if(bar) bar.style.display = 'none';
+  toast('💾 쓰다 만 것을 되살렸어요');
+}
+function refineDropDraft(qid){
+  draftDrop('refine', qid);
+  _rfRestored = qid;
+  const bar = $('rfRestore-' + qid); if(bar) bar.style.display = 'none';
+}
+
+/* ── ✨ 다듬기: 이 브라우저에 ────────────────────────────────────────── */
+function refineTouch(qid){
+  const ta = $('rfText-' + qid); if(!ta) return;
+  const chk = {};
+  INQ_CHECK.forEach(function(x){
+    const el = $('rfChk-' + qid + '-' + x.n);
+    if(el && el.classList.contains('on')) chk[x.n] = true;
+  });
+  draftPut('refine', qid, { text: ta.value, chk: chk });
+  draftMark('rfSaved-' + qid, '💾 임시저장됨 · 방금');
+}
+
 function renderRefinePanel(q){
   const cur = dispFix(q.refined_text || q.text || '');
   const chk = q.refine_check || {};
@@ -10626,8 +10787,18 @@ function renderRefinePanel(q){
   }).join('');
   const n = refineCount(q);
   const ready = looksReady(q.refined_text || q.text);
+  /* 이미 되살렸거나 버린 뒤면 배너를 다시 띄우지 않는다 */
+  const _draft = (_rfRestored === q.id) ? null : draftGet('refine', q.id);
   return '<div class="qc-refine">' +
-    '<div class="rf-hdr">✨ 질문 다듬기</div>' +
+    '<div class="rf-hdr">✨ 질문 다듬기' +
+      '<span class="rf-saved" id="rfSaved-' + q.id + '"></span></div>' +
+    /* 💾 쓰다 만 게 있으면 되살릴지 물어본다. 말없이 덮어쓰면
+       «내가 쓴 게 아닌데» 가 되고, 그냥 버리면 수업이 끝나서 못 쓴 게 날아간다. */
+    (_draft ? ('<div class="rf-restore" id="rfRestore-' + q.id + '">' +
+        '💾 <b>' + draftAgo(_draft.at) + '</b> 쓰다 만 것이 있어요.' +
+        '<button onclick="refineRestore(' + q.id + ')">되살리기</button>' +
+        '<button onclick="refineDropDraft(' + q.id + ')">버리기</button>' +
+      '</div>') : '') +
     '<div class="rf-sub">원본은 지워지지 않아요. <b>전과 후를 나란히</b> 남깁니다.</div>' +
     /* ② 안 다듬어도 된다는 걸 맨 위에서 말해 준다. 아래에 도구가 잔뜩 있으면
        «다 해야 하나» 싶어지는데, 이 활동은 그런 게 아니다. */
