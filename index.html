@@ -1902,6 +1902,8 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .rf-restore button{padding:6px 11px;border-radius:6px;border:1px solid #E8A33D;background:#fff;
   font-size:11px;font-weight:800;color:#8A5A00;cursor:pointer;font-family:inherit}
+.qei-note{font-size:10.5px;color:#5E35B1;background:#F3EFFB;border-radius:6px;
+  padding:5px 8px;margin-top:5px;line-height:1.5}
 </style>
 </head>
 <body data-theme="cute">
@@ -6126,7 +6128,7 @@ function renderFruitPicker(){
 
 function openFrPick(id){
   S.frPickId=id;
-  const q=qsInSub(S.activeSub).find(x=>x.id===id);
+  const q=findQ(id);
   const cur=q?.fruit||S.fruit;
   const g=$('frPickG');g.innerHTML='';
   FRUIT_OPTIONS.forEach(em=>{
@@ -6438,7 +6440,7 @@ function setQView(v){ S.qView=v; S.editId=null; renderQs(); }
 function setBoardGroup(g){ S.boardGroup=g; document.querySelectorAll('.bg-opt').forEach(b=>b.classList.toggle('on',b.dataset.g===g)); renderQs(); }
 
 // 🧭 한 질문이 거쳐온 과정을 아이콘 트레일로 (한눈에 보기)
-function hasChildren(q){ return qsInSub(S.activeSub).some(x=>x.parent_id===q.id); }
+function hasChildren(q){ return allMyQs().some(x=>x.parent_id===q.id); }
 function questionTrail(q){
   const steps=[];
   steps.push(`<span class="tstep done">🌱 심음</span>`);
@@ -6641,7 +6643,8 @@ function renderQs(){
 
     if(S.editId===q.id){
       d.innerHTML=`<div>
-        <input class="qei" id="eI-${q.id}" value="${esc(q.text)}">
+        <input class="qei" id="eI-${q.id}" value="${esc(dispFix(qShow(q)))}">
+        ${isRefined(q)?`<div class="qei-note">✨ 다듬은 질문을 고치는 중이에요. 원본은 그대로 남아요.</div>`:''}
         <div class="qea">
           <button class="qeb qe-c" onclick="S.editId=null;renderQs()">취소</button>
           <button class="qeb qe-s" onclick="saveEd(${q.id})">저장</button>
@@ -6858,11 +6861,13 @@ function expChip(qid, prompt){
 async function submitExpand(parentId){
   if(guestNudge()) return;
   const ta=$('expText-'+parentId); if(!ta) return;
-  const t=ta.value.trim();
+  let t=ta.value.trim();
+  t = await imeAsk(t, '키운 질문');
+  ta.value = t;
   const r=await chkQ(t);
   if(!r.ok){ ta.style.borderColor='var(--ar)'; toast('🤔 '+r.msg); shk(ta); return; }
   // 원본 질문 찾기 (같은 과목 내)
-  const parent = qsInSub(S.activeSub).find(q=>q.id===parentId);
+  const parent = findQ(parentId);
   if(!parent){ toast('원본 질문을 찾지 못했어요'); return; }
   const treeId = parent.tree_id || curTreeId();
   const payload={
@@ -6899,7 +6904,7 @@ function renderGrowthReport(){
   const today=td();
   const sub=S.subjects.find(s=>s.id===S.activeSub);
   // 오늘·이 과목의 질문만 집계
-  const todays=qsInSub(S.activeSub).filter(q=>q.date===today);
+  const todays=allMyQs().filter(q=>q.date===today);
   const before=todays.filter(q=>(q.phase||'before')==='before').length;
   const after=todays.filter(q=>q.phase==='after').length;
   const grew=todays.filter(q=>q.parent_id).length;   // 확장으로 자란 질문
@@ -7581,18 +7586,33 @@ async function chkQ(t){
 }
 
 async function saveEd(id){
-  const inp=$('eI-'+id);if(!inp) return;
-  const t=inp.value.trim();if(!t) return;
-  const {error}=await sb.from('questions').update({text:t}).eq('id',id).eq('user_id',S.user.id);
-  if(error){alert('수정 실패: '+error.message);return;}
-  qsInSub(S.activeSub).forEach(q=>{if(q.id===id) q.text=t;});
-  S.editId=null;renderQs();
+  const inp = $('eI-'+id); if(!inp) return;
+  const q = findQ(id); if(!q) return;
+  let v = inp.value.trim(); if(!v) return;
+  v = await imeAsk(v);
+
+  /* 다듬은 질문은 화면에 «다듬은 글» 이 보인다. 그런데 예전엔 언제나 text 를
+     고쳐서, 학생 눈에는 아무 것도 안 바뀐 것처럼 보였다. 보이는 걸 고친다. */
+  const onRefined = isRefined(q);
+  const patch = onRefined ? { refined_text: v } : { text: v };
+
+  const uid = await freshUid();
+  if(!uid){ alert('로그인이 풀렸어요. 새로고침 후 다시 해주세요.'); return; }
+  const r = await sb.from('questions').update(patch).eq('id', id).eq('user_id', uid).select('id');
+  if(r.error){ alert('수정 실패: ' + r.error.message); return; }
+  /* RLS 는 막아도 error 를 주지 않는다. 0줄이면 저장이 안 된 것이다. */
+  if(!r.data || !r.data.length){ alert('저장되지 않았어요. 새로고침 후 다시 해주세요.'); return; }
+
+  if(onRefined) q.refined_text = v; else q.text = v;
+  S.editId = null;
+  toast('✏️ 고쳤어요');
+  render();
 }
 
 // 🍎 수확하기: 해결 버튼을 누르면 "알아낸 것/아직 모르는 것"을 적는 패널을 연다
 function openHarvest(id){
   if(guestNudge()) return;
-  const q = qsInSub(S.activeSub).find(x=>x.id===id);
+  const q = findQ(id);
   if(!q) return;
   S.harvestEdit = !!q.resolved;   // 이미 해결된 질문이면 '기록 수정' 모드
   S.harvestId = id;
@@ -7604,10 +7624,12 @@ function closeHarvest(){ S.harvestId=null; S.harvestEdit=false; renderQs(); }
 
 async function saveHarvest(id){
   if(guestNudge()) return;
-  const q = qsInSub(S.activeSub).find(x=>x.id===id);
+  const q = findQ(id);
   if(!q) return;
-  const finding = ($('hvFind-'+id)?.value||'').trim();
-  const wonder  = ($('hvWonder-'+id)?.value||'').trim();
+  let finding = ($('hvFind-'+id)?.value||'').trim();
+  let wonder  = ($('hvWonder-'+id)?.value||'').trim();
+  finding = await imeAsk(finding, '알아낸 것');
+  wonder  = await imeAsk(wonder,  '아직 모르는 것');
   const wasResolved = !!q.resolved;
   const patch = { finding: finding||null, still_wondering: wonder||null };
   if(!wasResolved) patch.resolved = true;  // 처음 수확이면 해결 처리
@@ -7623,7 +7645,7 @@ async function saveHarvest(id){
 // 해결 토글(해제용) — 이미 해결된 열매를 다시 눌러 ○로 되돌릴 때
 async function togRes(id){
   if(guestNudge()) return;
-  const q=qsInSub(S.activeSub).find(x=>x.id===id);
+  const q=findQ(id);
   if(!q) return;
   if(!q.resolved){ openHarvest(id); return; }  // 아직이면 수확 패널로
   const {error}=await sb.from('questions').update({resolved:false}).eq('id',id).eq('user_id',S.user.id);
@@ -7865,7 +7887,7 @@ async function openPeerAnswer(qid){
   if(!q) return;
   const ans = prompt(`💬 친구의 질문에 답해보세요!\n\n"${q.text}"\n\n답변 (10자 이상):`, '');
   if(!ans) return;
-  const txt = ans.trim();
+  const txt = await imeAsk(ans.trim(), '친구에게 남기는 답');
   if(txt.length < 10){ toast('답변은 10자 이상 작성해주세요'); return; }
   if(txt.length > 500){ toast('답변은 500자 이내로 작성해주세요'); return; }
   try{
@@ -7908,7 +7930,7 @@ async function deletePeerAnswer(qid, paId){
 // 🌿 꼬리질문 (branches)
 // ============================================================================
 function openBM(qid){
-  const q=qsInSub(S.activeSub).find(x=>x.id===qid);
+  const q=findQ(qid);
   if(!q) return;
   S.bmId=qid;
   $('bmOrigQ').textContent=q.text;
@@ -7933,7 +7955,7 @@ async function confirmBM(){
   $('bmConfirm').disabled=false;
   if(error){alert('꼬리질문 실패: '+error.message);return;}
 
-  const q=qsInSub(S.activeSub).find(x=>x.id===S.bmId);
+  const q=findQ(S.bmId);
   if(q){q.branches=q.branches||[];q.branches.push(data);}
   S.expandedBranches.add(S.bmId);
   closeBM();
@@ -7946,7 +7968,7 @@ async function ansBr(brId, qid){
   const t=inp.value.trim();if(!t) return;
   const {error}=await sb.from('branches').update({answer:t}).eq('id',brId);
   if(error){alert('저장 실패: '+error.message);return;}
-  const q=qsInSub(S.activeSub).find(x=>x.id===qid);
+  const q=findQ(qid);
   if(q){const br=q.branches.find(b=>b.id===brId);if(br) br.answer=t;}
   toast('💡 답변이 달렸어요!');
   renderQs();
@@ -7956,7 +7978,7 @@ async function delBr(brId, qid){
   if(!confirm('이 꼬리질문을 삭제할까요?')) return;
   const {error}=await sb.from('branches').delete().eq('id',brId).eq('author_id',S.user.id);
   if(error){alert('삭제 실패: '+error.message);return;}
-  const q=qsInSub(S.activeSub).find(x=>x.id===qid);
+  const q=findQ(qid);
   if(q) q.branches=q.branches.filter(b=>b.id!==brId);
   renderQs();renderTree();
 }
@@ -8120,7 +8142,9 @@ function renderLiveBanner(s){
 async function submitLiveQuestion(sessionId){
   if(guestNudge()) return;
   const inp=$('liveInp-'+sessionId); if(!inp) return;
-  const t=inp.value.trim(); if(!t){ inp.focus(); return; }
+  let t=inp.value.trim(); if(!t){ inp.focus(); return; }
+  t = await imeAsk(t, '질문');
+  inp.value = t;
   const s=_liveSession; if(!s||s.id!==sessionId){ toast('세션이 종료됐어요'); return; }
   const uid = await freshUid();
   if(!uid){ toast('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
@@ -9009,7 +9033,9 @@ async function uploadFileToStorage(file){
 
 async function submitAnswer(qid){
   const textEl = document.getElementById('ansText-'+qid);
-  const text = (textEl?.value||'').trim();
+  let text = (textEl?.value||'').trim();
+  text = await imeAsk(text, '답변');
+  if(textEl) textEl.value = text;
   const st = _answerState[qid] || {pendingFiles:[]};
 
   if(!text && !st.pendingFiles.length){
@@ -9029,7 +9055,7 @@ async function submitAnswer(qid){
   }
 
   // 기존 답변 파일이 있으면 합치기
-  const q = qsInSub(S.activeSub).find(x=>x.id===qid);
+  const q = findQ(qid);
   const existingFiles = q?.answer_files || [];
   const allFiles = [...existingFiles, ...uploadedFiles];
 
@@ -9063,7 +9089,7 @@ async function deleteAnswer(qid){
     answer_text: null, answer_files: null
   }).eq('id', qid).eq('user_id', S.user.id);
   if(error){ toast('삭제 실패'); return; }
-  const q = qsInSub(S.activeSub).find(x=>x.id===qid);
+  const q = findQ(qid);
   if(q){ q.answer_text = null; q.answer_files = null; }
   toast('답변을 삭제했어요');
   renderQs();
@@ -10024,7 +10050,7 @@ function rfPaint(qid){
   const hint = $('rfHint-'+qid);
   if(ta && hint){
     const v = (ta.value||'').trim();
-    const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+    const q = findQ(qid);
     const orig = (q && q.text || '').trim();
     if(!v) hint.textContent = '';
     else if(v === orig) hint.textContent = '아직 원본 그대로예요';
@@ -10033,7 +10059,7 @@ function rfPaint(qid){
 }
 
 async function saveRefine(qid){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   if(!q) return;
   const ta = $('rfText-'+qid);
   let v = ((ta && ta.value) || '').trim();
@@ -10044,22 +10070,8 @@ async function saveRefine(qid){
      칸 안에서 엔터로 넘어가면 그 그물을 빠져나간다. 여기가 마지막 문이다.
      전각·반각은 확정적이라 «이렇게 바꿔서 저장할까요?» 만 묻고,
      영타 한글은 진짜 영어일 수 있어서 원문을 같이 보여주고 고르게 한다. */
-  const _w = fixWidth(v);
-  if(_w !== v){
-    if(confirm('글자가 깨져서 저장될 것 같아요.' + _SNL + _SNL +
-               '지금: ' + v + _SNL + '고치면: ' + _w + _SNL + _SNL +
-               '고쳐서 저장할까요?')){
-      v = _w; if(ta) ta.value = v;
-    }
-  }
-  const _ko = maybeKorean(v);
-  if(_ko && _ko.text !== v){
-    if(confirm('자판이 영어로 되어 있었나 봐요.' + _SNL + _SNL +
-               '지금: ' + v + _SNL + '한글로: ' + _ko.text + _SNL + _SNL +
-               '한글로 바꿔서 저장할까요?' + _SNL + '(영어가 맞으면 «취소»)')){
-      v = _ko.text; if(ta) ta.value = v;
-    }
-  }
+  const _fixed = await imeAsk(v);
+  if(_fixed !== v){ v = _fixed; if(ta) ta.value = v; }
   if(v === (q.text||'').trim()){ toast('원본과 똑같아요. 한 군데라도 바꿔볼까요?'); return; }
   const chk = {};
   INQ_CHECK.forEach(function(x){
@@ -10084,7 +10096,7 @@ async function saveRefine(qid){
 /* 다듬기를 되돌린다 — 원본으로 */
 async function undoRefine(qid){
   if(!confirm('다듬기 전으로 되돌릴까요? 다듬은 글은 지워집니다.')) return;
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   if(!q) return;
   if(!S.guest){
     const r = await sb.from('questions').update({refined_text:null, refine_check:null, refined_at:null})
@@ -10133,7 +10145,7 @@ function solveDraft(q){
 }
 
 function openSolve(qid){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   if(!q) return;
   if(S.solveId === qid){ S.solveId = null; renderQs(); return; }
   if(!isRefined(q)){
@@ -10174,7 +10186,7 @@ function solveGo(qid, step){
   if(step >= 2 && !(d.how||[]).length){ toast('먼저 «어떻게 확인할지» 를 골라주세요 🔬'); return; }
   if(step >= 2 && !(d.guess||'').trim()){ toast('내 예상을 먼저 적어주세요. 틀려도 괜찮아요 🌱'); return; }
   if(step === 2 && !(d.prompt||'').trim()){
-    const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+    const q = findQ(qid);
     if(q) d.prompt = buildPrompt(q, d);
   }
   S.solveStep = step; renderQs();
@@ -10227,7 +10239,7 @@ function buildPrompt(q, d){
 }
 
 function solveRebuild(qid){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   const d = _solveDraft[qid]; if(!q || !d) return;
   d.prompt = buildPrompt(q, d);
   const el = $('svPrompt-' + qid); if(el) el.value = d.prompt;
@@ -10241,10 +10253,18 @@ async function solveCopy(qid){
 }
 
 async function saveSolve(qid, done, quiet){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   if(!q) return;
   solveHarvest(qid);
   const d = _solveDraft[qid] || {};
+  /* 끝낼 때 한 번만 훑는다. 임시저장 때마다 물으면 못 견딘다. */
+  if(done){
+    await imeAskFields(d, [['guess','내 예상'], ['why','그 이유'], ['known','아는 것'],
+                           ['change','바꿀 것'], ['result','무슨 일이 있었나'],
+                           ['source','한 군데 더 확인'], ['unclear','아직 모르는 것'],
+                           ['answer','친구에게 설명'], ['newq','새로 생긴 질문'],
+                           ['stuckWhere','어디까지 찾아봤나']]);
+  }
   if(done && d.stuck){
     /* 🌫 막힌 채로 마치는 길 — 답안도 출처도 묻지 않는다.
        대신 «어디까지 갔는지» 만 받는다. 그게 다음 수업의 재료가 된다. */
@@ -10412,7 +10432,7 @@ function buildPrompt2(q, d){
 }
 
 function solveAgain(qid){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   const d = _solveDraft[qid]; if(!q || !d) return;
   solveHarvest(qid);
   if(!(d.ai || '').trim()){ toast('먼저 3단계에서 AI 답을 붙여넣어 주세요'); return; }
@@ -10672,7 +10692,7 @@ function buildRefinePrompt(q){
 }
 
 async function refineCopyPrompt(qid){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   if(!q) return;
   const txt = buildRefinePrompt(q);
   const box = $('rfPrompt-' + qid);
@@ -10772,6 +10792,47 @@ function refineTouch(qid){
   draftMark('rfSaved-' + qid, '💾 임시저장됨 · 방금');
 }
 
+/* ══ 🔎 질문 하나 찾기 ══════════════════════════════════════════════════════
+   질문 목록이 과목을 넘어선 뒤로, 화면에 보이는 질문이 지금 «활성 과목» 에
+   없을 수 있다. 그런데 저장하는 쪽은 여전히 활성 과목에서만 찾고 있었다.
+   → 서버에는 저장됐는데 화면은 안 바뀐다. 연필 수정이 안 먹던 진짜 원인이다. */
+function findQ(id){
+  return allMyQs().find(function(x){ return String(x.id) === String(id); }) || null;
+}
+
+/* ══ ⌨️ 저장 직전 깨진 글 되물어보기 (모든 저장 지점 공용) ══════════════════
+   전각·반각은 «무엇을 쳤는지» 가 확정적이라 고칠지만 묻는다.
+   영타 한글은 진짜 영어일 수 있어서 원문과 나란히 보여주고 고르게 한다.
+   빈 칸이나 멀쩡한 글은 아무 것도 묻지 않는다 — 물음이 잦으면 안 읽는다. */
+async function imeAsk(v, what){
+  let s = String(v == null ? '' : v);
+  if(!s.trim()) return s;
+  const tag = what ? ('「' + what + '」 칸에 ') : '';
+  const w = fixWidth(s);
+  if(w !== s){
+    if(confirm(tag + '글자가 깨져서 저장될 것 같아요.' + _SNL + _SNL +
+               '지금: ' + s + _SNL + '고치면: ' + w + _SNL + _SNL +
+               '고쳐서 저장할까요?')) s = w;
+  }
+  const ko = maybeKorean(s);
+  if(ko && ko.text !== s){
+    if(confirm(tag + '자판이 영어로 되어 있었나 봐요.' + _SNL + _SNL +
+               '지금: ' + s + _SNL + '한글로: ' + ko.text + _SNL + _SNL +
+               '한글로 바꿔서 저장할까요?' + _SNL + '(영어가 맞으면 «취소»)')) s = ko.text;
+  }
+  return s;
+}
+
+/* 여러 칸을 한꺼번에 — 깨진 칸만 묻는다 */
+async function imeAskFields(obj, pairs){
+  for(let i = 0; i < pairs.length; i++){
+    const k = pairs[i][0], label = pairs[i][1];
+    if(typeof obj[k] !== 'string') continue;
+    const nv = await imeAsk(obj[k], label);
+    if(nv !== obj[k]) obj[k] = nv;
+  }
+}
+
 function renderRefinePanel(q){
   const cur = dispFix(q.refined_text || q.text || '');
   const chk = q.refine_check || {};
@@ -10851,11 +10912,11 @@ function renderRefinePanel(q){
    ══════════════════════════════════════════════════════════════════════════ */
 function pickedInUnit(unit){
   if(!unit) return [];
-  return qsInSub(S.activeSub).filter(function(x){ return x.is_picked && (x.unit||'') === unit; });
+  return allMyQs().filter(function(x){ return x.is_picked && (x.unit||'') === unit; });
 }
 
 async function togglePick(qid){
-  const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
+  const q = findQ(qid);
   if(!q) return;
   if(!q.unit){ toast('차시가 붙은 질문만 대표로 고를 수 있어요'); return; }
   const want = !q.is_picked;
@@ -10931,15 +10992,24 @@ function scReasonInput(qid,n){
   const c=$('scCount-'+qid); if(c) c.textContent='충족 '+cnt+'/7';
 }
 async function saveSelfCheck(qid){
-  const q = qsInSub(S.activeSub).find(x=>x.id===qid);
+  const q = findQ(qid);
   if(!q) return;
-  const sc={};
+  const sc={}, _scFix=[];
   GOOD_Q.forEach(g=>{
     const row=$('scRow-'+qid+'-'+g.n), r=$('scR-'+qid+'-'+g.n);
     const checked = !!(row && row.classList.contains('on'));
     const reason = (r?.value||'').trim();
     if(checked || reason) sc[g.n]={checked, reason};
+    if(reason) _scFix.push([g.n, reason, g.t]);
   });
+  /* 근거 칸도 깨질 수 있다. 적힌 것만 훑는다. */
+  for(let i=0;i<_scFix.length;i++){
+    const nv = await imeAsk(_scFix[i][1], _scFix[i][2] + ' 근거');
+    if(nv !== _scFix[i][1]){
+      sc[_scFix[i][0]].reason = nv;
+      const el = $('scR-'+qid+'-'+_scFix[i][0]); if(el) el.value = nv;
+    }
+  }
   q.self_check=sc;
   if(!S.guest){
     const {error}=await sb.from('questions').update({self_check:sc}).eq('id',qid);
