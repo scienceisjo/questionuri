@@ -1710,6 +1710,36 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .qb-rf.done{background:#E8F5E9;border-color:#A5D6A7}
 .qb-solve.done{background:#EDE7F6;border-color:#B39DDB}
 .qb-pick.on{background:#FFF3E0;border-color:#F0B357}
+/* ══ 🃏 질문 카드 버튼 — 늘 보이는 셋 + ⋯ ══════════════════════════════════
+   버튼을 오른쪽 좁은 칸(55%)에 이모지로 욱여넣던 것을 그만두고,
+   카드 아래 한 줄을 통째로 내준다. 글자가 들어갈 자리가 생긴다. */
+.qc-in{flex-wrap:wrap}
+.qc-a{width:100%;max-width:none;justify-content:flex-start;gap:6px;margin-top:9px}
+
+.qbp{display:inline-flex;align-items:center;gap:5px;min-height:var(--touch-sm);
+     padding:0 13px;border-radius:999px;border:1.5px solid var(--bd);background:#fff;
+     color:var(--tx);font-size:var(--fs-xxs);font-weight:700;cursor:pointer;
+     font-family:inherit;white-space:nowrap;transition:all .12s}
+.qbp:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
+/* 이미 한 것은 «했음» 이 보이게 — 다시 눌러도 되지만 안 눌러도 된다 */
+.qbp-rf.done{background:#E8F5E9;border-color:#A5D6A7;color:#2E7D32}
+.qbp-solve.done{background:#EDE7F6;border-color:#B39DDB;color:#5E35B1}
+.qbp-pick.on{background:#FFF3E0;border-color:#F0B357;color:#B45309}
+.qbp-more{padding:0 15px;font-size:var(--fs-sm);color:var(--tl);letter-spacing:2px;font-weight:800}
+.qbp-more.on{background:#F4F4EF;border-color:var(--tl);color:var(--tx)}
+
+/* ⋯ 속. 미리 그려 두고 class 만 바꾼다 — 다시 그리면 스크롤이 튄다 */
+.qc-more{display:none;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:10px;
+         border-top:1px dashed var(--bd)}
+.qc-more.on{display:flex}
+.qbm{display:inline-flex;align-items:center;gap:5px;min-height:var(--touch-sm);
+     padding:0 12px;border-radius:10px;border:1.5px solid var(--bd);background:#fff;
+     color:var(--tx);font-size:var(--fs-xxs);font-weight:600;cursor:pointer;
+     font-family:inherit;white-space:nowrap;transition:all .12s}
+.qbm:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
+/* 삭제는 옆 버튼과 색으로 갈라 놓는다. 예전엔 열매 모양 바로 옆이었다 */
+.qbm-x{color:#C62828;border-color:rgba(232,93,93,.35)}
+.qbm-x:hover{background:rgba(232,93,93,.08);border-color:#E85D5D}
 .qc-refine{margin-top:10px;padding:14px;border:1.5px solid #CFE8D4;border-radius:12px;background:#FBFEFB}
 .rf-hdr{font-size:14.5px;font-weight:800;color:#2E7D32;margin-bottom:3px}
 .rf-sub{font-size:11.5px;color:var(--tl);margin-bottom:11px;line-height:1.55}
@@ -6324,7 +6354,7 @@ function showUnitFull(msgId, unit, info){
     '<div class="qf-t">📚 이 차시에는 ' + info.cap + '개까지예요</div>' +
     '<div class="qf-b"><b>' + esc(code) + '</b> 에 이미 ' + info.n + '개를 심었어요.<br>' +
       '새로 심는 대신, <b>가장 궁금한 질문 하나를 키워</b> 보면 어때요? ' +
-      '질문 카드의 <b>🌿+</b> 를 누르면 한 걸음 더 갈 수 있어요.</div>' +
+      '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 한 걸음 더 갈 수 있어요.</div>' +
     '<div class="qf-n">다른 차시 자료에는 새로 심을 수 있어요.</div>';
   m.className = (msgId === 'msMsg' ? 'ms-msg ' : 'q-msg ') + 'err qf';
   m.style.display = '';
@@ -6492,6 +6522,24 @@ function renderBoard(filtered, childCount, parentText){
       </div>
     </div>`).join('')}</div>`;
 }
+/* ══ ⋯ 카드의 나머지 기능 여닫기 ═════════════════════════════════════════
+   renderQs() 를 부르지 않는다. 부르면 목록이 통째로 다시 그려져서
+   스크롤이 맨 위로 튀고 열어 둔 다듬기·해결 패널이 닫힌다.
+   한 번에 하나만 열어 둔다 — 여러 개가 열려 있으면 카드가 다시 길어진다. */
+function togMore(id){
+  const box = $('more-' + id); if(!box) return;
+  const willOpen = !box.classList.contains('on');
+  document.querySelectorAll('.qc-more.on').forEach(function(el){ el.classList.remove('on'); });
+  document.querySelectorAll('.qbp-more.on').forEach(function(el){
+    el.classList.remove('on'); el.setAttribute('aria-expanded', 'false');
+  });
+  if(willOpen){
+    box.classList.add('on');
+    const b = $('moreB-' + id);
+    if(b){ b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); }
+  }
+}
+
 function boardCard(q,childCount,parentText){
   const fr=q.fruit||S.fruit||'🍎';
   const phase = q.phase==='after'?'🌙':'🌅';
@@ -6687,19 +6735,25 @@ function renderQs(){
               <button class="qc-nudge-grow" onclick="openExpand(${q.id})">🌱 이 되묻기로 질문 키우기</button>
             </div>` : ''}
         </div>
+        ${/* 늘 보이는 셋 — 지금 수업이 도는 순서 그대로 (다듬기 → 대표 → 해결) */''}
         <div class="qc-a">
-          <button class="qb qb-grow" onclick="openExpand(${q.id})" title="이 질문 키우기 — 더 깊은 질문으로">🌿+</button>
-          <button class="qb qb-check" onclick="openSelfCheck(${q.id})" title="좋은 질문 자가체크">🎯</button>
-          <button class="qb qb-rf${isRefined(q)?' done':''}" onclick="openRefine(${q.id})" title="질문 다듬기 — 탐구할 수 있는 질문으로">✨</button>
-          <button class="qb qb-solve${q.solve&&(q.solve.answer||'').trim()?' done':''}" onclick="openSolve(${q.id})" title="스스로 해결하기">🔬</button>
-          ${q.unit?`<button class="qb qb-pick${q.is_picked?' on':''}" onclick="togglePick(${q.id})" title="이 차시의 대표 질문으로 고르기 (차시당 ${PICK_MAX}개)">⭐</button>`:''}
-          <button class="qb qb-br" onclick="openBM(${q.id})" title="꼬리질문">🌿</button>
-          <button class="qb qb-e" onclick="openFrPick(${q.id})" title="열매 모양">🍎</button>
-          <button class="qb qb-e" onclick="S.editId=${q.id};renderQs()" title="수정">✏️</button>
-          ${(S.trees[S.activeSub]||[]).length>1 ? `<button class="qb qb-e" onclick="openMoveQ(${q.id})" title="다른 나무로 옮기기">📦</button>` : ''}
-          <button class="qb qb-r${q.resolved?' dn':''}" onclick="togRes(${q.id})" title="해결">${q.resolved?frEmoji:'○'}</button>
-          <button class="qb qb-x" onclick="delQ(${q.id})" title="삭제">🗑️</button>
+          <button class="qbp qbp-rf${isRefined(q)?' done':''}" onclick="openRefine(${q.id})" title="탐구할 수 있는 질문으로 다듬기">✨ ${isRefined(q)?'다듬음':'다듬기'}</button>
+          <button class="qbp qbp-solve${q.solve&&(q.solve.answer||'').trim()?' done':''}" onclick="openSolve(${q.id})" title="스스로 해결하기">🔬 ${q.solve&&(q.solve.answer||'').trim()?'해결함':'해결하기'}</button>
+          ${q.unit?`<button class="qbp qbp-pick${q.is_picked?' on':''}" onclick="togglePick(${q.id})" title="이 차시의 대표 질문으로 고르기 (차시당 ${PICK_MAX}개)">⭐ 대표</button>`:''}
+          <button class="qbp qbp-more" id="moreB-${q.id}" onclick="togMore(${q.id})" title="이 질문으로 할 수 있는 다른 것들" aria-expanded="false" aria-controls="more-${q.id}">⋯</button>
         </div>
+      </div>
+
+      ${/* ⋯ 속. 자주 쓰지 않는 것들 — 여기서도 글자를 붙였다 */''}
+      <div class="qc-more" id="more-${q.id}">
+        <button class="qbm" onclick="openExpand(${q.id})" title="더 깊은 질문으로">🌿+ 키우기</button>
+        <button class="qbm" onclick="openSelfCheck(${q.id})">🎯 자가체크${selfCheckCount(q)?` ${selfCheckCount(q)}/7`:''}</button>
+        <button class="qbm" onclick="openBM(${q.id})">🌿 꼬리질문${brCount?` ${brCount}`:''}</button>
+        <button class="qbm" onclick="togRes(${q.id})">${q.resolved?`${frEmoji} 수확함`:'○ 수확하기'}</button>
+        <button class="qbm" onclick="S.editId=${q.id};renderQs()">✏️ 질문 고치기</button>
+        <button class="qbm" onclick="openFrPick(${q.id})">🍎 열매 모양</button>
+        ${(S.trees[S.activeSub]||[]).length>1 ? `<button class="qbm" onclick="openMoveQ(${q.id})">📦 다른 나무로</button>` : ''}
+        <button class="qbm qbm-x" onclick="delQ(${q.id})">🗑️ 삭제</button>
       </div>
 
       ${/* 🌿 인라인 확장(키우기) 작성기 */
@@ -7024,7 +7078,7 @@ function quotaFullHTML(){
   return '<div class="qf-t">🌳 오늘 심을 새 질문 ' + cap + '개를 다 썼어요. 오늘 궁금한 게 참 많았네요!</div>' +
          '<div class="qf-b">새 씨앗은 <b>내일</b> 다시 생겨요. 지금 적은 문장은 지우지 마세요 — ' +
          '오늘 심은 질문 아래에 이어 붙이면 그게 <b>«키우기»</b>예요 🌿<br>' +
-         '질문 카드의 <b>🌿+</b> 를 누르면 돼요.</div>' +
+         '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 돼요.</div>' +
          '<div class="qf-n">🌙 «수업 닫기» 질문 한 개는 따로 남겨 뒀어요. ' +
          '결석해서 밀렸다면 선생님께 말하세요.</div>';
 }
@@ -7106,7 +7160,7 @@ function dupHTML(q){
   return '<div class="qf-t">🔁 이미 비슷한 질문을 심었어요</div>' +
          '<div class="qf-b">「' + t + '」<br>' +
          '같은 질문을 또 심는 대신, 그 질문을 <b>키워</b> 보면 어때요? ' +
-         '질문 카드의 <b>🌿+</b> 를 누르면 «그래서 만약 ~라면?» 처럼 한 걸음 더 갈 수 있어요 🌿</div>' +
+         '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 로 «그래서 만약 ~라면?» 처럼 한 걸음 더 갈 수 있어요 🌿</div>' +
          '<div class="qf-n">정말 다른 질문이라면 조금 더 구체적으로 적어 주세요.</div>';
 }
 function showDup(msgId, q){
