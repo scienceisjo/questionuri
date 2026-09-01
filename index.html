@@ -1885,6 +1885,11 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .rf-prompt{width:100%;min-height:170px;margin-top:9px;padding:10px;border:1px solid #B39DDB;
   border-radius:8px;font-size:11.5px;font-family:inherit;line-height:1.65;
   background:#fff;color:var(--tx);resize:vertical}
+/* ══ 🌳 여러 과목 나무 · 📚 과목 필터 ═══════════════════════════════════ */
+.forest-card-sub{flex:none;font-size:9.5px;font-weight:800;color:var(--pd);
+  background:rgba(93,184,110,.16);border-radius:5px;padding:2px 7px;margin-right:5px;white-space:nowrap}
+.filter-chip.sub-chip{background:rgba(93,184,110,.10);border-color:rgba(93,184,110,.3);font-weight:700}
+.filter-chip.sub-chip.on{background:var(--pr);border-color:var(--pr);color:#fff}
 </style>
 </head>
 <body data-theme="cute">
@@ -2717,6 +2722,7 @@ const S = {
   phase:'before',          // 🌅 현재 질문 작성 단계: 'before'(수업 열기) | 'after'(수업 닫기)
   phaseFilter:null,        // 질문 목록 단계 필터: null | 'before' | 'after'
   expandParentId:null,     // 🌿 지금 '키우는 중'인 원본 질문 id (인라인 확장 작성기)
+  subFilter:null,          // 📚 질문 목록의 과목 필터 (과목 «이름»)
   checkId:null,            // 🎯 지금 자가체크 중인 질문 id
   refineId:null,           // ✨ 지금 다듬는 중인 질문 id
   solveId:null,            // 🔬 지금 해결하는 중인 질문 id
@@ -5430,20 +5436,89 @@ function stickersSVG(interactive){
   return s;
 }
 
+/* ══ 🌳 모든 과목의 나무를 한 줄로 ══════════════════════════════════════════
+   예전엔 S.trees[S.activeSub] 만 그렸다. 그래서 과목을 새로 만든 학생은
+   전에 심은 나무가 통째로 사라진 것처럼 보였다. 과목을 옮겨 다녀야 찾을 수
+   있는데, 과목이 바뀐 줄도 모르니 «질문이 없어졌다» 가 된다.
+   이제 전부 한 줄에 놓고, 나무를 고르면 그 나무의 과목으로 같이 옮겨 간다.
+   — 그래야 질문을 심을 때 엉뚱한 과목에 들어가지 않는다. */
+function allTrees(){
+  const out = [];
+  const order = (S.subjects || []).map(function(s){ return s.id; });
+  /* 과목 목록에 없는 id(지운 과목 등)도 빠뜨리지 않는다 */
+  Object.keys(S.trees || {}).forEach(function(k){ if(order.indexOf(k) < 0) order.push(k); });
+  order.forEach(function(subId){
+    (S.trees[subId] || []).forEach(function(tr){
+      out.push({ tree: tr, subId: subId });
+    });
+  });
+  return out;
+}
+
+/* 과목 «이름» 으로 본다. subjects.id 는 학교 전체에서 하나뿐인 PK 라
+   계정마다 다른 id 가 만들어진다(science_a1b2…). 교사 코드로 들어와 생긴
+   과목과 학생이 손으로 만든 과목이 이름은 같은데 id 가 달라서, id 로 거르면
+   한쪽 질문이 통째로 안 보인다. 그래서 언제나 이름으로 묶는다. */
+function subLabelOf(subId){
+  const s = (S.subjects || []).find(function(x){ return x.id === subId; });
+  return (s && s.label) || subId || '';
+}
+function subIconOf(subId){
+  const s = (S.subjects || []).find(function(x){ return x.id === subId; });
+  return (s && s.icon) || '📚';
+}
+
+/* 내 질문 전부 — 어느 과목·어느 나무에 있든 */
+function allMyQs(){
+  const out = [];
+  Object.keys(S.questions || {}).forEach(function(subId){
+    qsInSub(subId).forEach(function(q){
+      q._sub = subId;                 /* 원본에 표시만 남긴다(복사하면 물주기가 깨진다) */
+      out.push(q);
+    });
+  });
+  return out;
+}
+
+/* 질문이 하나라도 있는 과목 이름들 */
+function subLabelsWithQs(){
+  const m = {};
+  allMyQs().forEach(function(q){
+    const l = subLabelOf(q._sub);
+    if(!l) return;
+    if(!m[l]) m[l] = { label:l, icon:subIconOf(q._sub), n:0 };
+    m[l].n++;
+  });
+  return Object.keys(m).map(function(k){ return m[k]; })
+                       .sort(function(a,b){ return b.n - a.n; });
+}
+
+/* 나무를 고르면 그 과목으로 같이 옮겨 간다 */
+function pickTree(subId, treeId){
+  if(subId && subId !== S.activeSub){
+    S.activeSub = subId;
+    S.editId = null; S.filterTag = null;
+    try{ if(!S.guest && S.user) sb.from('profiles').update({active_sub:subId}).eq('id', S.user.id); }catch(e){}
+  }
+  if(treeId != null) S.activeTreeId[subId] = treeId;
+}
+
 function renderTree(){
   const container = $('treeWrap');
   if(!container) return;
-  const subId = S.activeSub;
-  const trees = S.trees[subId] || [];
+  const rows = allTrees();                 /* [{tree, subId}] — 과목 상관없이 전부 */
+  const manySubs = new Set(rows.map(function(r){ return subLabelOf(r.subId); })).size > 1;
 
-  if(!trees.length){
+  if(!rows.length){
     container.innerHTML = '<div style="padding:var(--sp-4);text-align:center;color:var(--tl);font-size:var(--fs-xs)">나무가 없어요. 질문을 심어보세요!</div>';
     return;
   }
 
-  // 현재 활성 나무 인덱스
-  const activeId = S.activeTreeId[subId] || trees[0].id;
-  const activeIdx = Math.max(0, trees.findIndex(t => t.id === activeId));
+  const activeId = S.activeTreeId[S.activeSub];
+  let activeIdx = rows.findIndex(function(r){ return r.subId === S.activeSub && r.tree.id === activeId; });
+  if(activeIdx < 0) activeIdx = rows.findIndex(function(r){ return r.subId === S.activeSub; });
+  if(activeIdx < 0) activeIdx = 0;
+  const trees = rows;                      /* 아래 코드가 쓰던 이름 유지 */
 
   // 숲 컨테이너: 가로 스크롤 + 각 나무가 개별 카드
   // 카드 1개당 ~65%(모바일) / ~55%(데스크탑) 너비 → 한 면에 1~2그루
@@ -5451,20 +5526,24 @@ function renderTree(){
     <div class="forest-nav">
       <button class="forest-btn prev" ${activeIdx<=0?'disabled':''} onclick="scrollForest(-1)" aria-label="이전 나무">◀</button>
       <div class="forest-indicator">
-        ${trees.map((t,i)=>`<span class="forest-dot ${i===activeIdx?'on':''}" onclick="focusTree(${i})" title="${esc(t.name||'나무')}">${t.icon||'🌳'}</span>`).join('')}
+        ${trees.map((r,i)=>`<span class="forest-dot ${i===activeIdx?'on':''}" onclick="focusTree(${i})" title="${esc((manySubs?subLabelOf(r.subId)+' · ':'')+(r.tree.name||'나무'))}">${r.tree.icon||'🌳'}</span>`).join('')}
       </div>
       <button class="forest-btn next" ${activeIdx>=trees.length-1?'disabled':''} onclick="scrollForest(1)" aria-label="다음 나무">▶</button>
     </div>
     <div class="forest-scroll" id="forestScroll">
   `;
 
-  trees.forEach((tree, i) => {
+  trees.forEach((row, i) => {
+    const tree = row.tree, subId = row.subId;
     const tqs = qsInTree(subId, tree.id);
     const tLv = Math.min(Math.floor(tqs.length/2)+1, 10);
     const tR = tqs.filter(q=>q.resolved).length;
+    const _sid = JSON.stringify(subId).split('"').join('&quot;');
+    const _tid = (typeof tree.id==='number') ? tree.id : ("'"+esc(tree.id)+"'");
     html += `
-      <div class="forest-card ${i===activeIdx?'active':''}" data-tid="${esc(tree.id)}">
+      <div class="forest-card ${i===activeIdx?'active':''}" data-tid="${esc(tree.id)}" onclick="focusTree(${i})">
         <div class="forest-card-head">
+          ${manySubs?`<span class="forest-card-sub">${esc(subIconOf(subId))} ${esc(subLabelOf(subId))}</span>`:''}
           <span class="forest-card-name">${esc(tree.icon||'🌳')} ${esc(tree.name||'나무')}</span>
           <div class="forest-card-meta">
             <span>Lv.${tLv}</span>
@@ -5474,8 +5553,8 @@ function renderTree(){
             <span>🍎${tR}</span>
           </div>
           <div class="forest-card-actions">
-            <button class="fc-btn" onclick="openEditTree(${typeof tree.id==='number'?tree.id:"'"+esc(tree.id)+"'"})" title="이름·아이콘 수정">✏️</button>
-            ${trees.length>1 ? `<button class="fc-btn" onclick="delTree(${typeof tree.id==='number'?tree.id:"'"+esc(tree.id)+"'"})" title="나무 삭제">🗑️</button>` : ''}
+            <button class="fc-btn" onclick="event.stopPropagation();pickTree(${_sid},${_tid});openEditTree(${_tid})" title="이름·아이콘 수정">✏️</button>
+            ${trees.length>1 ? `<button class="fc-btn" onclick="event.stopPropagation();pickTree(${_sid},${_tid});delTree(${_tid})" title="나무 삭제">🗑️</button>` : ''}
           </div>
         </div>
         <div class="forest-tree-box">
@@ -5487,7 +5566,7 @@ function renderTree(){
 
   // 새 나무 심기 카드
   html += `
-      <div class="forest-card forest-plant-card" onclick="openPlantTree()">
+      <div class="forest-card forest-plant-card" onclick="event.stopPropagation();openPlantTree()">
         <div class="plant-ic">🌱</div>
         <div class="plant-ttl">새 나무 심기</div>
         <div class="plant-sub">다른 주제로 나무를<br>한 그루 더 키워보세요</div>
@@ -5500,9 +5579,10 @@ function renderTree(){
   // 🎉 A5 레벨업 감지 (활성 나무 기준)
   try{
     S.lvMemory = S.lvMemory || {};
-    const _atid = trees[activeIdx] && trees[activeIdx].id;
+    const _arow = trees[activeIdx];
+    const _atid = _arow && _arow.tree.id;
     if(_atid!=null){
-      const _alv = Math.min(Math.floor(qsInTree(subId,_atid).length/2)+1,10);
+      const _alv = Math.min(Math.floor(qsInTree(_arow.subId,_atid).length/2)+1,10);
       const _prev = S.lvMemory[_atid];
       if(_prev!=null && _alv>_prev) levelUpCelebrate(_alv);
       S.lvMemory[_atid] = _alv;
@@ -5560,20 +5640,25 @@ function renderTree(){
 
 // 이전/다음 나무로 스크롤
 function scrollForest(dir){
-  const trees = S.trees[S.activeSub] || [];
+  const rows = allTrees();
   const activeId = S.activeTreeId[S.activeSub];
-  const idx = trees.findIndex(t => t.id === activeId);
-  const next = Math.max(0, Math.min(trees.length-1, idx + dir));
-  focusTree(next);
+  let idx = rows.findIndex(function(r){ return r.subId === S.activeSub && r.tree.id === activeId; });
+  if(idx < 0) idx = 0;
+  focusTree(Math.max(0, Math.min(rows.length-1, idx + dir)));
 }
 
 // 특정 인덱스의 나무로 포커스
 function focusTree(idx){
-  const trees = S.trees[S.activeSub] || [];
-  if(!trees[idx]) return;
-  S.activeTreeId[S.activeSub] = trees[idx].id;
+  const rows = allTrees();
+  const row = rows[idx];
+  if(!row) return;
+  const changedSub = (row.subId !== S.activeSub);
+  pickTree(row.subId, row.tree.id);
+  /* 과목이 바뀌었으면 과목 탭·질문 목록도 같이 따라가야 한다 */
+  if(changedSub){ try{ renderSubTabs(); renderQs(); }catch(e){} }
   const scrollEl = $('forestScroll');
   const cards = scrollEl?.querySelectorAll('.forest-card[data-tid]');
+  if(changedSub){ renderTree(); return; }        /* 다시 그린 뒤엔 스크롤 계산이 어긋난다 */
   if(scrollEl && cards && cards[idx]){
     const card = cards[idx];
     const offset = card.offsetLeft - (scrollEl.clientWidth - card.clientWidth)/2;
@@ -6402,10 +6487,31 @@ function boardCard(q,childCount,parentText){
 }
 
 function renderQs(){
-  const{qs}=gD();
+  /* 나무는 모든 과목을 한 화면에 놓았으니, 질문도 과목을 넘어 모아서 보여주고
+     대신 «과목 필터» 로 갈라 볼 수 있게 한다. 안 그러면 나무는 보이는데
+     그 나무의 질문은 안 보이는 엇갈림이 생긴다. */
+  let qs = allMyQs();
+  if(S.subFilter) qs = qs.filter(function(q){ return subLabelOf(q._sub) === S.subFilter; });
   const c=$('qList');c.innerHTML='';
   const fr=$('filterRow');
   fr.innerHTML='';
+
+  /* 📚 과목 칩 — 과목이 둘 이상일 때만 */
+  const _subs = subLabelsWithQs();
+  if(_subs.length > 1){
+    const all = document.createElement('button');
+    all.className = 'filter-chip sub-chip' + (S.subFilter===null?' on':'');
+    all.textContent = '📚 전체 ' + allMyQs().length;
+    all.onclick = function(){ S.subFilter = null; renderQs(); };
+    fr.appendChild(all);
+    _subs.forEach(function(s){
+      const b = document.createElement('button');
+      b.className = 'filter-chip sub-chip' + (S.subFilter===s.label?' on':'');
+      b.textContent = (s.icon||'📚') + ' ' + s.label + ' ' + s.n;
+      b.onclick = function(){ S.subFilter = (S.subFilter===s.label ? null : s.label); renderQs(); };
+      fr.appendChild(b);
+    });
+  }
 
   // 🌅🌙 단계 필터 칩
   const beforeN=qs.filter(q=>(q.phase||'before')==='before').length;
@@ -6426,7 +6532,9 @@ function renderQs(){
   }
 
   // 🏷️ 태그 필터 칩
-  const tags=allTagsInSubject(S.activeSub);
+  const _tset = {};
+  qs.forEach(function(q){ (q.tags||[]).forEach(function(x){ _tset[x]=1; }); });
+  const tags = Object.keys(_tset);
   if(tags.length){
     const all=document.createElement('button');
     all.className='filter-chip'+(S.filterTag===null?' on':'');
@@ -6441,7 +6549,7 @@ function renderQs(){
   }
 
   // 🌿 같은 과목 내 부모→자식(확장) 관계 맵
-  const subQs=qsInSub(S.activeSub);
+  const subQs=allMyQs();      /* 부모 질문이 다른 과목에 있어도 이어지게 */
   const childCount={};         // parentId -> 자란 질문 수
   const parentText={};         // childId  -> 원본 질문 텍스트
   subQs.forEach(x=>{
@@ -9871,8 +9979,30 @@ async function saveRefine(qid){
   const q = qsInSub(S.activeSub).find(function(x){ return x.id === qid; });
   if(!q) return;
   const ta = $('rfText-'+qid);
-  const v = ((ta && ta.value) || '').trim();
+  let v = ((ta && ta.value) || '').trim();
   if(v.length < 5){ toast('다듬은 질문을 적어주세요 🌱'); return; }
+
+  /* ⌨️ 저장 직전에 한 번 더 본다.
+     칸을 떠날 때(focusout) 이미 고치지만, 붙여넣기 뒤 바로 저장을 누르거나
+     칸 안에서 엔터로 넘어가면 그 그물을 빠져나간다. 여기가 마지막 문이다.
+     전각·반각은 확정적이라 «이렇게 바꿔서 저장할까요?» 만 묻고,
+     영타 한글은 진짜 영어일 수 있어서 원문을 같이 보여주고 고르게 한다. */
+  const _w = fixWidth(v);
+  if(_w !== v){
+    if(confirm('글자가 깨져서 저장될 것 같아요.' + _SNL + _SNL +
+               '지금: ' + v + _SNL + '고치면: ' + _w + _SNL + _SNL +
+               '고쳐서 저장할까요?')){
+      v = _w; if(ta) ta.value = v;
+    }
+  }
+  const _ko = maybeKorean(v);
+  if(_ko && _ko.text !== v){
+    if(confirm('자판이 영어로 되어 있었나 봐요.' + _SNL + _SNL +
+               '지금: ' + v + _SNL + '한글로: ' + _ko.text + _SNL + _SNL +
+               '한글로 바꿔서 저장할까요?' + _SNL + '(영어가 맞으면 «취소»)')){
+      v = _ko.text; if(ta) ta.value = v;
+    }
+  }
   if(v === (q.text||'').trim()){ toast('원본과 똑같아요. 한 군데라도 바꿔볼까요?'); return; }
   const chk = {};
   INQ_CHECK.forEach(function(x){
