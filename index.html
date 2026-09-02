@@ -1898,6 +1898,28 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .rf-guide{background:#fff;border:1px solid var(--line,#E5E3DC);border-radius:9px;
   padding:11px 12px;margin-bottom:11px}
 .rf-guide-h{font-size:11.5px;font-weight:800;color:#2E7D32;margin-bottom:7px}
+/* ══ 📂 다듬기 패널 접이식 ══════════════════════════════════════════════════
+   details/summary 를 쓴다. 여닫는 데 자바스크립트가 없으니 다시 그릴 일도
+   없고, 키보드와 스크린리더가 그냥 된다. */
+.rf-fold{border:1px solid var(--line,#E5E3DC);border-radius:9px;background:#fff;margin-bottom:9px}
+.rf-fold>summary{list-style:none;cursor:pointer;padding:11px 12px;display:flex;align-items:center;
+                 gap:7px;font-size:11.5px;font-weight:800;color:var(--tx);min-height:var(--touch-sm);
+                 box-sizing:border-box}
+.rf-fold>summary::-webkit-details-marker{display:none}
+.rf-fold>summary::after{content:'▾';margin-left:auto;color:var(--tl);font-size:13px;
+                        transition:transform .15s;flex:none}
+.rf-fold[open]>summary::after{transform:rotate(180deg)}
+.rf-fold[open]>summary{border-bottom:1px dashed var(--line,#E5E3DC)}
+.rf-fold-b{padding:10px 12px 12px}
+/* 접힌 채로도 «몇 개 했는지» 는 보이게 — 열어봐야 아는 건 안 열어본다 */
+.rf-fold-n{margin-left:auto;font-size:10.5px;font-weight:800;color:var(--tl);
+           background:#F4F4EF;border-radius:10px;padding:2px 8px}
+.rf-fold[open]>summary .rf-fold-n{margin-left:0}
+.rf-fold-n.good{background:#E8F5E9;color:#2E7D32}
+/* 접힘 안으로 들어간 것들은 자기 테두리를 벗는다 — 상자 안의 상자가 된다 */
+.rf-fold-b .rf-tools,.rf-fold-b .rf-guide{border:none;padding:0;margin:0;background:none}
+.rf-fold-b .rf-chks{margin-bottom:0}
+.rf-fold-b .rf-ask{margin:0}
 .rf-guide-h.bad{color:#C62828;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line,#E5E3DC)}
 .rf-g{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--tl);
   line-height:1.6;padding:3px 0}
@@ -6564,12 +6586,34 @@ function boardCard(q,childCount,parentText){
   </div>`;
 }
 
+/* ══ 📍 다시 그려도 «있던 자리» 를 지킨다 ═══════════════════════════════════
+   renderQs() 는 목록을 통째로 지우고 새로 만든다. 지우는 순간 높이가 0이
+   되어 스크롤이 맨 위로 튄다. 학생이 아래쪽 질문을 고치고 저장할 때마다
+   맨 위로 올라가 다시 찾아 내려가야 했다 — 가장 자주 겪는 짜증이었다.
+
+   보이는 질문이 그대로일 때만 되돌린다. 필터를 바꿨으면 목록이 달라진
+   것이니 맨 위가 맞다. 무엇이 바뀌었는지 «보이는 id 목록» 으로 판단하므로
+   필터 단추를 하나하나 고칠 필요가 없다. */
+let _qsLastIds = null;    /* 직전에 그렸던 질문 id 목록 */
+let _qsPainted = false;   /* 첫 그림을 마쳤는지 */
+
+function qsKeepScroll(idsNow){
+  const sc = document.getElementById('tp-questions');
+  const same = (_qsLastIds !== null && idsNow === _qsLastIds);
+  const y = (sc && same) ? sc.scrollTop : 0;
+  _qsLastIds = idsNow;
+  /* 목록이 그대로면 있던 자리로. 달라졌으면(필터를 바꿨거나 새 질문을
+     심었거나) 맨 위가 맞다 — 새로 보여줄 게 거기 있다. */
+  return function(){ if(sc) sc.scrollTop = same ? y : 0; _qsPainted = true; };
+}
+
 function renderQs(){
   /* 나무는 모든 과목을 한 화면에 놓았으니, 질문도 과목을 넘어 모아서 보여주고
      대신 «과목 필터» 로 갈라 볼 수 있게 한다. 안 그러면 나무는 보이는데
      그 나무의 질문은 안 보이는 엇갈림이 생긴다. */
   let qs = allMyQs();
   if(S.subFilter) qs = qs.filter(function(q){ return subLabelOf(q._sub) === S.subFilter; });
+  const _restore = qsKeepScroll(qs.map(function(q){ return q.id; }).join(','));
   const c=$('qList');c.innerHTML='';
   const fr=$('filterRow');
   fr.innerHTML='';
@@ -6681,7 +6725,7 @@ function renderQs(){
 
   [...filtered].reverse().forEach((q,i)=>{
     const d=document.createElement('div');
-    let cls='qc slide-up '+(q.resolved?'res':'unr');
+    let cls='qc '+(_qsPainted?'':'slide-up ')+(q.resolved?'res':'unr');
     if(q.is_anonymous) cls+=' anon';
     cls+=' ph-'+(q.phase||'before');
     if(q.parent_id) cls+=' is-child';
@@ -6871,6 +6915,7 @@ function renderQs(){
       if(hasMath(el.textContent)) renderMath(el);
     });
   }
+  _restore();   /* 다 그렸으니 있던 자리로 */
 }
 
 function togBranches(qid){
@@ -10100,6 +10145,13 @@ function rfPaint(qid){
     c.textContent = '통과 ' + n + '/6';
     c.className = 'rf-count' + (n >= 4 ? ' good' : '');
   }
+  /* 접어 둔 채로도 몇 개 했는지 보이게 — 배지가 안 따라오면 접고 나서
+     «내가 체크했던가?» 가 된다 */
+  const fn = $('rfFoldN-'+qid);
+  if(fn){
+    fn.textContent = n + '/6';
+    fn.className = 'rf-fold-n' + (n >= 4 ? ' good' : '');
+  }
   const ta = $('rfText-'+qid);
   const hint = $('rfHint-'+qid);
   if(ta && hint){
@@ -10922,31 +10974,44 @@ function renderRefinePanel(q){
     '</div>' +
     '<div class="rf-orig"><span class="rf-orig-l">원본</span>' + esc(dispFix(q.text||'')) + '</div>' +
     /* ① 가이드라인 — 도구 목록만 있으면 «뭘 먼저 하지» 에서 멈춘다 */
+    /* 진짜 안내인 세 줄은 열어 둔다. 짧고, 이것부터 읽어야 한다 */
     '<div class="rf-guide">' +
       '<div class="rf-guide-h">📌 이렇게 해보세요</div>' +
       '<div class="rf-g"><span>1</span>내 질문을 <b>소리 내어</b> 읽어봐요. 읽다가 «어? 이게 무슨 말이지» 하는 데가 고칠 곳이에요.</div>' +
       '<div class="rf-g"><span>2</span>아래 여섯 가지 중 <b>딱 하나만</b> 골라요. 다 하려고 하면 오히려 나빠져요.</div>' +
       '<div class="rf-g"><span>3</span>고친 뒤에 다시 읽어봐요. <b>친구가 읽어도</b> 무엇을 알고 싶은지 보이면 된 거예요.</div>' +
-      '<div class="rf-guide-h bad">🚫 이건 피해요</div>' +
-      '<div class="rf-g bad"><span>✕</span><b>길게 쓰기</b> — 길다고 좋은 질문이 아니에요. 오히려 짧아질 수도 있어요.</div>' +
-      '<div class="rf-g bad"><span>✕</span><b>한 번에 여러 개 묻기</b> — «왜 A이고 또 B일까?» 는 두 질문이에요. 하나만.</div>' +
-      '<div class="rf-g bad"><span>✕</span><b>어려운 말 넣기</b> — 아는 말로 써야 내가 풀 수 있어요.</div>' +
     '</div>' +
-    '<div class="rf-tools"><div class="rf-tools-h">🧰 이 여섯 가지 중 <b>하나만</b> 골라 고쳐도 좋아요 ' +
-      '<a class="rf-link" onclick="openMCInfo(&#39;ba&#39;)">✨ 한 끗 차이 예시</a></div>' + tools + '</div>' +
+    /* ── 여기서부터는 접는다 ──────────────────────────────────────────────
+       예전엔 이 아래가 전부 펼쳐져 있어서 저장 버튼이 1,500px 지점에 있었다.
+       필요한 사람만 열면 된다. 안 열어도 다듬을 수 있다. */
     '<textarea class="rf-text" id="rfText-' + q.id + '" oninput="rfPaint(' + q.id + ')" ' +
       'placeholder="다듬은 질문을 적어요...">' + esc(cur) + '</textarea>' +
     '<div class="rf-hint" id="rfHint-' + q.id + '"></div>' +
-    '<div class="rf-chks-h">✅ 다듬은 질문을 점검해요 <small>(연수 «탐구 과제 체크리스트»)</small></div>' +
-    '<div class="rf-chks">' + checks + '</div>' +
+    '<details class="rf-fold"><summary>🧰 어떻게 고치지? <span class="rf-fold-n">6가지</span></summary>' +
+      '<div class="rf-fold-b"><div class="rf-tools"><div class="rf-tools-h">이 중 <b>하나만</b> 골라 고쳐도 좋아요 ' +
+        '<a class="rf-link" onclick="openMCInfo(&#39;ba&#39;)">✨ 한 끗 차이 예시</a></div>' + tools + '</div></div>' +
+    '</details>' +
+    '<details class="rf-fold"><summary>🚫 이건 피해요 <span class="rf-fold-n">3가지</span></summary>' +
+      '<div class="rf-fold-b">' +
+        '<div class="rf-g bad"><span>✕</span><b>길게 쓰기</b> — 길다고 좋은 질문이 아니에요. 오히려 짧아질 수도 있어요.</div>' +
+        '<div class="rf-g bad"><span>✕</span><b>한 번에 여러 개 묻기</b> — «왜 A이고 또 B일까?» 는 두 질문이에요. 하나만.</div>' +
+        '<div class="rf-g bad"><span>✕</span><b>어려운 말 넣기</b> — 아는 말로 써야 내가 풀 수 있어요.</div>' +
+      '</div>' +
+    '</details>' +
+    '<details class="rf-fold"' + (n ? ' open' : '') + '><summary>✅ 다듬은 질문 점검하기 ' +
+      '<span class="rf-fold-n' + (n>=4?' good':'') + '" id="rfFoldN-' + q.id + '">' + n + '/6</span></summary>' +
+      '<div class="rf-fold-b"><div class="rf-chks">' + checks + '</div></div>' +
+    '</details>' +
     /* ③ 스스로 점검한 결과를 그대로 실어 AI 에게 «봐 달라» 고 한다.
        체크 상태에 따라 부탁이 달라지므로 누를 때마다 새로 만든다. */
-    '<div class="rf-ask">' +
-      '<div class="rf-ask-t">🤖 <b>내 질문이 괜찮은지 봐 달라</b>고 AI 에게 물어볼 수 있어요.' +
-        '<br><small>내가 체크한 것에 맞춰 프롬프트가 만들어져요. <b>답은 안 알려주고</b> 질문만 봐 달라고 되어 있어요.</small></div>' +
-      '<button class="rf-ask-b" onclick="refineCopyPrompt(' + q.id + ')">📋 평가 프롬프트 만들어 복사하기</button>' +
-      '<textarea class="rf-prompt" id="rfPrompt-' + q.id + '" style="display:none" readonly></textarea>' +
-    '</div>' +
+    '<details class="rf-fold"><summary>🤖 AI 에게 내 질문 봐 달라고 하기</summary>' +
+      '<div class="rf-fold-b"><div class="rf-ask">' +
+        '<div class="rf-ask-t">내가 체크한 것에 맞춰 프롬프트가 만들어져요.' +
+          '<br><small><b>답은 안 알려주고</b> 질문만 봐 달라고 되어 있어요.</small></div>' +
+        '<button class="rf-ask-b" onclick="refineCopyPrompt(' + q.id + ')">📋 평가 프롬프트 만들어 복사하기</button>' +
+        '<textarea class="rf-prompt" id="rfPrompt-' + q.id + '" style="display:none" readonly></textarea>' +
+      '</div></div>' +
+    '</details>' +
     '<div class="rf-foot">' +
       '<span class="rf-count' + (n>=4?' good':'') + '" id="rfCount-' + q.id + '">통과 ' + n + '/6</span>' +
       '<div class="rf-btns">' +

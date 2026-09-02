@@ -1212,6 +1212,8 @@ tr:hover .row-del{opacity:.7}
           <span class="sub">학급 질문을 단원(성취기준) 기준으로 모아봐요 · 위 필터(학년·반·과목)가 함께 적용됩니다</span>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select id="boardUnitSel" class="board-unit-sel" onchange="onBoardUnitChange(this.value)"><option value="">📑 전체 단원</option></select>
+            <button class="bmode-btn" id="noUnitCsvBtn" onclick="exportNoUnitCSV()" title="단원이 안 붙은 질문만 CSV 로 — 분류해서 되돌려 넣을 수 있어요">📥 미지정 CSV</button>
+            <button class="bmode-btn" onclick="openUnitApply()" title="분류를 마친 CSV 를 붙여 넣으면 UPDATE SQL 을 만들어 줘요">📤 분류 결과 넣기</button>
             <button class="bmode-btn on" data-bmode="board" onclick="setBoardMode('board')">🗂️ 보드</button>
             <button class="bmode-btn" data-bmode="map" onclick="setBoardMode('map')">🧠 마인드맵</button>
           </div>
@@ -2958,6 +2960,152 @@ async function rpApply(){
   applyFilters();
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   🗂️ 단원 미지정 질문 — 내보내고, 분류해서, 되돌려 넣기
+
+   단원이 없으면 ⭐ 대표 질문으로 고를 수 없다. 그런데 보드에서 한 개씩
+   손으로 붙이는 길밖에 없었다. 수백 개를 그렇게 할 수는 없다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function _noUnitQs(){
+  return (filteredQuestions||[]).filter(function(q){ return !(q.unit && q.unit.trim()); });
+}
+
+/* 📥 분류에 필요한 것만 담는다.
+   이름과 번호는 넣지 않는다 — 단원을 정하는 데 쓰이지 않고,
+   파일이 밖으로 나갈 수 있는 이상 안 넣는 게 맞다.
+   날짜는 차시를 가르는 가장 센 단서라서 반드시 넣는다. */
+function exportNoUnitCSV(){
+  const qs = _noUnitQs();
+  if(!qs.length){ alert('단원이 안 붙은 질문이 없어요.' + String.fromCharCode(10) + '(위 필터가 걸려 있진 않나요?)'); return; }
+  const pm = {}; allProfiles.forEach(function(p){ pm[p.id] = p; });
+  const sm = {}; (typeof allSubjects !== 'undefined' ? allSubjects : []).forEach(function(s){ sm[s.id] = s.label || s.name || s.id; });
+  const rows = [['id','날짜','열기닫기','과목','학년','반','질문','다듬은질문','태그','단원']];
+  qs.slice().sort(function(a,b){
+    return String(a.created_at||'').localeCompare(String(b.created_at||''));
+  }).forEach(function(q){
+    const p = pm[q.user_id] || {};
+    rows.push([
+      q.id,
+      (q.question_date || (q.created_at||'').slice(0,10) || ''),
+      (q.phase === 'after' ? '닫기' : '열기'),
+      (sm[q.subject_id] || q.subject_id || ''),
+      (p.grade == null ? '' : p.grade),
+      (p.class_no == null ? '' : p.class_no),
+      (q.text || ''),
+      (q.refined_text || ''),
+      (Array.isArray(q.tags) ? q.tags.join(' ') : (q.tags || '')),
+      ''                       /* ← 여기를 채워서 돌려주면 된다 */
+    ]);
+  });
+  downloadCSV('해누리_단원미지정_' + today() + '.csv', rows);
+}
+
+/* 📤 분류를 마친 CSV 를 붙여 넣으면 UPDATE SQL 을 만든다.
+   브라우저가 곧장 수백 줄을 쓰게 두지 않는다 — 한 번 눈으로 보고,
+   Supabase 에서 사람이 실행한다. 잘못 붙었을 때 되돌릴 자리가 있어야 한다. */
+function openUnitApply(){
+  const box = document.getElementById('unitApplyWrap');
+  if(box){ box.remove(); return; }
+  const host = document.getElementById('boardBody');
+  if(!host) return;
+  const d = document.createElement('div');
+  d.id = 'unitApplyWrap';
+  d.style.cssText = 'border:1.5px solid var(--rule);border-radius:12px;padding:14px;margin-bottom:16px;background:var(--surface)';
+  d.innerHTML =
+    '<div style="font-size:13px;font-weight:800;margin-bottom:6px">📤 분류 결과 넣기</div>' +
+    '<div style="font-size:11.5px;color:var(--ink3);line-height:1.6;margin-bottom:9px">' +
+      '내려받은 CSV 의 <b>id</b> 와 <b>단원</b> 두 칸만 있으면 돼요. 통째로 붙여 넣어도 되고, ' +
+      '<code>id,단원</code> 두 칸만 붙여 넣어도 됩니다. 첫 줄이 머리글이면 알아서 건너뜁니다.<br>' +
+      '만들어진 SQL 을 <b>Supabase → SQL Editor</b> 에 붙여 한 번 실행하세요.' +
+    '</div>' +
+    '<textarea id="unitApplyIn" style="width:100%;min-height:110px;font-family:ui-monospace,Menlo,Consolas,monospace;' +
+      'font-size:12px;padding:10px;border:1.5px solid var(--rule);border-radius:8px;box-sizing:border-box" ' +
+      'placeholder="1234,2-1&#10;1235,2-1&#10;1236,2-3"></textarea>' +
+    '<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">' +
+      '<button class="bmode-btn on" onclick="buildUnitSQL()">🧾 SQL 만들기</button>' +
+      '<button class="bmode-btn" onclick="copyUnitSQL()">📋 복사</button>' +
+      '<span id="unitApplyMsg" style="font-size:11.5px;color:var(--ink3);align-self:center"></span>' +
+    '</div>' +
+    '<textarea id="unitApplyOut" readonly style="width:100%;min-height:120px;margin-top:9px;display:none;' +
+      'font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:10px;' +
+      'border:1.5px solid var(--rule);border-radius:8px;box-sizing:border-box;background:#FAFAF7"></textarea>';
+  host.insertBefore(d, host.firstChild);
+  d.scrollIntoView({block:'nearest'});
+}
+
+/* CSV 한 줄을 칸으로 가른다. 질문 안에 쉼표가 있으니 따옴표를 지켜야 한다 */
+function _csvSplit(line){
+  const out = []; let cur = ''; let q = false;
+  for(let i = 0; i < line.length; i++){
+    const ch = line[i];
+    if(q){
+      if(ch === '"'){ if(line[i+1] === '"'){ cur += '"'; i++; } else q = false; }
+      else cur += ch;
+    } else if(ch === '"') q = true;
+    else if(ch === ','){ out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+function buildUnitSQL(){
+  const inp = document.getElementById('unitApplyIn');
+  const out = document.getElementById('unitApplyOut');
+  const msg = document.getElementById('unitApplyMsg');
+  if(!inp || !out) return;
+  const lines = (inp.value||'').replace(/\uFEFF/g,'').split(/\r?\n/).filter(function(l){ return l.trim(); });
+  /* 내려받은 CSV 를 통째로 붙였으면 id 는 첫 칸, 단원은 마지막 칸이다.
+     두 칸만 붙였으면 첫 칸과 둘째 칸이다. 둘 다 받아 준다. */
+  const pairs = []; const bad = [];
+  lines.forEach(function(l){
+    const c = _csvSplit(l).map(function(x){ return x.trim(); });
+    const id = c[0];
+    if(!/^\d+$/.test(id)) { if(!/^id$/i.test(id)) bad.push(l.slice(0,40)); return; }   /* 머리글은 조용히 넘긴다 */
+    const unit = (c.length >= 10 ? c[9] : c[1]) || '';
+    if(!unit) return;                              /* 못 정한 것은 건드리지 않는다 */
+    pairs.push([id, unit]);
+  });
+  if(!pairs.length){
+    out.style.display = 'none';
+    msg.textContent = '넣을 것이 없어요 — 단원 칸이 비어 있는지 확인하세요.';
+    return;
+  }
+  /* 단원별로 묶어 IN 절 하나로 — 줄 수가 확 줄어 눈으로 볼 만해진다 */
+  const byUnit = {};
+  pairs.forEach(function(p){ (byUnit[p[1]] = byUnit[p[1]] || []).push(p[0]); });
+  const esq = function(s){ return String(s).split("'").join("''"); };
+  const sql = [
+    '-- 🗂️ 단원 미지정 질문에 단원 붙이기 (' + pairs.length + '개 / ' +
+      Object.keys(byUnit).length + '개 단원)',
+    '-- 만든 날: ' + today(),
+    '-- 되돌리려면: UPDATE questions SET unit = NULL WHERE id IN (' +
+      pairs.map(function(p){ return p[0]; }).join(',') + ');',
+    'BEGIN;'
+  ];
+  Object.keys(byUnit).forEach(function(u){
+    sql.push("UPDATE questions SET unit = '" + esq(u) + "' WHERE id IN (" +
+             byUnit[u].join(',') + ");");
+  });
+  sql.push('COMMIT;');
+  out.value = sql.join(String.fromCharCode(10));
+  out.style.display = 'block';
+  msg.textContent = pairs.length + '개 준비됐어요' + (bad.length ? (' · 못 읽은 줄 ' + bad.length) : '');
+}
+
+function copyUnitSQL(){
+  const out = document.getElementById('unitApplyOut');
+  const msg = document.getElementById('unitApplyMsg');
+  if(!out || !out.value){ if(msg) msg.textContent = '먼저 SQL 을 만들어 주세요.'; return; }
+  navigator.clipboard.writeText(out.value).then(function(){
+    if(msg) msg.textContent = '복사했어요 — Supabase SQL Editor 에 붙여 넣으세요.';
+  }, function(){
+    out.select(); document.execCommand('copy');
+    if(msg) msg.textContent = '복사했어요.';
+  });
+}
+
 let _boardMode = 'board';
 let _boardUnit = null;       // null = 전체, 아니면 단원 키('__none__' 포함)
 let _mapNodeKeys = [];       // 마인드맵 노드 인덱스 → 단원 키
@@ -2994,6 +3142,13 @@ function renderBoardView(){
     sel.innerHTML = `<option value="">📑 전체 단원 (${qs.length})</option>` +
       units.map(u=>`<option value="${_attr(u)}">${esc(_unitLabel(u))} (${groups[u].length})</option>`).join('');
     sel.value = _boardUnit==null ? '' : _boardUnit;
+  }
+  const _nb = document.getElementById('noUnitCsvBtn');
+  if(_nb){
+    const _nn = (groups['__none__']||[]).length;
+    _nb.textContent = '📥 미지정 CSV' + (_nn ? (' ' + _nn) : '');
+    _nb.disabled = !_nn;
+    _nb.style.opacity = _nn ? '' : '.45';
   }
   if(!qs.length){ box.innerHTML='<div class="empty-row" style="padding:40px">표시할 질문이 없어요. 위 필터를 확인하세요.</div>'; return; }
   if(_boardMode==='map') renderUnitMindmap(box, groups, units, qs.length);
