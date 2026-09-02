@@ -420,6 +420,38 @@ td strong{font-weight:700;color:var(--ink)}
 /* 🗂️ 질문 보드 (대시보드) */
 .bmode-btn{padding:7px 14px;min-height:36px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s}
 .bmode-btn.on{background:var(--ac);color:#1A2421;border-color:transparent}
+/* ══ 🌿 되묻기 일괄 ═══════════════════════════════════════════════════════ */
+.nd-steps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.nd-step{flex:1;min-width:210px;border:1.5px solid var(--rule);border-radius:12px;padding:13px 15px;background:var(--surface)}
+.nd-step-h{font-size:12.5px;font-weight:800;color:var(--pr);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.nd-step-d{font-size:11.5px;color:var(--ink3);line-height:1.6;margin-bottom:9px}
+.nd-units{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.nd-u{padding:6px 12px;min-height:34px;border-radius:999px;border:1.5px solid var(--rule);
+      background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.nd-u.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+.nd-u b{color:#C2410C;margin-left:4px}
+.nd-u.on b{color:#FFE0B2}
+.nd-ta{width:100%;min-height:120px;padding:11px;border:1.5px solid var(--rule);border-radius:9px;
+       font-family:inherit;font-size:12.5px;line-height:1.6;box-sizing:border-box;color:var(--ink)}
+.nd-ta:focus{outline:none;border-color:var(--pr)}
+.nd-tbl{border:1.5px solid var(--rule);border-radius:12px;overflow:hidden;margin-top:14px}
+.nd-row{display:flex;gap:11px;padding:12px 14px;border-bottom:1px solid var(--rule);align-items:flex-start}
+.nd-row:last-child{border-bottom:none}
+.nd-row.off{opacity:.45}
+.nd-row.warn{background:#FFF8E9}
+.nd-ck{flex:none;width:20px;height:20px;margin-top:2px;cursor:pointer;accent-color:#2D6A3E}
+.nd-q{flex:1;min-width:0}
+.nd-q-t{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.5}
+.nd-q-m{font-size:10.5px;color:var(--ink3);margin-top:3px}
+.nd-q-old{font-size:11px;color:#8A5A00;margin-top:4px}
+.nd-n{flex:1.2;min-width:0}
+.nd-n textarea{width:100%;min-height:58px;padding:9px 11px;border:1.5px solid #C8BFEA;border-radius:8px;
+               font-family:inherit;font-size:12.5px;line-height:1.55;box-sizing:border-box;
+               background:rgba(124,111,217,.05);color:var(--ink);resize:vertical}
+.nd-n textarea:focus{outline:none;border-color:#7C6FD9}
+.nd-bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.nd-msg{font-size:12px;color:var(--ink3)}
+.nd-none{padding:34px;text-align:center;color:var(--ink3);font-size:12.5px}
 .db-board{display:flex;gap:14px;overflow-x:auto;padding:18px;-webkit-overflow-scrolling:touch}
 .db-col{flex:0 0 290px;background:var(--surface2);border:1px solid var(--rule);border-radius:10px;display:flex;flex-direction:column;max-height:68vh}
 .db-col-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;font-size:13.5px;font-weight:800;color:var(--ink);border-bottom:1.5px solid var(--rule);position:sticky;top:0;background:var(--surface);border-radius:10px 10px 0 0}
@@ -939,6 +971,7 @@ tr:hover .row-del{opacity:.7}
       <button class="vm-tab" data-view="board" onclick="switchView('board')">🗂️ 질문 보드</button>
       <button class="vm-tab" data-view="picked" onclick="switchView('picked')">⭐ 대표 질문</button>
       <button class="vm-tab" data-view="stamp" onclick="switchView('stamp')">⚡ 빠른 피드백</button>
+      <button class="vm-tab" data-view="nudge" onclick="switchView('nudge')">🌿 되묻기 일괄</button>
       <button class="vm-tab" data-view="repair" onclick="switchView('repair')">🔧 깨진 질문</button>
       <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
     </div>
@@ -1230,6 +1263,16 @@ tr:hover .row-del{opacity:.7}
           <span class="sub">질문 한 장씩 넘기며 <b>숫자키 1~6</b> 으로 도장 · 학생 화면에 바로 보입니다 · 위 필터(학년·반·기간)가 함께 적용됩니다</span>
         </div>
         <div class="section-body" id="stampBody"></div>
+      </div>
+    </div>
+    <!-- ═════════ VIEW: 되묻기 일괄 ═════════ -->
+    <div class="view-body" id="viewNudge" style="display:none">
+      <div class="section">
+        <div class="section-hdr">
+          <h2>🌿 되묻기 일괄 — 차시별로 한 번에</h2>
+          <span class="sub">질문을 뽑아 AI 에게 초안을 받고 <b>한 줄씩 확인한 뒤</b> 올립니다 · 올린 되묻기는 학생 화면에 바로 보여요</span>
+        </div>
+        <div class="section-body" id="nudgeBody"></div>
       </div>
     </div>
     <!-- ═════════ VIEW: 깨진 질문 되살리기 ═════════ -->
@@ -1896,6 +1939,9 @@ function applyFilters(){
   } else if(activeView === 'stamp'){
     renderAlerts();
     stBuild(false);
+  } else if(activeView === 'nudge'){
+    renderAlerts();
+    renderNudgeView();
   } else if(activeView === 'growth'){
     renderSummary();
     renderAlerts();
@@ -3526,6 +3572,269 @@ function pkExportCSV(){
   downloadCSV('해누리_대표질문_해결과정_' + today() + '.csv', rows);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   🌿 되묻기 일괄
+
+   차시 고르기 → 프롬프트 복사 → AI 에 붙여넣기 → 결과 붙여넣기 → 검토 → 올리기
+
+   가운데 «검토» 를 뺄 수 없다. 되묻기는 학생이 읽는 글이다. AI 가 쓴 걸
+   확인 없이 서른 명한테 붙이면, 틀린 되묻기를 서른 명이 읽는다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let _ndUnit = null;      /* 고른 차시(단원). null = 전체 */
+let _ndRows = [];        /* 검토 표에 올라온 줄들 */
+
+/* 되묻기가 아직 없는 질문만. 이미 쓴 것에 AI 초안을 덮어쓰지 않는다 */
+function _ndPool(){
+  let qs = (filteredQuestions||[]).slice();
+  if(_ndUnit !== null){
+    qs = qs.filter(function(q){
+      const u = (q.unit && q.unit.trim()) ? q.unit.trim() : '__none__';
+      return u === _ndUnit;
+    });
+  }
+  return qs;
+}
+function _ndTodo(){ return _ndPool().filter(function(q){ return !(q.teacher_nudge||'').trim(); }); }
+
+function renderNudgeView(){
+  const box = $('nudgeBody'); if(!box) return;
+  const all = filteredQuestions || [];
+  if(!all.length){ box.innerHTML = '<div class="nd-none">표시할 질문이 없어요. 위 필터를 확인하세요.</div>'; return; }
+
+  /* 차시 칩 — 되묻기가 몇 개 남았는지 숫자로 */
+  const g = _groupByUnit(all);
+  const chip = function(key, label, arr){
+    const todo = arr.filter(function(q){ return !(q.teacher_nudge||'').trim(); }).length;
+    return '<button class="nd-u' + (_ndUnit === key ? ' on' : '') + '" ' +
+           'onclick="ndPickUnit(' + JSON.stringify(key === null ? '' : key).split('"').join('&quot;') + ')">' +
+           esc(label) + ' ' + arr.length + (todo ? (' <b>남은 ' + todo + '</b>') : ' ✓') + '</button>';
+  };
+  let chips = chip(null, '📑 전체', all);
+  g.units.forEach(function(u){ chips += chip(u, _unitLabel(u), g.groups[u]); });
+
+  const todo = _ndTodo();
+  const voice = _ndVoiceSamples();
+
+  box.innerHTML =
+    '<div class="nd-units">' + chips + '</div>' +
+    '<div class="nd-steps">' +
+      '<div class="nd-step">' +
+        '<div class="nd-step-h">① 프롬프트 만들기</div>' +
+        '<div class="nd-step-d">되묻기가 <b>아직 없는</b> 질문 <b>' + todo.length + '개</b>를 담습니다.<br>' +
+          (voice.length
+            ? ('선생님이 이미 쓴 되묻기 <b>' + voice.length + '개</b>를 문체 예시로 함께 넣어요.')
+            : '아직 쓰신 되묻기가 없어서 <b>원칙만</b> 넣습니다. 몇 개 직접 쓰시면 다음부터 그 문체를 따라가요.') +
+        '</div>' +
+        '<button class="st-nav primary" onclick="ndCopyPrompt()"' + (todo.length ? '' : ' disabled') + '>📋 프롬프트 복사</button>' +
+      '</div>' +
+      '<div class="nd-step">' +
+        '<div class="nd-step-h">② AI 에 붙여넣기</div>' +
+        '<div class="nd-step-d">Claude 나 쓰시는 AI 에 붙여넣고, 나온 표를 통째로 복사해 오세요.<br>' +
+          '<code>id | 되묻기</code> 한 줄씩 나옵니다.</div>' +
+      '</div>' +
+      '<div class="nd-step">' +
+        '<div class="nd-step-h">③ 붙여넣고 확인</div>' +
+        '<div class="nd-step-d">한 줄씩 <b>읽고 고친 뒤</b> 체크한 것만 올라갑니다.</div>' +
+      '</div>' +
+    '</div>' +
+    '<textarea class="nd-ta" id="ndIn" placeholder="AI 가 준 표를 여기에 붙여넣으세요&#10;&#10;1234 | 캔이 «어느 쪽으로» 움직였는지 먼저 적어볼까요?&#10;1235 | 무엇 하나만 바꿔서 다시 해본다면 무엇을 바꿔볼래요?"></textarea>' +
+    '<div class="nd-bar">' +
+      '<button class="st-nav primary" onclick="ndParse()">📖 표로 펼치기</button>' +
+      '<button class="st-nav" onclick="ndClear()">지우기</button>' +
+      '<span class="nd-msg" id="ndMsg"></span>' +
+    '</div>' +
+    '<div id="ndTable"></div>';
+}
+
+function ndPickUnit(v){ _ndUnit = (v === '') ? null : v; _ndRows = []; renderNudgeView(); }
+function ndClear(){ _ndRows = []; const i = $('ndIn'); if(i) i.value = ''; const tb = $('ndTable'); if(tb) tb.innerHTML = ''; const m = $('ndMsg'); if(m) m.textContent = ''; }
+
+/* ── 🗣️ «교사 자아» — 선생님이 실제로 쓴 되묻기를 예시로 ───────────────────
+   페르소나를 말로 설명하는 것보다 본인 문장 여덟 개가 훨씬 세다.
+   쓸수록 쌓이니 시간이 갈수록 더 선생님처럼 쓴다. */
+function _ndVoiceSamples(){
+  return (allQuestions||[])
+    .filter(function(q){ return (q.teacher_nudge||'').trim(); })
+    .sort(function(a,b){ return String(b.created_at||'').localeCompare(String(a.created_at||'')); })
+    .slice(0, 8);
+}
+
+function ndBuildPrompt(){
+  const todo = _ndTodo();
+  const voice = _ndVoiceSamples();
+  const L = [];
+  L.push('당신은 중학교 2학년 과학 교사입니다. 학생이 심은 질문에 «되묻기» 를 답니다.');
+  L.push('');
+  L.push('■ 되묻기가 무엇인가');
+  L.push('- 답을 주지 않습니다. 답을 주면 학생이 스스로 찾을 일이 없어집니다.');
+  L.push('- 학생이 «한 걸음 더» 갈 수 있게 되묻습니다.');
+  L.push('- 한두 문장. 중학교 2학년이 읽는 말로. 물음표로 끝냅니다.');
+  L.push('');
+  if(voice.length){
+    L.push('■ 이 선생님은 이렇게 씁니다 (실제로 쓴 되묻기 — 이 말투를 따라 주세요)');
+    voice.forEach(function(q, i){
+      L.push((i+1) + '. 학생 질문: ' + (q.text||'').replace(/\s+/g,' ').trim());
+      L.push('   되묻기: ' + (q.teacher_nudge||'').replace(/\s+/g,' ').trim());
+    });
+    L.push('');
+  }
+  L.push('■ 되묻는 방향 — 질문에 맞는 것 «하나만» 고르세요');
+  L.push('- 관찰이 안 들어 있으면 → 무엇을 보고 그렇게 생각했는지 묻는다');
+  L.push('- 해볼 수 없는 질문이면 → 무엇 하나를 바꿔서 해볼 수 있을지 묻는다');
+  L.push('- 너무 넓으면 → 어느 경우로 좁힐지 묻는다');
+  L.push('- 이미 좋은 질문이면 → 짧게 인정하고 «그럼 만약 ~라면?» 으로 한 걸음 더');
+  L.push('');
+  L.push('■ 하지 말 것');
+  L.push('- 설명하지 않기. «~때문이에요», «~는 ~입니다» 같은 문장 금지');
+  L.push('- «좋은 질문이에요!» 만 쓰고 끝내지 않기');
+  L.push('- 어려운 용어 넣지 않기 — 학생이 아는 말로');
+  L.push('- 한 번에 여러 개 묻지 않기. 하나만');
+  L.push('- 질문이 이미 훌륭하거나 되물을 말이 마땅치 않으면 그 줄은 «-» 하나만 쓰세요.');
+  L.push('  억지로 채우지 마세요. 빈 되묻기는 안 올라갑니다.');
+  L.push('');
+  L.push('■ 출력 — 다른 말 붙이지 말고 아래 표만 주세요');
+  L.push('id | 되묻기');
+  L.push('(한 줄에 하나씩. id 는 아래 목록의 숫자를 그대로.)');
+  L.push('');
+  L.push('■ 질문 목록 (' + todo.length + '개)');
+  todo.forEach(function(q){
+    const txt = (q.refined_text || q.text || '').replace(/\s+/g,' ').trim();
+    const was = (q.refined_text && q.text) ? ('  [다듬기 전: ' + q.text.replace(/\s+/g,' ').trim() + ']') : '';
+    L.push(q.id + ' | ' + (q.phase === 'after' ? '수업 닫기' : '수업 열기') +
+           (q.unit ? (' | ' + q.unit) : '') + ' | ' + txt + was);
+  });
+  return L.join(String.fromCharCode(10));
+}
+
+function ndCopyPrompt(){
+  const todo = _ndTodo();
+  if(!todo.length){ alert('되묻기가 아직 없는 질문이 없어요.'); return; }
+  const p = ndBuildPrompt();
+  const msg = $('ndMsg');
+  navigator.clipboard.writeText(p).then(function(){
+    if(msg) msg.textContent = '복사했어요 — AI 에 붙여넣고, 나온 표를 위 칸에 붙여 넣으세요. (' + todo.length + '개)';
+  }, function(){
+    const ta = $('ndIn'); if(ta){ ta.value = p; ta.select(); document.execCommand('copy'); ta.value = ''; }
+    if(msg) msg.textContent = '복사했어요. (' + todo.length + '개)';
+  });
+}
+
+/* ── 📖 AI 가 준 표를 검토 표로 ─────────────────────────────────────────── */
+function ndParse(){
+  const ta = $('ndIn'); const msg = $('ndMsg'); const tb = $('ndTable');
+  if(!ta || !tb) return;
+  const byId = {};
+  (allQuestions||[]).forEach(function(q){ byId[String(q.id)] = q; });
+
+  const seen = {}; const rows = []; let unknown = 0; let blank = 0;
+  (ta.value||'').split(/\r?\n/).forEach(function(line){
+    const s = line.trim(); if(!s) return;
+    /* id 다음의 첫 구분자에서만 자른다 — 되묻기 안에 쉼표가 있어도 안전하다 */
+    const m = s.match(/^(\d+)\s*[|\t,:]\s*(.*)$/);
+    if(!m) return;
+    const id = m[1]; let txt = (m[2]||'').trim();
+    /* AI 가 통째로 «따옴표로 감싸» 주는 일이 있다. 그럴 때만 벗긴다.
+       한쪽만 보고 떼면 「전압」이라는 처럼 «말 안에 든 괄호» 를 부순다. */
+    const _WRAP = [['"','"'], ["'","'"], ['「','」'], ['«','»'],
+                   ['“','”'], ['‘','’']];
+    for(let w = 0; w < _WRAP.length; w++){
+      if(txt.length > 1 && txt[0] === _WRAP[w][0] && txt[txt.length-1] === _WRAP[w][1]){
+        txt = txt.slice(1, -1).trim(); break;
+      }
+    }
+    if(seen[id]) return; seen[id] = 1;
+    const q = byId[id];
+    if(!q){ unknown++; return; }
+    if(!txt || txt === '-' || txt === '\u2014'){ blank++; return; }   /* 억지로 채우지 않은 줄 */
+    rows.push({id: q.id, q: q, text: txt, on: !(q.teacher_nudge||'').trim()});
+  });
+
+  _ndRows = rows;
+  if(!rows.length){
+    tb.innerHTML = '<div class="nd-none">읽을 줄이 없어요. <code>id | 되묻기</code> 모양인지 확인해 주세요.</div>';
+    if(msg) msg.textContent = '';
+    return;
+  }
+  ndPaintTable();
+  const notes = [];
+  if(unknown) notes.push('목록에 없는 id ' + unknown + '개는 건너뜀');
+  if(blank) notes.push('비워 둔 줄 ' + blank + '개는 건너뜀');
+  if(msg) msg.textContent = rows.length + '줄 읽었어요' + (notes.length ? (' · ' + notes.join(' · ')) : '');
+}
+
+function ndPaintTable(){
+  const tb = $('ndTable'); if(!tb) return;
+  const on = _ndRows.filter(function(r){ return r.on; }).length;
+  tb.innerHTML =
+    '<div class="nd-tbl">' + _ndRows.map(function(r, i){
+      const had = (r.q.teacher_nudge||'').trim();
+      return '<div class="nd-row' + (r.on ? '' : ' off') + (had ? ' warn' : '') + '" id="ndRow-' + i + '">' +
+        '<input type="checkbox" class="nd-ck" ' + (r.on ? 'checked' : '') + ' onchange="ndTog(' + i + ',this.checked)">' +
+        '<div class="nd-q">' +
+          '<div class="nd-q-t">' + esc(r.q.refined_text || r.q.text || '') + '</div>' +
+          '<div class="nd-q-m">' + (r.q.unit ? ('📑 ' + esc(r.q.unit) + ' · ') : '') +
+            (r.q.phase === 'after' ? '🌙 닫기' : '🌅 열기') + ' · id ' + r.id + '</div>' +
+          (had ? ('<div class="nd-q-old">⚠️ 이미 쓰신 되묻기가 있어요 — 덮어쓰려면 체크하세요<br>「' + esc(had) + '」</div>') : '') +
+        '</div>' +
+        '<div class="nd-n"><textarea id="ndTx-' + i + '" oninput="ndEdit(' + i + ',this.value)">' + esc(r.text) + '</textarea></div>' +
+      '</div>';
+    }).join('') + '</div>' +
+    '<div class="nd-bar">' +
+      '<button class="st-nav" onclick="ndAll(true)">전부 체크</button>' +
+      '<button class="st-nav" onclick="ndAll(false)">전부 해제</button>' +
+      '<button class="st-nav primary" id="ndGo" onclick="ndApply()"' + (on ? '' : ' disabled') + '>✅ ' + on + '개 올리기</button>' +
+      '<span class="nd-msg" id="ndGoMsg"></span>' +
+    '</div>';
+}
+
+function ndTog(i, on){
+  if(!_ndRows[i]) return;
+  _ndRows[i].on = !!on;
+  const row = $('ndRow-' + i); if(row) row.classList.toggle('off', !on);
+  const n = _ndRows.filter(function(r){ return r.on; }).length;
+  const b = $('ndGo'); if(b){ b.textContent = '✅ ' + n + '개 올리기'; b.disabled = !n; }
+}
+function ndEdit(i, v){ if(_ndRows[i]) _ndRows[i].text = v; }
+function ndAll(on){
+  _ndRows.forEach(function(r){ r.on = on; });
+  ndPaintTable();
+}
+
+/* ── ✅ 올리기 ────────────────────────────────────────────────────────────
+   학생 화면에 바로 보이는 글이라 한 번 묻는다. 한 줄씩 올리고 실패를 모은다 —
+   중간에 하나 실패했다고 나머지를 버리면 어디까지 올라갔는지 알 수 없다. */
+async function ndApply(){
+  const picked = _ndRows.filter(function(r){ return r.on && (r.text||'').trim(); });
+  if(!picked.length) return;
+  const over = picked.filter(function(r){ return (r.q.teacher_nudge||'').trim(); }).length;
+  const NLc = String.fromCharCode(10);
+  if(!confirm('되묻기 ' + picked.length + '개를 올립니다.' + NLc +
+              '학생 화면에 바로 보여요.' + NLc +
+              (over ? (NLc + '이 중 ' + over + '개는 이미 쓰신 되묻기를 «덮어씁니다».' + NLc) : '') +
+              NLc + '올릴까요?')) return;
+
+  const btn = $('ndGo'); const msg = $('ndGoMsg');
+  if(btn) btn.disabled = true;
+  let ok = 0; const fail = [];
+  for(let i = 0; i < picked.length; i++){
+    const r = picked[i];
+    if(msg) msg.textContent = '올리는 중… ' + (i+1) + '/' + picked.length;
+    const res = await sb.from('questions').update({teacher_nudge: r.text.trim()}).eq('id', r.id).select('id');
+    if(res.error || !res.data || !res.data.length){
+      fail.push(r.id + (res.error ? (' (' + res.error.message + ')') : ' (저장 안 됨)'));
+    } else {
+      ok++;
+      _applyQField(r.id, {teacher_nudge: r.text.trim()});
+    }
+  }
+  if(msg) msg.textContent = '';
+  alert('올렸어요: ' + ok + '개' +
+        (fail.length ? (NLc + NLc + '안 올라간 것 ' + fail.length + '개:' + NLc + fail.slice(0,10).join(NLc)) : ''));
+  ndClear();
+  renderNudgeView();
+}
+
 function switchView(view){
   currentView = view;
   // 탭 활성화
@@ -3537,6 +3846,7 @@ function switchView(view){
   $('viewSelfcheck').style.display = view === 'selfcheck' ? '' : 'none';
   $('viewBoard').style.display = view === 'board' ? '' : 'none';
   $('viewStamp').style.display = view === 'stamp' ? '' : 'none';
+  $('viewNudge').style.display = view === 'nudge' ? '' : 'none';
   $('viewPicked').style.display = view === 'picked' ? '' : 'none';
   $('viewRepair').style.display = view === 'repair' ? '' : 'none';
   $('viewGrowth').style.display = view === 'growth' ? '' : 'none';
