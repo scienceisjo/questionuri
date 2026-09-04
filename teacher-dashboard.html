@@ -1375,6 +1375,10 @@ let isServiceKey = false;
 // Raw data
 let allProfiles = [];
 let allQuestions = [];
+
+/* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
+   다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
+const BUILD = '09-04 c · 나눠받기';
 let allSubjects = [];
 let allBranches = [];
 
@@ -1762,7 +1766,7 @@ async function loadAll(){
     applyFilters();
     const now = new Date();
     const teacherInfo = currentTeacher?.name ? ` · ${currentTeacher.subject_icon||''} ${currentTeacher.name}` : (isServiceKey ? ' · 🔑 관리자' : '');
-    $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo}`;
+    $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo} · v${BUILD}`;
   }catch(e){
     console.error('loadAll error:', e);
     alert('데이터 로드 실패: '+(e.message||e)+'\n\n교사 계정으로 로그인했는지, 그리고 security_v5.sql 정책이 적용됐는지 확인하세요.');
