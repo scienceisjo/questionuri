@@ -1837,6 +1837,8 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
 .sv-next:hover,.sv-done:hover{background:#4527A0}
 .sv-done{background:#2E7D32}
+.sv-stuck-n{font-size:10.5px;color:#7a6a52;background:#faf6ec;border-radius:7px;
+            padding:6px 9px;margin-top:7px;line-height:1.5}
 .sv-done:hover{background:#1B5E20}
 /* ══ ✨ 한 끗 차이 · 질문 유형 예시 ═════════════════════════════════════ */
 .gq-ex{margin-top:5px;font-size:11px;color:var(--tl);font-style:italic}
@@ -6873,7 +6875,7 @@ function renderQs(){
         <button class="qbm" onclick="openExpand(${q.id})" title="더 깊은 질문으로">🌿+ 키우기</button>
         <button class="qbm" onclick="openSelfCheck(${q.id})">🎯 자가체크${selfCheckCount(q)?` ${selfCheckCount(q)}/7`:''}</button>
         <button class="qbm" onclick="openBM(${q.id})">🌿 꼬리질문${brCount?` ${brCount}`:''}</button>
-        <button class="qbm" onclick="togRes(${q.id})">${q.resolved?`${frEmoji} 수확함`:'○ 수확하기'}</button>
+        <button class="qbm" onclick="togRes(${q.id})">${q.resolved?`${frEmoji} 열매 되돌리기`:'🍎 바로 열매 맺기'}</button>
         <button class="qbm" onclick="S.editId=${q.id};renderQs()">✏️ 질문 고치기</button>
         <button class="qbm" onclick="openFrPick(${q.id})">🍎 열매 모양</button>
         ${(S.trees[S.activeSub]||[]).length>1 ? `<button class="qbm" onclick="openMoveQ(${q.id})">📦 다른 나무로</button>` : ''}
@@ -10490,17 +10492,45 @@ async function saveSolve(qid, done, quiet){
     answer:d.answer, newq:d.newq,
     saved_at: new Date().toISOString()
   };
+  /* ── 🍎 끝까지 했으면 여기서 열매가 맺힌다 ────────────────────────────────
+     예전에는 해결을 마쳐도 아무 일이 없고, 열매를 맺으려면 ⋯ 안의
+     «수확하기» 를 또 찾아 눌러야 했다. 학생들이 «해결한 다음 열매 어떻게
+     맺냐» 고 물었다. 두 곳이 묻는 게 사실 같은 두 칸이라 그대로 옮긴다.
+       친구에게 설명(answer) → 알아낸 것(finding)
+       아직 모르는 것(unclear) → 아직 모르는 것(still_wondering)
+     막힌 채로 마친 경우(🌫)는 맺지 않는다 — 못 찾은 것을 «해결» 이라 부르면
+     말이 어긋난다. 어디까지 갔는지만 남기고, 찾으면 그때 맺힌다. */
+  const patch = { solve: solve };
+  const ripen = done && !d.stuck;              /* 이번에 열매가 맺히는가 */
+  const firstTime = ripen && !q.resolved;      /* 처음이면 도토리를 준다 */
+  if(done){
+    if(ripen){
+      patch.finding = (d.answer || '').trim() || null;
+      patch.still_wondering = (d.unclear || '').trim() || null;
+      if(!q.resolved) patch.resolved = true;
+    } else {
+      /* 막힌 채로 마침 — 어디까지 갔는지가 다음 수업의 재료다 */
+      patch.still_wondering = (d.stuckWhere || '').trim() || q.still_wondering || null;
+    }
+  }
   if(!S.guest){
-    const r = await sb.from('questions').update({solve: solve}).eq('id', qid).select('id');
+    const r = await sb.from('questions').update(patch).eq('id', qid).select('id');
     if(r.error){ toast('저장 실패: ' + r.error.message); return; }
     if(!r.data || !r.data.length){ toast('저장되지 않았어요. 새로고침 후 다시 해주세요.'); return; }
   }
   q.solve = solve;
   if(done){
+    if(patch.finding !== undefined) q.finding = patch.finding;
+    if(patch.still_wondering !== undefined) q.still_wondering = patch.still_wondering;
+    if(patch.resolved) q.resolved = true;
+  }
+  if(done){
     S.solveId = null;
     clearTimeout(_draftTimer);     /* 끝냈으니 예약된 자동 저장은 취소 */
-    toast(d.stuck ? '🌫 여기까지 기록했어요. 모르는 걸 아는 것도 큰 거예요'
-                  : '🔬 해결 완료! 잘했어요');
+    if(firstTime){ await addSeeds(2, '🍎 열매 수확! +2 🌰'); harvestCelebrate(); }
+    toast(d.stuck
+      ? '🌫 여기까지 기록했어요. 열매는 아직이지만, 모르는 걸 아는 것도 큰 거예요'
+      : (firstTime ? '🍎 해결 완료! 열매가 맺혔어요' : '🔬 해결 내용을 고쳤어요'));
     if((d.newq||'').trim()) setTimeout(function(){ toast('🌱 새로 생긴 질문은 «키우기» 로 심어보세요'); }, 1600);
     render();
   } else {
@@ -10657,12 +10687,17 @@ function renderSolvePanel(q){
   let body = '';
 
   if(step === 1){
+    /* how 가 배열이 아닐 수 있다 — 예전 판이 저장한 solve, 브라우저에 남은
+       임시저장, 손으로 넣은 값 등. 여기서 터지면 renderQs 가 도중에 멈춰서
+       «질문이 통째로 사라진» 것처럼 보인다. 한 질문의 흠이 목록 전체를
+       지우게 두지 않는다. */
+    const _how = Array.isArray(d.how) ? d.how : (d.how = []);
     const hows = SOLVE_HOW.map(function(h){
-      const on = d.how.indexOf(h.k) >= 0 ? ' on' : '';
+      const on = _how.indexOf(h.k) >= 0 ? ' on' : '';
       return '<div class="sv-how' + on + '" id="svHow-' + q.id + '-' + h.k + '" onclick="solveHowToggle(' + q.id + ',\'' + h.k + '\')">' +
              '<b>' + h.ic + ' ' + h.t + '</b><small>' + esc(h.d) + '</small></div>';
     }).join('');
-    const _ask = svChangeAsk(d.how);
+    const _ask = svChangeAsk(_how);
     body =
       '<div class="sv-warn">🚫 아직 AI 에게 묻지 않아요. <b>먼저 내 머리로</b> 생각해봐요.</div>' +
       '<div class="sv-q">' + esc(qShow(q)) + '</div>' +
@@ -10779,13 +10814,15 @@ function renderSolvePanel(q){
            '<div class="sv-btns tight">' +
              '<button class="sv-back" onclick="svStuck(' + q.id + ',0)">아니야, 답 쓸래</button>' +
              '<button class="sv-stuck-go" onclick="saveSolve(' + q.id + ',true)">🌫 여기까지로 마치기</button>' +
+             '<div class="sv-stuck-n">🍎 열매는 아직 안 맺혀요 — 답을 찾으면 그때 맺힙니다.</div>' +
            '</div>' +
          '</div>')
         : '') +
       '<div class="sv-btns">' +
         '<button class="sv-back" onclick="solveGo(' + q.id + ',4)">← 따져보기</button>' +
         (d.stuck ? '' : '<button class="sv-ghost" onclick="svStuck(' + q.id + ',1)">🌫 아직 못 찾았어요</button>') +
-        (d.stuck ? '' : '<button class="sv-done" onclick="saveSolve(' + q.id + ',true)">🔬 해결 완료!</button>') +
+        (d.stuck ? '' : '<button class="sv-done" onclick="saveSolve(' + q.id + ',true)">🍎 ' +
+          (q.resolved ? '해결 완료!' : '해결 완료 — 열매 맺기') + '</button>') +
       '</div>';
   }
 
