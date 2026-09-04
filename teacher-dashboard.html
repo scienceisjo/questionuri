@@ -420,6 +420,27 @@ td strong{font-weight:700;color:var(--ink)}
 /* 🗂️ 질문 보드 (대시보드) */
 .bmode-btn{padding:7px 14px;min-height:36px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s}
 .bmode-btn.on{background:var(--ac);color:#1A2421;border-color:transparent}
+/* ══ 📑 지금 차시 ═════════════════════════════════════════════════════════ */
+.nowunit-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+             padding:10px 14px;margin-bottom:10px;border-radius:12px;
+             border:1.5px solid var(--rule);background:var(--surface)}
+.nowunit-bar.on{border-color:#2D6A3E;background:linear-gradient(135deg,#F3FAF4,#FFFDF5)}
+.nu-ic{font-size:15px;line-height:1}
+.nu-lbl{font-size:12.5px;font-weight:800;color:var(--ink2)}
+.nu-sel{padding:6px 9px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);
+        color:var(--ink);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.nu-in{flex:1;min-width:170px;max-width:320px;padding:6px 11px;border-radius:8px;
+       border:1.5px solid var(--rule);background:var(--surface);color:var(--ink);
+       font-family:inherit;font-size:12.5px}
+.nu-in:focus,.nu-sel:focus{outline:none;border-color:var(--pr)}
+.nu-go{padding:7px 15px;min-height:34px;border-radius:8px;border:none;background:var(--pr);
+       color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.nu-go:hover{background:#255632}
+.nu-off{padding:7px 13px;min-height:34px;border-radius:8px;border:1.5px solid var(--rule);
+        background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12px;
+        font-weight:700;cursor:pointer;margin-left:4px}
+.nu-state{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.nu-state b{color:#2D6A3E}
 /* ══ 🌿 되묻기 일괄 ═══════════════════════════════════════════════════════ */
 .nd-steps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .nd-step{flex:1;min-width:210px;border:1.5px solid var(--rule);border-radius:12px;padding:13px 15px;background:var(--surface)}
@@ -925,6 +946,17 @@ tr:hover .row-del{opacity:.7}
   </div></div>
 
   <div class="container">
+    <!-- 📑 지금 차시 — 수업 시작에 한 번 누르면 학생 질문에 저절로 붙는다 -->
+    <div class="nowunit-bar" id="nowUnitBar">
+      <span class="nu-ic">📑</span>
+      <span class="nu-lbl">지금 차시</span>
+      <select id="nuGrade" class="nu-sel"><option value="">학년</option></select>
+      <select id="nuClass" class="nu-sel"><option value="">반</option></select>
+      <input id="nuUnit" class="nu-in" list="bUnitDL" placeholder="예) 2-3차시 전압"
+             onkeydown="if(event.key==='Enter')setNowUnit()">
+      <button class="nu-go" onclick="setNowUnit()">켜기</button>
+      <span class="nu-state" id="nuState"></span>
+    </div>
     <!-- FILTERS -->
     <div class="filter-bar">
       <span class="lbl">Filter</span>
@@ -1378,7 +1410,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '09-04 d · 도장회수';
+const BUILD = '09-04 e · 지금차시';
 let allSubjects = [];
 let allBranches = [];
 
@@ -1653,6 +1685,115 @@ async function teacherSignup(){
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   📑 지금 차시 — 켜 두면 그 시간 질문에 차시가 저절로 붙는다
+
+   차시는 학생에게 뜻이 없는 라벨이다. 매번 고르게 하면 빼먹는다.
+   수업 시작에 선생님이 한 번 누르는 것으로 끝낸다.
+   3시간 뒤 스스로 꺼진다 — 끄는 걸 잊어도 다음 날 질문에 붙지 않게.
+   ══════════════════════════════════════════════════════════════════════════ */
+let _nowUnits = [];      /* 지금 켜져 있는 것들 */
+let _nuMissing = false;  /* active_units 표가 아직 없나 (SQL 미실행) */
+
+async function loadNowUnits(){
+  if(!sb) return;
+  const r = await sb.from('active_units').select('*')
+    .gt('expires_at', new Date().toISOString()).order('set_at', {ascending:false});
+  if(r.error){ _nuMissing = true; _nowUnits = []; paintNowUnit(); return; }
+  _nuMissing = false;
+  const tid = currentTeacher && currentTeacher.id;
+  _nowUnits = (r.data || []).filter(function(a){ return !tid || Number(a.teacher_id) === Number(tid); });
+  paintNowUnit();
+}
+
+function _nuLeft(iso){
+  const ms = new Date(iso).getTime() - Date.now();
+  if(ms <= 0) return '곧 꺼짐';
+  const m = Math.round(ms / 60000);
+  return m >= 60 ? (Math.floor(m/60) + '시간 ' + (m%60) + '분 남음') : (m + '분 남음');
+}
+function _nuWho(a){
+  return (a.target_grade ? a.target_grade + '학년 ' : '') +
+         (a.target_class ? a.target_class + '반' : (a.target_grade ? '전체' : '모든 반'));
+}
+
+function paintNowUnit(){
+  const bar = $('nowUnitBar'), st = $('nuState');
+  if(!bar || !st) return;
+  if(_nuMissing){
+    bar.classList.remove('on');
+    st.innerHTML = '<span title="10_지금차시.sql 을 Supabase 에서 한 번 실행하세요">' +
+                   '⚠️ 준비 안 됨 — <b>10_지금차시.sql</b> 을 한 번 실행하세요</span>';
+    return;
+  }
+  if(!_nowUnits.length){
+    bar.classList.remove('on');
+    st.innerHTML = '<span>꺼져 있어요. 켜 두면 그 반 학생 질문에 차시가 <b>저절로</b> 붙어요.</span>';
+    return;
+  }
+  bar.classList.add('on');
+  st.innerHTML = _nowUnits.map(function(a){
+    return '<span>✅ <b>' + esc(_nuWho(a)) + ' · ' + esc(a.unit) + '</b> ' +
+           '<span style="opacity:.7">(' + _nuLeft(a.expires_at) + ')</span>' +
+           '<button class="nu-off" onclick="clearNowUnit(' + a.id + ')">끄기</button></span>';
+  }).join('');
+}
+
+/* 학년·반 칸은 위 필터를 따라간다 — 대개 그 반을 보다가 켜기 때문이다 */
+function fillNowUnitSelects(){
+  const g = $('nuGrade'), c = $('nuClass');
+  if(!g || !c) return;
+  const grades = [...new Set(allProfiles.map(p => p.grade).filter(x => x != null))].sort();
+  const classes = [...new Set(allProfiles.map(p => p.class_no).filter(x => x != null))].sort((a,b)=>a-b);
+  const keepG = g.value, keepC = c.value;
+  g.innerHTML = '<option value="">학년</option>' + grades.map(function(x){
+    return '<option value="' + x + '">' + x + '학년</option>'; }).join('');
+  c.innerHTML = '<option value="">반</option>' + classes.map(function(x){
+    return '<option value="' + x + '">' + x + '반</option>'; }).join('');
+  g.value = keepG || ($('fGrade') ? $('fGrade').value : '') || '';
+  c.value = keepC || ($('fClass') ? $('fClass').value : '') || '';
+}
+
+async function setNowUnit(){
+  const unit = ($('nuUnit').value || '').trim();
+  if(!unit){ alert('차시를 적어 주세요. 예) 2-3차시 전압'); $('nuUnit').focus(); return; }
+  if(!currentTeacher || !currentTeacher.id){ alert('교사 계정으로 로그인해 주세요.'); return; }
+  const g = $('nuGrade').value ? Number($('nuGrade').value) : null;
+  const c = $('nuClass').value ? Number($('nuClass').value) : null;
+  if(!c && !confirm('반을 안 고르면 ' + (g ? (g + '학년 ') : '') + '모든 반에 걸려요.' +
+                    String.fromCharCode(10) + '그래도 켤까요?')) return;
+
+  /* 같은 반에 이미 켜 둔 게 있으면 갈아 끼운다 — 한 반에 두 차시가 동시에
+     켜져 있으면 어느 것이 붙을지 알 수 없다 */
+  const dupes = _nowUnits.filter(function(a){
+    return (a.target_grade || null) === g && (a.target_class || null) === c; });
+  for(let i = 0; i < dupes.length; i++){
+    await sb.from('active_units').delete().eq('id', dupes[i].id);
+  }
+
+  const sub = allSubjects.find(function(s){ return s.id === ($('fSubject') ? $('fSubject').value : ''); });
+  const r = await sb.from('active_units').insert({
+    teacher_id: currentTeacher.id, target_grade: g, target_class: c, unit: unit,
+    subject_id: sub ? sub.id : null, subject_label: sub ? sub.label : null
+  }).select('id');
+  if(r.error){
+    alert('켜지 못했어요: ' + r.error.message +
+          String.fromCharCode(10) + String.fromCharCode(10) +
+          '표가 아직 없다면 10_지금차시.sql 을 Supabase 에서 한 번 실행하세요.');
+    return;
+  }
+  try{ await sb.rpc('sweep_active_units'); }catch(e){}   /* 오래된 것 치우기 */
+  await loadNowUnits();
+  toast('📑 지금 차시를 켰어요 — 이제 학생 질문에 저절로 붙어요');
+}
+
+async function clearNowUnit(id){
+  const r = await sb.from('active_units').delete().eq('id', id).select('id');
+  if(r.error){ alert('끄지 못했어요: ' + r.error.message); return; }
+  await loadNowUnits();
+  toast('📑 지금 차시를 껐어요');
+}
+
 function showDashboard(){
   paintWhoAmI();
   _autoNew = 0; paintAutoBadge(); startAuto();
@@ -1767,6 +1908,8 @@ async function loadAll(){
     const now = new Date();
     const teacherInfo = currentTeacher?.name ? ` · ${currentTeacher.subject_icon||''} ${currentTeacher.name}` : (isServiceKey ? ' · 🔑 관리자' : '');
     $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo} · v${BUILD}`;
+    fillNowUnitSelects();
+    loadNowUnits();
   }catch(e){
     console.error('loadAll error:', e);
     alert('데이터 로드 실패: '+(e.message||e)+'\n\n교사 계정으로 로그인했는지, 그리고 security_v5.sql 정책이 적용됐는지 확인하세요.');

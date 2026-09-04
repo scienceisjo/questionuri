@@ -637,6 +637,16 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .tp-grp:last-child{margin-bottom:0}
 .tp-grp-h{font-size:9.5px;font-weight:800;color:var(--tl);margin:0 0 3px 2px}
 .tp-grp-b{display:flex;gap:5px;flex-wrap:wrap}
+/* 📑 차시 고르개 — 나무 고르개와 같은 꼴로 */
+.up-opt{display:inline-flex;align-items:center;gap:4px;min-height:var(--touch-sm);
+        padding:4px 11px;background:#fff;border-radius:16px;border:1.5px solid rgba(93,184,110,.15);
+        font-size:11px;font-weight:600;color:var(--tx);cursor:pointer;font-family:inherit;
+        transition:all .15s}
+.up-opt:hover{border-color:var(--pr);background:rgba(93,184,110,.05)}
+.up-opt.on{background:linear-gradient(135deg,rgba(93,184,110,.2),rgba(217,119,6,.12));
+           border-color:var(--pr);color:var(--pd)}
+.up-now{font-size:9px;font-weight:800;color:#fff;background:var(--pr);
+        border-radius:8px;padding:1px 5px;line-height:1.5}
 .tp-note{font-size:10px;color:#8A5A00;background:#FFF8E9;border:1px solid #F0D48A;
          border-radius:7px;padding:5px 8px;margin-top:6px;line-height:1.5}
 
@@ -2309,6 +2319,11 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
             <div class="tp-list" id="treePickerList"></div>
             <div class="tp-note" id="treePickerNote" style="display:none"></div>
           </div>
+          <div class="tree-picker" id="unitPicker" style="display:none">
+            <div class="tp-label">📑 몇 차시 질문인가요?</div>
+            <div class="tp-list" id="unitPickerList"></div>
+            <div class="tp-note" id="unitPickerNote" style="display:none"></div>
+          </div>
           <div class="tag-inp-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
             <span id="tagChips"></span>
             <input class="tag-inp" id="tagInp" placeholder="# 태그 입력 후 Enter" onkeydown="handleTagKey(event)">
@@ -2824,6 +2839,8 @@ const S = {
   trees:{},               // { subjectId: [ {id, name, icon, sort_order}, ... ] }
   activeTreeId:{},        // { subjectId: treeId } - 과목별 현재 포커스 나무
   pendingSubId:null,      // 심을 때 고른 나무가 «어느 과목» 것인지
+  pendingUnit:null,       // 📑 이 질문을 몇 차시로 둘지 (null = 차시 없음)
+  pendingUnitSet:false,   //   학생이 직접 골랐는가. 아직이면 기본값을 다시 계산한다
                           //   나무 id 만으로는 부족하다. 과목을 새로 만든 학생은
                           //   activeSub 가 새 과목이라, 예전 과목의 큰 나무를
                           //   골라도 저장은 새 과목으로 가 버렸다.
@@ -4326,7 +4343,7 @@ function toggleQMore(){
 function render(){
   renderSubTabs();renderTree();renderQs();renderStats();renderGrowthReport();
   renderAch();renderSkTray();renderDecoTree();renderTagPresets();
-  renderFruitPicker();renderAnonTog();renderTreePicker();
+  renderFruitPicker();renderAnonTog();renderTreePicker();renderUnitPicker();
   const q=QUOTES[new Date().getDate()%QUOTES.length];
   $('qTxt').textContent=q.t;$('qAuth').textContent=q.a;
   $('av').textContent=S.name?S.name[0]:'?';
@@ -6134,6 +6151,89 @@ async function confirmMoveQ(toTreeId){
   render();
 }
 
+/* ══ 📑 지금 차시 ═════════════════════════════════════════════════════════
+   선생님이 수업 시작에 켜 두면 그 시간 질문에 차시가 저절로 붙는다.
+   학생은 아무것도 안 해도 된다 — 차시는 학생에게 뜻이 없는 라벨이라
+   매번 고르게 하면 빼먹기 때문이다.
+   ══════════════════════════════════════════════════════════════════════ */
+let _nowUnit = null;      /* {unit, subject_label, teacher_id} 또는 null */
+
+async function loadNowUnit(){
+  if(!S.user || S.guest) return;
+  try{
+    const {data, error} = await sb.from('active_units').select('*')
+      .gt('expires_at', new Date().toISOString())
+      .order('set_at', {ascending:false}).limit(30);
+    /* 표가 아직 없으면(SQL 미실행) 조용히 넘어간다 — 질문 심기를 막지 않는다 */
+    if(error){ _nowUnit = null; return; }
+    const g = S.grade ? Number(S.grade) : null;
+    const c = S.cls ? Number(S.cls) : null;
+    _nowUnit = (data || []).find(function(a){
+      const gOk = !a.target_grade || Number(a.target_grade) === g;
+      const cOk = !a.target_class || Number(a.target_class) === c;
+      /* 내가 듣는 선생님 것만. 참여 정보를 아직 못 받았으면 넓게 잡는다 */
+      const tOk = !(S.myTeacherIds && S.myTeacherIds.size) ||
+                  S.myTeacherIds.has(Number(a.teacher_id));
+      return gOk && cOk && tOk;
+    }) || null;
+  }catch(e){ _nowUnit = null; }
+}
+
+/* 고를 수 있는 차시 — 지금 차시 + 내 자료들의 차시(최근 순) */
+function unitOptions(){
+  const out = [], seen = {};
+  if(_nowUnit && (_nowUnit.unit||'').trim()){
+    out.push({ u: _nowUnit.unit.trim(), now: true });
+    seen[_nowUnit.unit.trim()] = 1;
+  }
+  (_materials || []).forEach(function(m){
+    const u = (m.unit || '').trim();
+    if(!u || seen[u]) return;
+    seen[u] = 1; out.push({ u: u });
+  });
+  return out.slice(0, 6);
+}
+
+/* 아직 안 골랐으면 기본값을 정해 준다 — 선생님이 켜 둔 차시가 첫째,
+   없으면 가장 최근 자료의 차시. 둘 다 없으면 차시 없음. */
+function unitDefault(){
+  if(_nowUnit && (_nowUnit.unit||'').trim()) return _nowUnit.unit.trim();
+  const m = (_materials || [])[0];
+  return (m && (m.unit||'').trim()) || null;
+}
+
+function renderUnitPicker(){
+  const el = $('unitPicker'); if(!el) return;
+  const opts = unitOptions();
+  if(!opts.length){ el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  if(!S.pendingUnitSet) S.pendingUnit = unitDefault();
+
+  const box = $('unitPickerList');
+  box.innerHTML = opts.map(function(o){
+    const on = (S.pendingUnit === o.u) ? ' on' : '';
+    return '<button class="up-opt' + on + '" ' +
+      'onclick="setPendingUnit(' + JSON.stringify(o.u).split('"').join('&quot;') + ')">' +
+      (o.now ? '<span class="up-now">지금</span>' : '') + esc(o.u) + '</button>';
+  }).join('') +
+  '<button class="up-opt' + (S.pendingUnit ? '' : ' on') + '" ' +
+    'onclick="setPendingUnit(null)" title="수업과 상관없는 질문이면 비워 두세요">차시 없음</button>';
+
+  const note = $('unitPickerNote');
+  if(note){
+    const auto = !S.pendingUnitSet && _nowUnit && S.pendingUnit === (_nowUnit.unit||'').trim();
+    note.style.display = auto ? '' : 'none';
+    if(auto) note.innerHTML = '선생님이 <b>지금 차시</b>를 정해 두셔서 저절로 골라졌어요.';
+  }
+}
+
+function setPendingUnit(u){
+  S.pendingUnit = u; S.pendingUnitSet = true;
+  renderUnitPicker();
+}
+
+// 질문 작성 시 나무 선택 UI
 /* ══ 🌲 이 나무에 달래요 ══════════════════════════════════════════════════════
    과목을 하나 더 만든 학생은 activeSub 가 새 과목이 된다. 그 과목엔 갓 만든
    나무 하나뿐이라, 예전에 참여코드로 키운 큰 나무는 «보이지만 달 수 없는»
@@ -7662,7 +7762,8 @@ async function addQ(ctx){
 
   /* 차시당 제한 — 자료를 보고 심는 질문에는 그 자료의 차시가 붙는다 */
   const _mat0  = _pendingMaterialId ? (_materials||[]).find(m => m.id === _pendingMaterialId) : null;
-  const _unit0 = (_mat0 && _mat0.unit) ? _mat0.unit : null;
+  /* 자료를 걸었으면 그 차시가 제일 확실하다. 아니면 고른(또는 저절로 골라진) 차시 */
+  const _unit0 = (_mat0 && _mat0.unit) ? _mat0.unit : (S.pendingUnit || null);
   const _uFull = await unitBlocked(_unit0);
   if(_uFull){ showUnitFull(_msgId, _unit0, _uFull); inp.focus(); return; }
 
@@ -7698,6 +7799,8 @@ async function addQ(ctx){
     const _mat = (_materials||[]).find(m=>m.id===_pendingMaterialId);
     if(_mat && _mat.unit) payload.unit = _mat.unit;
   }
+  /* 자료가 없거나 자료에 차시가 안 붙어 있으면, 고른(또는 선생님이 켜 둔) 차시 */
+  if(!payload.unit && S.pendingUnit) payload.unit = S.pendingUnit;
 
   let {data,error}=await sb.from('questions').insert(payload).select().single();
   /* 나무가 DB 에서 사라졌는데 화면엔 남아 있던 경우 — 질문을 잃지 않게
@@ -7750,7 +7853,7 @@ async function addQ(ctx){
   /* 고른 나무는 그대로 둔다. 자료 시트에서 연달아 심을 때 매번 다시
      고르게 하면 첫 질문만 제자리에 가고 나머지는 딴 데로 간다. */
   inp.value='';S.pendingTags=[];S.pendingFruit=null;S.pendingAnon=false;S.pendingSource=null;
-  renderPendingTags();renderFruitPicker();renderAnonTog();renderSourcePicker();renderTreePicker();
+  renderPendingTags();renderFruitPicker();renderAnonTog();renderSourcePicker();renderTreePicker();renderUnitPicker();
   const m=_setMsg((S.phase==='after') ? '🌙 수업 닫기 질문이 심어졌어요!' : '🌅 수업 열기 질문이 심어졌어요!','ok');
   mascotPop((S.phase==='after')?'멋진 닫기 질문이에요! 🌙':'좋은 질문 하나가 자랐어요! 🌱');
   setTimeout(()=>{ if(m) m.className = (_msgId==='msMsg'?'ms-msg':'q-msg'); },1500);
@@ -8276,8 +8379,21 @@ function startLivePolling(){
   if(_livePollTimer) return;
   pollLiveSession();
   _livePollTimer = setInterval(pollLiveSession, 4000);
+  /* 📑 지금 차시도 같이 살핀다. 수업 중에 선생님이 켜면 바로 따라와야 한다.
+     40초면 충분하다 — 라이브처럼 4초마다 볼 것은 아니다. */
+  nowUnitTick();
+  if(!_nowUnitTimer) _nowUnitTimer = setInterval(nowUnitTick, 40000);
+}
+let _nowUnitTimer = null;
+async function nowUnitTick(){
+  const was = _nowUnit && _nowUnit.unit;
+  await loadNowUnit();
+  const now = _nowUnit && _nowUnit.unit;
+  /* 바뀌었으면 고르개를 다시 그린다. 학생이 직접 고른 뒤라면 건드리지 않는다 */
+  if(was !== now) renderUnitPicker();
 }
 function stopLivePolling(){
+  if(_nowUnitTimer){ clearInterval(_nowUnitTimer); _nowUnitTimer=null; }
   if(_livePollTimer){ clearInterval(_livePollTimer); _livePollTimer=null; }
   _liveSession=null;
   const b=$('liveBanner'); if(b){ b.style.display='none'; b.innerHTML=''; }
@@ -8359,6 +8475,8 @@ async function submitLiveQuestion(sessionId){
     var _lm = (_materials||[]).find(function(x){ return x.id === _liveMat; });
     if(_lm && _lm.unit) payload.unit = _lm.unit;
   }
+  /* 라이브는 수업 중에만 열린다 — 지금 차시가 켜져 있으면 그게 맞다 */
+  if(!payload.unit && _nowUnit && (_nowUnit.unit||'').trim()) payload.unit = _nowUnit.unit.trim();
   if(treeId && !String(treeId).startsWith('local_')) payload.tree_id=treeId;
   const {data,error}=await sb.from('questions').insert(payload).select().single();
   if(error){ toast('보내지 못했어요: '+error.message); return; }
