@@ -23,10 +23,20 @@
   --ink2:#3D4A42;
   --ink3:#6D7A6F;
   --ink4:#A3A89C;
-  --pr:#2D6A3E;           /* 딥 그린 */
+  /* ── 네 단계 초록 ─────────────────────────────────────────────────────
+     하나의 «브랜드 초록» 을 아무 데나 쓰면 위계가 사라진다. 자리마다 다르다.
+       --pr  제목·표제      --pa  누르는 단추
+       --ph  짙은 띠·바닥    --pu  장식 */
+  --pr:#006241;           /* 제목 초록 */
+  --pa:#00754A;           /* 단추 초록 — 누르는 것에만 */
+  --ph:#1E3932;           /* 짙은 띠 */
+  --pu:#2b5148;           /* 장식 */
   --pl:#5CB86E;
   --pd:#184B28;
-  --ac:#D97706;           /* 앰버 */
+  /* 금색은 «대표 질문·별표» 같은 예식 자리에만. 일반 강조로 쓰지 않는다 */
+  --gold:#cba258;
+  --gold-l:#faf6ee;
+  --ac:#D97706;           /* 앰버 — 경고·수치 같은 기능적 강조 */
   --ac2:#F59E0B;
   --ar:#B91C1C;           /* 경고 레드 */
   --blue:#2563EB;
@@ -420,6 +430,32 @@ td strong{font-weight:700;color:var(--ink)}
 /* 🗂️ 질문 보드 (대시보드) */
 .bmode-btn{padding:7px 14px;min-height:36px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s}
 .bmode-btn.on{background:var(--ac);color:#1A2421;border-color:transparent}
+
+/* 📑 질문 표의 차시 칸 — 미지정은 흐리게 두어 «채워야 할 것» 으로 읽히게 */
+.q-unit{display:inline-block;font-size:11px;font-weight:700;color:#5B4FC0;
+        background:rgba(124,111,217,.10);border-radius:10px;padding:2px 8px;white-space:nowrap;
+        max-width:150px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.q-unit.none{color:var(--ink4);background:transparent;border:1px dashed var(--rule);font-weight:600}
+
+/* 👥 반별 접기 */
+.stu-count{font-size:12px;color:var(--ink3);margin-bottom:12px;letter-spacing:-0.01em}
+.cls-fold{border:1.5px solid var(--rule);border-radius:12px;background:var(--surface);
+          margin-bottom:10px;overflow:hidden}
+.cls-fold[open]{background:var(--surface)}
+.cls-sum{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;
+         padding:13px 16px;min-height:48px;box-sizing:border-box}
+.cls-sum::-webkit-details-marker{display:none}
+.cls-sum::after{content:'▾';margin-left:auto;color:var(--ink3);font-size:14px;
+                transition:transform .15s;flex:none}
+.cls-fold[open] .cls-sum::after{transform:rotate(180deg)}
+.cls-fold[open] .cls-sum{border-bottom:1px solid var(--rule)}
+.cls-nm{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-0.01em}
+.cls-n{font-size:11.5px;font-weight:700;color:var(--pr);background:rgba(45,106,62,.10);
+       border-radius:10px;padding:2px 9px}
+.cls-q{font-size:11.5px;color:var(--ink3)}
+.cls-al{font-size:11.5px;font-weight:700;color:#B45309;background:#FFF8E9;
+        border-radius:10px;padding:2px 9px}
+.cls-fold .students-grid{padding:14px 16px 16px}
 /* ══ 📑 지금 차시 ═════════════════════════════════════════════════════════ */
 .nowunit-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
              padding:10px 14px;margin-bottom:10px;border-radius:12px;
@@ -866,6 +902,54 @@ tr:hover .row-del{opacity:.7}
 .tb{display:inline-block;margin-right:4px;font-size:12px;vertical-align:1px}
 .st-was{margin-top:9px;font-size:12px;color:var(--ink3);opacity:.85;line-height:1.55}
 .pk-row.peek .pk-v{color:#C62828;font-weight:700}
+/* ══════════════════════════════════════════════════════════════════════════
+   🎨 정돈 — 참고 문서의 «규칙» 만 가져온다
+     · 단추는 예외 없이 알약, 누를 때 살짝 눌린다
+     · 카드는 12px, 그림자는 옅은 것 두세 겹 (진한 한 겹을 쓰지 않는다)
+     · 자간 -0.01em 로 전체를 조금 조인다
+     · 한글에 고정폭 글꼴을 쓰지 않는다 — 자간이 벌어져 읽기 나쁘다
+   ══════════════════════════════════════════════════════════════════════════ */
+body{letter-spacing:-0.01em}
+
+/* 알약 단추 — 하나도 빠짐없이 */
+.btn,.btn-export,.st-nav,.bmode-btn,.nu-go,.nu-off,.nd-u,.exp-btn,.vm-tab,.db-unit-chip,
+.dd-btn,.dd-q-ctrl-btn,.stamp-btn{border-radius:999px}
+.btn:active,.btn-export:active,.st-nav:active,.bmode-btn:active,.nu-go:active,.nu-off:active,
+.nd-u:active,.exp-btn:active,.vm-tab:active,.dd-btn:active{transform:scale(.95)}
+.btn,.btn-export,.st-nav,.bmode-btn,.nu-go,.nu-off,.nd-u,.exp-btn,.vm-tab,.dd-btn{
+  transition:transform .12s ease, background .15s ease, border-color .15s ease}
+
+/* 누르는 단추의 초록은 --pa. 제목의 초록(--pr)과 섞지 않는다 */
+.st-nav.primary,.nu-go{background:var(--pa);border-color:var(--pa)}
+.st-nav.primary:hover,.nu-go:hover{background:var(--pd)}
+
+/* 카드 — 12px + 옅은 그림자 두 겹 */
+.section,.stu-card,.cls-fold,.nd-step,.nd-tbl,.nowunit-bar{
+  border-radius:12px;
+  box-shadow:0 0 .5px rgba(0,0,0,.14), 0 1px 1px rgba(0,0,0,.24)}
+.section:hover{box-shadow:0 0 .5px rgba(0,0,0,.14), 0 2px 4px rgba(0,0,0,.10)}
+
+/* 위 막대는 세 겹으로 살짝 띄운다 */
+.topbar{box-shadow:0 1px 3px rgba(0,0,0,.10), 0 2px 2px rgba(0,0,0,.06), 0 0 2px rgba(0,0,0,.07)}
+
+/* 고른 탭은 짙은 띠 색으로 — 초록이 자리마다 다르다는 걸 눈에 보이게 */
+.vm-tab.on{background:var(--ph);color:#fff;border-color:var(--ph)}
+
+/* ⭐ 별표·대표 질문에만 금색 */
+.pk-b.ok,.q-star.on{color:var(--gold)}
+.pk-unit-h{border-color:var(--gold)}
+
+/* 한글에 고정폭을 쓰지 않는다 — 숫자·코드·URL 에만 */
+.stu-card-progress span:first-child,.students-grid .stu-card-ref{font-family:inherit !important;
+  letter-spacing:-0.01em !important}
+
+/* 탭도 알약으로. 열두 개가 밑줄로만 갈리면 어느 것이 켜졌는지 잘 안 보인다 */
+.view-tabs{gap:6px;flex-wrap:wrap;border-bottom:none;padding-bottom:4px}
+.vm-tab{border:1.5px solid var(--rule);border-bottom:1.5px solid var(--rule);margin-bottom:0;
+        padding:8px 15px;border-radius:999px;background:var(--surface);font-size:13px}
+.vm-tab:hover{border-color:var(--pa);color:var(--pa);background:var(--surface)}
+.vm-tab.on{background:var(--ph);color:#fff;border-color:var(--ph);
+           border-bottom-color:var(--ph);background-image:none}
 </style>
 </head>
 <body>
@@ -997,6 +1081,8 @@ tr:hover .row-del{opacity:.7}
     <!-- VIEW MODE TABS -->
     <div class="view-tabs">
       <button class="vm-tab on" data-view="default" onclick="switchView('default')">📊 종합 현황</button>
+      <button class="vm-tab" data-view="top5" onclick="switchView('top5')">🏆 TOP 5</button>
+      <button class="vm-tab" data-view="deep" onclick="switchView('deep')">🔬 심화 분석</button>
       <button class="vm-tab" data-view="subjects" onclick="switchView('subjects')">📚 과목별 보기</button>
       <button class="vm-tab" data-view="students" onclick="switchView('students')">👩‍🎓 학생별 보기</button>
       <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">🎯 자가체크</button>
@@ -1025,7 +1111,7 @@ tr:hover .row-del{opacity:.7}
 
 
     <!-- ROW 2: 공감/협력 지표 TOP -->
-    <div class="grid grid-4">
+    <div class="grid grid-4" data-row="top5">
       <div class="section">
         <div class="section-hdr">
           <h2><span class="num">03</span> 💧 공감 TOP 5</h2>
@@ -1061,7 +1147,7 @@ tr:hover .row-del{opacity:.7}
     </div>
 
     <!-- ROW 3: 워드클라우드 + 자동 분류 -->
-    <div class="grid grid-2">
+    <div class="grid grid-2" data-row="deep">
       <div class="section">
         <div class="section-hdr">
           <h2><span class="num">07</span> ☁️ 질문 워드클라우드</h2>
@@ -1095,7 +1181,7 @@ tr:hover .row-del{opacity:.7}
     </div>
 
     <!-- ROW 4: 반의 숲 한눈보기 -->
-    <div class="section">
+    <div class="section" data-row="deep">
       <div class="section-hdr">
         <h2><span class="num">09</span> 🌳 우리 반의 숲</h2>
         <span class="sub" id="forestSub">Every student's tree at a glance</span>
@@ -1107,7 +1193,7 @@ tr:hover .row-del{opacity:.7}
     </div>
 
     <!-- ROW 5: 학생표 + 태그 -->
-    <div class="grid grid-3">
+    <div class="grid grid-3" data-row="deep">
       <div class="section">
         <div class="section-hdr">
           <h2><span class="num">10</span> 👩‍🎓 학생별 현황</h2>
@@ -1142,7 +1228,7 @@ tr:hover .row-del{opacity:.7}
     </div>
 
     <!-- ROW 6: 최근 질문 + 과목별 -->
-    <div class="grid grid-3">
+    <div class="grid grid-3" data-row="main">
       <div class="section">
         <div class="section-hdr">
           <h2><span class="num">12</span> ❓ 최근 질문</h2>
@@ -1156,6 +1242,7 @@ tr:hover .row-del{opacity:.7}
             <thead><tr>
               <th>학생</th>
               <th>과목</th>
+              <th>차시</th>
               <th style="min-width:200px">질문</th>
               <th>태그</th>
               <th>💧</th>
@@ -1410,7 +1497,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '09-04 e · 지금차시';
+const BUILD = '09-04 f · 세갈래·차시열';
 let allSubjects = [];
 let allBranches = [];
 
@@ -1910,6 +1997,7 @@ async function loadAll(){
     $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo} · v${BUILD}`;
     fillNowUnitSelects();
     loadNowUnits();
+    paintRowGroups(currentView);   /* 첫 화면에서도 한 번 — 안 부르면 다 펼쳐진다 */
   }catch(e){
     console.error('loadAll error:', e);
     alert('데이터 로드 실패: '+(e.message||e)+'\n\n교사 계정으로 로그인했는지, 그리고 security_v5.sql 정책이 적용됐는지 확인하세요.');
@@ -2114,6 +2202,16 @@ function applyFilters(){
   } else if(activeView === 'stamp'){
     renderAlerts();
     stBuild(false);
+  } else if(activeView === 'top5' || activeView === 'deep'){
+    /* 같은 껍데기의 다른 줄 묶음을 본다 — 그리는 일은 종합과 같다 */
+    renderSummary();
+    renderAlerts();
+    renderTopLists();
+    renderWordcloud();
+    renderCategories();
+    renderForest();
+    sortAndRenderStudents();
+    renderTags();
   } else if(activeView === 'nudge'){
     renderAlerts();
     renderNudgeView();
@@ -4010,12 +4108,38 @@ async function ndApply(){
   renderNudgeView();
 }
 
+/* ══ 📑 줄 묶음 갈아 보이기 ═══════════════════════════════════════════════
+   종합·TOP5·심화는 같은 껍데기(viewDefault) 안의 «줄 묶음» 을 갈아 보여준다.
+   DOM 을 옮기지 않는다 — 옮기면 그 안의 렌더 함수들이 잡고 있는 자리가
+   다 어긋난다.
+   첫 화면에서도 반드시 한 번 불러야 한다. 안 부르면 아무 것도 안 감춰져서
+   종합 현황에 열세 덩이가 그대로 쏟아진다. */
+function paintRowGroups(view){
+  view = view || 'default';
+  const rowViews = ['default', 'top5', 'deep'];
+  const vd = $('viewDefault');
+  if(vd) vd.style.display = rowViews.indexOf(view) >= 0 ? '' : 'none';
+  document.querySelectorAll('[data-row]').forEach(function(el){
+    const g = el.getAttribute('data-row');
+    const show = (view === 'default' && g === 'main') ||
+                 (view === 'top5'    && g === 'top5') ||
+                 (view === 'deep'    && g === 'deep');
+    el.style.display = show ? '' : 'none';
+  });
+  /* 요약 카드와 접이식 그래프는 종합에서만. 주목할 학생은 renderAlerts 가
+     보일지 말지를 정하므로 여기서는 «감추기만» 한다 — 빈 상자를 펴 놓지 않게 */
+  ['summary','foldStats'].forEach(function(id){
+    const el = $(id); if(el) el.style.display = (view === 'default') ? '' : 'none';
+  });
+  if(view !== 'default'){ const a = $('alertsSec'); if(a) a.style.display = 'none'; }
+}
+
 function switchView(view){
   currentView = view;
   // 탭 활성화
   document.querySelectorAll('.vm-tab').forEach(t => t.classList.toggle('on', t.dataset.view === view));
   // 뷰 컨테이너 토글
-  $('viewDefault').style.display = view === 'default' ? '' : 'none';
+  paintRowGroups(view);
   $('viewSubjects').style.display = view === 'subjects' ? '' : 'none';
   $('viewStudents').style.display = view === 'students' ? '' : 'none';
   $('viewSelfcheck').style.display = view === 'selfcheck' ? '' : 'none';
@@ -4166,12 +4290,21 @@ function renderStudentsView(){
     }
   });
 
-  body.innerHTML = `
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-bottom:14px;letter-spacing:.04em">
-      ${sorted.length}명 표시 중 · 카드 클릭 시 전체 드릴다운 열림
-    </div>
-    <div class="students-grid">
-      ${sorted.map(s => {
+  /* ── 반별로 묶는다 ────────────────────────────────────────────────────────
+     357장을 한 줄로 쏟으면 한 반을 찾는 데 한참 굴려야 한다. 반으로 묶어
+     접어 두면 열두어 줄이 된다. 필요한 반만 펼친다.
+     details/summary 라 여닫는 데 다시 그릴 일이 없다. */
+  const _byCls = [];
+  sorted.forEach(function(s){
+    const key = (s.grade == null ? '?' : s.grade) + '-' + (s.class_no == null ? '?' : s.class_no);
+    let g = _byCls.find(function(x){ return x.key === key; });
+    if(!g){ g = { key:key, grade:s.grade, cls:s.class_no, list:[] }; _byCls.push(g); }
+    g.list.push(s);
+  });
+  /* 반이 하나뿐이면(위 필터로 이미 좁혔으면) 묶을 것이 없다 — 그냥 편다 */
+  const _one = _byCls.length <= 1;
+
+  const _card = (s) => {
         const alerts = computeStudentAlerts ? computeStudentAlerts(s) : [];
         const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
         const lastTxt = s.last_active ? (lastDays === 0 ? '오늘' : `${lastDays}일 전`) : '기록 없음';
@@ -4210,9 +4343,31 @@ function renderStudentsView(){
             </div>
           </div>
         `;
-      }).join('')}
-    </div>
-  `;
+  };
+
+  /* 반 줄에 «지금 봐야 할 것» 을 미리 적는다 — 열어봐야 아는 건 안 열어본다 */
+  const _sum = function(g){
+    let al = 0, qs = 0;
+    g.list.forEach(function(s){
+      qs += (s.total || 0);
+      if(typeof computeStudentAlerts === 'function' && computeStudentAlerts(s).length) al++;
+    });
+    return '<summary class="cls-sum">' +
+      '<span class="cls-nm">' + (g.grade != null ? g.grade + '학년 ' : '') +
+        (g.cls != null ? g.cls + '반' : '반 없음') + '</span>' +
+      '<span class="cls-n">' + g.list.length + '명</span>' +
+      '<span class="cls-q">질문 ' + qs + '</span>' +
+      (al ? '<span class="cls-al">⚠️ ' + al + '</span>' : '') +
+    '</summary>';
+  };
+
+  body.innerHTML =
+    '<div class="stu-count">' + sorted.length + '명 · ' + _byCls.length + '개 반 · 카드를 누르면 그 학생 전체가 열려요</div>' +
+    _byCls.map(function(g){
+      return '<details class="cls-fold"' + (_one ? ' open' : '') + '>' + _sum(g) +
+        '<div class="students-grid">' + g.list.map(_card).join('') + '</div>' +
+      '</details>';
+    }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -4882,7 +5037,7 @@ function renderQuestions(){
   allBranches.forEach(b=>brByQ[b.question_id]=(brByQ[b.question_id]||0)+1);
 
   const body=$('questionBody');
-  if(!qs.length){ body.innerHTML='<tr><td colspan="10" class="empty-row">질문이 없습니다</td></tr>'; return; }
+  if(!qs.length){ body.innerHTML='<tr><td colspan="11" class="empty-row">질문이 없습니다</td></tr>'; return; }
 
   body.innerHTML = qs.map(q=>{
     const p=pm[q.user_id];
@@ -4897,6 +5052,7 @@ function renderQuestions(){
     return `<tr>
       <td>${name}</td>
       <td>${sub}</td>
+      <td>${q.unit ? `<span class="q-unit">${esc(q.unit)}</span>` : '<span class="q-unit none">미지정</span>'}</td>
       <td style="white-space:normal;max-width:320px;word-break:break-word">${qBadges(q)}${esc(q.refined_text || q.text)}${q.refined_text ? `<div class="tbl-was">✨ 전 · ${esc(q.text)}</div>` : ""}</td>
       <td>${tags||'—'}</td>
       <td style="color:var(--blue);font-weight:600">${q.water_count?'💧'+q.water_count:'—'}</td>
