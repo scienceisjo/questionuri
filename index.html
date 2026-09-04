@@ -630,6 +630,15 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .tp-opt.on{background:linear-gradient(135deg,rgba(93,184,110,.2),rgba(217,119,6,.12));border-color:var(--pr);color:var(--pd)}
 .tp-opt-ic{font-size:13px;line-height:1}
 .tp-opt-nm{max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-opt-n{font-size:9.5px;font-weight:800;color:var(--pd);background:rgba(93,184,110,.18);
+          border-radius:9px;padding:1px 5px;margin-left:2px;line-height:1.4}
+.tp-opt.on .tp-opt-n{background:rgba(255,255,255,.65)}
+.tp-grp{width:100%;margin-bottom:5px}
+.tp-grp:last-child{margin-bottom:0}
+.tp-grp-h{font-size:9.5px;font-weight:800;color:var(--tl);margin:0 0 3px 2px}
+.tp-grp-b{display:flex;gap:5px;flex-wrap:wrap}
+.tp-note{font-size:10px;color:#8A5A00;background:#FFF8E9;border:1px solid #F0D48A;
+         border-radius:7px;padding:5px 8px;margin-top:6px;line-height:1.5}
 
 /* 아이콘 고르기 버튼 (새 나무 / 수정 모달) */
 .pt-ic-b{width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,.03);font-size:18px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;margin:2px}
@@ -2296,6 +2305,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
           <div class="tree-picker" id="treePicker" style="display:none">
             <div class="tp-label">🌳 어느 나무에 달까요?</div>
             <div class="tp-list" id="treePickerList"></div>
+            <div class="tp-note" id="treePickerNote" style="display:none"></div>
           </div>
           <div class="tag-inp-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
             <span id="tagChips"></span>
@@ -2811,6 +2821,10 @@ const S = {
   // 🌲 포레스트: 과목당 여러 나무
   trees:{},               // { subjectId: [ {id, name, icon, sort_order}, ... ] }
   activeTreeId:{},        // { subjectId: treeId } - 과목별 현재 포커스 나무
+  pendingSubId:null,      // 심을 때 고른 나무가 «어느 과목» 것인지
+                          //   나무 id 만으로는 부족하다. 과목을 새로 만든 학생은
+                          //   activeSub 가 새 과목이라, 예전 과목의 큰 나무를
+                          //   골라도 저장은 새 과목으로 가 버렸다.
   pendingTreeId:null,     // 질문 작성 시 선택한 나무
   // 🧑‍🏫 담당 선생님 (다중 지원)
   teacherList:[],         // 가입한 전체 교사 목록
@@ -6118,32 +6132,98 @@ async function confirmMoveQ(toTreeId){
   render();
 }
 
-// 질문 작성 시 나무 선택 UI
+/* ══ 🌲 이 나무에 달래요 ══════════════════════════════════════════════════════
+   과목을 하나 더 만든 학생은 activeSub 가 새 과목이 된다. 그 과목엔 갓 만든
+   나무 하나뿐이라, 예전에 참여코드로 키운 큰 나무는 «보이지만 달 수 없는»
+   나무가 됐다. 그래서 모든 과목의 나무를 한자리에 놓고 고르게 한다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 그 나무에 달린 질문 수 — «내가 키운 큰 나무» 를 알아보는 표시 */
+function treeQCount(subId, treeId){
+  const box = S.questions && S.questions[subId];
+  if(!box || Array.isArray(box)) return 0;
+  const arr = box[treeId];
+  return Array.isArray(arr) ? arr.length : 0;
+}
+
+/* 지금 심으면 어디에 달리는지 — 고른 게 있으면 그것, 없으면 보던 나무 */
+function plantTarget(){
+  const list = allTrees();
+  /* 고른 나무가 아직 있는지 */
+  if(S.pendingSubId != null && S.pendingTreeId != null){
+    const hit = list.find(function(x){
+      return x.subId === S.pendingSubId && String(x.tree.id) === String(S.pendingTreeId);
+    });
+    if(hit) return { subId: hit.subId, treeId: hit.tree.id };
+  }
+  /* 아니면 보고 있던 과목의 나무 */
+  const sub = S.activeSub;
+  const want = S.activeTreeId ? S.activeTreeId[sub] : null;
+  if(treeExists(sub, want)) return { subId: sub, treeId: want };
+  const first = (S.trees[sub] || [])[0];
+  if(first) return { subId: sub, treeId: first.id };
+  /* 이 과목엔 나무가 없다 — 아무 과목의 첫 나무라도 (질문을 잃지 않는 게 먼저) */
+  if(list.length) return { subId: list[0].subId, treeId: list[0].tree.id };
+  return { subId: sub, treeId: null };
+}
+
 function renderTreePicker(){
   const el = $('treePicker');
   if(!el) return;
-  const subId = S.activeSub;
-  const trees = S.trees[subId] || [];
-  if(trees.length <= 1){
-    el.style.display = 'none';
-    return;
-  }
+  const list = allTrees();
+  /* 통틀어 하나뿐이면 고를 것이 없다 */
+  if(list.length <= 1){ el.style.display = 'none'; return; }
   el.style.display = '';
 
-  // 기본값: pendingTreeId → activeTreeId → 첫 번째
-  const selected = S.pendingTreeId || S.activeTreeId[subId] || trees[0].id;
-  S.pendingTreeId = selected;
+  const tgt = plantTarget();
+  S.pendingSubId = tgt.subId; S.pendingTreeId = tgt.treeId;
 
-  const list = $('treePickerList');
-  list.innerHTML = trees.map(t => `
-    <button class="tp-opt${t.id===selected?' on':''}" onclick="setPendingTree('${esc(t.id)}')">
-      <span class="tp-opt-ic">${esc(t.icon||'🌳')}</span>
-      <span class="tp-opt-nm">${esc(t.name||'나무')}</span>
-    </button>
-  `).join('');
+  /* 과목별로 묶는다. 과목이 하나면 묶음 이름을 안 붙인다 — 없는 구분을
+     보여주면 화면만 복잡해진다. */
+  const subs = [];
+  list.forEach(function(x){
+    let g = subs.find(function(s){ return s.subId === x.subId; });
+    if(!g){ g = { subId: x.subId, trees: [] }; subs.push(g); }
+    g.trees.push(x.tree);
+  });
+  const many = subs.length > 1;
+
+  const btn = function(subId, tr){
+    const on = (subId === tgt.subId && String(tr.id) === String(tgt.treeId));
+    const n = treeQCount(subId, tr.id);
+    return '<button class="tp-opt' + (on ? ' on' : '') + '" ' +
+      'onclick="setPendingTree(' + JSON.stringify(String(subId)).split('"').join('&quot;') +
+      ',' + JSON.stringify(String(tr.id)).split('"').join('&quot;') + ')">' +
+      '<span class="tp-opt-ic">' + esc(tr.icon || '🌳') + '</span>' +
+      '<span class="tp-opt-nm">' + esc(tr.name || '나무') + '</span>' +
+      (n ? ('<span class="tp-opt-n">' + n + '</span>') : '') +
+    '</button>';
+  };
+
+  const box = $('treePickerList');
+  box.innerHTML = subs.map(function(g){
+    const opts = g.trees.map(function(tr){ return btn(g.subId, tr); }).join('');
+    if(!many) return opts;
+    return '<div class="tp-grp">' +
+      '<div class="tp-grp-h">' + esc(subIconOf(g.subId)) + ' ' + esc(subLabelOf(g.subId)) + '</div>' +
+      '<div class="tp-grp-b">' + opts + '</div>' +
+    '</div>';
+  }).join('');
+
+  /* 다른 과목 나무에 달게 되는 상황이면 한 줄 알려 준다 — 말없이 옮기면
+     «내 질문 어디 갔지» 가 된다 */
+  const note = $('treePickerNote');
+  if(note){
+    const other = many && (tgt.subId !== S.activeSub);
+    note.style.display = other ? '' : 'none';
+    if(other) note.innerHTML = '이 질문은 <b>' + esc(subLabelOf(tgt.subId)) + '</b>의 나무에 달려요.';
+  }
 }
 
-function setPendingTree(tid){
+function setPendingTree(subId, tid){
+  /* 예전에는 나무 id 하나만 받았다. 옛 호출이 남아 있어도 안 깨지게 */
+  if(tid === undefined){ tid = subId; subId = S.activeSub; }
+  S.pendingSubId = String(subId);
   S.pendingTreeId = tid;
   renderTreePicker();
 }
@@ -7567,10 +7647,11 @@ async function addQ(ctx){
   /* 🌲 어느 나무에 달지 — 화면에 남아 있는 «없는 나무» 를 걸러낸다.
      예전에는 여기서 «나무 탭에서 나무를 심어주세요» 라고만 하고 끝냈는데,
      학생 입장에서는 나무가 멀쩡히 보이는데 그런 말이 나와 손을 들 수밖에 없었다. */
-  let treeId = S.pendingTreeId;
-  if(!treeExists(S.activeSub, treeId)) treeId = safeTreeId(S.activeSub);
+  const _tgt = plantTarget();
+  const plantSub = _tgt.subId;          /* 고른 나무가 있는 «과목» */
+  let treeId = _tgt.treeId;
   if(treeId == null || String(treeId).startsWith('local_')){
-    treeId = await ensureTree(S.activeSub);   /* 없으면 말없이 만들어 준다 */
+    treeId = await ensureTree(plantSub);   /* 없으면 말없이 만들어 준다 */
   }
 
   /* 하루 제한 — 서버가 판정한다. 새로고침·다른 기기·삭제 우회에 다 면역이다. */
@@ -7598,7 +7679,7 @@ async function addQ(ctx){
   const uid = await freshUid();
   if(!uid){ _addQBusy=false; if(_btn) _btn.disabled=false; _setMsg('로그인이 풀렸어요. 다시 로그인해 주세요.','err'); return; }
   const payload={
-    user_id:uid, subject_id:S.activeSub, text:t,
+    user_id:uid, subject_id:plantSub, text:t,
     tags, question_date:td(),
     fruit_emoji:fruit||null,
     is_anonymous:S.pendingAnon||false, answer_source:S.pendingSource||null,
@@ -7634,9 +7715,9 @@ async function addQ(ctx){
     return;
   }
 
-  if(!S.questions[S.activeSub]) S.questions[S.activeSub]={};
-  if(!S.questions[S.activeSub][treeId]) S.questions[S.activeSub][treeId]=[];
-  S.questions[S.activeSub][treeId].push({
+  if(!S.questions[plantSub] || Array.isArray(S.questions[plantSub])) S.questions[plantSub]={};
+  if(!S.questions[plantSub][treeId]) S.questions[plantSub][treeId]=[];
+  S.questions[plantSub][treeId].push({
     id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
     tags:data.tags||[], fruit:data.fruit_emoji||null,
     is_anonymous:data.is_anonymous||false, answer_source:data.answer_source||null,
@@ -7659,10 +7740,14 @@ async function addQ(ctx){
   await addSeeds(1, '질문 심기 +1 🌰');
   fetchQuota();   /* 남은 개수 갱신 (기다리지 않는다) */
 
-  // 활성 나무를 방금 달린 나무로 전환
-  S.activeTreeId[S.activeSub] = treeId;
+  /* 방금 달린 나무로 화면을 옮긴다. 다른 과목 나무에 달았으면 과목까지 —
+     안 그러면 심었는데 그 나무가 안 보여서 «없어졌다» 고 한다. */
+  S.activeSub = plantSub;
+  S.activeTreeId[plantSub] = treeId;
 
-  inp.value='';S.pendingTags=[];S.pendingFruit=null;S.pendingAnon=false;S.pendingSource=null;S.pendingTreeId=null;
+  /* 고른 나무는 그대로 둔다. 자료 시트에서 연달아 심을 때 매번 다시
+     고르게 하면 첫 질문만 제자리에 가고 나머지는 딴 데로 간다. */
+  inp.value='';S.pendingTags=[];S.pendingFruit=null;S.pendingAnon=false;S.pendingSource=null;
   renderPendingTags();renderFruitPicker();renderAnonTog();renderSourcePicker();renderTreePicker();
   const m=_setMsg((S.phase==='after') ? '🌙 수업 닫기 질문이 심어졌어요!' : '🌅 수업 열기 질문이 심어졌어요!','ok');
   mascotPop((S.phase==='after')?'멋진 닫기 질문이에요! 🌙':'좋은 질문 하나가 자랐어요! 🌱');
