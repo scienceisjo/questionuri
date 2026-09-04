@@ -1684,16 +1684,44 @@ function teacherLogout(){
 // ═══════════════════════════════════════════════════════════════════
 // DATA LOADING
 // ═══════════════════════════════════════════════════════════════════
+/* ══ 📦 나눠서 «다» 가져오기 ═══════════════════════════════════════════════
+   PostgREST 는 한 번에 주는 줄 수에 상한이 있다(기본 1000). .limit(3000)
+   을 걸어도 서버 상한이 이기고, 넘는 만큼은 «오류 없이» 잘린다.
+   그래서 화면은 «그 반 질문이 없다» 고 말하게 된다 — 실제로는 DB 에 있다.
+   한 장(1000줄)씩 끝까지 받아 온다. */
+async function fetchAllRows(table, shape, label){
+  const PAGE = 1000;
+  let out = [], from = 0;
+  for(;;){
+    let q = sb.from(table).select('*');
+    if(shape) q = shape(q);
+    const { data, error } = await q.range(from, from + PAGE - 1);
+    if(error) return { data: out, error: error };
+    const got = data || [];
+    out = out.concat(got);
+    if(got.length < PAGE) break;      /* 마지막 장 */
+    from += PAGE;
+    if(label) showLoader(label + ' ' + out.length + '개...');
+    if(from > 200000) break;          /* 안전장치 — 무한히 돌지 않게 */
+  }
+  return { data: out, error: null };
+}
+
 async function loadAll(){
   const btn=$('refreshBtn'); btn.classList.add('loading');
   showLoader('Supabase에서 데이터 수집 중...');
   try{
+    /* 예전에는 .limit(3000) 하나로 끝냈다. 서버 상한(1000)이 이겨서
+       그 위는 말없이 잘렸고, 오래된 반의 질문이 통째로 안 보였다. */
     const [pRes, qRes, sRes, bRes] = await Promise.all([
-      sb.from('profiles').select('*').order('grade').order('class_no').order('number'),
-      sb.from('questions').select('*').order('created_at',{ascending:false}).limit(3000),
+      fetchAllRows('profiles', function(q){
+        return q.order('grade').order('class_no').order('number'); }),
+      fetchAllRows('questions', function(q){
+        return q.order('created_at', {ascending:false}); }, '질문 가져오는 중'),
       // 학생이 개인적으로 추가한 과목도 포함해서 모두 가져옴
-      sb.from('subjects').select('*').order('sort_order'),
-      sb.from('branches').select('*').order('created_at',{ascending:false}).limit(3000)
+      fetchAllRows('subjects', function(q){ return q.order('sort_order'); }),
+      fetchAllRows('branches', function(q){
+        return q.order('created_at', {ascending:false}); })
     ]);
 
     if(pRes.error) throw pRes.error;
