@@ -637,6 +637,28 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .tp-grp:last-child{margin-bottom:0}
 .tp-grp-h{font-size:9.5px;font-weight:800;color:var(--tl);margin:0 0 3px 2px}
 .tp-grp-b{display:flex;gap:5px;flex-wrap:wrap}
+/* 🌳➕🌳 나무 합치기 */
+.mg-wrap{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.45);
+         display:flex;align-items:center;justify-content:center;padding:16px}
+.mg-box{width:100%;max-width:420px;max-height:82vh;overflow-y:auto;background:#fff;
+        border-radius:16px;padding:20px;box-shadow:0 8px 28px rgba(0,0,0,.24)}
+.mg-t{font-size:16px;font-weight:800;color:var(--pd);margin-bottom:8px}
+.mg-from{font-size:13px;color:var(--tx);line-height:1.65;margin-bottom:14px}
+.mg-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.mg-opt{display:flex;align-items:center;gap:10px;width:100%;padding:11px 13px;
+        border:1.5px solid var(--line,#E5E3DC);border-radius:12px;background:#fff;
+        font-family:inherit;cursor:pointer;text-align:left;transition:all .12s}
+.mg-opt:hover{border-color:var(--pr);background:rgba(93,184,110,.05)}
+.mg-opt:active{transform:scale(.98)}
+.mg-ic{font-size:20px;flex:none}
+.mg-nm{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--tx)}
+.mg-nm small{display:block;font-size:11px;font-weight:600;color:var(--tl);margin-top:2px}
+.mg-go{font-size:11.5px;font-weight:800;color:var(--pr);flex:none}
+.mg-n{font-size:11.5px;color:#2E7D32;background:#F1F8F2;border-radius:9px;
+      padding:9px 11px;line-height:1.6;margin-bottom:12px}
+.mg-cancel{width:100%;min-height:var(--touch-md);border:1.5px solid var(--line,#E5E3DC);
+           border-radius:999px;background:#fff;color:var(--tl);font-family:inherit;
+           font-size:13px;font-weight:700;cursor:pointer}
 /* 🛟 불러오기 실패 알림 — 「지워진 게 아니다」를 제일 크게 말한다 */
 #loadBanner{position:fixed;left:0;right:0;bottom:0;z-index:9000;padding:10px;
             background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.10))}
@@ -2853,6 +2875,7 @@ const S = {
   trees:{},               // { subjectId: [ {id, name, icon, sort_order}, ... ] }
   activeTreeId:{},        // { subjectId: treeId } - 과목별 현재 포커스 나무
   pendingSubId:null,      // 심을 때 고른 나무가 «어느 과목» 것인지
+  mergeFrom:null,         // 🌳 지금 어느 나무를 합치려는 중인지
   pendingUnit:null,       // 📑 이 질문을 몇 차시로 둘지 (null = 차시 없음)
   pendingUnitSet:false,   //   학생이 직접 골랐는가. 아직이면 기본값을 다시 계산한다
                           //   나무 id 만으로는 부족하다. 과목을 새로 만든 학생은
@@ -4435,6 +4458,13 @@ function render(){
   $('streakN').textContent=(S.profile?.streak_days||0)+'일';
   $('seedsCnt').textContent=S.seeds;
   renderMyVisits();
+  /* 🌳 합치기 창 */
+  (function(){
+    let mw = document.getElementById('mergeWrap');
+    if(!S.mergeFrom){ if(mw) mw.remove(); return; }
+    if(!mw){ mw = document.createElement('div'); mw.id = 'mergeWrap'; document.body.appendChild(mw); }
+    mw.innerHTML = mergeTreeHTML();
+  })();
   paintLoadBanner();   /* 못 불러온 게 있으면 화면 맨 위에 알린다 */
   checkOldQ();
 }
@@ -5693,6 +5723,103 @@ function subLabelsWithQs(){
                        .sort(function(a,b){ return b.n - a.n; });
 }
 
+/* ══ 🌳➕🌳 나무 합치기 ═══════════════════════════════════════════════════
+   과목을 하나 더 만들었다가 질문이 두 나무로 갈라진 학생을 위한 것.
+   질문을 하나씩 «다른 나무로» 옮기는 길은 있지만 스무 개를 그렇게 할 수는
+   없다. 나무째 부어 넣는다.
+
+   순서가 중요하다 — 질문을 «먼저» 옮기고, 빈 나무를 «나중에» 지운다.
+   나무를 먼저 지우면 질문이 딸려 간다. 그리고 옮기다 실패하면 나무를
+   지우지 않는다. 반쯤 옮긴 채로 나무가 사라지는 게 제일 나쁘다. */
+function openMergeTree(subId, treeId){
+  if(loadBlocked('나무 합치기')) return;
+  const list = allTrees();
+  const from = list.find(function(x){ return x.subId === subId && String(x.tree.id) === String(treeId); });
+  if(!from) return;
+  const others = list.filter(function(x){ return !(x.subId === subId && String(x.tree.id) === String(treeId)); });
+  if(!others.length){ toast('합칠 다른 나무가 없어요 🌱'); return; }
+  S.mergeFrom = { subId: subId, treeId: treeId };
+  render();
+}
+function closeMerge(){ S.mergeFrom = null; render(); }
+
+function mergeTreeHTML(){
+  const m = S.mergeFrom; if(!m) return '';
+  const list = allTrees();
+  const from = list.find(function(x){ return x.subId === m.subId && String(x.tree.id) === String(m.treeId); });
+  if(!from) return '';
+  const n = treeQCount(m.subId, m.treeId);
+  const others = list.filter(function(x){ return !(x.subId === m.subId && String(x.tree.id) === String(m.treeId)); });
+  return '<div class="mg-wrap">' +
+    '<div class="mg-box">' +
+      '<div class="mg-t">🌳 나무 합치기</div>' +
+      '<div class="mg-from">' + esc(from.tree.icon || '🌳') + ' <b>' + esc(from.tree.name || '나무') + '</b>' +
+        ' 의 질문 <b>' + n + '개</b>를<br>어느 나무로 옮길까요?</div>' +
+      '<div class="mg-list">' + others.map(function(x){
+        const cnt = treeQCount(x.subId, x.tree.id);
+        return '<button class="mg-opt" onclick="doMergeTree(' +
+          JSON.stringify(String(x.subId)).split('"').join('&quot;') + ',' +
+          JSON.stringify(String(x.tree.id)).split('"').join('&quot;') + ')">' +
+          '<span class="mg-ic">' + esc(x.tree.icon || '🌳') + '</span>' +
+          '<span class="mg-nm">' + esc(x.tree.name || '나무') +
+            '<small>' + esc(subLabelOf(x.subId)) + ' · 질문 ' + cnt + '개</small></span>' +
+          '<span class="mg-go">여기로 →</span>' +
+        '</button>';
+      }).join('') + '</div>' +
+      '<div class="mg-n">✅ 질문은 하나도 지워지지 않아요. 자리만 옮겨요.<br>' +
+        '옮기고 나면 빈 나무는 사라져요.</div>' +
+      '<button class="mg-cancel" onclick="closeMerge()">그만둘래요</button>' +
+    '</div>' +
+  '</div>';
+}
+
+async function doMergeTree(toSub, toTree){
+  const m = S.mergeFrom; if(!m) return;
+  if(loadBlocked('나무 합치기')) return;
+  const list = allTrees();
+  const from = list.find(function(x){ return x.subId === m.subId && String(x.tree.id) === String(m.treeId); });
+  const to   = list.find(function(x){ return x.subId === String(toSub) && String(x.tree.id) === String(toTree); });
+  if(!from || !to) return;
+
+  const qs = qsInTree(m.subId, m.treeId);
+  if(!confirm('「' + (from.tree.name||'나무') + '」 의 질문 ' + qs.length + '개를' + _SNL +
+              '「' + (to.tree.name||'나무') + '」 로 옮길게요.' + _SNL + _SNL +
+              '질문은 지워지지 않아요. 옮기고 나면 빈 나무는 사라져요.')) return;
+
+  const uid = await freshUid();
+  if(!uid){ alert('로그인이 풀렸어요. 새로고침 후 다시 해주세요.'); return; }
+
+  /* ① 질문을 먼저 옮긴다. 과목도 같이 옮겨야 «과목 필터» 에서 안 사라진다 */
+  if(qs.length){
+    const ids = qs.map(function(q){ return q.id; });
+    const r = await sb.from('questions')
+      .update({ tree_id: to.tree.id, subject_id: to.subId })
+      .in('id', ids).eq('user_id', uid).select('id');
+    if(r.error){ alert('옮기지 못했어요: ' + r.error.message); return; }
+    /* 반쯤 옮겨졌으면 나무를 지우지 않는다 — 남은 질문이 딸려 갈 수 있다 */
+    if(!r.data || r.data.length !== ids.length){
+      alert('일부만 옮겨졌어요 (' + ((r.data||[]).length) + '/' + ids.length + ').' + _SNL +
+            '나무는 그대로 두었어요. 새로고침 후 다시 해주세요.');
+      await bootstrapUser(); render(); return;
+    }
+  }
+
+  /* ② 이제 빈 나무를 지운다 */
+  const d = await sb.from('trees').delete()
+    .eq('id', from.tree.id).eq('user_id', uid).select('id');
+  if(d.error){
+    toast('질문은 옮겼는데 빈 나무가 안 지워졌어요 — 그대로 둘게요');
+  }
+
+  S.mergeFrom = null;
+  lastTreePut(to.subId, to.tree.id);   /* 앞으로는 합친 나무로 */
+  S.pendingSubId = String(to.subId); S.pendingTreeId = to.tree.id;
+  await bootstrapUser();
+  pickTree(to.subId, to.tree.id);
+  toast('🌳 질문 ' + qs.length + '개를 옮겼어요');
+  render();
+}
+
 /* 나무를 고르면 그 과목으로 같이 옮겨 간다 */
 function pickTree(subId, treeId){
   if(subId && subId !== S.activeSub){
@@ -5754,6 +5881,7 @@ function renderTree(){
           </div>
           <div class="forest-card-actions">
             <button class="fc-btn" onclick="event.stopPropagation();pickTree(${_sid},${_tid});openEditTree(${_tid})" title="이름·아이콘 수정">✏️</button>
+            ${rows.length>1 ? `<button class="fc-btn" onclick="event.stopPropagation();openMergeTree(${_sid},${_tid})" title="이 나무의 질문을 다른 나무로 모두 옮기기">🌳➕</button>` : ''}
             ${trees.length>1 ? `<button class="fc-btn" onclick="event.stopPropagation();pickTree(${_sid},${_tid});delTree(${_tid})" title="나무 삭제">🗑️</button>` : ''}
           </div>
         </div>
@@ -6334,17 +6462,47 @@ function treeQCount(subId, treeId){
   return Array.isArray(arr) ? arr.length : 0;
 }
 
-/* 지금 심으면 어디에 달리는지 — 고른 게 있으면 그것, 없으면 보던 나무 */
+/* ── 🌲 마지막에 심은 나무를 기억한다 ────────────────────────────────────
+   과목을 하나 더 만든 학생은 activeSub 가 그 새 과목이 된다. 기본값이
+   «보고 있는 과목의 나무» 면, 아무것도 안 고를 때마다 새 나무로 간다.
+   한 번만 제자리에 심으면 그 다음부터는 저절로 거기로 가게 한다.
+   브라우저에 적어 두므로 다음 날도, 다른 탭에서도 같다. */
+const LAST_TREE_KEY = 'qt_last_tree_v1';
+function lastTreeGet(){
+  try{
+    const raw = localStorage.getItem(LAST_TREE_KEY + ':' + ((S.user && S.user.id) || 'guest'));
+    if(!raw) return null;
+    const o = JSON.parse(raw);
+    return (o && o.subId != null && o.treeId != null) ? o : null;
+  }catch(e){ return null; }
+}
+function lastTreePut(subId, treeId){
+  try{
+    localStorage.setItem(LAST_TREE_KEY + ':' + ((S.user && S.user.id) || 'guest'),
+      JSON.stringify({ subId: String(subId), treeId: treeId }));
+  }catch(e){}
+}
+
+/* 지금 심으면 어디에 달리는지 */
 function plantTarget(){
   const list = allTrees();
-  /* 고른 나무가 아직 있는지 */
-  if(S.pendingSubId != null && S.pendingTreeId != null){
-    const hit = list.find(function(x){
-      return x.subId === S.pendingSubId && String(x.tree.id) === String(S.pendingTreeId);
+  const has = function(subId, treeId){
+    return list.find(function(x){
+      return x.subId === String(subId) && String(x.tree.id) === String(treeId);
     });
+  };
+  /* ① 이번에 직접 고른 나무 */
+  if(S.pendingSubId != null && S.pendingTreeId != null){
+    const hit = has(S.pendingSubId, S.pendingTreeId);
     if(hit) return { subId: hit.subId, treeId: hit.tree.id };
   }
-  /* 아니면 보고 있던 과목의 나무 */
+  /* ② 마지막에 심은 나무 — 이게 «매번 고르지 않아도 되게» 하는 핵심이다 */
+  const lastT = lastTreeGet();
+  if(lastT){
+    const hit = has(lastT.subId, lastT.treeId);
+    if(hit) return { subId: hit.subId, treeId: hit.tree.id };
+  }
+  /* ③ 아니면 보고 있던 과목의 나무 */
   const sub = S.activeSub;
   const want = S.activeTreeId ? S.activeTreeId[sub] : null;
   if(treeExists(sub, want)) return { subId: sub, treeId: want };
@@ -7942,6 +8100,7 @@ async function addQ(ctx){
      안 그러면 심었는데 그 나무가 안 보여서 «없어졌다» 고 한다. */
   S.activeSub = plantSub;
   S.activeTreeId[plantSub] = treeId;
+  lastTreePut(plantSub, treeId);   /* 다음에도 여기로 */
 
   /* 고른 나무는 그대로 둔다. 자료 시트에서 연달아 심을 때 매번 다시
      고르게 하면 첫 질문만 제자리에 가고 나머지는 딴 데로 간다. */
