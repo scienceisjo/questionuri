@@ -637,6 +637,20 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .tp-grp:last-child{margin-bottom:0}
 .tp-grp-h{font-size:9.5px;font-weight:800;color:var(--tl);margin:0 0 3px 2px}
 .tp-grp-b{display:flex;gap:5px;flex-wrap:wrap}
+/* 🛟 불러오기 실패 알림 — 「지워진 게 아니다」를 제일 크게 말한다 */
+#loadBanner{position:fixed;left:0;right:0;bottom:0;z-index:9000;padding:10px;
+            background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.10))}
+.lbn-in{max-width:560px;margin:0 auto;background:#FFF8E9;border:2px solid #F0B357;
+        border-radius:14px;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.14),
+        0 8px 20px rgba(0,0,0,.10)}
+.lbn-t{font-size:14px;font-weight:800;color:#8A5A00;margin-bottom:5px}
+.lbn-d{font-size:12px;color:#6b5326;line-height:1.65}
+.lbn-d b{color:#8A5A00}
+.lbn-b{margin-top:10px;width:100%;min-height:var(--touch-md);border:none;border-radius:999px;
+       background:#8A5A00;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;
+       cursor:pointer}
+.lbn-b:disabled{opacity:.6;cursor:default}
+.lbn-b:active{transform:scale(.97)}
 /* 📑 차시 고르개 — 나무 고르개와 같은 꼴로 */
 .up-opt{display:inline-flex;align-items:center;gap:4px;min-height:var(--touch-sm);
         padding:4px 11px;background:#fff;border-radius:16px;border:1.5px solid rgba(93,184,110,.15);
@@ -4002,6 +4016,64 @@ async function doLogout(){
   goTo('welcome');
 }
 
+/* ══ 🛟 «못 불러온 것» 과 «없는 것» 을 구별한다 ═══════════════════════════
+   이 앱에서 절대 일어나면 안 되는 두 가지가 있다.
+     · 학생 나무가 초기화되는 것
+     · 학생 질문이 오류로 사라지는 것
+   둘 다 «읽기 실패를 빈 값으로 받아들이는» 한 가지 실수에서 나온다.
+   실패했으면 덮지 않고, 말하고, 쓰기를 멈춘다. ══════════════════════════ */
+let _loadBroken = null;    /* 실패한 것 이름들. null 이면 멀쩡하다 */
+
+function loadFail(what, err){
+  if(!_loadBroken) _loadBroken = [];
+  if(_loadBroken.indexOf(what) < 0) _loadBroken.push(what);
+  console.warn('[불러오기 실패] ' + what, err);
+}
+function loadOk(){ return !_loadBroken; }
+
+/* 실패한 동안에는 쓰기를 막는다. 무엇이 있는지 모르는 채로 쓰면
+   그때 진짜로 망가진다 — 없는 줄 알고 새 나무를 만드는 식으로. */
+function loadBlocked(doing){
+  if(loadOk()) return false;
+  alert('아직 자료를 다 불러오지 못했어요.' + _SNL + _SNL +
+        '지금 ' + (doing || '이 작업') + '을(를) 하면 꼬일 수 있어서 잠깐 막았어요.' + _SNL +
+        '위의 «다시 불러오기» 를 눌러 주세요.' + _SNL + _SNL +
+        '⚠️ 질문과 나무는 지워지지 않았어요. 잠깐 못 읽어온 것뿐이에요.');
+  return true;
+}
+
+/* 화면 맨 위에 대놓고 알린다.
+   «질문이 사라졌다» 고 오해하는 게 제일 무섭다. 그러니 문구의 절반은
+   «지워진 게 아니다» 라고 말하는 데 쓴다. */
+function paintLoadBanner(){
+  let el = document.getElementById('loadBanner');
+  if(loadOk()){ if(el) el.remove(); return; }
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'loadBanner';
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div class="lbn-in">' +
+      '<div class="lbn-t">🛟 자료를 다 불러오지 못했어요</div>' +
+      '<div class="lbn-d"><b>질문과 나무는 지워지지 않았어요.</b> 잠깐 못 읽어온 것뿐이에요.<br>' +
+        '지금 화면이 실제보다 비어 보일 수 있어서, 질문 심기는 잠깐 멈춰 뒀어요. ' +
+        '(못 읽은 것: ' + esc(_loadBroken.join(', ')) + ')</div>' +
+      '<button class="lbn-b" onclick="retryLoad()">🔄 다시 불러오기</button>' +
+    '</div>';
+}
+
+async function retryLoad(){
+  const b = document.querySelector('#loadBanner .lbn-b');
+  if(b){ b.disabled = true; b.textContent = '불러오는 중...'; }
+  _loadBroken = null;
+  try{ await bootstrapUser(); }catch(e){ loadFail('다시 불러오기', e); }
+  paintLoadBanner();
+  if(loadOk()){ toast('🌳 다시 불러왔어요'); render(); }
+  else{ const b2 = document.querySelector('#loadBanner .lbn-b');
+        if(b2){ b2.disabled = false; b2.textContent = '🔄 다시 불러오기'; } }
+}
+
 async function bootstrapUser(){
   showLoading('데이터 불러오는 중...');
   const {data:prof}=await sb.from('profiles').select('*').eq('id',S.user.id).single();
@@ -4027,9 +4099,12 @@ async function bootstrapUser(){
     document.querySelectorAll('.season-btn').forEach(b=>b.classList.toggle('on',b.dataset.s===S.season));
     await updateStreak();
   }
-  const {data:subs}=await sb.from('subjects').select('*')
+  /* ⚠️ error 를 반드시 본다. 예전에는 `subs||[]` 로 실패를 «과목 없음» 으로
+     받아들여, 통신이 한 번 흔들리면 화면이 초기화된 것처럼 보였다. */
+  const _subRes = await sb.from('subjects').select('*')
     .eq('user_id', S.user.id).order('sort_order');
-  S.subjects=subs||[];
+  if(_subRes.error) loadFail('과목', _subRes.error);
+  else S.subjects = _subRes.data || [];
   if(!S.subjects.find(x=>x.id===S.activeSub)&&S.subjects.length) S.activeSub=S.subjects[0].id;
   if(!S.subjects.length) S.activeSub = '';
 
@@ -4040,9 +4115,14 @@ async function bootstrapUser(){
   }catch(e){ S.teacherList=[]; }
 
   // 🌲 나무들 로드 (과목당 여러 그루)
-  const {data:trees} = await sb.from('trees').select('*')
+  const _treeRes = await sb.from('trees').select('*')
     .eq('user_id', S.user.id).order('sort_order', {ascending:true});
-  S.trees = {};
+  /* 실패하면 «나무 없음» 으로 만들지 않는다. 빈 상태에서 질문을 심으면
+     ensureTree() 가 새 나무를 진짜로 만들어 버린다 — 잠깐의 오류가
+     DB 에 흔적을 남기는 길이다. */
+  const trees = _treeRes.error ? null : (_treeRes.data || []);
+  if(_treeRes.error) loadFail('나무', _treeRes.error);
+  else S.trees = {};
   (trees||[]).forEach(t => {
     if(!S.trees[t.subject_id]) S.trees[t.subject_id] = [];
     S.trees[t.subject_id].push({
@@ -4087,9 +4167,13 @@ async function bootstrapUser(){
   }
 
   // 질문 + 꼬리질문 한꺼번에 가져오기
-  const {data:qs}=await sb.from('questions').select('*')
+  const _qRes = await sb.from('questions').select('*')
     .eq('user_id',S.user.id).order('created_at',{ascending:true});
-  S.questions={};
+  /* 여기서 실패를 빈 배열로 받으면 학생 화면에서 질문이 통째로 사라진다.
+     지워진 게 아니라 «못 읽은 것» 이므로 예전 값을 그대로 둔다. */
+  const qs = _qRes.error ? null : (_qRes.data || []);
+  if(_qRes.error) loadFail('질문', _qRes.error);
+  else S.questions={};
   const qIds=[];
   (qs||[]).forEach(q=>{
     if(!S.questions[q.subject_id]) S.questions[q.subject_id]={};
@@ -4351,6 +4435,7 @@ function render(){
   $('streakN').textContent=(S.profile?.streak_days||0)+'일';
   $('seedsCnt').textContent=S.seeds;
   renderMyVisits();
+  paintLoadBanner();   /* 못 불러온 게 있으면 화면 맨 위에 알린다 */
   checkOldQ();
 }
 
@@ -6059,6 +6144,7 @@ async function delTree(treeId){
   const tree = trees.find(t => t.id === treeId);
   if(!tree) return;
 
+  if(loadBlocked('나무 베어내기')) return;
   const tqs = qsInTree(subId, treeId);
   const msg = tqs.length
     ? `"${tree.icon} ${tree.name}" 나무를 베어낼까요?\n\n⚠️ 이 나무의 질문 ${tqs.length}개도 모두 삭제됩니다.`
@@ -7424,6 +7510,9 @@ function safeTreeId(subId){
 async function ensureTree(subId){
   let id = safeTreeId(subId);
   if(id != null && !String(id).startsWith('local_')) return id;
+  /* 못 불러온 상태에서는 «나무가 없다» 를 믿을 수 없다. 여기서 만들면
+     멀쩡한 나무를 두고 새 나무가 하나 더 생긴다. */
+  if(!loadOk()) return id;
   try{
     const {data:newT, error} = await sb.from('trees').insert({
       user_id:S.user.id, subject_id:subId, name:'나의 첫 나무', icon:'🌳', sort_order:1
@@ -7452,9 +7541,12 @@ function isTreeError(err){
 /* DB 기준으로 나무 목록을 다시 맞춘다 (지워진 나무를 화면에서 치운다) */
 async function reloadTrees(){
   try{
-    const {data} = await sb.from('trees').select('*')
+    const {data, error} = await sb.from('trees').select('*')
       .eq('user_id', S.user.id).order('sort_order', {ascending:true});
-    if(!data) return;
+    if(error){ loadFail('나무 다시 읽기', error); paintLoadBanner(); return; }
+    /* 0그루가 왔으면 덮지 않는다 — 마지막 나무는 지울 수 없게 되어 있으니
+       «0그루» 는 정상값이 아니라 의심스러운 값이다. */
+    if(!data || !data.length) return;
     const next = {};
     data.forEach(function(x){
       (next[x.subject_id] = next[x.subject_id] || []).push({
@@ -7717,6 +7809,7 @@ async function addQ(ctx){
   const _setMsg = (txt, cls) => { const m=$(_msgId); if(!m) return null;
     m.textContent=txt; m.className=(_msgId==='msMsg'?'ms-msg ':'q-msg ')+(cls||''); return m; };
   if(guestNudge()) return;
+  if(loadBlocked('질문 심기')) return;
   const inp=$(_inpId); if(!inp) return;
   /* ⌨️ 전각(ｐｕｓｈ)·반각 자모(ﾡￜﾵﾼ) 는 «무엇을 쳤는지» 가 확정적이라 조용히 고친다 */
   const _raw = inp.value.trim();
@@ -10066,6 +10159,7 @@ async function delSubject(subId){
     toast('마지막 과목은 삭제할 수 없어요 📚');
     return;
   }
+  if(loadBlocked('과목 삭제')) return;
   const qs = qsInSub(subId);
   const msg = qs.length
     ? `"${sub.icon} ${sub.label}" 과목을 삭제할까요?\n\n⚠️ 이 과목의 질문 ${qs.length}개, 나무 ${(S.trees[subId]||[]).length}그루도 모두 삭제됩니다.`
