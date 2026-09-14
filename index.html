@@ -1701,6 +1701,32 @@ body.ask-open .fab-ask{display:none!important}
 .ql-h h4{white-space:nowrap;margin:0}
 .ql-tools{margin-left:auto;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .ql-tools #qCnt,.ql-tools .vseg{white-space:nowrap}
+/* 🙋/🏫 범위 토글 */
+.scope-seg{display:flex;gap:4px;background:rgba(0,0,0,.05);padding:3px;border-radius:12px;margin-bottom:var(--sp-2)}
+.scope-opt{flex:1;border:none;background:transparent;font-family:inherit;font-size:var(--fs-xs);font-weight:800;
+           color:var(--tl);padding:8px 6px;border-radius:9px;cursor:pointer;min-height:var(--touch-sm)}
+.scope-opt.on{background:var(--card);color:var(--pd);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+/* 우리 반 흐름 — 날짜 구분선·더 보기 */
+.feed-day{display:flex;align-items:center;gap:8px;font-size:var(--fs-xxs);font-weight:800;color:var(--pd);margin:10px 0 2px}
+.feed-day b{background:rgba(93,184,110,.14);padding:1px 7px;border-radius:8px}
+.feed-day::after{content:'';flex:1;height:1px;background:var(--bd)}
+#qList .feed-day:first-child{margin-top:0}
+.feed-more{width:100%;margin-top:8px;padding:11px;border-radius:12px;border:1.5px dashed var(--pl);background:transparent;
+           color:var(--pr);font-weight:800;font-size:var(--fs-xs);cursor:pointer;font-family:inherit}
+.feed-more:hover{background:rgba(93,184,110,.06)}
+/* 칩 한 줄 — 우리 반·이 차시에서는 옆으로 밀어 본다 */
+.filter-row.one-line{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;align-items:center}
+.filter-row.one-line .filter-chip{flex:0 0 auto;white-space:nowrap}
+.chip-sep{flex:0 0 auto;width:1px;height:16px;background:var(--bd);margin:0 3px}
+.filter-chip.status-chip.wait{border-color:rgba(33,150,243,.35);color:#1565C0;background:rgba(33,150,243,.07)}
+.filter-chip.status-chip.wait.on{background:#1565C0;color:#fff;border-color:#1565C0}
+/* 이 차시 안내 줄 */
+.feed-unit{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 8px;padding:8px 11px;border-radius:10px;
+           background:rgba(93,184,110,.08);border:1px solid rgba(93,184,110,.2)}
+.fu-u{font-size:var(--fs-sm);font-weight:800;color:var(--pd)}
+.fu-why{font-size:var(--fs-xxs);color:var(--tl)}
+#qScopeSeg .scope-opt{padding:8px 4px;font-size:var(--fs-xxs)}
+#scopeUnitBtn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 입력부: 항상 바닥에 붙어 있다 */
 .ms-foot{flex:0 0 auto;background:var(--card);border-top:1px solid var(--bd);padding:9px 12px 12px;
   box-shadow:0 -3px 12px rgba(0,0,0,.07)}
@@ -2393,8 +2419,14 @@ body.ask-open .fab-ask{display:none!important}
       <!-- 🌳 오늘의 탐구 성장 리포트 -->
       <div id="growthCard"></div>
       <div class="cs">
+        <!-- 🙋/🏫 범위 — «내 질문 보고 친구 질문 보기» 가 이 앱의 중심이라 맨 위에 둔다 -->
+        <div class="scope-seg" id="qScopeSeg">
+          <button class="scope-opt on" data-s="mine" onclick="setQScope('mine')">🙋 나</button>
+          <button class="scope-opt" data-s="class" onclick="setQScope('class')">🏫 우리 반</button>
+          <button class="scope-opt" data-s="unit" onclick="setQScope('unit')" id="scopeUnitBtn">📑 이 차시</button>
+        </div>
         <div class="ql-h">
-          <h4>📋 나의 질문들</h4>
+          <h4 id="qlTitle">📋 나의 질문들</h4>
           <div class="ql-tools">
             <button class="ql-ask" onclick="openAskSheet()">✏️ 질문 심기</button>
             <span id="qCnt">0/0</span>
@@ -2897,6 +2929,8 @@ const S = {
   harvestEdit:false,       // 🍎 수확 패널이 '기록 수정' 모드인지(이미 해결됨)
   lvMemory:{},             // 🎉 나무별 마지막 레벨(레벨업 연출 감지용)
   qView:'list',            // 📋 질문 보기 방식: 'list' | 'board'
+  qScope:'mine',           // 🙋 나 | 🏫 우리 반 | 📑 이 차시 — 질문 탭의 범위
+  cUnit:null, cPhase:null, cStatus:null, // 우리 반 흐름의 칩 상태 (차시 / 단계 / 상태)
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
   expandedBranches:new Set(),
@@ -7167,7 +7201,39 @@ function qsKeepScroll(idsNow){
   return function(){ if(sc) sc.scrollTop = same ? y : 0; _qsPainted = true; };
 }
 
+function setQScope(s){
+  S.qScope = (s === 'class' || s === 'unit') ? s : 'mine';
+  S.editId = null;
+  _classFeedN = 40;
+  renderQs();
+}
+/* 「이 차시」 가 가리키는 차시 — 선생님이 켜 둔 지금 차시 > 고르개 기본값(최근 자료) >
+   선생님 차시 목록 맨 위 > 우리 반 질문 중 가장 최근 차시 */
+function currentUnit(){
+  if(_nowUnit && (_nowUnit.unit||'').trim()) return { u:_nowUnit.unit.trim(), why:'선생님이 켜 둔 지금 차시' };
+  try{ const d = unitDefault(); if(d) return { u:d, why:'가장 최근 자료의 차시' }; }catch(e){}
+  if(_lessonUnits && _lessonUnits.length && (_lessonUnits[0].unit||'').trim()) return { u:_lessonUnits[0].unit.trim(), why:'선생님 차시 목록 맨 위' };
+  const list = _classBoardCache && _classBoardCache.list;
+  if(list){ const q = list.find(function(x){ return x.unit && x.unit.trim(); }); if(q) return { u:q.unit.trim(), why:'우리 반에서 가장 최근 차시' }; }
+  return null;
+}
+function paintQScope(){
+  const sc = S.qScope;
+  document.querySelectorAll('#qScopeSeg .scope-opt').forEach(function(b){ b.classList.toggle('on', b.dataset.s === sc); });
+  const ttl = $('qlTitle');
+  if(ttl) ttl.textContent = (sc === 'class') ? '🏫 우리 반 질문' : (sc === 'unit') ? '📑 이 차시 질문' : '📋 나의 질문들';
+  const mine = (sc === 'mine');
+  const cnt = $('qCnt'); if(cnt) cnt.style.display = mine ? '' : 'none';
+  const vs = document.querySelector('.ql-tools .view-seg'); if(vs) vs.style.display = mine ? '' : 'none';
+  const bg = $('boardGroup'); if(bg && !mine) bg.style.display = 'none';
+  const fr = $('filterRow'); if(fr) fr.classList.toggle('one-line', !mine);
+  const ub = $('scopeUnitBtn');
+  if(ub){ const cu = currentUnit(); ub.textContent = cu ? ('📑 ' + unitShort(cu.u)) : '📑 이 차시'; ub.title = cu ? cu.u : '지금 차시가 없어요'; }
+}
+
 function renderQs(){
+  paintQScope();
+  if(S.qScope === 'class' || S.qScope === 'unit'){ renderClassFeed(); return; }
   /* 나무는 모든 과목을 한 화면에 놓았으니, 질문도 과목을 넘어 모아서 보여주고
      대신 «과목 필터» 로 갈라 볼 수 있게 한다. 안 그러면 나무는 보이는데
      그 나무의 질문은 안 보이는 엇갈림이 생긴다. */
@@ -7177,6 +7243,7 @@ function renderQs(){
   const c=$('qList');c.innerHTML='';
   const fr=$('filterRow');
   fr.innerHTML='';
+  fr.classList.remove('one-line');
 
   /* 📚 과목 칩 — 과목이 둘 이상일 때만 */
   const _subs = subLabelsWithQs();
@@ -8258,6 +8325,13 @@ async function addQ(ctx){
   /* 질문 탭 시트에서 심었으면 닫는다 — 새 카드가 맨 위에 올라오는 걸 봐야 «심어졌다» 를 안다.
      자료 시트(msInp)는 연달아 심으므로 그대로 둔다. */
   if(_inpId === 'qInp'){ setTimeout(closeAskSheet, 350); }
+  /* 우리 반 흐름을 보던 중이면 방금 심은 것이 맨 위에 바로 보이게 — 다시 안 받아도 된다 */
+  try{
+    if(_classBoardCache && _classBoardCache.list && data && data.id){
+      _classBoardCache.list.unshift(data);
+      if(!_classBoardCache.nameById[data.user_id]) _classBoardCache.nameById[data.user_id] = { name: S.name, number: S.num };
+    }
+  }catch(e){}
   render();
 }
 
@@ -8551,7 +8625,7 @@ function friendCardHTML(q, o){
         (sc ? '<span class="qc-sc-badge">🎯 ' + sc + '/7</span>' : '') +
         (q.water_count ? '<span>💧 ' + q.water_count + '</span>' : '') +
         (q.explore_votes ? '<span>🗳️ ' + q.explore_votes + '</span>' : '') +
-        (peers.length ? '<span style="color:#2196F3;font-weight:700">💬 ' + peers.length + '</span>' : '') +
+        ((peers.length || o.peerN) ? '<span style="color:#2196F3;font-weight:700">💬 ' + (peers.length || o.peerN) + '</span>' : '') +
       '</div>' +
       peerHtml +
     '</div>' +
@@ -8563,6 +8637,143 @@ function friendCardHTML(q, o){
       (o.treeBtn && !anon && !mine ? '<button class="qbp qbp-tree" onclick="openClassmateTree(' + JSON.stringify(String(q.user_id||'')).split('"').join('&quot;') + ')" title="이 친구의 나무 보기">🌳 나무</button>' : '') +
     '</div>' +
   '</div>';
+}
+
+/* ── 🏫 우리 반 흐름 — 반 전체 질문을 최신순으로, 날짜로 묶어서 ────────────────
+   예전엔 친구 질문이 «숲 → 나무 톡 → 모달» 두 단계 아래 숨어 있어서 «우리 반이
+   오늘 뭘 물었나» 를 볼 길이 없었다. 여기가 그 자리다. 카드는 friendCardHTML 하나. */
+let _classFeedN = 40;
+let _peerLoaded = {};          /* qid → 또래 답 불러왔음 */
+async function ensurePeerAnswers(list){
+  const need = list.filter(function(q){ return !_peerLoaded[q.id]; }).map(function(q){ return q.id; });
+  if(!need.length) return false;
+  need.forEach(function(id){ _peerLoaded[id] = true; });
+  const byQ = {};
+  for(let i = 0; i < need.length; i += 150){
+    const chunk = need.slice(i, i + 150);
+    try{
+      const {data} = await sb.from('peer_answers').select('*').in('question_id', chunk).order('created_at', {ascending:true});
+      (data||[]).forEach(function(p){ (byQ[p.question_id] = byQ[p.question_id] || []).push(p); });
+    }catch(e){ /* peer_answers 표가 없을 수 있다 */ }
+  }
+  const needSet = {}; need.forEach(function(id){ needSet[id] = 1; });
+  list.forEach(function(q){ if(needSet[q.id]) q.peer_answers = byQ[q.id] || []; });
+  return true;
+}
+function _feedDayKey(q){
+  return (q.question_date || String(q.created_at || '').slice(0, 10) || '');
+}
+async function renderClassFeed(){
+  const c = $('qList'), fr = $('filterRow'); if(!c || !fr) return;
+  if(!_classBoardCache){
+    fr.innerHTML = '';
+    c.innerHTML = '<div class="cb-loading">🏫 우리 반 질문을 모으는 중...</div>';
+    const r = await loadClassQs();
+    if(S.qScope !== 'class') return;               /* 기다리는 사이 «나» 로 돌아갔다 */
+    if(r.error){
+      if(r.error === 'gc' || S.guest || !S.user){
+        c.innerHTML = emptyStateHTML(EMPTY_FOREST, '우리 반 질문은 로그인하면 보여요', '같은 반 친구들이 심은 질문을 최신순으로 볼 수 있어요.', null, null);
+      } else if(r.error === 'noclass'){
+        c.innerHTML = emptyStateHTML(EMPTY_FOREST, '아직 같은 반 친구가 없어요', '반 친구들이 질문을 심으면 여기 최신순으로 모여요.', null, null);
+      } else {
+        c.innerHTML = emptyStateHTML(EMPTY_ERROR, '불러오지 못했어요', esc(r.error), '🔄 다시', 'loadClassQs(true).then(renderClassFeed)');
+      }
+      return;
+    }
+  }
+  const all = _classBoardCache.list || [];
+  const nameById = _classBoardCache.nameById || {};
+  const peerN = _classBoardCache.peerN || {};
+  const unitScope = (S.qScope === 'unit');
+  const cu = unitScope ? currentUnit() : null;
+  paintQScope();   /* 「이 차시」 단추 이름은 반 질문을 받은 뒤에야 정해질 수 있다 */
+
+  /* ── 칩 한 줄: [차시…] | 🌅 🌙 | 🙋 🍎 🌫 — 누르면 켜지고 다시 누르면 꺼진다 ── */
+  fr.innerHTML = '';
+  const chip = function(cls, label, on, fn, title){
+    const b = document.createElement('button');
+    b.className = 'filter-chip ' + cls + (on ? ' on' : '');
+    b.textContent = label; b.onclick = fn; if(title) b.title = title;
+    fr.appendChild(b); return b;
+  };
+  const sep = function(){ const s = document.createElement('span'); s.className = 'chip-sep'; fr.appendChild(s); };
+  const again = function(){ _classFeedN = 40; renderClassFeed(); };
+
+  let list;
+  let unitNote = '';
+  if(unitScope){
+    if(!cu){
+      c.innerHTML = emptyStateHTML(EMPTY_SPROUT, '아직 «이 차시» 가 없어요', '선생님이 「지금 차시」를 켜거나 차시 목록을 올리면, 그 차시에 심긴 우리 반 질문만 여기 모여요.', '🏫 우리 반 전체 보기', "setQScope('class')");
+      return;
+    }
+    list = all.filter(function(q){ return (q.unit || '').trim() === cu.u; });
+    unitNote = '<div class="feed-unit"><span class="fu-u">📑 ' + esc(cu.u) + '</span><span class="fu-why">' + esc(cu.why) + ' · ' + list.length + '개</span></div>';
+  } else {
+    const {groups, units} = _groupQsByUnit(all);
+    const topUnits = units.filter(function(u){ return u !== '__none__'; }).slice(0, 6);
+    if(S.cUnit != null && !groups[S.cUnit]) S.cUnit = null;
+    if(topUnits.length){
+      chip('unit-chip', '📑 전체 ' + all.length, S.cUnit == null, function(){ S.cUnit = null; again(); });
+      topUnits.forEach(function(u){
+        chip('unit-chip', unitShort(u) + ' ' + groups[u].length, S.cUnit === u, function(){ S.cUnit = (S.cUnit === u ? null : u); again(); }, u);
+      });
+      if(groups['__none__']) chip('unit-chip', '차시 없음 ' + groups['__none__'].length, S.cUnit === '__none__', function(){ S.cUnit = (S.cUnit === '__none__' ? null : '__none__'); again(); });
+      sep();
+    }
+    list = (S.cUnit == null) ? all : (groups[S.cUnit] || []);
+  }
+
+  /* 단계 */
+  const bN = list.filter(function(q){ return (q.phase || 'before') === 'before'; }).length;
+  const aN = list.length - bN;
+  chip('phase-chip', '🌅 열기 ' + bN, S.cPhase === 'before', function(){ S.cPhase = (S.cPhase === 'before' ? null : 'before'); again(); });
+  chip('phase-chip', '🌙 닫기 ' + aN, S.cPhase === 'after',  function(){ S.cPhase = (S.cPhase === 'after'  ? null : 'after');  again(); });
+  if(S.cPhase) list = list.filter(function(q){ return (q.phase || 'before') === S.cPhase; });
+  sep();
+
+  /* 상태 — 🙋 답 기다림이 먼저. 친구가 도울 수 있는 자리라서 */
+  const wN = list.filter(function(q){ return _waitingAnswer(q, peerN); }).length;
+  const rN = list.filter(function(q){ return q.resolved; }).length;
+  const sN = list.filter(function(q){ return q.solve && q.solve.stuck; }).length;
+  chip('status-chip wait', '🙋 답 기다림 ' + wN, S.cStatus === 'wait', function(){ S.cStatus = (S.cStatus === 'wait' ? null : 'wait'); again(); }, '되묻기도 답도 아직 없는 질문 — 아는 게 있으면 답해 주세요');
+  chip('status-chip', '🍎 열매 ' + rN, S.cStatus === 'res', function(){ S.cStatus = (S.cStatus === 'res' ? null : 'res'); again(); });
+  if(sN) chip('status-chip', '🌫 막힘 ' + sN, S.cStatus === 'stuck', function(){ S.cStatus = (S.cStatus === 'stuck' ? null : 'stuck'); again(); }, '해결하다가 막혔다고 적은 질문');
+  if(S.cStatus === 'wait')  list = list.filter(function(q){ return _waitingAnswer(q, peerN); });
+  if(S.cStatus === 'res')   list = list.filter(function(q){ return q.resolved; });
+  if(S.cStatus === 'stuck') list = list.filter(function(q){ return q.solve && q.solve.stuck; });
+
+  if(!list.length){
+    c.innerHTML = unitNote + emptyStateHTML(EMPTY_SPROUT,
+      (S.cStatus || S.cPhase) ? '이 조건에 맞는 질문이 없어요' : (unitScope ? '이 차시에 심긴 질문이 아직 없어요' : '아직 모인 질문이 없어요'),
+      (S.cStatus || S.cPhase) ? '칩을 다시 눌러 끄면 전체가 보여요' : '우리 반 누군가 질문을 심으면 여기 최신순으로 쌓여요 🌱', null, null);
+    return;
+  }
+
+  /* ── 날짜로 묶어서 ── */
+  const shown = list.slice(0, _classFeedN);
+  let html = unitNote, lastDay = null;
+  shown.forEach(function(q){
+    const day = _feedDayKey(q);
+    if(day !== lastDay){
+      const n = list.filter(function(x){ return _feedDayKey(x) === day; }).length;
+      const lbl = relDay(day) || day;
+      html += '<div class="feed-day">' + (lbl === '오늘' ? '📅 오늘 우리 반이 심은 질문' : '📅 ' + esc(lbl)) + ' <b>' + n + '</b></div>';
+      lastDay = day;
+    }
+    const p = nameById[q.user_id];
+    const who = p ? ((p.number ? p.number + '번 ' : '') + (p.name || '친구')) : '친구';
+    html += friendCardHTML(q, { who: who, ownerId: q.user_id, treeBtn: true, peerN: peerN[q.id] || 0 });
+  });
+  if(list.length > shown.length){
+    html += '<button class="feed-more" onclick="_classFeedN += 40; renderClassFeed()">더 보기 · 남은 ' + (list.length - shown.length) + '개</button>';
+  }
+  c.innerHTML = html;
+  if(window.MathJax?.typesetPromise){ try{ MathJax.typesetPromise([c]); }catch(e){} }
+
+  /* 또래 답은 보이는 카드 것만 — 한 번 받은 건 다시 안 받는다 */
+  if(await ensurePeerAnswers(shown)){
+    if(S.qScope === 'class' && S.tab === 'questions') renderClassFeed();
+  }
 }
 
 /* 친구 질문을 어느 화면에서 만졌든 같은 객체를 찾고, 열려 있는 화면을 다시 그린다 */
@@ -8579,6 +8790,7 @@ function _peerRerender(){
     if(board && board.style.display !== 'none' && _classBoardCache && modeBtn && modeBtn.dataset.mode === 'board'){
       _renderClassKanban(board, _classBoardCache.list, _classBoardCache.nameById);
     }
+    if(S.tab === 'questions' && S.qScope === 'class') renderClassFeed();
   }catch(e){}
 }
 
@@ -9537,27 +9749,64 @@ function setForestMode(mode){
   if(mode==='trees'){ board.style.display='none'; grid.style.display=''; }
   else { grid.style.display='none'; board.style.display=''; renderClassCollection(mode); }
 }
+/* 우리 반 질문 한 번에 — 단원 보드·마인드맵·질문 탭 «우리 반» 흐름이 같이 쓴다.
+   {list, nameById} 또는 {error:'gc'|'noclass'|메시지}.
+   PostgREST 는 1000행에서 조용히 자르므로 나눠 받는다 (반 누적 1000개는 금방 넘는다). */
+async function loadClassQs(force){
+  if(_classBoardCache && !force) return _classBoardCache;
+  const _gc=_myGC();
+  if(!_gc.ok) return {error:'gc'};
+  try{
+    const {data:classmates, error:e1}=await sb.from('profiles')
+      .select('id,name,number,active_tree').eq('grade',_gc.g).eq('class_no',_gc.c);
+    if(e1) return {error:e1.message||'profiles'};
+    const nameById={}; (classmates||[]).forEach(c=>nameById[c.id]=c);
+    const ids=(classmates||[]).map(c=>c.id);
+    if(!ids.length) return {error:'noclass'};
+    const list=[];
+    for(let _from=0; _from<4000; _from+=1000){
+      const r=await sb.from('questions').select('*').in('user_id',ids)
+        .order('created_at',{ascending:false}).range(_from, _from+999);
+      if(r.error) return {error:r.error.message||'questions'};
+      const rows=r.data||[];
+      for(const x of rows) list.push(x);
+      if(rows.length<1000) break;
+    }
+    /* 또래 답 «개수» 만 미리 — «답 기다리는 질문» 을 고르려면 전체가 필요하다.
+       답 내용은 보이는 카드 것만 나중에(ensurePeerAnswers). */
+    const peerN = {};
+    try{
+      const qids = list.map(function(q){ return q.id; });
+      for(let i = 0; i < qids.length; i += 200){
+        const r2 = await sb.from('peer_answers').select('question_id').in('question_id', qids.slice(i, i + 200));
+        if(r2.error) break;
+        (r2.data||[]).forEach(function(p){ peerN[p.question_id] = (peerN[p.question_id]||0) + 1; });
+      }
+    }catch(e){}
+    _classBoardCache={list, nameById, peerN, at:Date.now()};
+    return _classBoardCache;
+  }catch(err){ return {error:(err&&err.message)||'load'}; }
+}
+/* 답이 없는 질문 — 선생님 되묻기도, 또래 답도, 스스로 쓴 답도 없고 열매도 안 맺힘.
+   36차시 «다른 사람의 질문에 공감하기» 가 행동이 되는 자리다. */
+function _waitingAnswer(q, peerN){
+  if(q.resolved) return false;
+  if((q.teacher_nudge||'').trim()) return false;
+  if(q.solve && (q.solve.answer||'').trim()) return false;
+  const n = (q.peer_answers && q.peer_answers.length) || (peerN && peerN[q.id]) || 0;
+  return n === 0;
+}
+
 async function renderClassCollection(mode){
   const board=$('forestBoard');
   if(_classBoardCache){ _dispatchClassView(board, mode, _classBoardCache); return; }
   board.innerHTML='<div class="cb-loading">🗂️ 우리 반 질문을 모으는 중...</div>';
-  const _gc=_myGC();
-  if(!_gc.ok){ board.innerHTML=emptyStateHTML(EMPTY_ERROR,'학년·반 정보를 불러오지 못했어요','로그아웃 후 다시 로그인하면 우리 반 질문을 모아볼 수 있어요.',null,null); return; }
-  try{
-    const {data:classmates}=await sb.from('profiles')
-      .select('id,name,number,active_tree').eq('grade',_gc.g).eq('class_no',_gc.c);
-    const nameById={}; (classmates||[]).forEach(c=>nameById[c.id]=c);
-    const ids=(classmates||[]).map(c=>c.id);
-    if(!ids.length){ board.innerHTML=emptyStateHTML(EMPTY_FOREST,'아직 같은 반 친구가 없어요','반 친구들이 질문을 심으면 단원별로 모아서 볼 수 있어요!',null,null); return; }
-    const {data:qs}=await sb.from('questions').select('*').in('user_id',ids).order('created_at',{ascending:false});
-    const list=qs||[];
-    if(!list.length){ board.innerHTML=emptyStateHTML(EMPTY_SPROUT,'아직 모인 질문이 없어요','우리 반 누군가 질문을 심으면 여기 단원별로 카드가 쌓여요 🌱',null,null); return; }
-    _classBoardCache={list, nameById};
-    _dispatchClassView(board, mode, _classBoardCache);
-  }catch(err){
-    console.error('classBoard error:', err);
-    board.innerHTML=emptyStateHTML(EMPTY_ERROR, '불러오지 못했어요', esc(err.message||''), null, null);
-  }
+  const r = await loadClassQs();
+  if(r.error==='gc'){ board.innerHTML=emptyStateHTML(EMPTY_ERROR,'학년·반 정보를 불러오지 못했어요','로그아웃 후 다시 로그인하면 우리 반 질문을 모아볼 수 있어요.',null,null); return; }
+  if(r.error==='noclass'){ board.innerHTML=emptyStateHTML(EMPTY_FOREST,'아직 같은 반 친구가 없어요','반 친구들이 질문을 심으면 단원별로 모아서 볼 수 있어요!',null,null); return; }
+  if(r.error){ console.error('classBoard error:', r.error); board.innerHTML=emptyStateHTML(EMPTY_ERROR, '불러오지 못했어요', esc(r.error), null, null); return; }
+  if(!r.list.length){ board.innerHTML=emptyStateHTML(EMPTY_SPROUT,'아직 모인 질문이 없어요','우리 반 누군가 질문을 심으면 여기 단원별로 카드가 쌓여요 🌱',null,null); return; }
+  _dispatchClassView(board, mode, r);
 }
 function _groupQsByUnit(list){
   const groups={};
