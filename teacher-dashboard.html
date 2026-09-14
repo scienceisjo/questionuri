@@ -518,6 +518,18 @@ td strong{font-weight:700;color:var(--ink)}
 .nu-off{padding:7px 13px;min-height:34px;border-radius:8px;border:1.5px solid var(--rule);
         background:var(--surface);color:var(--ink2);font-family:inherit;font-size:12px;
         font-weight:700;cursor:pointer;margin-left:4px}
+.nu-list-btn{margin-left:auto;padding:6px 11px;min-height:32px;border-radius:8px;border:1.5px solid var(--rule);
+             background:var(--surface);font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer}
+.nu-list-btn:hover{border-color:var(--pr);color:var(--pr)}
+.unitlist-panel{margin:-6px 0 12px;padding:12px 14px;border:1.5px solid var(--rule);border-radius:12px;background:var(--surface)}
+.ul-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:12.5px}
+.ul-hint{font-size:11.5px;color:var(--ink3)}
+.ul-ta{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:8px;border:1.5px solid var(--rule);
+       font:inherit;font-size:13px;line-height:1.6;resize:vertical;background:var(--surface);color:var(--ink)}
+.ul-ta:focus{outline:none;border-color:var(--pr)}
+.ul-ft{display:flex;align-items:center;gap:8px;margin-top:8px}
+.ul-state{font-size:12px;color:var(--ink3);margin-right:auto}
+.ul-close{padding:7px 12px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface);font-size:12.5px;cursor:pointer}
 .nu-state{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .nu-state b{color:#2D6A3E}
 /* ══ 🌿 되묻기 일괄 ═══════════════════════════════════════════════════════ */
@@ -1080,7 +1092,8 @@ body{letter-spacing:-0.01em}
       <button class="btn-ghost btn-live" onclick="openLiveModal()"><span>🔴</span> 라이브 세션</button>
       <button class="btn-ghost" onclick="openMaterials()"><span>📚</span> 수업 자료</button>
       <button class="btn-ghost" onclick="openGoodQ()"><span>🎯</span> 좋은 질문 예시</button>
-      <button class="btn-ghost" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
+      <button class="btn-ghost" id="bulkOpenBtn" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
+      <button class="btn-ghost" id="adminOpenBtn" onclick="openAdmin()" style="display:none"><span>⚙️</span> 관리</button>
       <button class="btn-ghost" onclick="openWeeklyReport()"><span>📄</span> 주간 리포트</button>
       <button class="btn-ghost" id="refreshBtn" onclick="loadAll()"><span class="ico">↻</span> 새로고침</button>
       <button class="btn-ghost logout" onclick="teacherLogout()">로그아웃</button>
@@ -1099,6 +1112,21 @@ body{letter-spacing:-0.01em}
              onkeydown="if(event.key==='Enter')setNowUnit()">
       <button class="nu-go" onclick="setNowUnit()">켜기</button>
       <span class="nu-state" id="nuState"></span>
+      <button class="nu-list-btn" onclick="toggleUnitList()" title="학생이 질문 심을 때 고를 차시 목록">📋 차시 목록</button>
+    </div>
+    <!-- 📑 차시 목록 — 학생 화면의 차시 고르개에 이 순서대로 나온다 -->
+    <div class="unitlist-panel" id="unitListPanel" style="display:none">
+      <div class="ul-hd">
+        <b>📑 학생이 고를 차시 목록</b>
+        <select id="ulGrade" class="nu-sel"><option value="">모든 학년</option></select>
+        <span class="ul-hint">한 줄에 하나. <b>맨 윗줄이 학생에게 가장 먼저</b> 보여요. 「지금 차시」를 켜면 그건 그 위에 따로 붙어요.</span>
+      </div>
+      <textarea id="ulText" class="ul-ta" rows="6" placeholder="2-4차시 전류와 저항&#10;2-3차시 전압&#10;2-2차시 전기 회로"></textarea>
+      <div class="ul-ft">
+        <span class="ul-state" id="ulState"></span>
+        <button class="nu-go" onclick="saveUnitList()">저장</button>
+        <button class="ul-close" onclick="toggleUnitList()">닫기</button>
+      </div>
     </div>
     <!-- FILTERS -->
     <div class="filter-bar">
@@ -1551,15 +1579,36 @@ body{letter-spacing:-0.01em}
 /* ════════════════════════════════════════════════════════════════════
    ⚙️ 학교 설정 — 새 학교는 아래 3줄만 고치면 됩니다! (학생앱과 같은 값으로)
    ════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   🧰 배포판(class-kit)은 config.js 의 window.CLASS_KIT_CONFIG 를 먼저 읽습니다.
+   설정 파일이 없으면 아래 기본값(우리 학교 값)으로 지금처럼 동작합니다.
+   ════════════════════════════════════════════════════════════════════ */
+const KIT = window.CLASS_KIT_CONFIG || {};
+const kitGet = (path, dflt) => { try{ const v = path.split('.').reduce((o,k)=>(o==null?undefined:o[k]), KIT); return (v===undefined||v===null||v==='') ? dflt : v; }catch(e){ return dflt; } };
+const kitTheme = (section) => { const t = kitGet('theme.'+section, null); if(!t || typeof t!=='object') return; const r=document.documentElement.style; Object.keys(t).forEach(k => { if(t[k]) r.setProperty(k.charAt(0)==='-'?k:'--'+k, String(t[k])); }); };
+const kitFooter = (label) => { if(!window.CLASS_KIT_CONFIG) return; const f=document.getElementById('app-credit'); if(!f){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', () => kitFooter(label)); return; }
+  const e = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const c = KIT.credits||{}, a = c.author||'조승재(과학이조선생)', lic = c.license||'CC BY-NC-SA 4.0';
+  const lu = c.licenseUrl||'https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ko', au = c.authorUrl||'';
+  const sch = kitGet('school.name',''), tch = kitGet('school.teacher','');
+  f.innerHTML = '원작 © 2026 ' + (au ? '<a href="'+e(au)+'" target="_blank" rel="noopener" style="color:inherit">'+e(a)+'</a>' : e(a))
+    + ' · <a href="'+e(lu)+'" target="_blank" rel="noopener" style="color:inherit">'+e(lic)+'</a>'
+    + (sch ? ' · 운영: '+e(sch)+(tch ? ' '+e(tch)+' 선생님' : '') : '')
+    + '<br><span style="font-size:11px;opacity:.85;">'+e(label)+' · 우리 반 도구 꾸러미 '+e(KIT.version||'')+'</span>'; };
 const HAENURI_CONFIG = {
-  schoolName : '해누리중학교',                                    // 학교 이름 (화면에 표시)
-  supabaseUrl: 'https://hmzklbrksfdhzsgwzfyg.supabase.co',        // Supabase Project URL
-  supabaseKey: 'sb_publishable_OFVhbjVPbJiMWXVz2nKQuw_m6RmVVZE',  // Supabase publishable 키
+  schoolName : kitGet('school.name', '해누리중학교'),                                   // 학교 이름 (화면에 표시)
+  supabaseUrl: kitGet('supabase.url', 'https://hmzklbrksfdhzsgwzfyg.supabase.co'),      // Supabase Project URL
+  supabaseKey: kitGet('supabase.key', 'sb_publishable_OFVhbjVPbJiMWXVz2nKQuw_m6RmVVZE'),  // Supabase publishable 키
 };
 /* ════════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL  = HAENURI_CONFIG.supabaseUrl;
 const SUPABASE_ANON = HAENURI_CONFIG.supabaseKey;
 const SCHOOL_NAME   = HAENURI_CONFIG.schoolName || '우리 학교';
+const SCHOOL_SHORT  = kitGet('school.short', String(SCHOOL_NAME).replace(/(중학교|고등학교|초등학교|학교)$/,'') || SCHOOL_NAME);
+const APP_NAME      = kitGet('brand.question', '질문 과수원');
+const LEARNER       = kitGet('question.learnerText', '중학교 2학년');
+const AI_TEACHER    = kitGet('question.aiTeacherText', '중학교 2학년 과학 교사');
+const USE_EDGE_FN   = !window.CLASS_KIT_CONFIG || !!kitGet('features.edgeFunction', false);   // 배포판은 기본으로 Edge Function 없이(SQL 함수) 동작
 const EDGE_FN = SUPABASE_URL + '/functions/v1/teacher-admin';  // 🔐 교사 등록·일괄생성 (service_role은 서버 전용)
 
 let sb = null;
@@ -1571,7 +1620,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '09-05 a · 교사라벨';
+const BUILD = '09-14 a · 차시목록';
 let allSubjects = [];
 let allBranches = [];
 
@@ -1696,25 +1745,34 @@ async function edgeCall(payload){
 }
 
 // 교사 등록 (초대코드 검증은 서버에서)
+//   ① SQL 함수 register_teacher (class-kit 설치본: 초대코드는 kit_settings 표) → ② 없으면 Edge Function(옛 방식)
 async function doRegister(invite){
   const subPreset = T_SUBJECT_PRESETS.find(p => p.id === sgSelectedSubject);
   const grade = $('sgGrade').value;
-  const { teacher } = await edgeCall({
-    action:'register',
+  const payload = {
     name: ($('sgName').value||'').trim(),
     subject_id: sgSelectedSubject,
     subject_label: subPreset?.label || sgSelectedSubject,
     subject_icon: subPreset?.icon || '📚',
     grade: grade ? Number(grade) : null,
-    invite_code: invite,
+  };
+  const r = await sb.rpc('register_teacher', {
+    p_invite_code: invite, p_name: payload.name, p_subject_id: payload.subject_id,
+    p_subject_label: payload.subject_label, p_subject_icon: payload.subject_icon, p_grade: payload.grade,
   });
+  if(!r.error) return Array.isArray(r.data) ? r.data[0] : r.data;
+  const msg = r.error.message || '';
+  const noFn = r.error.code === 'PGRST202' || /could not find the function|schema cache/i.test(msg);
+  if(!noFn) throw new Error(msg);
+  if(!USE_EDGE_FN) throw new Error('교사 등록 함수가 없어요 — setup/01_설치.sql 을 Supabase SQL Editor 에서 실행했는지 확인하세요');
+  const { teacher } = await edgeCall({ action:'register', ...payload, invite_code: invite });
   return teacher;
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // 교사 과목 프리셋 (학생앱과 동일)
 // ═══════════════════════════════════════════════════════════════════
-const T_SUBJECT_PRESETS = [
+const T_SUBJECT_PRESETS = kitGet('question.subjects', null) || [
   {id:'science',    icon:'🔬', label:'과학'},
   {id:'math',       icon:'📐', label:'수학'},
   {id:'korean',     icon:'📖', label:'국어'},
@@ -1946,6 +2004,63 @@ async function setNowUnit(){
   try{ await sb.rpc('sweep_active_units'); }catch(e){}   /* 오래된 것 치우기 */
   await loadNowUnits();
   toast('📑 지금 차시를 켰어요 — 이제 학생 질문에 저절로 붙어요');
+}
+
+/* ── 📑 차시 목록 (16_차시목록.sql) ─────────────────────────────────────────
+   학생이 질문 심을 때 고르는 목록. 맨 윗줄이 sort_order 가 가장 커서 먼저 보인다. */
+function toggleUnitList(){
+  const p = $('unitListPanel'); if(!p) return;
+  const open = p.style.display === 'none';
+  p.style.display = open ? '' : 'none';
+  if(open){
+    const gs = $('ulGrade'), ng = $('nuGrade');
+    if(gs && ng && gs.options.length <= 1){
+      Array.from(ng.options).forEach(function(o){ if(o.value) gs.appendChild(new Option(o.text, o.value)); });
+    }
+    if(gs && ng && ng.value && !gs.value) gs.value = ng.value;
+    loadUnitList();
+  }
+}
+async function loadUnitList(){
+  const st = $('ulState'), ta = $('ulText'); if(!ta) return;
+  if(!currentTeacher || !currentTeacher.id){ if(st) st.textContent = '교사 계정으로 로그인해 주세요.'; return; }
+  const g = $('ulGrade') && $('ulGrade').value ? Number($('ulGrade').value) : null;
+  let q = sb.from('lesson_units').select('*').eq('teacher_id', currentTeacher.id)
+            .order('sort_order', {ascending:false}).order('id', {ascending:false});
+  q = (g == null) ? q.is('target_grade', null) : q.eq('target_grade', g);
+  const r = await q;
+  if(r.error){
+    if(st) st.textContent = '⚠️ 표가 아직 없어요 — 16_차시목록.sql 을 Supabase 에서 한 번 실행하세요.';
+    return;
+  }
+  ta.value = (r.data || []).map(function(x){ return x.unit; }).join(String.fromCharCode(10));
+  if(st) st.textContent = (r.data || []).length ? ((r.data.length) + '개 저장돼 있어요') : '아직 비어 있어요';
+}
+async function saveUnitList(){
+  const st = $('ulState'), ta = $('ulText'); if(!ta) return;
+  if(!currentTeacher || !currentTeacher.id){ alert('교사 계정으로 로그인해 주세요.'); return; }
+  const g = $('ulGrade') && $('ulGrade').value ? Number($('ulGrade').value) : null;
+  const seen = {};
+  const lines = ta.value.split(/\r?\n/).map(function(s){ return s.trim(); })
+    .filter(function(s){ if(!s || seen[s]) return false; seen[s] = 1; return true; });
+  if(lines.length > 60){ alert('차시는 60개까지만 넣을 수 있어요.'); return; }
+  const sub = allSubjects.find(function(s){ return s.id === ($('fSubject') ? $('fSubject').value : ''); });
+  /* 같은 학년 목록을 통째로 갈아 끼운다 — 줄 순서가 곧 표시 순서 */
+  let del = sb.from('lesson_units').delete().eq('teacher_id', currentTeacher.id);
+  del = (g == null) ? del.is('target_grade', null) : del.eq('target_grade', g);
+  const d = await del.select('id');
+  if(d.error){ alert('저장하지 못했어요: ' + d.error.message); return; }
+  if(lines.length){
+    const rows = lines.map(function(u, i){
+      return { teacher_id: currentTeacher.id, target_grade: g, unit: u,
+               subject_id: sub ? sub.id : null, subject_label: sub ? sub.label : null,
+               sort_order: lines.length - i };
+    });
+    const r = await sb.from('lesson_units').insert(rows).select('id');
+    if(r.error){ alert('저장하지 못했어요: ' + r.error.message); return; }
+  }
+  if(st) st.textContent = lines.length + '개 저장했어요 — 학생 화면에 바로 나와요';
+  toast('📑 차시 목록을 저장했어요');
 }
 
 async function clearNowUnit(id){
@@ -2215,6 +2330,15 @@ function applyFilters(){
     if(q.is_anonymous) stats[q.user_id].anon++;
   });
 
+  /* 나무 크기는 «필터에 걸린 질문» 이 아니라 «그 학생이 심은 전체» 로 그린다.
+     기간을 최근 7일로 두거나 해결 여부를 걸면 학생 나무가 통째로 작아져서
+     «안 자란 아이» 처럼 보였다 — 자료가 아니라 필터가 만든 그림이었다. */
+  const totalAll = {}, resolvedAll = {};
+  allQuestions.forEach(q => {
+    totalAll[q.user_id] = (totalAll[q.user_id]||0) + 1;
+    if(q.resolved) resolvedAll[q.user_id] = (resolvedAll[q.user_id]||0) + 1;
+  });
+
   // 꼬리질문 수
   const branchesByAuthor = {};
   allBranches.forEach(b => {
@@ -2234,6 +2358,8 @@ function applyFilters(){
     return {
       ...p,
       total: s.total, resolved: s.resolved,
+      totalAll: totalAll[p.id] || 0,        /* 나무 크기 전용 — 필터에 안 깎인다 */
+      resolvedAll: resolvedAll[p.id] || 0,  /* 나무에 다는 열매도 같은 기준이어야 한다 */
       pct: s.total ? Math.round(100*s.resolved/s.total) : 0,
       branches: branchesByAuthor[p.id] || 0,
       waters_got: s.waters_got,
@@ -2384,7 +2510,7 @@ function exportQuestionsCSV(){
     const p=pm[q.user_id]||{};
     rows.push([p.grade,p.class_no,p.number,p.name,q.text,q.refined_text||'',(q.is_picked?'⭐':''),((q.solve&&(q.solve.answer||'').trim())?'해결':''),q.unit||'',(q.phase==='after'?'수업후':'수업전'),qStatus(q),q.finding||'',q.still_wondering||'',q.explore_votes||0,q.teacher_nudge||'',q.water_count||0,brByQ[q.id]||0,scCount(q),scText(q),(q.created_at||'').slice(0,10)]);
   });
-  downloadCSV(`해누리_질문상세_${today()}.csv`, rows);
+  downloadCSV(`${SCHOOL_SHORT}_질문상세_${today()}.csv`, rows);
 }
 function exportStudentsCSV(){
   if(!filteredStudents.length){ alert('내보낼 학생이 없어요.'); return; }
@@ -2399,7 +2525,7 @@ function exportStudentsCSV(){
     const top=GOOD_Q.slice().sort((a,b)=>dist[b.n]-dist[a.n]).filter(g=>dist[g.n]>0).slice(0,2).map(g=>g.t).join(', ');
     rows.push([s.grade,s.class_no,s.number,s.name,s.total,s.resolved,s.pct,expanded,s.branches,s.waters_got,avgSc,top]);
   });
-  downloadCSV(`해누리_학생요약_${today()}.csv`, rows);
+  downloadCSV(`${SCHOOL_SHORT}_학생요약_${today()}.csv`, rows);
 }
 function exportSelfcheckCSV(){
   const pm={}; allProfiles.forEach(p=>pm[p.id]=p);
@@ -2409,7 +2535,7 @@ function exportSelfcheckCSV(){
     GOOD_Q.forEach(g=>{ if(scValid(q.self_check[g.n])) rows.push([p.grade,p.class_no,p.number,p.name,q.text,g.n,g.t,q.self_check[g.n].reason]); });
   });
   if(rows.length===1){ alert('자가체크 근거가 있는 질문이 없어요.'); return; }
-  downloadCSV(`해누리_자가체크근거_${today()}.csv`, rows);
+  downloadCSV(`${SCHOOL_SHORT}_자가체크근거_${today()}.csv`, rows);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2484,7 +2610,7 @@ function printClassReport(){
   }).join('');
   const classRows=g.byClass.map(c=>`<tr><td>${c.grade}-${c.class_no}</td><td>${c.students}</td><td>${c.total}</td><td>${c.before}</td><td>${c.after}</td><td>${c.expanded}</td></tr>`).join('');
   const teacher=(currentTeacher&&currentTeacher.name)?currentTeacher.name:'';
-  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>해누리 학급 리포트</title>
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${SCHOOL_SHORT} 학급 리포트</title>
   <style>
     *{box-sizing:border-box} body{font-family:'Malgun Gothic','Noto Sans KR',sans-serif;color:#1a2421;margin:32px;font-size:13px}
     h1{font-size:22px;margin:0 0 4px;color:#184B28} h2{font-size:15px;margin:22px 0 8px;color:#2D6A3E;border-bottom:2px solid #2D6A3E;padding-bottom:4px}
@@ -2498,7 +2624,7 @@ function printClassReport(){
     @media print{body{margin:12mm}.no-print{display:none}}
     .foot{margin-top:24px;color:#888;font-size:10px;text-align:center}
   </style></head><body>
-    <h1>🌳 해누리 질문 과수원 — 학급 리포트</h1>
+    <h1>🌳 ${SCHOOL_SHORT} ${APP_NAME} — 학급 리포트</h1>
     <div class="meta">범위: ${esc(scope)} ${teacher?(' · 교사: '+esc(teacher)):''} · 작성일: ${today()}</div>
     <div class="cards">
       <div class="card"><b>${filteredStudents.length}</b><span>학생</span></div>
@@ -2513,7 +2639,7 @@ function printClassReport(){
     <table><thead><tr><th>학년-반</th><th>학생</th><th>전체</th><th>수업 전</th><th>수업 후</th><th>확장</th></tr></thead><tbody>${classRows}</tbody></table>
     <h2>학생별 요약</h2>
     <table><thead><tr><th>학번</th><th>이름</th><th>질문</th><th>해결</th><th>해결률</th><th>확장</th><th>평균 자가체크</th></tr></thead><tbody>${studentRows}</tbody></table>
-    <div class="foot">해누리 질문 과수원 · 자동 생성 리포트</div>
+    <div class="foot">${SCHOOL_SHORT} ${APP_NAME} · 자동 생성 리포트</div>
   </body></html>`;
   const w=window.open('','_blank');
   if(!w){ alert('팝업이 차단되었어요. 팝업 허용 후 다시 시도해주세요.'); return; }
@@ -3400,7 +3526,7 @@ function exportNoUnitCSV(){
       ''                       /* ← 여기를 채워서 돌려주면 된다 */
     ]);
   });
-  downloadCSV('해누리_단원미지정_' + today() + '.csv', rows);
+  downloadCSV(SCHOOL_SHORT + '_단원미지정_' + today() + '.csv', rows);
 }
 
 /* 📤 분류를 마친 CSV 를 붙여 넣으면 UPDATE SQL 을 만든다.
@@ -3727,7 +3853,7 @@ function printStudentPortfolio(){
     </div>
     <div class="note">🌅 수업 열기 ${before}개 · 🌙 수업 닫기 ${after}개 · 답을 찾은 뒤에도 <b>'아직 모르는 것'</b>을 남긴 질문은 다음 탐구의 씨앗이 됩니다.</div>
     ${subSections}
-    <div class="foot">해누리 질문 과수원 · 개인 탐구 포트폴리오</div>
+    <div class="foot">${SCHOOL_SHORT} ${APP_NAME} · 개인 탐구 포트폴리오</div>
   </body></html>`;
   const w=window.open('','_blank');
   if(!w){ alert('팝업이 차단되었어요. 팝업 허용 후 다시 시도해주세요.'); return; }
@@ -3925,7 +4051,7 @@ function pkExportCSV(){
       s.unclear||'', s.ai2||'', (s.stuck?'🌫':''), s.stuckWhere||'',
       s.answer||'', s.newq||'']);
   });
-  downloadCSV('해누리_대표질문_해결과정_' + today() + '.csv', rows);
+  downloadCSV(SCHOOL_SHORT + '_대표질문_해결과정_' + today() + '.csv', rows);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -4020,12 +4146,12 @@ function ndBuildPrompt(){
   const todo = _ndTodo();
   const voice = _ndVoiceSamples();
   const L = [];
-  L.push('당신은 중학교 2학년 과학 교사입니다. 학생이 심은 질문에 «되묻기» 를 답니다.');
+  L.push(`당신은 ${AI_TEACHER}입니다. 학생이 심은 질문에 «되묻기» 를 답니다.`);
   L.push('');
   L.push('■ 되묻기가 무엇인가');
   L.push('- 답을 주지 않습니다. 답을 주면 학생이 스스로 찾을 일이 없어집니다.');
   L.push('- 학생이 «한 걸음 더» 갈 수 있게 되묻습니다.');
-  L.push('- 한두 문장. 중학교 2학년이 읽는 말로. 물음표로 끝냅니다.');
+  L.push(`- 한두 문장. ${LEARNER}이 읽는 말로. 물음표로 끝냅니다.`);
   L.push('');
   if(voice.length){
     L.push('■ 이 선생님은 이렇게 씁니다 (실제로 쓴 되묻기 — 이 말투를 따라 주세요)');
@@ -4375,7 +4501,7 @@ function lbExportCSV(){
       q.text || '', q.refined_text || '',
       (q.teacher_labels || []).join(' '), (q.created_at||'').slice(0,10)]);
   });
-  downloadCSV('해누리_라벨_' + today() + '.csv', rows);
+  downloadCSV(SCHOOL_SHORT + '_라벨_' + today() + '.csv', rows);
 }
 
 function switchView(view){
@@ -5085,6 +5211,13 @@ function renderForest(){
   const byLv = {low:0, mid:0, high:0};
   const bySpecies = {};
   wrap.innerHTML = filteredStudents.map(s=>{
+    /* 숲 화면의 나무는 «그 학생이 심은 전체» 를 그린다. 레벨도 열매도 같은
+       기준이어야 «Lv.는 전체인데 열매만 필터본» 이라는 어긋남이 안 생긴다. */
+    const sAll = Object.assign({}, s, {
+      total:    (s.totalAll    != null ? s.totalAll    : s.total),
+      resolved: (s.resolvedAll != null ? s.resolvedAll : s.resolved),
+    });
+    s = sAll;
     const lv = Math.min(Math.floor(s.total/2)+1, 10);
     if(lv<=3) byLv.low++; else if(lv<=7) byLv.mid++; else byLv.high++;
     const sp = s.active_tree && TREE_STYLES[s.active_tree] ? s.active_tree : 'default';
@@ -5707,9 +5840,14 @@ function renderDrilldownBody(){
   if(!currentDrilldown) return;
   const {student:s, questions, branchesOnMyQs, branchesByMe, teacherNotes = []} = currentDrilldown;
 
-  // 나무 SVG (크게)
-  const lv = Math.min(Math.floor(s.total/2)+1, 10);
-  const bigTreeSVG = miniTreeSVG(s, lv); // 재사용 (100x100 svg, 컨테이너가 확대)
+  // 나무 SVG (크게) — 아래 질문 목록은 필터 안 걸린 전체이므로 나무도 전체 기준.
+  // (예전에는 나무만 필터본이라 «질문은 다 있는데 나무만 작은» 화면이 나왔다)
+  const _sAll = Object.assign({}, s, {
+    total:    (s.totalAll    != null ? s.totalAll    : s.total),
+    resolved: (s.resolvedAll != null ? s.resolvedAll : s.resolved),
+  });
+  const lv = Math.min(Math.floor(_sAll.total/2)+1, 10);
+  const bigTreeSVG = miniTreeSVG(_sAll, lv); // 재사용 (100x100 svg, 컨테이너가 확대)
 
   // 통계
   const waterGot = s.waters_got || 0;
@@ -5742,7 +5880,7 @@ function renderDrilldownBody(){
   $('ddBody').innerHTML = `
     <!-- 프린트 전용 헤더 -->
     <div class="dd-print-header">
-      <h1>🌳 해누리 질문 과수원 · 학생 리포트</h1>
+      <h1>🌳 ${SCHOOL_SHORT} ${APP_NAME} · 학생 리포트</h1>
       <div class="sub">${esc(s.grade)}학년 ${esc(s.class_no)}반 ${esc(s.number)}번 · ${esc(s.name)} · ${today()}</div>
     </div>
 
@@ -6193,7 +6331,7 @@ function openWeeklyReport(){
   // HTML 구성
   const pr = $('printReport');
   pr.innerHTML = `
-    <div class="pr-title">🌳 해누리 질문 과수원 · 주간 리포트</div>
+    <div class="pr-title">🌳 ${SCHOOL_SHORT} ${APP_NAME} · 주간 리포트</div>
     <div class="pr-sub">${esc(ctx||'전체')} · ${rangeStr} · ${today()} 생성</div>
 
     <div class="pr-sec">
@@ -6274,6 +6412,16 @@ function openBulkCreate(){
   if(!currentTeacher){
     alert('교사 계정으로 로그인한 뒤 사용할 수 있어요.');
     return;
+  }
+  /* 배포판(Edge Function 없음): 일괄 생성 대신 «학생 스스로 가입» 안내 */
+  const self = $('bulkSelf'), steps = $('bulkSteps');
+  if(self && steps){
+    self.style.display  = USE_EDGE_FN ? 'none' : '';
+    steps.style.display = USE_EDGE_FN ? '' : 'none';
+    if(!USE_EDGE_FN){
+      const u = location.href.replace(/[^\/]*$/, '') ;   // 학생 앱은 같은 폴더의 index.html
+      const link = $('bulkSelfLink'); if(link){ link.textContent = u; link.href = u; }
+    }
   }
   $('mBulk').classList.add('show');
   $('bulkPreview').innerHTML = '';
@@ -6474,6 +6622,24 @@ async function submitBulkCreate(){
     <h2>📋 학생 계정 일괄 생성</h2>
     <p class="sub">CSV 또는 Excel 명렬표를 업로드하면 학생 계정이 한 번에 만들어집니다.<br>학생들은 학년·반·번호·비밀번호로 바로 로그인할 수 있어요.</p>
 
+    <div id="bulkSelf" style="display:none">
+      <div class="bulk-step">
+        <h3>1️⃣ 학생이 스스로 가입해요</h3>
+        <p>이 설치본은 서버 함수 없이 돌아가서, 계정을 대신 만들어 주지 않습니다. 대신 학생이 학생 앱에서
+           <b>학년 · 반 · 번호 · 이름 · 비밀번호</b>만 넣으면 바로 계정이 생겨요(이메일 불필요).</p>
+        <p>학생 앱 주소: <a id="bulkSelfLink" href="./" target="_blank" rel="noopener" style="word-break:break-all"></a></p>
+      </div>
+      <div class="bulk-step">
+        <h3>2️⃣ 수업 시간에 이렇게</h3>
+        <p>① 칠판에 주소(또는 QR)를 띄운다 → ② «가입» 탭 → ③ 학년·반·번호·이름·비밀번호(4자 이상) → ④ 가입 완료 후 첫 로그인.<br>
+           같은 학년·반·번호로는 한 번만 가입돼요. 비밀번호를 잊으면 이 대시보드의 학생 목록에서 🔑 로 초기화합니다.</p>
+      </div>
+      <div class="bulk-step">
+        <h3>3️⃣ 가입 현황 확인</h3>
+        <p>가입이 끝나면 «↻ 새로고침»으로 학생 목록을 갱신해 빠진 학생이 없는지 보세요.</p>
+      </div>
+    </div>
+    <div id="bulkSteps">
     <div class="bulk-step">
       <h3>1️⃣ 명렬표 양식 다운로드</h3>
       <p>아래 버튼을 눌러 양식을 받고, Excel에서 학생 정보를 입력하세요.<br>컬럼 순서: <b>학년 / 반 / 번호 / 이름 / 비밀번호</b></p>
@@ -6494,6 +6660,7 @@ async function submitBulkCreate(){
       <button class="bulk-btn primary" id="bulkSubmitBtn" onclick="submitBulkCreate()" disabled>✅ 계정 일괄 생성</button>
       <div id="bulkResult" style="margin-top:12px"></div>
     </div>
+    </div><!-- /bulkSteps -->
 
     <div style="text-align:right;margin-top:8px">
       <button class="bulk-btn" onclick="closeBulkCreate()">닫기</button>
@@ -7348,11 +7515,98 @@ function viewMaterialQuestions(matId, title){
 // ⚙️ 학교 브랜딩 적용 (설정 블록의 schoolName 반영)
 function applyBranding(){
   try{
-    document.title = `🌳 질문 과수원 — ${SCHOOL_NAME} 교사 대시보드`;
+    document.title = `🌳 ${APP_NAME} — ${SCHOOL_NAME} 교사 대시보드`;
     const s=document.getElementById('brandSchool'); if(s) s.textContent=SCHOOL_NAME;
+    const t=document.getElementById('brandTitle');  if(t) t.textContent=APP_NAME;
+    if(window.CLASS_KIT_CONFIG){   /* 배포판: 로고·색·푸터·관리 단추 */
+      const logo = kitGet('brand.logo', ''); if(logo) document.querySelectorAll('img.hn-logo-t').forEach(i => { i.src = logo; i.alt = SCHOOL_NAME + ' 로고'; });
+      document.querySelectorAll('#authEmail,#sgEmail').forEach(i => i.placeholder = '이메일 (예: name@school.ac.kr)');
+      const ab = document.getElementById('adminOpenBtn'); if(ab) ab.style.display = '';
+      const bb = document.getElementById('bulkOpenBtn');  if(bb && !USE_EDGE_FN) bb.innerHTML = '<span>👥</span> 학생 가입 안내';
+      kitTheme('dashboard'); kitFooter(APP_NAME + ' · 교사 대시보드');
+    }
   }catch(e){}
 }
 applyBranding();
+</script>
+
+<!-- ⚙️ 관리 (class-kit) — 초대코드·하루 상한·계정 도움말 -->
+<div class="bulk-modal" id="mAdmin" onclick="if(event.target.id==='mAdmin')closeAdmin()">
+  <div class="bulk-box">
+    <h2>⚙️ 관리</h2>
+    <p class="sub">이 학교 설치본을 관리하는 곳입니다. 등록된 교사라면 누구나 바꿀 수 있어요.</p>
+
+    <div class="bulk-step">
+      <h3>🔑 교사 초대코드</h3>
+      <p>동료 선생님이 «교사 등록»할 때 입력하는 암호예요. 유출됐다 싶으면 바꾸세요.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="admInvite" type="text" placeholder="불러오는 중…" style="flex:1;min-width:180px;padding:8px 10px;border:1.5px solid var(--rule);border-radius:4px;font-family:inherit;font-size:13px">
+        <button class="bulk-btn primary" onclick="saveInvite()">바꾸기</button>
+      </div>
+      <div id="admInviteMsg" style="margin-top:6px;font-size:12px;color:var(--ink3)"></div>
+    </div>
+
+    <div class="bulk-step">
+      <h3>📏 하루 질문 상한</h3>
+      <p>학생 한 명이 <b>하루에</b> 심을 수 있는 질문 수, 도토리 상한, <b>한 차시에</b> 심을 수 있는 수. 서버(app_limits)에 저장돼요.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px">
+        하루 <input id="admLimNew" type="number" min="1" max="50" style="width:64px;padding:6px;border:1.5px solid var(--rule);border-radius:4px">개 ·
+        도토리 <input id="admLimSeeds" type="number" min="0" max="50" style="width:64px;padding:6px;border:1.5px solid var(--rule);border-radius:4px">개 ·
+        차시당 <input id="admLimUnit" type="number" min="1" max="20" style="width:64px;padding:6px;border:1.5px solid var(--rule);border-radius:4px">개
+        <button class="bulk-btn primary" onclick="saveLimits()">저장</button>
+      </div>
+      <div id="admLimMsg" style="margin-top:6px;font-size:12px;color:var(--ink3)"></div>
+    </div>
+
+    <div class="bulk-step">
+      <h3>👥 학생 계정</h3>
+      <p>학생은 학생 앱에서 <b>학년·반·번호·이름·비밀번호</b>로 스스로 가입합니다.<br>
+         비밀번호를 잊은 학생은 학생 목록의 <b>🔑</b> 단추로 초기화하세요.<br>
+         학년 초 진급·졸업 정리, 전체 초기화, 백업은 <code>setup/02_관리_레시피.sql</code>을 SQL Editor에서 실행합니다.</p>
+    </div>
+
+    <div style="text-align:right;margin-top:8px">
+      <button class="bulk-btn" onclick="closeAdmin()">닫기</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ⚙️ 관리 — kit_get_setting / kit_set_setting / kit_get_limits / kit_set_limits (setup/01_설치.sql PART 10) */
+function closeAdmin(){ $('mAdmin').classList.remove('show'); }
+async function openAdmin(){
+  if(!currentTeacher){ alert('교사 계정으로 로그인한 뒤 사용할 수 있어요.'); return; }
+  $('mAdmin').classList.add('show');
+  $('admInviteMsg').textContent=''; $('admLimMsg').textContent='';
+  $('admInvite').value=''; $('admInvite').placeholder='불러오는 중…';
+  try{
+    const r = await sb.rpc('kit_get_setting', { p_key:'teacher_invite_code' });
+    if(r.error) throw r.error;
+    $('admInvite').value = r.data || ''; $('admInvite').placeholder = '새 초대코드';
+  }catch(e){ $('admInvite').placeholder='(불러오지 못함)'; $('admInviteMsg').textContent='⚠️ ' + (kitSqlHint(e) || (e.message||e)); }
+  try{
+    const r = await sb.rpc('kit_get_limits');
+    if(r.error) throw r.error;
+    const L = Array.isArray(r.data) ? r.data[0] : r.data;
+    if(L){ $('admLimNew').value=L.new_per_day; $('admLimSeeds').value=L.seeds_per_day; $('admLimUnit').value=L.per_unit; }
+  }catch(e){ $('admLimMsg').textContent='⚠️ ' + (kitSqlHint(e) || (e.message||e)); }
+}
+function kitSqlHint(e){
+  const m = (e && e.message) || '';
+  return (e && e.code==='PGRST202') || /could not find the function|schema cache/i.test(m)
+    ? 'SQL 함수가 없어요 — setup/01_설치.sql(PART 10)을 Supabase SQL Editor에서 실행하세요' : '';
+}
+async function saveInvite(){
+  const v = ($('admInvite').value||'').trim();
+  if(v.length < 4){ $('admInviteMsg').textContent='4자 이상으로 해 주세요'; return; }
+  const r = await sb.rpc('kit_set_setting', { p_key:'teacher_invite_code', p_value:v });
+  $('admInviteMsg').textContent = r.error ? ('⚠️ ' + (kitSqlHint(r.error) || r.error.message)) : '✅ 바꿨어요. 동료 선생님께 새 코드를 알려 주세요.';
+}
+async function saveLimits(){
+  const n = Number($('admLimNew').value), s = Number($('admLimSeeds').value), u = Number($('admLimUnit').value);
+  if(!(n>=1) || !(s>=0) || !(u>=1)){ $('admLimMsg').textContent='숫자를 확인해 주세요'; return; }
+  const r = await sb.rpc('kit_set_limits', { p_new_per_day:n, p_seeds_per_day:s, p_per_unit:u });
+  $('admLimMsg').textContent = r.error ? ('⚠️ ' + (kitSqlHint(r.error) || r.error.message)) : '✅ 저장했어요. 학생 앱은 다음 새로고침부터 적용돼요.';
+}
 </script>
 
 <footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-06-27</span></footer>

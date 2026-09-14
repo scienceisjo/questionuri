@@ -685,6 +685,12 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
         border-radius:8px;padding:1px 5px;line-height:1.5}
 .tp-note{font-size:10px;color:#8A5A00;background:#FFF8E9;border:1px solid #F0D48A;
          border-radius:7px;padding:5px 8px;margin-top:6px;line-height:1.5}
+/* 차시 고르개 — 학기 차시가 스무 개라도 한 줄로 밀어 본다 */
+.unit-picker{margin:8px 0 4px}
+.unit-picker .tp-label small{font-weight:500;color:var(--tl);margin-left:4px}
+.tree-picker .tp-list.up-row{flex-wrap:nowrap;overflow-x:auto;padding:2px 0 6px;scroll-snap-type:x proximity;
+        -webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.up-row .up-opt{flex:0 0 auto;scroll-snap-align:start;white-space:nowrap}
 
 /* 아이콘 고르기 버튼 (새 나무 / 수정 모달) */
 .pt-ic-b{width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,.03);font-size:18px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;margin:2px}
@@ -941,6 +947,41 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 /* 📚 수업자료 탭 (학생용) */
 .mat-area{max-width:min(720px,100%);margin:0 auto}
 .mat-area-hdr{text-align:center;margin-bottom:var(--sp-3)}
+.mat-view-seg{justify-content:center;margin-top:8px}
+/* ── 🖼️ 자료 모아보기 — 큰 카드 사이에서 «최신» 을 못 찾는 문제를 푼다 ── */
+.mg-hero{display:flex;gap:12px;align-items:stretch;background:linear-gradient(135deg,#fff,rgba(255,248,225,.55));
+         border:1.5px solid rgba(245,166,35,.55);border-radius:14px;padding:10px;margin-bottom:var(--sp-3);
+         box-shadow:0 3px 14px rgba(245,166,35,.16);cursor:pointer}
+.mg-hero .mg-thumb{width:38%;min-width:110px;aspect-ratio:4/3;height:auto}
+.mg-hero-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.mg-hero-k{font-size:var(--fs-xxs);font-weight:800;color:#B26A00;letter-spacing:.04em}
+.mg-hero-t{font-size:var(--fs-md);font-weight:800;color:var(--tx);line-height:1.3;
+           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mg-hero-m{font-size:var(--fs-xxs);color:var(--tl)}
+.mg-hero-go{margin-top:auto;align-self:flex-start;font-size:var(--fs-xxs);font-weight:800;color:#fff;
+            background:linear-gradient(135deg,#5CB86E,#3D8B4F);padding:6px 12px;border-radius:10px}
+.mg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:640px){.mg-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mg-tile{background:#fff;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;
+         display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;position:relative}
+.mg-tile:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.mg-tile.new{border-color:rgba(245,166,35,.6)}
+.mg-thumb{width:100%;aspect-ratio:16/10;background:#EEF4EE;display:flex;align-items:center;justify-content:center;
+          font-size:30px;overflow:hidden;border-bottom:1px solid var(--bd);position:relative}
+.mg-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mg-thumb .mg-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                   font-size:26px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.mg-badge{position:absolute;top:6px;left:6px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;
+          color:#fff;background:linear-gradient(135deg,#FF5722,#F4511E);letter-spacing:.05em}
+.mg-badge.hw{background:linear-gradient(135deg,#6A4FBF,#4A3A9E)}
+.mg-b{padding:8px 9px 9px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.mg-u{font-size:var(--fs-xxs);font-weight:800;color:var(--pd);background:rgba(93,184,110,.12);
+      padding:1px 7px;border-radius:8px;align-self:flex-start;max-width:100%;overflow:hidden;
+      text-overflow:ellipsis;white-space:nowrap}
+.mg-t{font-size:var(--fs-xs);font-weight:700;color:var(--tx);line-height:1.3;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.mg-m{font-size:var(--fs-xxs);color:var(--tl);display:flex;justify-content:space-between;gap:6px}
+.mg-m b{color:var(--pr);font-weight:700}
 .mat-area-title{font-size:var(--fs-lg);font-weight:700;color:var(--pd);margin-bottom:4px}
 .mat-area-sub{font-size:var(--fs-xs);color:var(--tl);line-height:1.5}
 .mat-area-list{display:flex;flex-direction:column;gap:var(--sp-3)}
@@ -1644,6 +1685,22 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
   .ms-media{max-height:44dvh}
   .ms-body .mat-area-yt{height:44dvh;max-height:44dvh}
 }
+/* ✏️ 질문 심기 시트 */
+.ask-sheet{max-width:640px;margin:0 auto}
+.ask-sheet .ms-top h3{font-size:15.5px}
+.ask-body{padding:10px 12px 28px}
+.ask-body .cs{box-shadow:none;border:none;background:transparent;padding:0;margin:0}
+body.ask-open{overflow:hidden}
+body.ask-open .fab-ask{display:none!important}
+.ql-ask{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:14px;border:none;
+        background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-xxs);font-weight:800;
+        cursor:pointer;box-shadow:0 2px 8px rgba(93,184,110,.3);white-space:nowrap}
+.ql-ask:hover{filter:brightness(1.05)}
+/* 목록 머리 — 폰 폭에서 «나의 질문 들 / 해 결 / 목 록» 으로 낱자가 쪼개지지 않게 */
+.ql-h{flex-wrap:wrap;gap:6px 10px}
+.ql-h h4{white-space:nowrap;margin:0}
+.ql-tools{margin-left:auto;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.ql-tools #qCnt,.ql-tools .vseg{white-space:nowrap}
 /* 입력부: 항상 바닥에 붙어 있다 */
 .ms-foot{flex:0 0 auto;background:var(--card);border-top:1px solid var(--bd);padding:9px 12px 12px;
   box-shadow:0 -3px 12px rgba(0,0,0,.07)}
@@ -1778,6 +1835,21 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 .qbp:hover{border-color:var(--pr);background:rgba(93,184,110,.06)}
 /* 이미 한 것은 «했음» 이 보이게 — 다시 눌러도 되지만 안 눌러도 된다 */
 .qbp-rf.done{background:#E8F5E9;border-color:#A5D6A7;color:#2E7D32}
+/* 친구 질문 카드 — 같은 껍데기, 다른 손잡이 */
+.qc.fr{background:#fff}
+.qc.fr.res .qc-t{text-decoration:none;opacity:1}          /* 친구의 열매 맺은 질문은 읽혀야 한다 */
+.qc-who{width:100%;font-size:var(--fs-xxs);color:var(--tl);margin-bottom:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.qc-who b{color:var(--pd);font-weight:800}
+.qbp-water.done{background:#E3F2FD;border-color:#90CAF9;color:#1565C0}
+.qbp-water:disabled{opacity:.55;cursor:default}
+.qbp-vote.on{background:#FFF3E0;border-color:#FFCC80;color:#E65100}
+.qbp-peer.done,.qbp-mine{background:rgba(0,0,0,.04);border-color:transparent;color:var(--tl);cursor:default}
+.qbp-tree{margin-left:auto}
+.cb-col-body .qc{padding:8px 10px}
+.cb-col-body .qc-t{font-size:var(--fs-sm)}
+.cb-col-body .qc-a{gap:4px;margin-top:7px}
+.cb-col-body .qbp{padding:3px 8px;font-size:10.5px;min-height:28px}
+.fv-list .ql,#fvList .ql{display:flex;flex-direction:column;gap:8px}
 .qbp-solve.done{background:#EDE7F6;border-color:#B39DDB;color:#5E35B1}
 .qbp-pick.on{background:#FFF3E0;border-color:#F0B357;color:#B45309}
 .qbp-more{padding:0 15px;font-size:var(--fs-sm);color:var(--tl);letter-spacing:2px;font-weight:800}
@@ -2280,6 +2352,7 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
       <div class="tree-area">
         <div class="tree-sub" id="treeSub"></div>
         <div class="tree-ttl" id="treeTtl"></div>
+        <div id="treeTtlNote" style="display:none;text-align:center;font-size:var(--fs-xxs);color:var(--tl);margin:-2px 0 6px"></div>
         <div class="season-row">
           <button class="season-btn on" data-s="spring" onclick="setSeason('spring')">🌸 봄</button>
           <button class="season-btn" data-s="summer" onclick="setSeason('summer')">☀️ 여름</button>
@@ -2306,6 +2379,10 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
       <div class="mat-area-hdr">
         <h2 class="mat-area-title">📚 자료</h2>
         <p class="mat-area-sub">선생님이 알려 주신 <b>차시 번호</b>를 누르면 그 시간 자료만 볼 수 있어요. 자료를 보고 떠오른 질문을 적으면 나무에 열매가 열려요 🍎</p>
+        <div class="view-seg mat-view-seg">
+          <button class="vseg on" id="mvGallery" onclick="setMatView('gallery')">🖼️ 모아보기</button>
+          <button class="vseg" id="mvList" onclick="setMatView('list')">📋 자세히</button>
+        </div>
       </div>
       <div class="mat-area-list" id="matAreaList">
         <div class="mat-area-empty"><div class="em">📭</div><div>아직 올라온 수업 자료가 없어요</div></div>
@@ -2316,73 +2393,10 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
       <!-- 🌳 오늘의 탐구 성장 리포트 -->
       <div id="growthCard"></div>
       <div class="cs">
-        <!-- 🌅🌙 수업 단계 토글 -->
-        <div class="phase-seg" id="phaseSeg">
-          <button class="phase-opt on" data-phase="before" onclick="setPhase('before')">
-            <span class="phase-em">🌅</span><span class="phase-tx"><b>수업 열기</b><small>수업 전 궁금한 것</small></span>
-          </button>
-          <button class="phase-opt" data-phase="after" onclick="setPhase('after')">
-            <span class="phase-em">🌙</span><span class="phase-tx"><b>수업 닫기</b><small>수업 뒤 새로 생긴 질문</small></span>
-          </button>
-        </div>
-        <h4 id="qHead">🌅 수업 열기 — 새로운 질문 심기</h4>
-        <p class="phase-note" id="phaseNote">오늘 수업에서 무엇이 가장 궁금한가요? 🌱 <a onclick="openMCInfo('seven')" style="color:var(--pr);font-weight:700;cursor:pointer;white-space:nowrap">🎯 좋은 질문이란?</a></p>
-        <div id="matLinkBanner" class="mat-link-banner" style="display:none"></div>
-        <div class="q-iw">
-          <div class="q-quota" id="qQuota" style="display:none"></div>
-          <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ()">
-          <button class="ba" id="addBtn" onclick="addQ()">심기</button>
-        </div>
-        <div class="q-stems" id="qStems"></div>
-        <!-- 질문이 막힐 때 손 닿는 곳에. 옵션 안에 숨기면 정작 막힌 학생이 못 찾는다. -->
-        <!-- 🧺 세 바구니 — 접힘 안에 있으면 있는 줄도 모른다 -->
-        <div class="q-opt-g" style="width:100%;margin-top:9px">
-          <span>🧺 이 질문, 어느 바구니 같아요? <b style="font-weight:600;opacity:.7">안 골라도 돼요</b></span>
-          <div class="q-src-pick" id="srcPick"></div>
-        </div>
-        <div class="q-help">
-          <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
-          <button class="kbd" onclick="openKbd()">⌨️ 키보드가 이상해요</button>
-          <button onclick="openBaskets()">🧺 질문의 세 종류</button>
-        </div>
-        <button class="q-more-toggle" id="qMoreToggle" onclick="toggleQMore()" aria-expanded="false">＋ 옵션 <small>(나무·태그·열매·익명)</small></button>
-        <div class="q-more" id="qMore" style="display:none">
-          <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
-            <button class="math-helper-btn" onclick="openMathHelper('qInp')" title="수식·화학식 입력 도우미">🧮 수식·화학식</button>
-          </div>
-          <div class="tree-picker" id="treePicker" style="display:none">
-            <div class="tp-label">🌳 어느 나무에 달까요?</div>
-            <div class="tp-list" id="treePickerList"></div>
-            <div class="tp-note" id="treePickerNote" style="display:none"></div>
-          </div>
-          <div class="tree-picker" id="unitPicker" style="display:none">
-            <div class="tp-label">📑 몇 차시 질문인가요?</div>
-            <div class="tp-list" id="unitPickerList"></div>
-            <div class="tp-note" id="unitPickerNote" style="display:none"></div>
-          </div>
-          <div class="tag-inp-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
-            <span id="tagChips"></span>
-            <input class="tag-inp" id="tagInp" placeholder="# 태그 입력 후 Enter" onkeydown="handleTagKey(event)">
-          </div>
-          <div class="tag-presets" id="tagPresets"></div>
-          <div class="tag-hint">💡 태그로 질문을 분류해봐요! (Enter 또는 쉼표로 추가)</div>          <div class="q-opts q-src-g">
-          </div>
-          <div class="q-opts">
-            <div class="q-opt-g">
-              <span>🍎 열매:</span>
-              <div class="q-fr-pick" id="qFrPick"></div>
-            </div>
-            <button class="anon-tog" id="anonTog" onclick="toggleAnon()">
-              <span>🕊️</span><span id="anonTxt">익명으로 심기</span>
-            </button>
-          </div>
-        </div>
-        <div class="q-msg" id="qMsg"></div>
-      </div>
-      <div class="cs">
         <div class="ql-h">
           <h4>📋 나의 질문들</h4>
           <div class="ql-tools">
+            <button class="ql-ask" onclick="openAskSheet()">✏️ 질문 심기</button>
             <span id="qCnt">0/0</span>
             <div class="view-seg">
               <button class="vseg on" id="vsegList" onclick="setQView('list')">📋 목록</button>
@@ -2768,15 +2782,37 @@ body[data-theme="cute"] .mc-btn.accent:hover{box-shadow:0 12px 26px rgba(245,166
 /* ════════════════════════════════════════════════════════════════════
    ⚙️ 학교 설정 — 새 학교는 아래 3줄만 고치면 됩니다! (설치 마법사로 자동 생성 가능)
    ════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   🧰 배포판(class-kit)은 config.js 의 window.CLASS_KIT_CONFIG 를 먼저 읽습니다.
+   설정 파일이 없으면 아래 기본값(우리 학교 값)으로 지금처럼 동작합니다.
+   ════════════════════════════════════════════════════════════════════ */
+const KIT = window.CLASS_KIT_CONFIG || {};
+const kitGet = (path, dflt) => { try{ const v = path.split('.').reduce((o,k)=>(o==null?undefined:o[k]), KIT); return (v===undefined||v===null||v==='') ? dflt : v; }catch(e){ return dflt; } };
+const kitTheme = (section) => { const t = kitGet('theme.'+section, null); if(!t || typeof t!=='object') return; const r=document.documentElement.style; Object.keys(t).forEach(k => { if(t[k]) r.setProperty(k.charAt(0)==='-'?k:'--'+k, String(t[k])); }); };
+const kitFooter = (label) => { if(!window.CLASS_KIT_CONFIG) return; const f=document.getElementById('app-credit'); if(!f){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', () => kitFooter(label)); return; }
+  const e = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const c = KIT.credits||{}, a = c.author||'조승재(과학이조선생)', lic = c.license||'CC BY-NC-SA 4.0';
+  const lu = c.licenseUrl||'https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ko', au = c.authorUrl||'';
+  const sch = kitGet('school.name',''), tch = kitGet('school.teacher','');
+  f.innerHTML = '원작 © 2026 ' + (au ? '<a href="'+e(au)+'" target="_blank" rel="noopener" style="color:inherit">'+e(a)+'</a>' : e(a))
+    + ' · <a href="'+e(lu)+'" target="_blank" rel="noopener" style="color:inherit">'+e(lic)+'</a>'
+    + (sch ? ' · 운영: '+e(sch)+(tch ? ' '+e(tch)+' 선생님' : '') : '')
+    + '<br><span style="font-size:11px;opacity:.85;">'+e(label)+' · 우리 반 도구 꾸러미 '+e(KIT.version||'')+'</span>'; };
 const HAENURI_CONFIG = {
-  schoolName : '해누리중학교',                                    // 학교 이름 (화면에 표시)
-  supabaseUrl: 'https://hmzklbrksfdhzsgwzfyg.supabase.co',        // Supabase Project URL
-  supabaseKey: 'sb_publishable_OFVhbjVPbJiMWXVz2nKQuw_m6RmVVZE',  // Supabase publishable 키
+  schoolName : kitGet('school.name', '해누리중학교'),                                   // 학교 이름 (화면에 표시)
+  supabaseUrl: kitGet('supabase.url', 'https://hmzklbrksfdhzsgwzfyg.supabase.co'),      // Supabase Project URL
+  supabaseKey: kitGet('supabase.key', 'sb_publishable_OFVhbjVPbJiMWXVz2nKQuw_m6RmVVZE'),  // Supabase publishable 키
 };
 /* ════════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL  = HAENURI_CONFIG.supabaseUrl;
 const SUPABASE_ANON = HAENURI_CONFIG.supabaseKey;
 const SCHOOL_NAME   = HAENURI_CONFIG.schoolName || '우리 학교';
+const SCHOOL_SHORT  = kitGet('school.short', String(SCHOOL_NAME).replace(/(중학교|고등학교|초등학교|학교)$/,'') || SCHOOL_NAME);
+const STUDENT_DOMAIN = kitGet('studentEmailDomain', 'haenuri.app');   // 학생 가짜 이메일 도메인 (세 앱 공통)
+const APP_NAME  = kitGet('brand.question', '질문 과수원');
+const APP_TAG   = kitGet('brand.questionSub', '질문하는 교실');
+const SUBJECT_WORD = kitGet('school.subject', '과학');
+const LEARNER   = kitGet('question.learnerText', '중학교 2학년');
 const GUIDE_URL = '';
 const VIDEO_URL = '';
 
@@ -2937,7 +2973,7 @@ const SOLVE_HOW = [
   {k:'cmp', ic:'📊', t:'비교', d:'둘을 나란히 놓고 견준다'},
   {k:'src', ic:'📚', t:'조사', d:'책·인터넷에서 찾는다'},
 ];
-const PICK_MAX = 2;   /* 한 차시에 남기는 대표 질문 수 */
+const PICK_MAX = Math.max(1, Number(kitGet('question.pickMax', 2)) || 2);   /* 한 차시에 남기는 대표 질문 수 */
 /* ══ ✨ 다듬기 전 / 후 — 우리 학교 2학년이 실제로 쓴 질문 ══════════════════
    2026-08 마찰전기 차시에서 나온 690개를 유형별로 갈라 짝지은 것이다.
    왼쪽도 우리 반, 오른쪽도 우리 반이다. 그게 이 표의 힘이다. */
@@ -3080,7 +3116,7 @@ function showLoading(t){const el=$('loadingTxt');if(el)el.textContent=t||'불러
 function hideLoading(){$('loading')?.classList.remove('show');}
 function shk(el){if(!el)return;el.style.animation='shake .4s ease';setTimeout(()=>el.style.animation='',500);}
 function td(){return new Date().toISOString().slice(0,10);}
-function fakeEmail(g,c,n){return `s${g}_${c}_${n}@haenuri.app`;}
+function fakeEmail(g,c,n){return `s${g}_${c}_${n}@${STUDENT_DOMAIN}`;}
 
 // 🧮 LaTeX 수식 렌더링 — $...$ 또는 $$...$$ 자동 감지
 function renderMath(rootEl){
@@ -4139,7 +4175,10 @@ async function bootstrapUser(){
 
   // 🌲 나무들 로드 (과목당 여러 그루)
   const _treeRes = await sb.from('trees').select('*')
-    .eq('user_id', S.user.id).order('sort_order', {ascending:true});
+    .eq('user_id', S.user.id)
+    .order('sort_order', {ascending:true})
+    .order('id', {ascending:true});   /* sort_order 가 동점이면 [0] 이 매번 바뀐다 —
+                                         «어제는 컸는데 오늘은 작다» 의 물리적 실체 */
   /* 실패하면 «나무 없음» 으로 만들지 않는다. 빈 상태에서 질문을 심으면
      ensureTree() 가 새 나무를 진짜로 만들어 버린다 — 잠깐의 오류가
      DB 에 흔적을 남기는 길이다. */
@@ -4155,7 +4194,10 @@ async function bootstrapUser(){
   });
 
   // 각 과목마다 나무가 하나라도 있게 보장 (하위호환 — 첫 실행 시 자동 생성)
-  for(const sub of S.subjects){
+  /* 못 불러온 상태에서는 «나무가 없다» 를 믿을 수 없다. 여기서 만들면 멀쩡한
+     나무를 두고 빈 나무가 하나 더 생기고, 그게 대문 나무가 되어 Lv.1 로 보인다.
+     (ensureTree 는 이미 같은 가드를 쓰고 있었는데 여기만 빠져 있었다) */
+  for(const sub of (loadOk() ? S.subjects : [])){
     if(!S.trees[sub.id] || S.trees[sub.id].length === 0){
       const def = {
         user_id: S.user.id,
@@ -4188,6 +4230,17 @@ async function bootstrapUser(){
       S.activeTreeId[subId] = S.trees[subId][0].id;
     }
   }
+  /* 마지막에 심은 나무가 있으면 그 나무로 시작한다. 이게 없으면 새로고침할
+     때마다 1번 나무로 돌아가서, 학생이 키우던 큰 나무는 옆 칸에 숨는다.
+     (기기마다 따로 기억하므로 학교 크롬북·집 컴퓨터는 각자 기억한다) */
+  try{
+    const _lt = lastTreeGet();
+    if(_lt && S.trees[_lt.subId] && S.trees[_lt.subId].some(function(x){
+      return String(x.id) === String(_lt.treeId);
+    })){
+      S.activeTreeId[_lt.subId] = _lt.treeId;
+    }
+  }catch(e){}
 
   // 질문 + 꼬리질문 한꺼번에 가져오기
   const _qRes = await sb.from('questions').select('*')
@@ -4314,8 +4367,8 @@ function swTab(t){
   if(t==='hall') renderHallOfFame();
   if(t==='materials') renderMaterials();
   if(t==='growth') renderGrowthMirror();
-  // 질문 탭에선 FAB 숨김(이미 작성 화면이므로)
-  const fab=$('fabAsk'); if(fab) fab.style.display = (t==='questions')?'none':'';
+  /* 작성 폼이 시트로 들어갔으니 질문 탭에서도 FAB 가 곧 «심기» 다 */
+  const fab=$('fabAsk'); if(fab) fab.style.display = '';
 }
 function openMore(){ $('moreSheet')?.classList.add('show'); }
 // 🔑 학생 본인 비밀번호 변경
@@ -4439,7 +4492,24 @@ async function doChangePw(){
 }
 function closeMore(){ $('moreSheet')?.classList.remove('show'); }
 function swMore(t){ closeMore(); swTab(t); }
-function fabAskTap(){ swTab('questions'); setTimeout(()=>{ const i=$('qInp'); if(i){ i.focus(); i.scrollIntoView({behavior:'smooth',block:'center'}); } }, 60); }
+/* ✏️ 질문 심기 시트 — 예전엔 작성 폼이 질문 탭 첫 1.5화면을 차지해서, 내 질문을
+   «보러» 온 학생도 매번 폼을 지나쳐 내려가야 했다. 폼은 시트로, 목록이 첫 화면. */
+function openAskSheet(){
+  const s = $('askSheet'); if(!s) return;
+  s.classList.add('show');
+  document.body.classList.add('ask-open');
+  try{ renderTagPresets();renderFruitPicker();renderAnonTog();renderTreePicker();renderStems();renderSourcePicker();renderUnitPicker(); }catch(e){}
+  setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 80);
+}
+function closeAskSheet(){
+  const s = $('askSheet'); if(!s) return;
+  s.classList.remove('show');
+  document.body.classList.remove('ask-open');
+}
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && $('askSheet') && $('askSheet').classList.contains('show')) closeAskSheet();
+});
+function fabAskTap(){ swTab('questions'); openAskSheet(); }
 function toggleQMore(){
   const box=$('qMore'), btn=$('qMoreToggle'); if(!box) return;
   const open = box.style.display==='none';
@@ -4572,9 +4642,10 @@ function renderSubTabs(){
 }
 
 function gD(){
-  // 현재 활성 나무의 질문만 집계 (레벨/진행도용)
+  /* 지금은 아무도 부르지 않는다. 부르게 되면 renderStats 와 같은 기준
+     (내가 심은 질문 전체)이어야 하므로 함께 맞춰 둔다. */
   const treeId = curTreeId();
-  const qs = treeId ? qsInTree(S.activeSub, treeId) : [];
+  const qs = allMyQs();
   // 과목 전체 질문도 별도 집계
   const allInSub = qsInSub(S.activeSub);
   return {
@@ -4588,29 +4659,42 @@ function gD(){
 }
 
 function renderStats(){
-  // 현재 포커스된 나무 기준
-  const subId = S.activeSub;
-  const treeId = S.activeTreeId?.[subId] || (S.trees[subId]?.[0]?.id);
-  const tqs = treeId ? qsInTree(subId, treeId) : qsInSub(subId);
-  const t = tqs.length;
-  const r = tqs.filter(q=>q.resolved).length;
+  /* ══ 근본책 ══════════════════════════════════════════════════════════════
+     레벨을 «지금 보고 있는 나무 한 그루» 로 세면, 나무를 한 그루 더 심거나
+     과목이 갈리는 순간 아무것도 잃지 않았는데 Lv.7 이 Lv.4 로 «작아진다».
+     (질문 12개 = Lv.7 → 6+6 으로 갈리면 양쪽 다 Lv.4)
+     그래서 여기서는 «내가 심은 질문 전부» 로 센다. 반 숲도, 교사 대시보드도
+     학생의 전체 질문으로 세고 있어서 이렇게 해야 세 화면이 같은 말을 한다.
+     그루별 레벨은 위 숲 카드(renderTree)에 그대로 남는다.                  */
+  const mine = allMyQs();
+  const t = mine.length;
+  const r = mine.filter(q=>q.resolved).length;
   const lv = Math.min(Math.floor(t/2)+1, 10);
 
+  const subId = S.activeSub;
   const sub = S.subjects.find(s=>s.id===subId);
-  const tree = (S.trees[subId]||[]).find(t=>t.id===treeId);
+  const nTree = allTrees().length;
 
   $('treeSub').textContent = sub ? sub.icon+' '+sub.label : '';
-  // 나무 개수가 여러 개면 현재 나무 이름도 표시
-  const multiTree = (S.trees[subId]||[]).length > 1;
-  $('treeTtl').textContent = multiTree && tree
-    ? `${tree.icon||'🌳'} ${tree.name||'나무'}`
-    : (S.name||'나')+'의 질문 나무';
+  $('treeTtl').textContent = (S.name||'나')+'의 질문 나무';
+  const _note = $('treeTtlNote');
+  if(_note){
+    _note.style.display = (nTree > 1) ? '' : 'none';
+    _note.textContent = (nTree > 1)
+      ? ('🌳 나무 ' + nTree + '그루를 모두 합한 «나» 전체예요 (나무마다의 레벨은 위 카드에)')
+      : '';
+  }
   $('sLv').textContent='Lv.'+lv;
   $('sT').textContent=t; $('sR').textContent=r; $('sFI').textContent=S.fruit;
   $('qCnt').textContent=r+'/'+t+' 해결';
   $('pC').textContent='Lv.'+lv;
-  $('pN').textContent='Lv.'+(lv+1)+'까지 '+Math.max(0,(lv+1)*2-t)+'개 필요';
-  $('pF').style.width=(t>0?Math.min(100,((t%((lv+1)*2))/((lv+1)*2))*100||100):0)+'%';
+  /* 레벨은 질문 2개마다 오른다: lv = floor(t/2)+1 → 다음 레벨은 t = lv*2 부터.
+     예전 식 (lv+1)*2-t 는 «1개 남았는데 3개 필요» 라고 말하고 있었다. */
+  const need = Math.max(0, lv*2 - t);
+  const inLv = Math.max(0, Math.min(2, t - (lv-1)*2));
+  $('pN').textContent = (lv>=10) ? '가장 큰 나무예요! 🏆'
+                                 : ('Lv.'+(lv+1)+'까지 '+need+'개 필요');
+  $('pF').style.width = ((lv>=10) ? 100 : Math.round(inLv/2*100)) + '%';
 }
 
 // ============================================================================
@@ -5943,9 +6027,16 @@ function renderTree(){
           const d = Math.abs(mid - center);
           if(d < bestDist){ bestDist = d; bestIdx = i; }
         });
-        const tree = trees[bestIdx];
-        if(tree && S.activeTreeId[subId] !== tree.id){
-          S.activeTreeId[subId] = tree.id;
+        /* trees 의 원소는 {tree, subId} 행이다. 예전 코드는 행을 나무로 착각해
+           tree.id 가 undefined 였고, subId 는 이 스코프에 아예 없는 이름이라
+           ReferenceError 로 죽어 있었다 — 밀어도 Lv. 이 안 따라오던 이유. */
+        const _row = trees[bestIdx];
+        const _rsub = _row && _row.subId;
+        const _rtid = _row && _row.tree && _row.tree.id;
+        if(_row && _rsub && (S.activeTreeId[_rsub] !== _rtid || _rsub !== S.activeSub)){
+          const _changedSub = (_rsub !== S.activeSub);
+          pickTree(_rsub, _rtid);          /* 과목까지 옮기고 서버에도 저장 */
+          if(_changedSub){ try{ renderSubTabs(); renderQs(); }catch(e){} }
           // 점 인디케이터만 업데이트 (전체 재렌더링 방지)
           document.querySelectorAll('.forest-dot').forEach((el,i)=>{
             el.classList.toggle('on', i===bestIdx);
@@ -6274,26 +6365,42 @@ async function delTree(treeId){
 
   if(loadBlocked('나무 베어내기')) return;
   const tqs = qsInTree(subId, treeId);
+  const keep = trees.filter(t => t.id !== treeId);
+  const moveTo = keep[0];                      /* 위 가드 덕에 반드시 있다 */
   const msg = tqs.length
-    ? `"${tree.icon} ${tree.name}" 나무를 베어낼까요?\n\n⚠️ 이 나무의 질문 ${tqs.length}개도 모두 삭제됩니다.`
+    ? `"${tree.icon} ${tree.name}" 나무를 베어낼까요?\n\n🌱 이 나무의 질문 ${tqs.length}개는 지워지지 않고\n"${moveTo.icon||'🌳'} ${moveTo.name||'나무'}" 로 옮겨져요.`
     : `"${tree.icon} ${tree.name}" 나무를 베어낼까요?`;
   if(!confirm(msg)) return;
 
-  // 나무에 속한 질문들 삭제
+  /* 질문을 «옮긴다». 예전에는 여기서 지웠다 — 나무 한 그루를 정리하려다
+     질문이 통째로 사라졌다. 옮기기가 하나라도 실패하면 나무를 베지 않는다. */
   if(tqs.length){
     const ids = tqs.map(q => q.id);
-    await sb.from('questions').delete().in('id', ids);
+    const mv = await sb.from('questions')
+      .update({tree_id: moveTo.id})
+      .in('id', ids).eq('user_id', S.user.id).select('id');
+    if(mv.error || !mv.data || mv.data.length !== ids.length){
+      alert('질문을 옮기지 못해서 나무를 그대로 두었어요.\n잠시 뒤에 다시 해 주세요 🌱');
+      return;
+    }
   }
   const {error} = await sb.from('trees').delete().eq('id', treeId).eq('user_id', S.user.id);
   if(error){ alert('삭제 실패: ' + error.message); return; }
 
-  S.trees[subId] = trees.filter(t => t.id !== treeId);
-  if(S.questions[subId]) delete S.questions[subId][treeId];
+  S.trees[subId] = keep;
+  if(S.questions[subId] && !Array.isArray(S.questions[subId])){
+    const _box = S.questions[subId];
+    const _moved = _box[treeId] || [];
+    if(!_box[moveTo.id]) _box[moveTo.id] = [];
+    _moved.forEach(function(q){ q.tree_id = moveTo.id; _box[moveTo.id].push(q); });
+    delete _box[treeId];
+  }
   if(S.activeTreeId[subId] === treeId){
     S.activeTreeId[subId] = S.trees[subId][0]?.id || null;
   }
 
-  toast('🪓 나무를 베어냈어요');
+  toast(tqs.length ? ('🪓 나무를 베고 질문 ' + tqs.length + '개는 옮겼어요')
+                   : '🪓 나무를 베어냈어요');
   render();
 }
 
@@ -6391,21 +6498,40 @@ async function loadNowUnit(){
       return gOk && cOk && tOk;
     }) || null;
   }catch(e){ _nowUnit = null; }
+  await loadLessonUnits();
 }
 
-/* 고를 수 있는 차시 — 지금 차시 + 내 자료들의 차시(최근 순) */
+/* 📑 선생님이 «미리» 올려 둔 차시 목록 (16_차시목록.sql).
+   지금 차시는 3시간이면 꺼지지만 이 목록은 학기 내내 남는다. */
+let _lessonUnits = [];
+async function loadLessonUnits(){
+  if(!S.user || S.guest) return;
+  try{
+    const {data, error} = await sb.from('lesson_units').select('*')
+      .order('sort_order', {ascending:false}).order('id', {ascending:false}).limit(80);
+    if(error){ _lessonUnits = []; return; }        /* 표가 아직 없으면 조용히 */
+    const g = S.grade ? Number(S.grade) : null;
+    _lessonUnits = (data || []).filter(function(a){
+      const gOk = !a.target_grade || Number(a.target_grade) === g;
+      const tOk = !(S.myTeacherIds && S.myTeacherIds.size) ||
+                  S.myTeacherIds.has(Number(a.teacher_id));
+      return gOk && tOk;
+    });
+  }catch(e){ _lessonUnits = []; }
+}
+
+/* 고를 수 있는 차시 — 지금 차시 → 선생님 차시 목록(맨 위가 먼저) → 자료의 차시 */
 function unitOptions(){
   const out = [], seen = {};
-  if(_nowUnit && (_nowUnit.unit||'').trim()){
-    out.push({ u: _nowUnit.unit.trim(), now: true });
-    seen[_nowUnit.unit.trim()] = 1;
-  }
-  (_materials || []).forEach(function(m){
-    const u = (m.unit || '').trim();
+  const add = function(u, extra){
+    u = (u || '').trim();
     if(!u || seen[u]) return;
-    seen[u] = 1; out.push({ u: u });
-  });
-  return out.slice(0, 6);
+    seen[u] = 1; out.push(Object.assign({ u: u }, extra || {}));
+  };
+  if(_nowUnit) add(_nowUnit.unit, { now: true });
+  (_lessonUnits || []).forEach(function(a){ add(a.unit, { listed: true }); });
+  (_materials || []).forEach(function(m){ add(m.unit); });
+  return out.slice(0, 24);
 }
 
 /* 아직 안 골랐으면 기본값을 정해 준다 — 선생님이 켜 둔 차시가 첫째,
@@ -6440,6 +6566,10 @@ function renderUnitPicker(){
     note.style.display = auto ? '' : 'none';
     if(auto) note.innerHTML = '선생님이 <b>지금 차시</b>를 정해 두셔서 저절로 골라졌어요.';
   }
+  const hint = $('unitPickerHint');
+  if(hint) hint.textContent = (opts.length > 4) ? '← 옆으로 밀어 보세요' : '';
+  /* 고른 칩이 화면 밖이면 보이게 끌어온다 */
+  try{ const on = box.querySelector('.up-opt.on'); if(on && on.scrollIntoView) on.scrollIntoView({block:'nearest', inline:'nearest'}); }catch(e){}
 }
 
 function setPendingUnit(u){
@@ -6821,7 +6951,11 @@ function unitCode(u){
 }
 function unitShort(u){
   const c = unitCode(u);
-  return c || (String(u || '').slice(0, 10) || '기타');
+  if(c) return c;
+  /* «2-4차시 전류와 저항» 처럼 코드가 아닌 이름은 10자에서 뚝 잘려 «전류와» 로 끝났다 */
+  const s = String(u || '').trim();
+  if(!s) return '기타';
+  return s.length > 14 ? (s.slice(0, 13) + '…') : s;
 }
 
 /* 자료들을 차시별로 묶는다. 차시가 없는 자료는 «기타» 로 */
@@ -8060,7 +8194,7 @@ async function addQ(ctx){
     delete payload.tree_id;
     const retry = await sb.from('questions').insert(payload).select().single();
     data = retry.data; error = retry.error;
-    if(!error){ reloadTrees(); }
+    if(!error){ await reloadTrees(); }
   }
   _addQBusy=false;
   if(_btn) _btn.disabled=false;
@@ -8071,15 +8205,23 @@ async function addQ(ctx){
     return;
   }
 
+  /* DB 가 실제로 어디에 달았는지에 맞춘다. 재시도로 tree_id 가 빠졌는데
+     화면에만 고른 나무에 달아 두면, 새로고침 때 질문이 다른 나무로 «옮겨져»
+     보이고 내가 고른 나무만 하나 줄어든다 — 어제 Lv.7, 오늘 Lv.4 의 정체.
+     tree_id 가 비면 로더(4204)와 똑같이 그 과목의 첫 나무로 맞춘다. */
+  const _savedTree = (data && data.tree_id != null)
+    ? data.tree_id
+    : ((S.trees[plantSub] && S.trees[plantSub][0]) ? S.trees[plantSub][0].id : treeId);
+
   if(!S.questions[plantSub] || Array.isArray(S.questions[plantSub])) S.questions[plantSub]={};
-  if(!S.questions[plantSub][treeId]) S.questions[plantSub][treeId]=[];
-  S.questions[plantSub][treeId].push({
+  if(!S.questions[plantSub][_savedTree]) S.questions[plantSub][_savedTree]=[];
+  S.questions[plantSub][_savedTree].push({
     id:data.id,text:data.text,resolved:false,date:data.question_date,hint:null,
     tags:data.tags||[], fruit:data.fruit_emoji||null,
     is_anonymous:data.is_anonymous||false, answer_source:data.answer_source||null,
     phase:data.phase||'before', parent_id:null, self_check:null,
     water_count:0, watered_by:[], branches:[],
-    tree_id: treeId,
+    tree_id: _savedTree,
     material_id: data.material_id||null,
     unit: data.unit||null, teacher_nudge:null, teacher_stamp:null,
     finding:null, still_wondering:null,
@@ -8098,9 +8240,12 @@ async function addQ(ctx){
 
   /* 방금 달린 나무로 화면을 옮긴다. 다른 과목 나무에 달았으면 과목까지 —
      안 그러면 심었는데 그 나무가 안 보여서 «없어졌다» 고 한다. */
-  S.activeSub = plantSub;
-  S.activeTreeId[plantSub] = treeId;
-  lastTreePut(plantSub, treeId);   /* 다음에도 여기로 */
+  /* 예전에는 화면만 옮기고 profiles.active_sub 에는 안 썼다. 그래서 나무를
+     제대로 골라 심어 준 학생도 다음 날 앱을 열면 여전히 빈 새 과목으로
+     시작해서 Lv.1 이 되었다 — «고쳐 줬는데 오늘 또 작아졌어요» 의 정체.
+     pickTree 가 과목 이동을 서버에까지 저장한다. */
+  pickTree(plantSub, _savedTree);
+  lastTreePut(plantSub, _savedTree);   /* 다음에도 여기로 */
 
   /* 고른 나무는 그대로 둔다. 자료 시트에서 연달아 심을 때 매번 다시
      고르게 하면 첫 질문만 제자리에 가고 나머지는 딴 데로 간다. */
@@ -8110,6 +8255,9 @@ async function addQ(ctx){
   mascotPop((S.phase==='after')?'멋진 닫기 질문이에요! 🌙':'좋은 질문 하나가 자랐어요! 🌱');
   setTimeout(()=>{ if(m) m.className = (_msgId==='msMsg'?'ms-msg':'q-msg'); },1500);
   if(typeof ctx.after === 'function') ctx.after(data);
+  /* 질문 탭 시트에서 심었으면 닫는다 — 새 카드가 맨 위에 올라오는 걸 봐야 «심어졌다» 를 안다.
+     자료 시트(msInp)는 연달아 심으므로 그대로 둔다. */
+  if(_inpId === 'qInp'){ setTimeout(closeAskSheet, 350); }
   render();
 }
 
@@ -8202,13 +8350,20 @@ async function delQ(id){
   if(!confirm('이 질문을 삭제할까요? (꼬리질문도 함께 삭제돼요)')) return;
   const {error}=await sb.from('questions').delete().eq('id',id).eq('user_id',S.user.id);
   if(error){alert('삭제 실패: '+error.message);return;}
-  // 모든 나무에서 해당 질문 제거
-  const subMap = S.questions[S.activeSub];
-  if(subMap && !Array.isArray(subMap)){
-    for(const tid in subMap){
-      subMap[tid] = subMap[tid].filter(q => q.id !== id);
+  /* 질문 목록은 모든 과목을 펼쳐 보여주는데(allMyQs), 지우는 뒷정리는 보고
+     있던 과목만 훑고 있었다. 다른 과목 질문을 지우면 DB 에서는 사라졌는데
+     화면 나무는 그대로여서, 다음에 열 때 갑자기 줄어들었다. */
+  Object.keys(S.questions || {}).forEach(function(sid){
+    const m = S.questions[sid];
+    if(!m) return;
+    if(Array.isArray(m)){
+      S.questions[sid] = m.filter(function(q){ return q.id !== id; });
+      return;
     }
-  }
+    for(const tid in m){
+      m[tid] = (m[tid] || []).filter(function(q){ return q.id !== id; });
+    }
+  });
   S.expandedBranches.delete(id);
   render();
 }
@@ -8233,8 +8388,8 @@ async function waterQ(ev, qid, ownerId){
     return;
   }
 
-  // S.frView.questions 에서 찾음 (친구 질문)
-  const q = S.frView?.questions?.find(x=>x.id===qid);
+  // 친구 나무 모달이든 우리 반 보드든 같은 객체를 찾는다
+  const q = _peerFind(qid);
   if(!q){toast('질문을 찾을 수 없어요');return;}
 
   const watered=(q.watered_by||[]).includes(S.user.id);
@@ -8263,15 +8418,14 @@ async function waterQ(ev, qid, ownerId){
 
   // 물 주는 사람에게 도토리 +1
   await addSeeds(1, '💧 물 주기 +1 🌰');
-  // 모달 내 버튼 갱신
-  renderFrViewList();
+  _peerRerender();
 }
 
 // 🗳️ 함께 탐구하고 싶은 질문에 투표 (토글)
 async function voteExplore(ev, qid){
   if(guestNudge()) return;
   ev?.stopPropagation?.();
-  const q = S.frView?.questions?.find(x=>x.id===qid);
+  const q = _peerFind(qid);
   if(!q) return;
   const voters = q.explore_voters||[];
   const voted = voters.includes(S.user.id);
@@ -8283,7 +8437,7 @@ async function voteExplore(ev, qid){
   if(error){ console.warn('vote failed:', error); toast('투표를 저장하지 못했어요 😢'); return; }
   q.explore_votes=newCnt; q.explore_voters=newVoters;
   toast(voted ? '투표를 취소했어요' : '🗳️ 함께 탐구하고 싶은 질문에 투표했어요!');
-  renderFrViewList();
+  _peerRerender();
 }
 
 // ============================================================================
@@ -8343,6 +8497,91 @@ function closeFrView(){
   if($('tp-forest')?.classList.contains('on')) renderForest();
 }
 
+/* ── 친구 질문 카드 — 내 카드(qc) 와 같은 껍데기 ─────────────────────────────
+   친구 질문이 내 것과 다르게 생기면 «다른 종류의 물건» 으로 읽힌다.
+   친구 나무(모달)와 우리 반 보드가 이 하나를 같이 쓴다. 뒤에 «우리 반» 흐름도. */
+function friendCardHTML(q, o){
+  o = o || {};
+  const me = S.user ? S.user.id : null;
+  const owner = o.ownerId || q.user_id || null;
+  const anon = !!q.is_anonymous;
+  const who = anon ? '🕊️ 익명' : esc(o.who || '친구');
+  const watered = (q.watered_by||[]).includes(me);
+  const voted = (q.explore_voters||[]).includes(me);
+  const peers = q.peer_answers || [];
+  const hasMyPeer = peers.some(function(pa){ return pa.user_id === me; });
+  const mine = !!(me && owner === me);
+  const canWater = !mine && !watered && canWaterQuestions();
+  const shown = qShow(q);
+  const qt = qType(shown);
+  const fruit = q.fruit || q.fruit_emoji || '🍎';
+  const dateTxt = q.date || q.question_date || (q.created_at ? String(q.created_at).slice(0,10) : '');
+  const sc = selfCheckCount(q);
+
+  let peerHtml = '';
+  if(peers.length){
+    peerHtml = '<div class="fv-peer-answers">' +
+      peers.slice(0, 3).map(function(pa){
+        return '<div class="fv-peer-ans' + (pa.user_id === me ? ' mine' : '') + '">' +
+          '<div class="fv-peer-ans-hdr">' +
+            '<span class="fv-peer-ans-author">' + esc(pa.author_name || '익명 친구') + '</span>' +
+            '<span class="fv-peer-ans-time">' + (pa.created_at ? new Date(pa.created_at).toLocaleDateString('ko-KR', {month:'short',day:'numeric'}) : '') + '</span>' +
+            (pa.user_id === me ? '<button class="fv-peer-del" onclick="deletePeerAnswer(' + q.id + ',' + pa.id + ')">×</button>' : '') +
+          '</div>' +
+          '<div class="fv-peer-ans-txt">' + esc(pa.text) + '</div>' +
+        '</div>';
+      }).join('') +
+      (peers.length > 3 ? '<button class="fv-peer-more" onclick="alert(' + JSON.stringify('전체 답변 ' + peers.length + '개:' + String.fromCharCode(10,10) + peers.map(function(p){ return p.author_name + ': ' + p.text; }).join(String.fromCharCode(10,10))).split('"').join('&quot;') + ')">▼ ' + (peers.length-3) + '개 더 보기</button>' : '') +
+    '</div>';
+  }
+
+  return '<div class="qc fr ' + (q.resolved ? 'res' : 'unr') + (anon ? ' anon' : '') + ' ph-' + (q.phase||'before') + '" data-qid="' + q.id + '">' +
+    '<div class="qc-in">' +
+      '<div class="qc-who"><b>' + who + '</b>' +
+        (q.unit ? ' · <span class="qc-unit-b">📑 ' + esc(q.unit) + '</span>' : '') +
+        (dateTxt ? ' · 📅 ' + esc(dateTxt) : '') + '</div>' +
+      '<div class="qc-t" data-math="1">' +
+        '<span class="qc-phase ph-' + (q.phase||'before') + '" title="' + (q.phase==='after' ? '수업 닫기 질문' : '수업 열기 질문') + '">' + (q.phase==='after' ? '🌙' : '🌅') + '</span> ' +
+        '<span class="qtype qtype-' + qt.cls + '" title="질문 유형: ' + qt.label + '">' + qt.icon + ' ' + qt.label + '</span> ' +
+        escWithMath(shown) +
+        (q.resolved ? ' <span class="qc-fr" title="열매를 맺은 질문">' + fruit + '</span>' : '') +
+      '</div>' +
+      '<div class="qc-d">' +
+        (q.resolved ? '<span class="qc-solved-b">🍎 열매 맺음</span>' : '') +
+        (sc ? '<span class="qc-sc-badge">🎯 ' + sc + '/7</span>' : '') +
+        (q.water_count ? '<span>💧 ' + q.water_count + '</span>' : '') +
+        (q.explore_votes ? '<span>🗳️ ' + q.explore_votes + '</span>' : '') +
+        (peers.length ? '<span style="color:#2196F3;font-weight:700">💬 ' + peers.length + '</span>' : '') +
+      '</div>' +
+      peerHtml +
+    '</div>' +
+    '<div class="qc-a">' +
+      (mine ? '<span class="qbp qbp-mine">🙋 내 질문</span>' :
+        '<button class="qbp qbp-water' + (watered ? ' done' : '') + '" onclick="waterQ(event,' + q.id + ',' + JSON.stringify(String(owner||'')).split('"').join('&quot;') + ')"' + (canWater ? '' : ' disabled') + ' title="' + (watered ? '이미 물을 줬어요' : '나도 궁금한 질문에 물 주기') + '">💧 ' + (watered ? '물 줬어요' : '나도 궁금해') + '</button>' +
+        '<button class="qbp qbp-vote' + (voted ? ' on' : '') + '" onclick="voteExplore(event,' + q.id + ')" title="같이 탐구하고 싶은 질문에 투표">🗳️ ' + (voted ? '투표함' : '같이 탐구') + '</button>' +
+        (hasMyPeer ? '<span class="qbp qbp-peer done">✓ 답 남김</span>' : '<button class="qbp qbp-peer" onclick="openPeerAnswer(' + q.id + ')" title="친구 질문에 내가 아는 것 남기기">💬 답해줄게</button>')) +
+      (o.treeBtn && !anon && !mine ? '<button class="qbp qbp-tree" onclick="openClassmateTree(' + JSON.stringify(String(q.user_id||'')).split('"').join('&quot;') + ')" title="이 친구의 나무 보기">🌳 나무</button>' : '') +
+    '</div>' +
+  '</div>';
+}
+
+/* 친구 질문을 어느 화면에서 만졌든 같은 객체를 찾고, 열려 있는 화면을 다시 그린다 */
+function _peerFind(qid){
+  let q = (S.frView && S.frView.questions) ? S.frView.questions.find(function(x){ return x.id === qid; }) : null;
+  if(!q && _classBoardCache && _classBoardCache.list) q = _classBoardCache.list.find(function(x){ return x.id === qid; }) || null;
+  return q || null;
+}
+function _peerRerender(){
+  try{
+    if(S.frView && $('mFrView') && $('mFrView').classList.contains('show')) renderFrViewList();
+    const board = $('forestBoard');
+    const modeBtn = document.querySelector('.fmode.on');
+    if(board && board.style.display !== 'none' && _classBoardCache && modeBtn && modeBtn.dataset.mode === 'board'){
+      _renderClassKanban(board, _classBoardCache.list, _classBoardCache.nameById);
+    }
+  }catch(e){}
+}
+
 function renderFrViewList(){
   const el=$('fvList');
   if(!el || !S.frView) return;
@@ -8365,66 +8604,18 @@ function renderFrViewList(){
     return;
   }
 
-  let html = gateHtml;
-  qs.forEach(q=>{
-    const watered = (q.watered_by||[]).includes(S.user?.id);
-    const fruit = q.fruit || '🍎';
-    const disabled = watered || !canWaterQuestions();
-    const peerAnswers = q.peer_answers || [];
-    const hasMyPeerAnswer = peerAnswers.some(pa => pa.user_id === S.user?.id);
-    html += `
-      <div class="fv-q${q.resolved?' resolved':''}">
-        <div class="fv-q-hdr">
-          <div class="fv-q-txt">${esc(q.text)}</div>
-          ${q.resolved?`<div class="fv-q-fr">${fruit}</div>`:''}
-        </div>
-        <div class="fv-q-meta">
-          <span>📅 ${q.date||''}</span>
-          ${q.resolved?`<span style="color:var(--pr);font-weight:700">✓ 해결</span>`:''}
-          ${q.is_anonymous?`<span class="anon-bdg">🕊️ 익명</span>`:''}
-          ${q.water_count?`<span>💧 ${q.water_count}명</span>`:''}
-          ${peerAnswers.length?`<span style="color:#2196F3;font-weight:700">💬 ${peerAnswers.length}개 답변</span>`:''}
-        </div>
-        ${peerAnswers.length ? `
-          <div class="fv-peer-answers">
-            ${peerAnswers.slice(0, 3).map(pa => `
-              <div class="fv-peer-ans${pa.user_id===S.user?.id?' mine':''}">
-                <div class="fv-peer-ans-hdr">
-                  <span class="fv-peer-ans-author">${esc(pa.author_name || '익명 친구')}</span>
-                  <span class="fv-peer-ans-time">${pa.created_at ? new Date(pa.created_at).toLocaleDateString('ko-KR', {month:'short',day:'numeric'}) : ''}</span>
-                  ${pa.user_id === S.user?.id ? `<button class="fv-peer-del" onclick="deletePeerAnswer(${q.id},${pa.id})">×</button>` : ''}
-                </div>
-                <div class="fv-peer-ans-txt">${esc(pa.text)}</div>
-              </div>
-            `).join('')}
-            ${peerAnswers.length > 3 ? `<button class="fv-peer-more" onclick="alert('전체 답변 ${peerAnswers.length}개:\\n\\n' + ${JSON.stringify(peerAnswers.map(p=>p.author_name+': '+p.text).join('\\n\\n'))})">▼ ${peerAnswers.length-3}개 더 보기</button>` : ''}
-          </div>
-        ` : ''}
-        <div class="fv-q-act">
-          <button class="fv-w-btn" onclick="waterQ(event,${q.id},'${esc(S.frView.profile.id)}')" ${disabled?'disabled':''}>
-            ${watered?'💧 이미 물을 줬어요':'💧 나도 궁금해!'}
-            ${q.water_count?`<span class="wc-bdg">${q.water_count}</span>`:''}
-          </button>
-          <button class="fv-vote-btn${(q.explore_voters||[]).includes(S.user?.id)?' voted':''}" onclick="voteExplore(event,${q.id})">
-            ${(q.explore_voters||[]).includes(S.user?.id)?'🗳️ 투표함':'🗳️ 같이 탐구하고 싶어요'}
-            ${q.explore_votes?`<span class="wc-bdg">${q.explore_votes}</span>`:''}
-          </button>
-          ${!hasMyPeerAnswer && S.frView.profile.id !== S.user?.id ? `
-            <button class="fv-peer-btn" onclick="openPeerAnswer(${q.id})">
-              💬 내가 답해줄게!
-            </button>
-          ` : hasMyPeerAnswer ? `
-            <span class="fv-peer-done">✓ 답변 남김</span>
-          ` : ''}
-        </div>
-      </div>`;
-  });
+  const _who = (S.frView.profile.number ? S.frView.profile.number + '번 ' : '') + (S.frView.profile.name || '친구');
+  const html = gateHtml + '<div class="ql">' +
+    qs.map(function(q){ return friendCardHTML(q, { who:_who, ownerId:S.frView.profile.id }); }).join('') +
+  '</div>';
   el.innerHTML = html;
+  if(window.MathJax?.typesetPromise){ try{ MathJax.typesetPromise([el]); }catch(e){} }
 }
 
 // 또래 답변 작성
 async function openPeerAnswer(qid){
-  const q = (S.frView.questions||[]).find(x=>x.id===qid);
+  if(guestNudge()) return;
+  const q = _peerFind(qid);
   if(!q) return;
   const ans = prompt(`💬 친구의 질문에 답해보세요!\n\n"${q.text}"\n\n답변 (10자 이상):`, '');
   if(!ans) return;
@@ -8448,7 +8639,7 @@ async function openPeerAnswer(qid){
     if(!q.peer_answers) q.peer_answers = [];
     q.peer_answers.push(data);
     toast('💬 친구에게 답을 남겼어요! 🌰+2');
-    renderFrViewList();
+    _peerRerender();
   }catch(e){
     toast('오류: ' + (e.message||''));
   }
@@ -8459,12 +8650,12 @@ async function deletePeerAnswer(qid, paId){
   const uid = await freshUid();
   const {error} = await sb.from('peer_answers').delete().eq('id', paId).eq('user_id', uid || S.user.id);
   if(error){ toast('삭제 실패'); return; }
-  const q = (S.frView.questions||[]).find(x=>x.id===qid);
+  const q = _peerFind(qid);
   if(q && q.peer_answers){
     q.peer_answers = q.peer_answers.filter(pa => pa.id !== paId);
   }
   toast('답변을 삭제했어요');
-  renderFrViewList();
+  _peerRerender();
 }
 
 // ============================================================================
@@ -8702,11 +8893,22 @@ async function submitLiveQuestion(sessionId){
   const s=_liveSession; if(!s||s.id!==sessionId){ toast('세션이 종료됐어요'); return; }
   const uid = await freshUid();
   if(!uid){ toast('로그인이 풀렸어요. 다시 로그인해 주세요.'); return; }
-  // 세션 과목에 맞는 나무 찾기 (없으면 활성 나무/orphan)
+  /* 라이브만 «그 과목의 1번 나무» 로 못박혀 있었다. 수업 중 모은 질문이 전부
+     첫 나무로 몰려서, 학생이 키우던 나무는 그대로인데 1번만 커졌다.
+     심는 곳을 정하는 규칙(plantTarget)을 여기서도 그대로 쓴다. */
   let subId = s.subject_id || S.activeSub || null;
   let treeId = null;
-  if(subId && S.trees[subId] && S.trees[subId][0]) treeId = S.trees[subId][0].id;
-  else if(S.activeSub && S.trees[S.activeSub] && S.trees[S.activeSub][0]){ subId=S.activeSub; treeId=S.trees[S.activeSub][0].id; }
+  let _pt = null;
+  try{ _pt = plantTarget(); }catch(e){ _pt = null; }
+  if(subId && _pt && String(_pt.subId) === String(subId) && _pt.treeId != null){
+    treeId = _pt.treeId;                                   /* 고른 나무 / 마지막에 심은 나무 */
+  } else if(subId && S.trees[subId] && S.trees[subId].length){
+    treeId = treeExists(subId, S.activeTreeId[subId])
+      ? S.activeTreeId[subId]                              /* 지금 보고 있는 나무 */
+      : S.trees[subId][0].id;
+  } else if(_pt && _pt.treeId != null){
+    subId = _pt.subId; treeId = _pt.treeId;                /* 세션 과목엔 나무가 없다 */
+  }
   /* 라이브만 chkQ 를 안 거치고 있었다 — 5글자 검사도 의문사 검사도 없었다. */
   const _r = await chkQ(t);
   if(!_r.ok){ toast(_r.msg); return; }
@@ -8782,9 +8984,47 @@ function parseYouTubeId(url){
   const m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);
   return m?m[1]:'';
 }
+/* ── 🖼️ 자료 보기 방식 — 갤러리(기본) / 자세히. 기기마다 기억한다 ─────────── */
+const MAT_VIEW_KEY = 'qt_mat_view_v1';
+let _matView = 'gallery';
+try{ const v = localStorage.getItem(MAT_VIEW_KEY); if(v === 'list' || v === 'gallery') _matView = v; }catch(e){}
+function setMatView(v){
+  _matView = (v === 'list') ? 'list' : 'gallery';
+  try{ localStorage.setItem(MAT_VIEW_KEY, _matView); }catch(e){}
+  renderMaterials();
+}
+/* «오늘 / 어제 / 3일 전 / 9.2.» — 반마다 수업 날짜가 달라 절대 날짜만으론 «최신» 이 안 보인다 */
+function relDay(ts){
+  const d = new Date(ts); if(isNaN(d)) return '';
+  const a = new Date(d); a.setHours(0,0,0,0);
+  const n = new Date();  n.setHours(0,0,0,0);
+  const diff = Math.round((n - a) / 86400000);
+  if(diff <= 0) return '오늘';
+  if(diff === 1) return '어제';
+  if(diff < 7)  return diff + '일 전';
+  return (d.getMonth()+1) + '.' + d.getDate() + '.';
+}
+function matDaysAgo(m){
+  const d = new Date(m.created_at); if(isNaN(d)) return 999;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+/* 타일 썸네일 — 첫 그림 · 유튜브 썸네일 · 영상 · 링크 · 글 */
+function matThumbHTML(m){
+  const files = m.files || [];
+  const vid = parseYouTubeId(m.video_url || '') || (files.find(function(f){ return f.kind === 'youtube' && f.videoId; }) || {}).videoId;
+  if(vid) return '<img src="https://img.youtube.com/vi/' + esc(vid) + '/mqdefault.jpg" alt="" loading="lazy"><span class="mg-play">▶</span>';
+  const img = files.find(function(f){ return f.kind !== 'youtube' && f.kind !== 'link' && f.kind !== 'video' && !((f.type||'').startsWith('video/')) && f.url; });
+  if(img) return '<img src="' + esc(img.url) + '" alt="" loading="lazy">';
+  if(files.some(function(f){ return f.kind === 'video' || (f.type||'').startsWith('video/'); })) return '🎬';
+  if(files.some(function(f){ return f.kind === 'link'; })) return '🔗';
+  return '📄';
+}
+
 async function renderMaterials(){
   const el = $('matAreaList');
   el.innerHTML = '<div class="mat-area-empty"><div class="em">⏳</div><div>자료를 불러오는 중...</div></div>';
+  $('mvGallery')?.classList.toggle('on', _matView !== 'list');
+  $('mvList')?.classList.toggle('on', _matView === 'list');
 
   try{
     // 자료는 RLS가 '참여(teacher_ids)한 교사'로 이미 한정함.
@@ -8809,6 +9049,8 @@ async function renderMaterials(){
       const mineOk = !(S.myTeacherIds && S.myTeacherIds.size) || S.myTeacherIds.has(Number(m.teacher_id));
       return gradeOk && classOk && mineOk;
     });
+    /* 최신이 맨 앞 — 서버가 정렬해 주지만, 여기서도 한 번 더 (모아보기의 «가장 최근» 이 이 순서를 믿는다) */
+    _materials.sort(function(a, b){ return new Date(b.created_at) - new Date(a.created_at); });
 
     if(!_materials.length){
       el.innerHTML = emptyStateHTML(EMPTY_HOMEWORK, '아직 올라온 자료가 없어요', '참여한 선생님이 자료를 올리면 여기에 나타나요. 그걸 보고 궁금한 걸 질문해봐요!', null, null);
@@ -8919,6 +9161,55 @@ async function renderMaterials(){
     let html = '';
     /* 차시 칩 — 반마다 수업 날짜가 달라 «오늘» 로는 묶이지 않는다 */
     html += unitChipsHTML(_materials);
+
+    /* ── 🖼️ 모아보기 — 타일로 한눈에. 맨 위에 «가장 최근 자료» 한 장을 크게 ── */
+    if(_matView !== 'list'){
+      const tile = function(m, isHw){
+        const days = matDaysAgo(m);
+        const isNew = days <= 3;
+        const myQCount = myQByMat[m.id] || 0;
+        const badge = isHw ? '<span class="mg-badge hw">📼 과제</span>' : (isNew ? '<span class="mg-badge">NEW</span>' : '');
+        return '<div class="mg-tile' + (isNew ? ' new' : '') + '" onclick="openMatSheet(' + m.id + ')">' +
+          '<div class="mg-thumb">' + matThumbHTML(m) + badge + '</div>' +
+          '<div class="mg-b">' +
+            (m.unit ? '<span class="mg-u" title="' + esc(m.unit) + '">' + esc(m.unit) + '</span>' : '') +
+            '<div class="mg-t">' + esc(m.title || '자료') + '</div>' +
+            '<div class="mg-m"><span>' + relDay(m.created_at) + '</span>' +
+              (myQCount ? '<b>✓ 질문 ' + myQCount + '</b>' : (isHw ? hwDdayBadge(m) : '<span></span>')) +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      };
+      const shown = (_matUnit !== null) ? normalMats.filter(function(m){ return (m.unit || '') === _matUnit; }) : normalMats;
+      /* 가장 최근 자료 — 차시를 안 고른 상태에서만. 고르면 그 차시 안에서 최신이 맨 앞 타일이다 */
+      const newest = (_matUnit === null && normalMats.length) ? normalMats[0] : null;
+      if(newest){
+        html += '<div class="mg-hero" onclick="openMatSheet(' + newest.id + ')">' +
+          '<div class="mg-thumb">' + matThumbHTML(newest) + '</div>' +
+          '<div class="mg-hero-b">' +
+            '<div class="mg-hero-k">🆕 가장 최근에 올라온 자료 · ' + relDay(newest.created_at) + '</div>' +
+            '<div class="mg-hero-t">' + esc(newest.title || '자료') + '</div>' +
+            '<div class="mg-hero-m">' + (newest.unit ? '📑 ' + esc(newest.unit) + ' · ' : '') + '🧑‍🏫 ' + esc(newest.teacher_name || '선생님') + '</div>' +
+            '<div class="mg-hero-go">📖 보고 질문하기</div>' +
+          '</div>' +
+        '</div>';
+      }
+      if(hwMats.length){
+        html += '<div class="mat-area-section">📼 주말 과제 <span class="mat-area-count">' + hwMats.length + '</span></div>';
+        html += '<div class="mg-grid">' + hwMats.map(function(m){ return tile(m, true); }).join('') + '</div>';
+      }
+      const rest = newest ? shown.filter(function(m){ return m.id !== newest.id; }) : shown;
+      if(rest.length){
+        html += '<div class="mat-area-section">' + (_matUnit !== null ? '📚 이 차시 자료' : '🗂️ 모든 자료') +
+                ' <span class="mat-area-count">' + rest.length + '</span></div>';
+        html += '<div class="mg-grid">' + rest.map(function(m){ return tile(m, false); }).join('') + '</div>';
+      } else if(!newest && !hwMats.length){
+        html += '<div class="mat-area-empty"><div class="em">📭</div><div>' + (_matUnit !== null ? '이 차시에는 아직 자료가 없어요' : '아직 자료가 없어요') + '</div></div>';
+      }
+      el.innerHTML = html;
+      return;
+    }
+
     if(hwMats.length){
       html += `<div class="mat-area-section">📼 주말 과제 <span class="mat-area-count">${hwMats.length}</span></div>`;
       html += hwMats.map(renderHwCard).join('');
@@ -9106,6 +9397,7 @@ function askFromMaterial(matId){
   // 질문 탭으로 전환
   swTab('questions');
   render();
+  openAskSheet();
 
   // 질문 입력란에 안내 + 포커스
   setTimeout(()=>{
@@ -9113,7 +9405,6 @@ function askFromMaterial(matId){
     if(inp){
       inp.placeholder = `📚 "${mat.title}" 자료를 보고 떠오른 질문을 적어보세요!`;
       inp.focus();
-      inp.scrollIntoView({behavior:'smooth', block:'center'});
     }
     // 연결 배너 표시
     const banner = $('matLinkBanner');
@@ -9174,9 +9465,21 @@ async function renderForest(){
     // 각자의 '현재 active_sub' 기준 질문 개수를 뽑아오는 건 RLS가 막을 수 있으므로,
     // 여기선 공개 집계(여기서는 '통합' 과목 기준 total)로 단순화
     const ids=classmates.map(c=>c.id);
-    const {data:counts}=await sb.from('questions')
-      .select('user_id,resolved,water_count')
-      .in('user_id',ids);
+    /* PostgREST 는 한 번에 1000행까지만 준다 — .limit() 을 안 걸어도 조용히
+       잘린다. 반 누적 질문이 1000개를 넘는 순간부터 요청마다 다른 친구의
+       나무가 작아졌다. 교사 대시보드는 이미 fetchAllRows 로 피해 둔 함정. */
+    const counts=[];
+    for(let _from=0; ; _from+=1000){
+      const _cr = await sb.from('questions')
+        .select('user_id,resolved,water_count')
+        .in('user_id',ids)
+        .order('id',{ascending:true})
+        .range(_from, _from+999);
+      if(_cr.error) break;
+      const _rows = _cr.data || [];
+      for(const _row of _rows) counts.push(_row);
+      if(_rows.length < 1000) break;
+    }
 
     const byUser={};
     (counts||[]).forEach(q=>{
@@ -9284,24 +9587,11 @@ function clearClassUnit(){
 }
 function _classCol(u, arr, nameById){
   const title = u==='__none__' ? '🗂️ 단원 미지정' : '📑 '+esc(u);
+  /* 친구 나무 모달과 같은 카드. 물주기·투표·답하기가 여기서도 바로 된다. */
   const cards = arr.map(q=>{
-    const anon = q.is_anonymous;
-    const who = anon ? '🕊️ 익명' : `${nameById[q.user_id]?.number||''}번 ${esc(nameById[q.user_id]?.name||'친구')}`;
-    const sc = selfCheckCount(q);
-    const phase = q.phase==='after' ? '🌙' : '🌅';
-    const clickable = !anon;
-    const clk = clickable ? ` data-go="1" onclick="openClassmateTree('${q.user_id}')" title="${esc(nameById[q.user_id]?.name||'친구')}의 나무 보기"` : '';
-    return `<div class="cb-card${q.resolved?' done':''}${clickable?' cb-go':''}"${clk}>
-      <div class="cb-card-q">${phase} ${escWithMath(q.text)}</div>
-      <div class="cb-card-meta">
-        <span>${who}</span>
-        ${q.resolved?'<span class="cb-done">🍎 수확</span>':''}
-        ${sc?`<span>🎯 ${sc}/7</span>`:''}
-        ${q.water_count?`<span>💧 ${q.water_count}</span>`:''}
-        ${q.explore_votes?`<span>🗳️ ${q.explore_votes}</span>`:''}
-        ${clickable?'<span class="cb-go-hint">나무 보기 →</span>':''}
-      </div>
-    </div>`;
+    const p = nameById[q.user_id];
+    const who = p ? ((p.number ? p.number + '번 ' : '') + (p.name || '친구')) : '친구';
+    return friendCardHTML(q, { who: who, ownerId: q.user_id, treeBtn: true });
   }).join('');
   return `<div class="cb-col"><div class="cb-col-hdr">${title}<span class="cb-col-cnt">${arr.length}</span></div><div class="cb-col-body">${cards}</div></div>`;
 }
@@ -10181,7 +10471,7 @@ function renderAch(){
 // 과목 추가
 // ============================================================================
 // 공용 과목 프리셋 목록 (중학교 기본 교과)
-const SUBJECT_PRESETS = [
+const SUBJECT_PRESETS = kitGet('question.subjects', null) || [
   {id:'science',      icon:'🔬', label:'과학',      color:'#4CAF50'},
   {id:'math',         icon:'📐', label:'수학',      color:'#2196F3'},
   {id:'korean',       icon:'📖', label:'국어',      color:'#FF9800'},
@@ -10390,7 +10680,7 @@ async function bumpSiteVisit(){
     }
   }catch(err){
     // 카운터는 부가 기능 — 실패해도 앱 동작에 영향 없음
-    const {data}=await sb.rpc('get_site_visits').catch(()=>({data:null}));
+    const {data}=await Promise.resolve(sb.rpc('get_site_visits')).catch(()=>({data:null}));   // 빌더는 thenable 이라 Promise 로 감싸야 .catch 가 있다
     if(data!=null) showSiteVisits(data);
   }
 }
@@ -10779,7 +11069,7 @@ function buildPrompt(q, d){
     const h = SOLVE_HOW.find(function(x){ return x.k === k; }); return h ? h.t : '';
   }).filter(Boolean).join(' · ');
   const L = [];
-  L.push('나는 중학교 2학년 학생이야. 과학 수업에서 내가 만든 질문을 스스로 풀어보는 중이야.');
+  L.push(`나는 ${LEARNER} 학생이야. ${SUBJECT_WORD} 수업에서 내가 만든 질문을 스스로 풀어보는 중이야.`);
   L.push('');
   L.push('【내 질문】');
   L.push(qShow(q).trim());
@@ -10796,7 +11086,7 @@ function buildPrompt(q, d){
   L.push('【이렇게 답해줘】');
   L.push('1. 정답부터 말하지 마. 내 예상에서 맞는 부분과 어긋난 부분을 먼저 짚어줘.');
   L.push('2. 내가 직접 확인해볼 수 있는 방법을 알려줘.');
-  L.push('3. 중학교 2학년이 아는 말로 설명해줘. 어려운 낱말을 쓰면 뜻도 같이 알려줘.');
+  L.push(`3. ${LEARNER}이 아는 말로 설명해줘. 어려운 낱말을 쓰면 뜻도 같이 알려줘.`);
   L.push('4. 네 설명 중에 확실하지 않은 부분이 있으면 솔직히 말해줘.');
   L.push('5. 내가 한 번 더 확인해볼 곳(교과서 단원 이름이나 검색어)을 알려줘.');
   return L.join(_SNL);
@@ -11017,7 +11307,7 @@ function buildPrompt2(q, d){
   L.push('');
   L.push('【이렇게 다시 알려줘】');
   L.push('1. 아까와 <b>다른 방법</b>으로 설명해줘. 같은 말을 길게 늘이지 말고.');
-  L.push('2. 중학교 2학년이 아는 것에 <b>빗대어</b> 설명해줘.');
+  L.push(`2. ${LEARNER}이 아는 것에 <b>빗대어</b> 설명해줘.`);
   L.push('3. 내가 뭘 잘못 알고 있어서 막힌 건지 짚어줘.');
   L.push('4. 이걸 이해했는지 확인할 수 있는 질문을 하나 내줘.');
   return L.join(_SNL).split('<b>').join('').split('</b>').join('');
@@ -11248,7 +11538,7 @@ function buildRefinePrompt(q){
   });
 
   const L = [];
-  L.push('나는 중학교 2학년이야. 과학 수업에서 내가 만든 질문을 더 좋은 질문으로 고치는 중이야.');
+  L.push(`나는 ${LEARNER}이야. ${SUBJECT_WORD} 수업에서 내가 만든 질문을 더 좋은 질문으로 고치는 중이야.`);
   L.push('답을 찾는 중이 아니라 «질문 자체» 를 고치는 중이야.');
   L.push('');
   L.push('【내가 처음 쓴 질문】');
@@ -11285,7 +11575,7 @@ function buildRefinePrompt(q){
   L.push('【꼭 지켜줘】');
   L.push('· 내 질문의 <답>은 알려주지 마. 나는 질문을 고치는 중이야.');
   L.push('· 고친 예를 줄 때는 내가 쓴 문장을 살려서 한 군데만 바꿔줘. 완전히 새로 쓰지 마.');
-  L.push('· 중학교 2학년이 아는 말로. 어려운 낱말을 쓰면 뜻도 같이 알려줘.');
+  L.push(`· ${LEARNER}이 아는 말로. 어려운 낱말을 쓰면 뜻도 같이 알려줘.`);
   L.push('· 길게 쓰지 마. 짧게.');
   return L.join(_SNL).split('<').join('「').split('>').join('」');
 }
@@ -11867,8 +12157,19 @@ var GUEST_KEY='high';
 
 function applyBranding(){
   try{
-    document.title = `🌳 질문 과수원 - 🏫 ${SCHOOL_NAME}`;
+    document.title = `🌳 ${APP_NAME} - 🏫 ${SCHOOL_NAME}`;
     const ws=$('welSchool'); if(ws) ws.textContent='🏫 '+SCHOOL_NAME;
+    if(window.CLASS_KIT_CONFIG){   /* 배포판: 이름·로고·색·푸터를 설정대로 */
+      const full = `${SCHOOL_SHORT} ${APP_NAME}`;
+      document.querySelectorAll('.mc-title').forEach(el => el.textContent = full);
+      document.querySelectorAll('.mc-subtitle').forEach(el => el.textContent = '⛏️ ' + APP_TAG);
+      const hb = document.querySelector('.hdr-logo b'); if(hb) hb.textContent = full;
+      const hs = document.querySelector('.hdr-logo span'); if(hs) hs.textContent = '🏫 ' + APP_TAG;
+      const lh = document.querySelector('.login-hero + div h2'); if(lh) lh.textContent = '🌳 ' + APP_NAME;
+      document.querySelectorAll('meta[property="og:site_name"],meta[property="og:title"]').forEach(m => m.setAttribute('content', '🌳 ' + full));
+      const logo = kitGet('brand.logo', ''); if(logo) document.querySelectorAll('img.hn-logo, img.mc-logo-blk').forEach(i => { i.src = logo; i.alt = SCHOOL_NAME + ' 로고'; });
+      kitTheme('question'); kitFooter(APP_NAME + ' · 학생 앱');
+    }
   }catch(e){}
 }
 applyBranding();
@@ -11876,6 +12177,81 @@ applyBranding();
 </script>
 
 <!-- 📚 자료 시트 -->
+<!-- ✏️ 질문 심기 시트 — 목록이 먼저 보이게 작성 폼을 여기로 옮겼다. 안의 ID 는 그대로다. -->
+<div class="msheet ask-sheet" id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <div class="ms-top">
+    <h3 id="askTitle">✏️ 질문 심기</h3>
+    <button class="ms-x" onclick="closeAskSheet()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ms-body ask-body" id="askBody">
+      <div class="cs">
+        <!-- 🌅🌙 수업 단계 토글 -->
+        <div class="phase-seg" id="phaseSeg">
+          <button class="phase-opt on" data-phase="before" onclick="setPhase('before')">
+            <span class="phase-em">🌅</span><span class="phase-tx"><b>수업 열기</b><small>수업 전 궁금한 것</small></span>
+          </button>
+          <button class="phase-opt" data-phase="after" onclick="setPhase('after')">
+            <span class="phase-em">🌙</span><span class="phase-tx"><b>수업 닫기</b><small>수업 뒤 새로 생긴 질문</small></span>
+          </button>
+        </div>
+        <h4 id="qHead">🌅 수업 열기 — 새로운 질문 심기</h4>
+        <p class="phase-note" id="phaseNote">오늘 수업에서 무엇이 가장 궁금한가요? 🌱 <a onclick="openMCInfo('seven')" style="color:var(--pr);font-weight:700;cursor:pointer;white-space:nowrap">🎯 좋은 질문이란?</a></p>
+        <!-- 📑 차시 고르개 — 접힌 옵션 안에 있으면 있는 줄도 모른다. 열기/닫기 바로 아래에 둔다. -->
+        <div class="tree-picker unit-picker" id="unitPicker" style="display:none">
+          <div class="tp-label">📑 몇 차시 질문인가요? <small id="unitPickerHint"></small></div>
+          <div class="tp-list up-row" id="unitPickerList"></div>
+          <div class="tp-note" id="unitPickerNote" style="display:none"></div>
+        </div>
+        <div id="matLinkBanner" class="mat-link-banner" style="display:none"></div>
+        <div class="q-iw">
+          <div class="q-quota" id="qQuota" style="display:none"></div>
+          <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ()">
+          <button class="ba" id="addBtn" onclick="addQ()">심기</button>
+        </div>
+        <div class="q-stems" id="qStems"></div>
+        <!-- 질문이 막힐 때 손 닿는 곳에. 옵션 안에 숨기면 정작 막힌 학생이 못 찾는다. -->
+        <!-- 🧺 세 바구니 — 접힘 안에 있으면 있는 줄도 모른다 -->
+        <div class="q-opt-g" style="width:100%;margin-top:9px">
+          <span>🧺 이 질문, 어느 바구니 같아요? <b style="font-weight:600;opacity:.7">안 골라도 돼요</b></span>
+          <div class="q-src-pick" id="srcPick"></div>
+        </div>
+        <div class="q-help">
+          <button class="sos" onclick="openStuck()">🆘 질문을 못 만들겠어요</button>
+          <button class="kbd" onclick="openKbd()">⌨️ 키보드가 이상해요</button>
+          <button onclick="openBaskets()">🧺 질문의 세 종류</button>
+        </div>
+        <button class="q-more-toggle" id="qMoreToggle" onclick="toggleQMore()" aria-expanded="false">＋ 옵션 <small>(나무·태그·열매·익명)</small></button>
+        <div class="q-more" id="qMore" style="display:none">
+          <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
+            <button class="math-helper-btn" onclick="openMathHelper('qInp')" title="수식·화학식 입력 도우미">🧮 수식·화학식</button>
+          </div>
+          <div class="tree-picker" id="treePicker" style="display:none">
+            <div class="tp-label">🌳 어느 나무에 달까요?</div>
+            <div class="tp-list" id="treePickerList"></div>
+            <div class="tp-note" id="treePickerNote" style="display:none"></div>
+          </div>
+          <div class="tag-inp-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
+            <span id="tagChips"></span>
+            <input class="tag-inp" id="tagInp" placeholder="# 태그 입력 후 Enter" onkeydown="handleTagKey(event)">
+          </div>
+          <div class="tag-presets" id="tagPresets"></div>
+          <div class="tag-hint">💡 태그로 질문을 분류해봐요! (Enter 또는 쉼표로 추가)</div>          <div class="q-opts q-src-g">
+          </div>
+          <div class="q-opts">
+            <div class="q-opt-g">
+              <span>🍎 열매:</span>
+              <div class="q-fr-pick" id="qFrPick"></div>
+            </div>
+            <button class="anon-tog" id="anonTog" onclick="toggleAnon()">
+              <span>🕊️</span><span id="anonTxt">익명으로 심기</span>
+            </button>
+          </div>
+        </div>
+        <div class="q-msg" id="qMsg"></div>
+      </div>
+  </div>
+</div>
+
 <div class="msheet" id="matSheet" role="dialog" aria-modal="true">
   <div class="ms-top">
     <h3 id="msTitle">자료</h3>
