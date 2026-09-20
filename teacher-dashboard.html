@@ -533,6 +533,25 @@ td strong{font-weight:700;color:var(--ink)}
 .nu-state{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .nu-state b{color:#2D6A3E}
 /* ══ 🌿 되묻기 일괄 ═══════════════════════════════════════════════════════ */
+/* ══ 📤 CSV 왕복 피드백 ═══════════════════════════════════════════════ */
+.fb-box{border:1.5px solid var(--rule);border-radius:12px;padding:12px 14px;margin:10px 0 14px;background:var(--surface)}
+.fb-h{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.fb-d{font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:8px}
+.fb-d code{background:rgba(0,0,0,.05);padding:1px 5px;border-radius:5px;font-size:11.5px}
+.fb-up{position:relative;overflow:hidden;cursor:pointer}
+.fb-up input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fb-rows{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.fb-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--rule);border-radius:10px;padding:8px 10px;background:var(--surface)}
+.fb-row.off{opacity:.5}
+.fb-row-l{padding-top:2px}
+.fb-row-b{flex:1;min-width:0}
+.fb-row-q{font-size:12.5px;color:var(--ink);margin-bottom:4px}
+.fb-who{font-weight:800;color:var(--ink2);margin-right:4px}
+.fb-chg{font-size:12px;color:var(--ink2);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fb-chg s{color:var(--ink3)}
+.fb-in{flex:1;min-width:200px;padding:5px 9px;border:1.5px solid var(--rule);border-radius:7px;font:inherit;font-size:12.5px;background:var(--surface);color:var(--ink)}
+.fb-in:focus{outline:none;border-color:var(--pr)}
+.nd-chk{font-size:12px;display:inline-flex;align-items:center;gap:5px;color:var(--ink2)}
 .nd-steps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .nd-step{flex:1;min-width:210px;border:1.5px solid var(--rule);border-radius:12px;padding:13px 15px;background:var(--surface)}
 .nd-step-h{font-size:12.5px;font-weight:800;color:var(--pr);margin-bottom:5px;display:flex;align-items:center;gap:6px}
@@ -1620,7 +1639,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '09-14 a · 차시목록';
+const BUILD = '09-17 a · CSV 왕복 피드백';
 let allSubjects = [];
 let allBranches = [];
 
@@ -4098,8 +4117,22 @@ function renderNudgeView(){
   const todo = _ndTodo();
   const voice = _ndVoiceSamples();
 
+  const pool = _ndPool();
   box.innerHTML =
     '<div class="nd-units">' + chips + '</div>' +
+    /* ── 📤 CSV 왕복 — 되묻기만이 아니라 도장·라벨·별표까지 한 파일로 ── */
+    '<div class="fb-box">' +
+      '<div class="fb-h">📤 CSV 왕복 — 질문을 통째로 내려받아 피드백을 채운 뒤 다시 올리기</div>' +
+      '<div class="fb-d">① <b>내려받기</b> → ② Claude Code 에서 <code>/question-feedback</code> (다른 AI 도 됨) 로 ' +
+        '<b>되묻기 · 도장 · 라벨 · 별표</b> 칸 채우기 → ③ <b>올리기</b> → 표에서 한 줄씩 확인 → 반영.<br>' +
+        '비워 둔 칸은 건드리지 않아요. <code>-</code> 를 적으면 지웁니다. 이름·번호는 파일에 안 들어가고 <code>id</code> 로 맞춥니다.</div>' +
+      '<div class="nd-bar">' +
+        '<button class="st-nav primary" onclick="fbExportCSV()"' + (pool.length ? '' : ' disabled') + '>📥 피드백 CSV 내려받기 (' + pool.length + '개)</button>' +
+        '<label class="st-nav fb-up">📤 채운 CSV 올리기<input type="file" accept=".csv,text/csv" onchange="fbLoadFile(event)"></label>' +
+        '<span class="nd-msg" id="fbMsg"></span>' +
+      '</div>' +
+      '<div id="fbTable"></div>' +
+    '</div>' +
     '<div class="nd-steps">' +
       '<div class="nd-step">' +
         '<div class="nd-step-h">① 프롬프트 만들기</div>' +
@@ -4286,6 +4319,221 @@ function ndAll(on){
 /* ── ✅ 올리기 ────────────────────────────────────────────────────────────
    학생 화면에 바로 보이는 글이라 한 번 묻는다. 한 줄씩 올리고 실패를 모은다 —
    중간에 하나 실패했다고 나머지를 버리면 어디까지 올라갔는지 알 수 없다. */
+/* ══ 📤 CSV 왕복 피드백 ═══════════════════════════════════════════════════
+   내려받기: 지금 필터·차시 칩에 걸린 질문 전부. id 가 들어가고 이름·번호는 안 들어간다.
+   올리기: id 로 맞춰 «바뀐 칸만» 표에 올리고, 체크한 줄만 반영한다.
+   빈 칸 = 그대로, «-» = 지움. 학생이 읽는 글이라 검토 표를 건너뛸 수 없다. */
+const FB_COLS = ['id','학년','반','차시','단계','질문','다듬은질문','유형','바구니','상태','해결답변','알아낸것','아직모르는것',
+                 '자가체크','물','탐구투표','기존_되묻기','기존_도장','기존_라벨','기존_별표','기존_다듬기피드백','기존_해결피드백',
+                 '되묻기','도장','라벨','별표','다듬기피드백','해결피드백'];
+let _fbRows = [];
+
+function _fbQType(text){
+  /* 학생 앱 qType 과 같은 갈래 이름만 — 대시보드엔 그 함수가 없다 */
+  const t = (text||'').trim();
+  const has = function(){ for(let i=0;i<arguments.length;i++){ if(t.indexOf(arguments[i])>=0) return true; } return false; };
+  if(!t) return '';
+  if(has('만약','라면','였다면','없다면','바뀌면','하면 어떻게')) return '상상·가정';
+  if(has('왜','이유','때문','어째서')) return '추론·설명';
+  if(has('어떻게 하면','방법','할 수 있','만들','적용','쓰이')) return '적용·설계';
+  if(has('정말','맞나','진짜','옳','틀린','차이','비교','다를까')) return '비판·비교';
+  return '사실·확인';
+}
+function fbExportCSV(){
+  const pool = _ndPool();
+  if(!pool.length){ alert('내보낼 질문이 없어요. 필터를 확인하세요.'); return; }
+  const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
+  const rows = [FB_COLS.slice()];
+  pool.forEach(function(q){
+    const p = pm[q.user_id] || {};
+    const st = q.teacher_stamp ? (STAMP_BY[q.teacher_stamp] ? STAMP_BY[q.teacher_stamp].k : q.teacher_stamp) : '';
+    rows.push([q.id, p.grade||'', p.class_no||'', q.unit||'', (q.phase==='after'?'닫기':'열기'),
+      q.text||'', q.refined_text||'', _fbQType(q.refined_text||q.text),
+      q.answer_source||'', qStatus(q), (q.solve&&q.solve.answer)||'', q.finding||'', q.still_wondering||'',
+      scCount(q), q.water_count||0, q.explore_votes||0,
+      q.teacher_nudge||'', st, (q.teacher_labels||[]).join('; '), (q.starred?'1':''), q.teacher_refine_note||'', q.teacher_solve_note||'',
+      '', '', '', '', '', '']);
+  });
+  const unitTag = (_ndUnit === null) ? '전체' : (_ndUnit === '__none__' ? '차시없음' : _ndUnit.replace(/[\\/:*?"<>|]/g,'_').slice(0,20));
+  downloadCSV(SCHOOL_SHORT + '_피드백_' + unitTag + '_' + today() + '.csv', rows);
+  const m = $('fbMsg'); if(m) m.textContent = pool.length + '개를 내려받았어요. 채운 뒤 「올리기」로 돌아오세요.';
+}
+
+/* 따옴표 안의 줄바꿈까지 받는 CSV 파서 — parseCSV 는 줄로 먼저 자르므로 못 쓴다 */
+function parseCSVFull(text){
+  if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = []; let row = [], cur = '', q = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(q){
+      if(c === '"'){ if(text[i+1] === '"'){ cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else {
+      if(c === '"') q = true;
+      else if(c === ','){ row.push(cur); cur = ''; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += c;
+    }
+  }
+  if(cur !== '' || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ''; }); });
+}
+function _fbNormStamp(v){
+  v = (v||'').trim(); if(!v) return undefined; if(v === '-') return null;
+  const low = v.toLowerCase();
+  const hit = STAMPS.find(function(s){ return s.k === low || s.e === v || s.t === v || s.s === v || (v.length >= 3 && s.t.indexOf(v) >= 0); });
+  return hit ? hit.k : '__bad__';
+}
+function _fbNormStar(v){
+  v = (v||'').trim(); if(!v) return undefined;
+  if(/^(1|⭐|★|o|y|yes|true|예|네|별|별표)$/i.test(v)) return true;
+  if(/^(0|-|x|n|no|false|아니오|아니요|해제)$/i.test(v)) return false;
+  return '__bad__';
+}
+function _fbNormLabels(v){
+  v = (v||'').trim(); if(!v) return undefined; if(v === '-') return [];
+  const seen = {};
+  return v.split(/[;|,、·]/).map(function(s){ return s.trim(); }).filter(function(s){ if(!s || seen[s]) return false; seen[s] = 1; return true; });
+}
+function _fbSameLabels(a, b){
+  a = (a||[]).slice().sort(); b = (b||[]).slice().sort();
+  return a.length === b.length && a.every(function(x, i){ return x === b[i]; });
+}
+
+function fbLoadFile(ev){
+  const f = ev.target.files && ev.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = function(){ try{ fbParseText(String(rd.result||'')); }catch(e){ alert('읽지 못했어요: ' + (e.message||e)); } ev.target.value = ''; };
+  rd.readAsText(f, 'utf-8');
+}
+function fbParseText(text){
+  const m = $('fbMsg'); const tb = $('fbTable');
+  const rows = parseCSVFull(text);
+  if(rows.length < 2){ if(m) m.textContent = '줄이 없어요.'; return; }
+  const head = rows[0].map(function(h){ return String(h||'').trim(); });
+  const col = {}; head.forEach(function(h, i){ col[h] = i; });
+  if(col['id'] === undefined){
+    alert('«id» 열이 없어요. 이 화면의 「📥 피드백 CSV 내려받기」로 받은 파일을 채워서 올려 주세요. (질문상세 CSV 는 id 가 없어서 못 씁니다)');
+    return;
+  }
+  const cell = function(r, name){ const i = col[name]; return (i === undefined) ? undefined : String(r[i] == null ? '' : r[i]); };
+  const out = []; let noId = 0, notFound = 0, noChange = 0, bad = [];
+  for(let ri = 1; ri < rows.length; ri++){
+    const r = rows[ri];
+    const id = parseInt(cell(r, 'id'), 10);
+    if(!id){ noId++; continue; }
+    const q = qById(id);
+    if(!q){ notFound++; continue; }
+    const patch = {}, chg = [];
+    /* 되묻기 */
+    const nd = cell(r, '되묻기');
+    if(nd !== undefined && nd.trim() !== ''){
+      const nv = (nd.trim() === '-') ? null : nd.trim();
+      const cur = (q.teacher_nudge||'').trim();
+      if((nv||'') !== cur){ patch.teacher_nudge = nv; chg.push({f:'🌿 되묻기', a:cur, b:nv}); }
+    }
+    /* 도장 */
+    const st = _fbNormStamp(cell(r, '도장'));
+    if(st === '__bad__'){ bad.push(id + ' 도장「' + cell(r,'도장') + '」'); }
+    else if(st !== undefined && st !== (q.teacher_stamp||null)){ patch.teacher_stamp = st; chg.push({f:'🏷️ 도장', a:q.teacher_stamp ? (STAMP_BY[q.teacher_stamp]||{}).t || q.teacher_stamp : '', b:st ? (STAMP_BY[st].e + ' ' + STAMP_BY[st].t) : null}); }
+    /* 라벨 */
+    const lb = _fbNormLabels(cell(r, '라벨'));
+    if(lb !== undefined && !_fbSameLabels(lb, q.teacher_labels)){ patch.teacher_labels = lb; chg.push({f:'🏷 라벨', a:(q.teacher_labels||[]).join(', '), b:lb.length ? lb.join(', ') : null}); }
+    /* 별표 */
+    const sr = _fbNormStar(cell(r, '별표'));
+    if(sr === '__bad__'){ bad.push(id + ' 별표「' + cell(r,'별표') + '」'); }
+    else if(sr !== undefined && sr !== !!q.starred){ patch.starred = sr; chg.push({f:'⭐ 별표', a:q.starred ? '⭐' : '', b:sr ? '⭐ (도장판에 도장 1개)' : null}); }
+    /* ✨ 다듬기 · 🔬 해결 피드백 — 되묻기와 같은 규칙(빈 칸=그대로, '-'=지움) */
+    [['다듬기피드백','teacher_refine_note','✨ 다듬기 피드백'],['해결피드백','teacher_solve_note','🔬 해결 피드백']].forEach(function(spec){
+      const v = cell(r, spec[0]);
+      if(v === undefined || v.trim() === '') return;
+      const nv = (v.trim() === '-') ? null : v.trim();
+      const cur = (q[spec[1]]||'').trim();
+      if((nv||'') !== cur){ patch[spec[1]] = nv; chg.push({f:spec[2], a:cur, b:nv, col:spec[1]}); }
+    });
+    if(!chg.length){ noChange++; continue; }
+    out.push({ id:id, q:q, patch:patch, chg:chg, on:true });
+  }
+  _fbRows = out;
+  if(m) m.textContent = '바뀌는 줄 ' + out.length + '개' +
+    (noChange ? ' · 그대로 ' + noChange : '') + (notFound ? ' · 못 찾은 id ' + notFound : '') + (noId ? ' · id 없는 줄 ' + noId : '') +
+    (bad.length ? (' · ⚠️ 못 읽은 값 ' + bad.length + '개: ' + bad.slice(0,5).join(', ')) : '');
+  fbPaintTable();
+}
+function fbPaintTable(){
+  const tb = $('fbTable'); if(!tb) return;
+  if(!_fbRows.length){ tb.innerHTML = ''; return; }
+  const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
+  const on = _fbRows.filter(function(r){ return r.on; }).length;
+  let h = '<div class="nd-bar"><label class="nd-chk"><input type="checkbox" ' + (on === _fbRows.length ? 'checked' : '') + ' onchange="fbAll(this.checked)"> 전체</label>' +
+    '<button class="st-nav primary" id="fbGo" onclick="fbApply()"' + (on ? '' : ' disabled') + '>✅ ' + on + '개 반영하기</button>' +
+    '<span class="nd-msg" id="fbGoMsg"></span></div>';
+  h += '<div class="fb-rows">';
+  _fbRows.forEach(function(r, i){
+    const p = pm[r.q.user_id] || {};
+    const who = (p.grade||'') + '-' + (p.class_no||'') + ' ' + (p.number||'') + '번 ' + esc(p.name||'');
+    const qt = esc((r.q.refined_text || r.q.text || '').replace(/\s+/g,' ').trim().slice(0, 60));
+    h += '<div class="fb-row' + (r.on ? '' : ' off') + '">' +
+      '<label class="fb-row-l"><input type="checkbox" ' + (r.on ? 'checked' : '') + ' onchange="fbTog(' + i + ', this.checked)"></label>' +
+      '<div class="fb-row-b">' +
+        '<div class="fb-row-q"><span class="fb-who">' + who + '</span> ' + qt + '</div>' +
+        r.chg.map(function(c){
+          const col = c.col || (c.f === '🌿 되묻기' ? 'teacher_nudge' : '');
+          if(col && c.b !== null){
+            return '<div class="fb-chg"><b>' + c.f + '</b>' + (c.a ? ' <s>' + esc(c.a) + '</s> →' : '') +
+              ' <input class="fb-in" value="' + _attr(c.b) + '" oninput="fbEditNote(' + i + ', \'' + col + '\', this.value)"></div>';
+          }
+          return '<div class="fb-chg"><b>' + c.f + '</b> ' + (c.a ? '<s>' + esc(c.a) + '</s> → ' : '') + (c.b === null ? '<i>(지움)</i>' : esc(c.b)) + '</div>';
+        }).join('') +
+      '</div></div>';
+  });
+  h += '</div>';
+  tb.innerHTML = h;
+}
+function fbTog(i, on){ if(_fbRows[i]){ _fbRows[i].on = !!on; fbPaintTable(); } }
+function fbAll(on){ _fbRows.forEach(function(r){ r.on = !!on; }); fbPaintTable(); }
+function fbEditNote(i, col, v){ const r = _fbRows[i]; if(!r) return; r.patch[col] = (v||'').trim() || null; const c = r.chg.find(function(x){ return (x.col || (x.f === '🌿 되묻기' ? 'teacher_nudge' : '')) === col; }); if(c) c.b = r.patch[col]; }
+function fbEditNudge(i, v){ fbEditNote(i, 'teacher_nudge', v); }
+async function fbApply(){
+  const picked = _fbRows.filter(function(r){ return r.on; });
+  if(!picked.length) return;
+  const NLc = String.fromCharCode(10);
+  const nStar = picked.filter(function(r){ return r.patch.starred !== undefined; }).length;
+  const nNd = picked.filter(function(r){ return r.patch.teacher_nudge !== undefined; }).length;
+  const nRf = picked.filter(function(r){ return r.patch.teacher_refine_note !== undefined; }).length;
+  const nSv = picked.filter(function(r){ return r.patch.teacher_solve_note !== undefined; }).length;
+  if(!confirm(picked.length + '줄을 반영합니다. 학생 화면에 바로 보여요.' + NLc +
+              (nNd ? ('· 되묻기 ' + nNd + '개' + NLc) : '') +
+              (nRf ? ('· 다듬기 피드백 ' + nRf + '개' + NLc) : '') +
+              (nSv ? ('· 해결 피드백 ' + nSv + '개' + NLc) : '') +
+              (nStar ? ('· 별표 ' + nStar + '개 — 칭찬도장판 도장이 같이 찍히거나 회수돼요' + NLc) : '') +
+              NLc + '반영할까요?')) return;
+  const btn = $('fbGo'), msg = $('fbGoMsg'); if(btn) btn.disabled = true;
+  let ok = 0; const fail = []; let colHint = '';
+  for(let i = 0; i < picked.length; i++){
+    const r = picked[i];
+    if(msg) msg.textContent = '반영 중… ' + (i+1) + '/' + picked.length;
+    const res = await sb.from('questions').update(r.patch).eq('id', r.id).select('id');
+    if(res.error || !res.data || !res.data.length){
+      const em = res.error ? res.error.message : '저장 안 됨(권한)';
+      if(/teacher_labels/.test(em)) colHint = '11_교사라벨.sql'; else if(/teacher_stamp/.test(em)) colHint = '6_질문도장.sql'; else if(/teacher_(solve|refine)_note/.test(em)) colHint = '17_피드백우편함.sql';
+      fail.push(r.id + ' (' + em + ')'); continue;
+    }
+    ok++;
+    _applyQField(r.id, r.patch);
+    if(r.patch.starred === true) await awardStampForQuestion(r.id);
+    else if(r.patch.starred === false) await revokeStampForQuestion(r.id);
+  }
+  if(msg) msg.textContent = '';
+  alert('반영했어요: ' + ok + '줄' +
+        (fail.length ? (NLc + NLc + '안 된 것 ' + fail.length + '줄:' + NLc + fail.slice(0,8).join(NLc)) : '') +
+        (colHint ? (NLc + NLc + '→ Supabase 에서 ' + colHint + ' 을 먼저 실행하세요.') : ''));
+  _fbRows = []; fbPaintTable();
+  try{ renderQuestions(); }catch(e){}
+  renderNudgeView();
+}
+
 async function ndApply(){
   const picked = _ndRows.filter(function(r){ return r.on && (r.text||'').trim(); });
   if(!picked.length) return;
@@ -5460,18 +5708,21 @@ async function awardStampForQuestion(qid){
   try{
     var q = (typeof allQuestions!=='undefined') ? allQuestions.find(function(x){return x.id===qid;}) : null;
     if(!q || !q.user_id){
-      var qr = await sb.from('questions').select('id,user_id,text,question_date').eq('id',qid).maybeSingle();
+      var qr = await sb.from('questions').select('id,user_id,text,question_date,unit').eq('id',qid).maybeSingle();
       if(qr.error || !qr.data) return;
       q = qr.data;
     }
     if(!q.user_id) return;
 
-    var tag = '질문과수원 ⭐ (Q#' + qid + ')';
+    /* 기록(lesson_note) = 「질문과수원 ⭐ <차시> (Q#번호)」 — 차시가 있으면 도장판 CSV 의 「수업(차시)」 칸에 그대로 뜬다.
+       찾을 때는 끝의 (Q#번호) 만 본다 — 차시가 없던 옛 태그도 같이 잡힌다. */
+    var unit = String(q.unit || '').replace(/\s+/g,' ').trim();
+    var tag = '질문과수원 ⭐ ' + (unit ? unit + ' ' : '') + '(Q#' + qid + ')';
     /* 같은 질문으로 «살아 있는» 도장이 있으면 건너뛴다.
        voided_at 을 봐야 한다 — 한 번 무른 뒤 다시 별표를 켜면 새로 찍혀야 하는데,
        예전에는 무른 도장까지 세서 두 번째부터는 영영 안 찍혔다. */
     var dup = await sb.from('observations').select('id')
-                .eq('lesson_note', tag).is('voided_at', null).limit(1);
+                .like('lesson_note', '%(Q#' + qid + ')').is('voided_at', null).limit(1);
     if(dup.error){ _stampWarn('도장판을 확인하지 못했어요', dup.error); return; }
     if(dup.data && dup.data.length) return;
 
@@ -5525,10 +5776,9 @@ function _stampWarn(what, err){
 async function revokeStampForQuestion(qid){
   try{
     if(!sb) return;
-    var tag = '질문과수원 ⭐ (Q#' + qid + ')';
     var r = await sb.from('observations')
       .update({ voided_at: new Date().toISOString(), void_reason: '질문 별표 해제' })
-      .eq('lesson_note', tag).is('voided_at', null).select('id');
+      .like('lesson_note', '%(Q#' + qid + ')').is('voided_at', null).select('id');
     if(r.error){ _stampWarn('도장을 회수하지 못했어요', r.error); return; }
     var n = (r.data || []).length;
     if(n && typeof toast==='function') toast('🏅 칭찬도장판의 도장도 거뒀어요' + (n > 1 ? (' (' + n + '개)') : ''));
@@ -6042,8 +6292,12 @@ function filterDDQs(mode){
             ${q.still_wondering ? `<div>🌱 <strong>아직 모르는 것:</strong> ${esc(q.still_wondering)}</div>` : ''}
           </div>` : ''}
         ${q.teacher_nudge ? `<div class="dd-q-nudge-show">🌿 <strong>내 되묻기:</strong> ${esc(q.teacher_nudge)}</div>` : ''}
+        ${q.teacher_refine_note ? `<div class="dd-q-nudge-show">✨ <strong>다듬기 피드백:</strong> ${esc(q.teacher_refine_note)}</div>` : ''}
+        ${q.teacher_solve_note ? `<div class="dd-q-nudge-show">🔬 <strong>해결 피드백:</strong> ${esc(q.teacher_solve_note)}</div>` : ''}
         <div class="dd-q-ctrl">
           <button class="dd-q-ctrl-btn" onclick="toggleQEd('nudge',${q.id})">🌿 되묻기${q.teacher_nudge?' ✓':''}</button>
+          ${q.refined_text ? `<button class="dd-q-ctrl-btn" onclick="toggleQEd('refine',${q.id})">✨ 다듬기 피드백${q.teacher_refine_note?' ✓':''}</button>` : ''}
+          ${(q.solve&&(q.solve.answer||'').trim()) || q.finding ? `<button class="dd-q-ctrl-btn" onclick="toggleQEd('solve',${q.id})">🔬 해결 피드백${q.teacher_solve_note?' ✓':''}</button>` : ''}
           <button class="dd-q-ctrl-btn" onclick="toggleQEd('unit',${q.id})">📑 단원${q.unit?' ✓':''}</button>
           <button class="dd-q-ctrl-btn danger" onclick="delQuestion(${q.id})">🧹 지우기</button>
         </div>
@@ -6052,6 +6306,22 @@ function filterDDQs(mode){
           <div class="dd-q-editor-btns">
             <button class="dd-btn primary" onclick="saveNudge(${q.id})">💾 되묻기 남기기</button>
             ${q.teacher_nudge?`<button class="dd-btn" onclick="clearNudge(${q.id})">지우기</button>`:''}
+          </div>
+        </div>
+        <div class="dd-q-editor" id="refineEd-${q.id}" style="display:none">
+          ${q.refined_text ? `<div class="dd-q-record" style="margin-bottom:6px">✨ <strong>다듬은 질문:</strong> ${esc(q.refined_text)}</div>` : ''}
+          <textarea id="refineTx-${q.id}" placeholder="다듬은 질문에 한마디 — 무엇이 좋아졌고, 어디를 더 좁히면 좋을지">${esc(q.teacher_refine_note||'')}</textarea>
+          <div class="dd-q-editor-btns">
+            <button class="dd-btn primary" onclick="saveNote('refine',${q.id})">💾 다듬기 피드백 남기기</button>
+            ${q.teacher_refine_note?`<button class="dd-btn" onclick="saveNote('refine',${q.id},true)">지우기</button>`:''}
+          </div>
+        </div>
+        <div class="dd-q-editor" id="solveEd-${q.id}" style="display:none">
+          ${(q.solve&&(q.solve.answer||'').trim()) ? `<div class="dd-q-record" style="margin-bottom:6px">🔬 <strong>학생의 답:</strong> ${esc(q.solve.answer)}</div>` : ''}
+          <textarea id="solveTx-${q.id}" placeholder="해결 답변에 한마디 — 맞고 틀림보다, 근거·과정에서 무엇을 더 볼지">${esc(q.teacher_solve_note||'')}</textarea>
+          <div class="dd-q-editor-btns">
+            <button class="dd-btn primary" onclick="saveNote('solve',${q.id})">💾 해결 피드백 남기기</button>
+            ${q.teacher_solve_note?`<button class="dd-btn" onclick="saveNote('solve',${q.id},true)">지우기</button>`:''}
           </div>
         </div>
         <div class="dd-q-editor" id="unitEd-${q.id}" style="display:none">
@@ -6093,6 +6363,22 @@ async function clearNudge(id){
   _applyQField(id, {teacher_nudge:null});
   filterDDQs(curDDFilter());
   toast('되묻기를 지웠어요');
+}
+/* ✨ 다듬기 · 🔬 해결 피드백 — 17_피드백우편함.sql 의 칸. 학생 화면 카드와 허브 우편함에 보인다 */
+const NOTE_COL = { refine:'teacher_refine_note', solve:'teacher_solve_note' };
+async function saveNote(kind, id, clear){
+  const col = NOTE_COL[kind]; if(!col) return;
+  const tx = $(kind+'Tx-'+id);
+  const val = clear ? '' : ((tx && tx.value) || '').trim();
+  const patch = {}; patch[col] = val || null;
+  const {error} = await sb.from('questions').update(patch).eq('id', id);
+  if(error){
+    alert((/teacher_(solve|refine)_note/.test(error.message) ? 'Supabase 에서 17_피드백우편함.sql 을 먼저 실행하세요.\n\n' : '') + '저장 실패: ' + error.message);
+    return;
+  }
+  _applyQField(id, patch);
+  filterDDQs(curDDFilter());
+  toast(val ? (kind==='solve' ? '🔬 해결 피드백을 남겼어요 — 학생 화면에 보여요' : '✨ 다듬기 피드백을 남겼어요 — 학생 화면에 보여요') : '피드백을 지웠어요');
 }
 async function saveUnit(id){
   const tx=$('unitTx-'+id); if(!tx) return;
