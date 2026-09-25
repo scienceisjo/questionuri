@@ -56,7 +56,7 @@
   --pink:#DB2777;
   --rule:#e0ddd6;         /* 크림 위에서 티 안 나게 */
   --rule2:#edebe9;
-  --mono:'JetBrains Mono',monospace;
+  --mono:'JetBrains Mono','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif; /* 한글은 고정폭으로 떨어지지 않게 */
   --serif:'Fraunces',Georgia,serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1040,6 +1040,11 @@ body{letter-spacing:-0.01em}
 .vm-tab:hover{border-color:var(--pa);color:var(--pa);background:var(--surface)}
 .vm-tab.on{background:var(--ph);color:#fff;border-color:var(--ph);
            border-bottom-color:var(--ph);background-image:none}
+/* 한글이 들어가는 고정폭 이름표 — 자간·대문자 변환 풀기 (2026-09-25) */
+.auth-box .sub,.auth-box .fl,.auth-tab,.topbar-logo .tag,.teacher-badge,.my-students-toggle,.topbar-r .info,.btn-ghost,
+.filter-bar .lbl,.scard-lbl,.section-hdr .sub,.section-hdr .badge,th,.cat-panel-h,.loader-txt,.alerts-hdr .count,.alerts-hdr .empty,
+.dd-back,.dd-tag,.dd-btn,.dd-hero-ref,.dd-stat-lbl,.dd-qs-tab,.btn-export,.exp-btn,.mat-form label,.hm-legend,.forest-legend{letter-spacing:0!important;text-transform:none!important}
+.auth-box .sub{font-size:12.5px}.auth-box .fl{font-size:12px}
 </style>
 </head>
 <body>

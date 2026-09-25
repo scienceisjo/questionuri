@@ -104,6 +104,11 @@
 
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
+/* 푸터가 첫 화면 카드를 가리지 않게 — 얇은 한 줄로 (2026-09-25) */
+.scr.on{flex:1 1 auto;min-height:0}
+#app-credit{flex:none;margin:0!important;padding:5px 12px!important;font-size:11px!important;line-height:1.4!important}
+#app-credit br{display:none}
+#app-credit span{margin-left:8px}
 body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;font-size:var(--fs-sm);-webkit-text-size-adjust:100%}
 button{font-family:inherit;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent;font-size:inherit}
 input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
@@ -12598,6 +12603,6 @@ applyBranding();
   </div>
 </div>
 
-<footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-06-27</span></footer>
+<footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-09-25</span></footer>
 </body>
 </html>
