@@ -1763,7 +1763,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '10-14 a · 우리 반 과수원';
+const BUILD = '10-14 b · 칠판 본것 분리';
 let allSubjects = [];
 let allBranches = [];
 
@@ -5649,11 +5649,14 @@ function _orGet(k, d){ try{ const v = localStorage.getItem(k); return v == null 
 function _orPut(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function _orMs(t){ const n = Date.parse(t || ''); return isNaN(n) ? 0 : n; }
 function _orToday0(){ const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); }
-function _orSeen(uid){ const m = _orGet(OR_SEEN_KEY, {}); return (m && m[uid]) || _orToday0(); }
+/* 칠판 창은 «본 것» 을 따로 센다. 같은 브라우저에서 칠판 나무를 눌렀다고 선생님 화면의
+   반짝임이 꺼지면 안 된다 — 칠판엔 익명 질문이 안 나오니, 그 질문은 영영 못 보게 된다. */
+function _orSeenKey(){ return _orBoard() ? (OR_SEEN_KEY + '_board') : OR_SEEN_KEY; }
+function _orSeen(uid){ const m = _orGet(_orSeenKey(), {}); return (m && m[uid]) || _orToday0(); }
 function _orMarkSeen(uids){
-  const m = _orGet(OR_SEEN_KEY, {}) || {}; const now = Date.now();
+  const m = _orGet(_orSeenKey(), {}) || {}; const now = Date.now();
   (uids || []).forEach(function(u){ m[u] = now; });
-  _orPut(OR_SEEN_KEY, m);
+  _orPut(_orSeenKey(), m);
 }
 /* 칠판 화면은 토글이 아니라 따로 연 창(?board=2-4)이다. 토글은 한 번 끄면 이름이 뜬다. */
 const _orBoardOnly = /[?&]board(=|&|$)/.test(location.search);
