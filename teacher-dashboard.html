@@ -270,6 +270,13 @@ td strong{font-weight:700;color:var(--ink)}
 .forest-card-meta{font-family:var(--mono);font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.02em}
 .forest-card-meta .sep{margin:0 4px;color:var(--rule)}
 /* ══ 🌳 우리 반 과수원 ══ */
+/* 📺 칠판 창: 과수원 말고 아무것도 없다 */
+body.or-board-only .topbar, body.or-board-only .nowunit-bar, body.or-board-only .unitlist-panel,
+body.or-board-only .filter-bar, body.or-board-only .view-tabs, body.or-board-only .alerts-section,
+body.or-board-only .or-tools, body.or-board-only #app-credit, body.or-board-only .section-hdr .sub{display:none!important}
+body.or-board-only .or-field{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+body.or-board-only .or-stat{font-size:15px}
+body.or-board-only .or-c{font-size:15px;padding:8px 16px}
 .or-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 18px 6px}
 .or-classes{display:flex;gap:6px;flex-wrap:wrap}
 .or-c{border:1.5px solid var(--rule);background:var(--surface);color:var(--ink2);font:inherit;font-size:13px;font-weight:800;
@@ -1515,7 +1522,7 @@ body{letter-spacing:-0.01em}
           <div class="or-bar">
             <div class="or-classes" id="orClasses"></div>
             <div class="or-tools">
-              <label class="or-tog" title="전자칠판에 띄울 때 — 이름·번호를 가리고 질문만 보여요"><input type="checkbox" id="orBoard" onchange="orSetBoard(this.checked)"> 📺 칠판용 (이름 가리기)</label>
+              <button class="or-btn" onclick="orOpenBoard()" title="전자칠판용 창을 따로 엽니다 — 이름·번호·숫자가 아예 안 나오고, 끌 단추도 없어요">📺 칠판 화면 열기</button>
               <button class="or-btn" onclick="orSeenAll()" title="이 반의 반짝임을 모두 끕니다">✓ 이 반 모두 봤어요</button>
             </div>
           </div>
@@ -2211,6 +2218,13 @@ function showDashboard(){
   _autoNew = 0; paintAutoBadge(); startAuto();
   $('authWrap').style.display='none';
   $('dashboard').classList.add('on');
+  /* 📺 칠판 창 — 과수원만, 끌 단추 없이 */
+  if(_orBoardOnly){
+    document.body.classList.add('or-board-only');
+    if(_orBoardClass) _orClass = _orBoardClass;
+    document.title = '🌳 우리 반 과수원';
+    switchView('orchard');
+  }
 
   // 교사 이름 상단바에 표시
   if(currentTeacher?.name){
@@ -5641,7 +5655,21 @@ function _orMarkSeen(uids){
   (uids || []).forEach(function(u){ m[u] = now; });
   _orPut(OR_SEEN_KEY, m);
 }
-function _orBoard(){ return !!_orGet(OR_BOARD_KEY, false); }
+/* 칠판 화면은 토글이 아니라 따로 연 창(?board=2-4)이다. 토글은 한 번 끄면 이름이 뜬다. */
+const _orBoardOnly = /[?&]board(=|&|$)/.test(location.search);
+const _orBoardClass = (function(){ try{ const v = new URLSearchParams(location.search).get('board'); return /^\d+-\d+$/.test(v || '') ? v : null; }catch(e){ return null; } })();
+function _orBoard(){ return _orBoardOnly; }
+function orOpenBoard(){
+  window.open(location.pathname + '?board=' + encodeURIComponent(_orClass || ''), 'qt_orch_board');
+}
+/* 칠판에서는 번호순으로 세우지 않는다 — 모둠·번호표가 공개돼 있어서 자리만 보면 누군지 안다.
+   날마다 같은 순서(그날 안에서는 안 섞임) */
+function _orShuffleKey(uid){
+  const d = new Date(); const s = uid + '|' + d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+  let h = 2166136261;
+  for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
 function _orRel(t){
   const ms = _orMs(t); if(!ms) return '';
   const s = Math.round((Date.now() - ms) / 1000);
@@ -5684,7 +5712,7 @@ function _orDefaultClass(classes, byUser){
   return best || classes[0].key;
 }
 function orPick(key){ _orClass = key; _orKnown = null; _orPut(OR_CLASS_KEY, key); orClose(); renderOrchard(); }
-function orSetBoard(on){ _orPut(OR_BOARD_KEY, !!on); renderOrchard(); if(_orOpen) orRenderDrawer(_orOpen); }
+
 function orSeenAll(){
   const c = _orClasses(_orByUser()).find(function(x){ return x.key === _orClass; }); if(!c) return;
   _orMarkSeen(c.people.map(function(p){ return p.id; }));
@@ -5700,15 +5728,17 @@ function renderOrchard(){
   if(!classes.length){ field.innerHTML = '<div class="empty-row">아직 학생이 없어요</div>'; cBox.innerHTML = ''; stat.textContent = ''; return; }
   if(!_orClass || !classes.some(function(c){ return c.key === _orClass; })) _orClass = _orDefaultClass(classes, byUser);
   const board = _orBoard();
-  const bx = $('orBoard'); if(bx) bx.checked = board;
 
+  /* 칠판에는 다른 반 반짝임 수를 띄우지 않는다 */
   cBox.innerHTML = classes.map(function(c){
     return '<button class="or-c' + (c.key === _orClass ? ' on' : '') + '" onclick="orPick(\'' + c.key + '\')">' +
-      c.g + '-' + c.c + (c.glow ? ' <b>✨' + c.glow + '</b>' : '') + '</button>';
+      c.g + '-' + c.c + ((c.glow && !board) ? ' <b>✨' + c.glow + '</b>' : '') + '</button>';
   }).join('');
 
   const cls = classes.find(function(c){ return c.key === _orClass; });
-  const people = cls.people.slice().sort(function(a, b){ return (Number(a.number)||999) - (Number(b.number)||999); });
+  const people = cls.people.slice().sort(board
+    ? function(a, b){ return _orShuffleKey(a.id) - _orShuffleKey(b.id); }
+    : function(a, b){ return (Number(a.number)||999) - (Number(b.number)||999); });
   const t0 = _orToday0();
   /* 서랍을 열어 둔 학생은 선생님이 지금 보고 있다 — 새 질문이 와도 반짝이지 않는다(서랍 안에서 NEW 로 보인다) */
   if(_orOpen) _orMarkSeen([_orOpen]);
@@ -5727,21 +5757,25 @@ function renderOrchard(){
     if(_orKnown) unseen.forEach(function(q){ if(!_orKnown.has(q.id)) fresh.push({ p:p, q:q }); });
     const total = qs.length, resolved = qs.filter(function(q){ return q.resolved; }).length;
     const lv = Math.min(Math.floor(total / 2) + 1, 10);
-    const svg = miniTreeSVG({ active_tree:p.active_tree, fruit_emoji:p.fruit_emoji, resolved:resolved }, lv);
+    /* 칠판에서는 나무 크기·열매로 «많이 물은 아이» 가 읽히지 않게 모두 같은 나무 */
+    const svg = board ? miniTreeSVG({ active_tree:p.active_tree, resolved:0 }, 5)
+                      : miniTreeSVG({ active_tree:p.active_tree, fruit_emoji:p.fruit_emoji, resolved:resolved }, lv);
     const label = board ? '' : ((p.number ? p.number + '번 ' : '') + esc(p.name || ''));
     const bubble = (unseen.length && !board)
       ? '<div class="or-bubble">' + esc(String(unseen[0].refined_text || unseen[0].text || '').replace(/\s+/g, ' ').slice(0, 26)) + '</div>' : '';
     const quiet = (!board && !today.length) ? ' quiet' : '';
     return '<button class="or-tree' + (unseen.length ? ' glow' : '') + quiet + (_orOpen === p.id ? ' open' : '') + '" onclick="orOpen(\'' + p.id + '\')" title="' + (board ? '' : esc((p.number||'') + '번 ' + (p.name||''))) + '">' +
-      (unseen.length ? '<span class="or-badge">✨ ' + unseen.length + '</span><span class="or-sp s1">✦</span><span class="or-sp s2">✧</span><span class="or-sp s3">✦</span>' : '') +
+      (unseen.length ? '<span class="or-badge">✨' + (board ? '' : ' ' + unseen.length) + '</span><span class="or-sp s1">✦</span><span class="or-sp s2">✧</span><span class="or-sp s3">✦</span>' : '') +
       '<div class="or-svg">' + svg + '</div>' +
       bubble +
       (label ? '<div class="or-name">' + label + '</div>' : '') +
-      '<div class="or-meta">Lv.' + lv + ' · ❓' + total + ' · 🍎' + resolved + (today.length ? ' · <b>오늘 ' + today.length + '</b>' : '') + '</div>' +
+      (board ? '' : '<div class="or-meta">Lv.' + lv + ' · ❓' + total + ' · 🍎' + resolved + (today.length ? ' · <b>오늘 ' + today.length + '</b>' : '') + '</div>') +
     '</button>';
   }).join('');
 
-  stat.innerHTML =
+  stat.innerHTML = board
+    ? ('<span>🌳 ' + cls.g + '-' + cls.c + ' 과수원 — 새 질문을 심으면 나무가 반짝여요</span>' + (newQ ? '<span class="hot">✨ 새 질문이 왔어요</span>' : ''))
+    :
     '<span>📅 오늘 질문한 학생 <b>' + askedToday + '</b> / ' + people.length + '명</span>' +
     '<span>❓ 오늘 질문 <b>' + qToday + '</b>개</span>' +
     (newQ ? '<span class="hot">✨ 아직 안 본 질문 <b>' + newQ + '</b>개 · ' + glowN + '명</span>' : '<span>✓ 새 질문 다 봤어요</span>') +
@@ -5776,15 +5810,31 @@ function orRenderDrawer(uid, soft){
   const body = $('orDrBody'), ttl = $('orDrTitle'); if(!body) return;
   if(soft && body.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
   const p = (allProfiles || []).find(function(x){ return x.id === uid; }); if(!p) return;
-  const qs = (_orByUser()[uid] || []);
+  const qsAll = (_orByUser()[uid] || []);
+  /* 칠판: 오늘 심은 것만, 익명은 빼고 — 지난 질문까지 펼치면 누군지 드러난다 */
+  const qs = _orBoard()
+    ? qsAll.filter(function(q){ return !q.is_anonymous && _orMs(q.created_at) >= _orToday0(); })
+    : qsAll;
   const seen = (uid === _orOpen && _orOpenSeen) ? _orOpenSeen : _orSeen(uid);
   const board = _orBoard();
   const total = qs.length, resolved = qs.filter(function(q){ return q.resolved; }).length;
   const lv = Math.min(Math.floor(total / 2) + 1, 10);
   ttl.innerHTML = board ? '🌳 친구의 나무'
     : ('🌳 ' + p.grade + '-' + p.class_no + ' ' + (p.number ? p.number + '번 ' : '') + esc(p.name || ''));
-  let h = '<div class="or-dr-sum">Lv.' + lv + ' · ❓ 질문 ' + total + ' · 🍎 열매 ' + resolved + '</div>';
-  if(!qs.length) h += '<div class="or-empty">🌱 아직 심은 질문이 없어요</div>';
+  let h = board ? '' : '<div class="or-dr-sum">Lv.' + lv + ' · ❓ 질문 ' + total + ' · 🍎 열매 ' + resolved + '</div>';
+  if(!qs.length) h += '<div class="or-empty">' + (board ? '🌱 오늘 심은 질문이 없어요' : '🌱 아직 심은 질문이 없어요') + '</div>';
+  if(board){
+    qs.forEach(function(q){
+      h += '<div class="or-q' + (_orMs(q.created_at) > seen ? ' new' : '') + '">' +
+        '<div class="or-q-top">' + (q.phase === 'after' ? '🌙' : '🌅') + (q.unit ? '<span class="or-unit">📑 ' + esc(q.unit) + '</span>' : '') +
+          '<span class="or-time">' + _orRel(q.created_at) + '</span></div>' +
+        '<div class="or-q-t">' + esc(q.refined_text || q.text || '') + '</div>' +
+      '</div>';
+    });
+    body.innerHTML = h;
+    if(qsAll.some(function(q){ return _orMs(q.created_at) > _orSeen(uid); })){ _orMarkSeen([uid]); if(!soft) setTimeout(renderOrchard, 0); }
+    return;
+  }
   qs.forEach(function(q){
     const isNew = _orMs(q.created_at) > seen;
     const txt = q.refined_text || q.text || '';
