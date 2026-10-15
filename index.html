@@ -1709,6 +1709,30 @@ body.ask-open .fab-ask{display:none!important}
         background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-xxs);font-weight:800;
         cursor:pointer;box-shadow:0 2px 8px rgba(93,184,110,.3);white-space:nowrap}
 .ql-ask:hover{filter:brightness(1.05)}
+/* 🌱 심은 다음 */
+.ap-wrap{position:absolute;left:0;right:0;bottom:0;top:56px;z-index:6;background:var(--bg);overflow-y:auto;
+         padding:18px 16px 32px;display:flex;justify-content:center;animation:apIn .18s ease}
+.ap-wrap[hidden]{display:none!important}
+@keyframes apIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ap-card{width:100%;max-width:520px}
+.ap-ok{font-size:22px;font-weight:900;color:var(--pd);text-align:center;margin:10px 0 8px}
+.ap-q{background:#fff;border:1.5px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:700;color:var(--tx);
+      line-height:1.5;margin:4px 0 20px;word-break:keep-all}
+.ap-ask{font-size:19px;font-weight:800;color:var(--tx);text-align:center;margin:4px 0 16px;line-height:1.45}
+.ap-yn{display:flex;gap:10px}
+.ap-yn button{flex:1;min-height:60px;border-radius:16px;font-size:16.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.ap-yes{background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;border:none;box-shadow:0 4px 12px rgba(93,184,110,.3)}
+.ap-no{background:#fff;color:var(--tx);border:1.5px solid var(--bd)}
+.ap-yn button:active{transform:scale(.97)}
+.ap-task{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--bd);border-radius:16px;
+         padding:14px 15px;margin-bottom:10px;cursor:pointer;font-family:inherit;transition:border-color .12s,transform .1s}
+.ap-task:hover{border-color:var(--pr)}
+.ap-task:active{transform:scale(.98)}
+.ap-task.first{border-color:var(--pr);box-shadow:0 0 0 3px rgba(93,184,110,.16)}
+.ap-task .ic{font-size:28px;line-height:1;flex:0 0 auto}
+.ap-task b{display:block;font-size:15.5px;color:var(--tx)}
+.ap-task small{display:block;font-size:12.5px;color:var(--tl);margin-top:3px;line-height:1.4}
+.ap-close{display:block;margin:8px auto 0;background:none;border:none;color:var(--tl);font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit}
 /* 목록 머리 — 폰 폭에서 «나의 질문 들 / 해 결 / 목 록» 으로 낱자가 쪼개지지 않게 */
 .ql-h{flex-wrap:wrap;gap:6px 10px}
 .ql-h h4{white-space:nowrap;margin:0}
@@ -4563,11 +4587,99 @@ function swMore(t){ closeMore(); swTab(t); }
    «보러» 온 학생도 매번 폼을 지나쳐 내려가야 했다. 폼은 시트로, 목록이 첫 화면. */
 function openAskSheet(){
   const s = $('askSheet'); if(!s) return;
+  apHide();
   s.classList.add('show');
   document.body.classList.add('ask-open');
   try{ renderTagPresets();renderFruitPicker();renderAnonTog();renderTreePicker();renderStems();renderSourcePicker();renderUnitPicker(); }catch(e){}
   setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 80);
 }
+/* ══ 🌱 심은 다음 ════════════════════════════════════════════════════════ */
+let _apQ = null;
+function apHide(){ const w = $('apWrap'); if(w) w.hidden = true; _apQ = null; }
+async function apShow(q){
+  const w = $('apWrap'), card = $('apCard'), sheet = $('askSheet');
+  if(!w || !card || !q){ closeAskSheet(); return; }
+  _apQ = q;
+  const top = sheet ? sheet.querySelector('.ms-top') : null;
+  w.style.top = (top ? top.offsetHeight : 56) + 'px';
+  const qText = esc(String(q.text || '').slice(0, 120));
+  card.innerHTML =
+    '<div class="ap-ok">🌱 심었어요!</div>' +
+    '<div class="ap-q">' + qText + '</div>' +
+    '<div class="ap-ask">오늘 수업에 대한 질문을<br>더 심을 건가요?</div>' +
+    '<div class="ap-yn">' +
+      '<button class="ap-yes" onclick="apYes()">🌱 네, 더 심을래요</button>' +
+      '<button class="ap-no" onclick="apNo()">🙂 아니요</button>' +
+    '</div>';
+  w.hidden = false;
+  /* 오늘·이 차시 상한에 닿았으면 «네» 가 헛걸음이다 — 묻지 않고 바로 다음 과제 */
+  if(await _apFull(q) && _apQ === q) apNo(true);
+}
+async function _apFull(q){
+  try{
+    for(let i = 0; i < 15 && typeof _quotaBusy !== 'undefined' && _quotaBusy; i++) await new Promise(function(r){ setTimeout(r, 100); });
+    await fetchQuota();
+    if(quotaBlocked()) return true;
+    const u = (q && q.unit) || S.pendingUnit || null;
+    return !!(await unitBlocked(u));
+  }catch(e){ return false; }      /* 못 세면 묻는 쪽으로 — 막지 않는다 */
+}
+function apYes(){
+  apHide();
+  setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 50);
+}
+function apNo(full){
+  const card = $('apCard'); if(!card || !_apQ) return;
+  const q = _apQ;
+  card.innerHTML =
+    '<div class="ap-ok">' + (full ? '🌱 오늘 이 수업 질문은 다 심었어요!' : '👍 좋아요!') + '</div>' +
+    '<div class="ap-ask">그럼 이제 이걸 해 봐요</div>' +
+    '<button class="ap-task first" onclick="apGo(\'refine\')"><span class="ic">✨</span><span><b>방금 심은 질문 다듬기</b>' +
+      '<small>친구가 읽어도 무엇이 궁금한지 딱 보이게, 확인해 볼 수 있게 고쳐요</small></span></button>' +
+    '<button class="ap-task" onclick="apGo(\'help\')"><span class="ic">🙋</span><span><b>친구 질문 도와주기</b>' +
+      '<small id="apHelpN">아직 아무도 답하지 않은 친구 질문을 찾는 중…</small></span></button>' +
+    '<button class="ap-task" onclick="apGo(\'solve\')"><span class="ic">⚡</span><span><b>내 질문 답 찾아 적기</b>' +
+      '<small>찾아보고, 친구에게 말하듯 한 줄로</small></span></button>' +
+    '<button class="ap-close" onclick="apGo(\'close\')">괜찮아요, 닫을게요</button>';
+  _apHelpCount();
+}
+/* 도와줄 질문 수 — 이 차시가 있으면 이 차시, 없으면 우리 반 */
+async function _apHelpCount(){
+  const el = $('apHelpN'); if(!el) return;
+  try{
+    const r = await loadClassQs();
+    if(!$('apHelpN')) return;
+    if(!r || r.error){ el.textContent = '우리 반 친구들의 질문에 💧나도 궁금해·💬 한 마디를 남겨요'; return; }
+    const cu = currentUnit();
+    const pool = (r.list || []).filter(function(x){ return !cu || (x.unit || '').trim() === cu.u; });
+    const n = pool.filter(function(x){ return _waitForFriend(x, r.peerN); }).length;
+    el.textContent = n ? ('아직 아무도 답하지 않은 친구 질문 ' + n + '개가 기다려요' + (cu ? ' (이 차시)' : ''))
+                       : '지금은 기다리는 질문이 없어요 — 친구 질문에 💧나도 궁금해를 눌러 봐요';
+  }catch(e){}
+}
+function apGo(what){
+  const q = _apQ;
+  apHide();
+  closeAskSheet();
+  if(what === 'close' || !q) return;
+  swTab('questions');
+  if(what === 'help'){
+    S.qScope = currentUnit() ? 'unit' : 'class';
+    S.cStatus = 'wait'; S.cPhase = null; S.cUnit = null;
+    renderQs();
+    setTimeout(function(){ const l = $('qScopeSeg'); if(l) l.scrollIntoView({behavior:'smooth', block:'start'}); }, 80);
+    return;
+  }
+  /* 다듬기·해결은 «나» 목록 안에서 열린다 — 거르기를 풀어 방금 심은 카드가 보이게 */
+  S.qScope = 'mine'; S.subFilter = null; S.treeFilter = null; S.phaseFilter = null; S.filterTag = null;
+  if(what === 'refine') openRefine(q.id);
+  else if(what === 'solve') openSolve(q.id);
+  setTimeout(function(){
+    const el = document.querySelector('#qList [data-qid="' + q.id + '"]') || $(what === 'refine' ? ('rfText-' + q.id) : ('svPanel-' + q.id));
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 120);
+}
+
 function closeAskSheet(){
   const s = $('askSheet'); if(!s) return;
   s.classList.remove('show');
@@ -8406,9 +8518,10 @@ async function addQ(ctx){
   mascotPop((S.phase==='after')?'멋진 닫기 질문이에요! 🌙':'좋은 질문 하나가 자랐어요! 🌱');
   setTimeout(()=>{ if(m) m.className = (_msgId==='msMsg'?'ms-msg':'q-msg'); },1500);
   if(typeof ctx.after === 'function') ctx.after(data);
-  /* 질문 탭 시트에서 심었으면 닫는다 — 새 카드가 맨 위에 올라오는 걸 봐야 «심어졌다» 를 안다.
-     자료 시트(msInp)는 연달아 심으므로 그대로 둔다. */
-  if(_inpId === 'qInp'){ setTimeout(closeAskSheet, 350); }
+  /* 질문 탭 시트에서 심었으면 «더 심을래, 아니면 다음 과제?» 를 묻는다.
+     예전엔 시트를 바로 닫았는데, 심고 나서 할 일이 안 보이니 멍때리는 학생이 많았다.
+     자료 시트(msInp)는 연달아 심는 곳이라 그대로 둔다. */
+  if(_inpId === 'qInp'){ apShow(data); }
   /* 우리 반 흐름을 보던 중이면 방금 심은 것이 맨 위에 바로 보이게 — 다시 안 받아도 된다 */
   try{
     if(_classBoardCache && _classBoardCache.list && data && data.id){
@@ -8816,13 +8929,13 @@ async function renderClassFeed(){
   sep();
 
   /* 상태 — 🙋 답 기다림이 먼저. 친구가 도울 수 있는 자리라서 */
-  const wN = list.filter(function(q){ return _waitingAnswer(q, peerN); }).length;
+  const wN = list.filter(function(q){ return _waitForFriend(q, peerN); }).length;
   const rN = list.filter(function(q){ return q.resolved; }).length;
   const sN = list.filter(function(q){ return q.solve && q.solve.stuck; }).length;
   chip('status-chip wait', '🙋 답 기다림 ' + wN, S.cStatus === 'wait', function(){ S.cStatus = (S.cStatus === 'wait' ? null : 'wait'); again(); }, '되묻기도 답도 아직 없는 질문 — 아는 게 있으면 답해 주세요');
   chip('status-chip', '🍎 열매 ' + rN, S.cStatus === 'res', function(){ S.cStatus = (S.cStatus === 'res' ? null : 'res'); again(); });
   if(sN) chip('status-chip', '🌫 막힘 ' + sN, S.cStatus === 'stuck', function(){ S.cStatus = (S.cStatus === 'stuck' ? null : 'stuck'); again(); }, '해결하다가 막혔다고 적은 질문');
-  if(S.cStatus === 'wait')  list = list.filter(function(q){ return _waitingAnswer(q, peerN); });
+  if(S.cStatus === 'wait')  list = list.filter(function(q){ return _waitForFriend(q, peerN); });
   if(S.cStatus === 'res')   list = list.filter(function(q){ return q.resolved; });
   if(S.cStatus === 'stuck') list = list.filter(function(q){ return q.solve && q.solve.stuck; });
 
@@ -9873,6 +9986,10 @@ async function loadClassQs(force){
 }
 /* 답이 없는 질문 — 선생님 되묻기도, 또래 답도, 스스로 쓴 답도 없고 열매도 안 맺힘.
    36차시 «다른 사람의 질문에 공감하기» 가 행동이 되는 자리다. */
+/* 🙋 «도와줄 수 있는» 질문 — 내 질문은 뺀다 */
+function _waitForFriend(q, peerN){
+  return !!(q && !(S.user && q.user_id === S.user.id) && _waitingAnswer(q, peerN));
+}
 function _waitingAnswer(q, peerN){
   if(q.resolved) return false;
   if((q.teacher_nudge||'').trim()) return false;
@@ -12597,6 +12714,8 @@ applyBranding();
     <h3 id="askTitle">✏️ 질문 심기</h3>
     <button class="ms-x" onclick="closeAskSheet()" aria-label="닫기">✕</button>
   </div>
+  <!-- 🌱 심은 다음 — 더 심을지 묻고, 아니면 다음 과제 (심고 멍때리는 시간을 없앤다) -->
+  <div class="ap-wrap" id="apWrap" hidden><div class="ap-card" id="apCard"></div></div>
   <div class="ms-body ask-body" id="askBody">
       <div class="cs">
         <!-- 🌅🌙 수업 단계 토글 -->
