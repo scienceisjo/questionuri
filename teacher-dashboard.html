@@ -270,6 +270,52 @@ td strong{font-weight:700;color:var(--ink)}
 .forest-card-meta{font-family:var(--mono);font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.02em}
 .forest-card-meta .sep{margin:0 4px;color:var(--rule)}
 /* ══ 🌳 우리 반 과수원 ══ */
+/* 🔍 큰 질문 카드 */
+.or-cardwrap{position:fixed;inset:0;z-index:950;display:none;align-items:center;justify-content:center;padding:24px 92px}
+.or-cardwrap.show{display:flex}
+.or-cscrim{position:absolute;inset:0;background:rgba(16,28,22,.58)}
+.or-card{position:relative;width:min(960px,100%);max-height:calc(100vh - 48px);overflow-y:auto;background:var(--surface);border-radius:22px;
+         box-shadow:0 30px 80px rgba(0,0,0,.35);padding:22px 30px 18px;animation:orCardIn .16s ease}
+@keyframes orCardIn{from{transform:translateY(8px) scale(.985);opacity:0}to{transform:none;opacity:1}}
+.or-arrow{position:absolute;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;border:none;z-index:2;
+          background:rgba(255,255,255,.94);font-size:42px;line-height:1;color:var(--ph);cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.28);
+          display:flex;align-items:center;justify-content:center;padding:0 0 6px}
+.or-arrow:hover:not(:disabled){background:#fff;transform:translateY(-50%) scale(1.06)}
+.or-arrow.prev{left:16px}.or-arrow.next{right:16px}
+.or-arrow:disabled{opacity:.25;cursor:default}
+.or-ch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14.5px;color:var(--ink3)}
+.or-ch .who{font-size:18px;font-weight:800;color:var(--ink)}
+.or-cx{margin-left:auto;border:none;background:rgba(0,0,0,.06);width:38px;height:38px;border-radius:50%;font-size:17px;cursor:pointer;color:var(--ink2)}
+.or-scope{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.or-sc{border:1.5px solid var(--rule);background:var(--surface);font:inherit;font-size:13px;font-weight:800;color:var(--ink3);padding:5px 13px;border-radius:999px;cursor:pointer}
+.or-sc.on{background:var(--ph);border-color:var(--ph);color:#fff}
+.or-sc.word{border-color:#E7C35A;background:#FFF8E1;color:#8A6100}
+.or-big{font-size:clamp(26px,3.3vw,42px);font-weight:800;line-height:1.45;color:var(--ink);margin:26px 4px 12px;word-break:keep-all;overflow-wrap:anywhere}
+.or-big-empty{font-size:26px;color:var(--ink3);text-align:center;padding:56px 0 40px}
+.or-was{font-size:15px;color:var(--ink3);margin:0 4px 6px}
+.or-rows .or-q-row{font-size:16px;margin:8px 4px 0}
+.or-card .or-nd{margin-top:12px}
+.or-card .or-nd input{font-size:15px;padding:10px 12px}
+.or-cf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--rule);margin-top:20px;padding-top:14px}
+.or-card .or-a{font-size:14px;padding:7px 14px}
+.or-cnt{margin-left:auto;font-size:15px;font-weight:800;color:var(--ink2)}
+.or-cnt small{font-size:11.5px;font-weight:600;color:var(--ink3)}
+body.or-board-only .or-big{font-size:clamp(32px,4.4vw,60px)}
+body.or-board-only .or-ch .who{font-size:20px}
+/* 🌳 나무 | ☁️ 낱말 구름 */
+.or-modes{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:0 18px 10px}
+.or-seg{display:inline-flex;gap:3px;background:rgba(0,0,0,.05);padding:3px;border-radius:999px}
+.or-seg button{border:none;background:transparent;font:inherit;font-size:13px;font-weight:800;color:var(--ink3);padding:6px 14px;border-radius:999px;cursor:pointer}
+.or-seg button.on{background:var(--surface);color:var(--ph);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.or-seg.sm button{font-size:12px;padding:5px 11px}
+.or-hint{font-size:12px;color:var(--ink3)}
+.or-cloud{min-height:380px;padding:34px 34px 40px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 22px;
+          background:linear-gradient(180deg,#F4F9F1 0%,#EAF3E3 100%);border-top:1px solid var(--rule)}
+.or-w{border:none;background:none;font-family:inherit;font-weight:800;line-height:1.1;cursor:pointer;padding:2px 4px;border-radius:8px;transition:transform .12s,background .12s}
+.or-w:hover{transform:scale(1.08);background:rgba(255,255,255,.7)}
+.or-w small{font-size:.42em;opacity:.65;margin-left:3px;vertical-align:super}
+.or-cloud-empty{font-size:18px;color:var(--ink3)}
+body.or-board-only .or-cloud{min-height:60vh}
 /* 📺 칠판 창: 과수원 말고 아무것도 없다 */
 body.or-board-only .topbar, body.or-board-only .nowunit-bar, body.or-board-only .unitlist-panel,
 body.or-board-only .filter-bar, body.or-board-only .view-tabs, body.or-board-only .alerts-section,
@@ -1527,15 +1573,17 @@ body{letter-spacing:-0.01em}
             </div>
           </div>
           <div class="or-stat" id="orStat"></div>
+          <div class="or-modes" id="orModes"></div>
           <div class="or-field" id="orField"></div>
+          <div class="or-cloud" id="orCloud" style="display:none"></div>
         </div>
       </div>
-      <div class="or-drawer" id="orDrawer" aria-hidden="true">
-        <div class="or-scrim" onclick="orClose()"></div>
-        <aside class="or-panel" role="dialog" aria-labelledby="orDrTitle">
-          <div class="or-dr-hd"><div class="or-dr-t" id="orDrTitle"></div><button class="or-dr-x" onclick="orClose()" aria-label="닫기">✕</button></div>
-          <div class="or-dr-body" id="orDrBody"></div>
-        </aside>
+      <!-- 🔍 큰 질문 카드 — 나무를 누르면 화면 가운데. ‹ › 로 옆 질문 -->
+      <div class="or-cardwrap" id="orCardWrap" aria-hidden="true">
+        <div class="or-cscrim" onclick="orClose()"></div>
+        <button class="or-arrow prev" id="orPrev" onclick="orCardStep(-1)" aria-label="앞 질문">‹</button>
+        <div class="or-card" id="orCard" role="dialog" aria-modal="true"></div>
+        <button class="or-arrow next" id="orNext" onclick="orCardStep(1)" aria-label="다음 질문">›</button>
       </div>
     </div>
 
@@ -1763,7 +1811,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '10-14 b · 칠판 본것 분리';
+const BUILD = '10-15 a · 큰 질문 카드·낱말 구름';
 let allSubjects = [];
 let allBranches = [];
 
@@ -5448,22 +5496,28 @@ function tokenize(text){
     });
 }
 
+/* 한국어: 조사 제거 휴리스틱 — 끝에 붙은 -이/가/은/는/을/를/에/의 등 떼기 (길이 3자 이상일 때).
+   종합 화면 구름과 과수원 구름이 같은 낱말을 세도록 한 곳에 둔다. 못 쓰는 낱말이면 '' */
+function wcBase(w){
+  let base=w;
+  if(w.length>=3){
+    const sufs=['이다','입니다','에서','에게','이에','이나','이랑','에도','에는','에게','부터','까지','으로','로서','이라','라고','이라고','이라는','라는','들은','들이','들을','들의','으면','이면','이면서','으면서','으니','이니','이니까','니까'];
+    for(const s of sufs){ if(w.endsWith(s)&&w.length>s.length+1){ base=w.slice(0,-s.length); break; } }
+    if(base===w){
+      const short=['이','가','은','는','을','를','에','의','과','와','도','만','나','든','랑','께','처럼','보다','마저','조차','까지']
+        .sort((a,b)=>b.length-a.length);
+      for(const s of short){ if(w.endsWith(s)&&w.length>s.length+1){ base=w.slice(0,-s.length); break; } }
+    }
+  }
+  if(base.length<2||STOPWORDS.has(base)) return '';
+  return base;
+}
 function renderWordcloud(){
   const counts={};
   filteredQuestions.forEach(q=>{
     tokenize(q.text||'').forEach(w=>{
-      // 한국어: 조사 제거 휴리스틱 — 끝에 붙은 -이/가/은/는/을/를/에/의 등 떼기 (길이 3자 이상일 때)
-      let base=w;
-      if(w.length>=3){
-        const sufs=['이다','입니다','에서','에게','이에','이나','이랑','에도','에는','에게','부터','까지','으로','로서','이라','라고','이라고','이라는','라는','들은','들이','들을','들의','으면','이면','이면서','으면서','으니','이니','이니까','니까'];
-        for(const s of sufs){ if(w.endsWith(s)&&w.length>s.length+1){ base=w.slice(0,-s.length); break; } }
-        if(base===w){
-          const short=['이','가','은','는','을','를','에','의','과','와','도','만','나','든','랑','께','처럼','보다','마저','조차','까지']
-            .sort((a,b)=>b.length-a.length);
-          for(const s of short){ if(w.endsWith(s)&&w.length>s.length+1){ base=w.slice(0,-s.length); break; } }
-        }
-      }
-      if(base.length<2||STOPWORDS.has(base)) return;
+      const base = wcBase(w);
+      if(!base) return;
       counts[base]=(counts[base]||0)+1;
     });
   });
@@ -5644,7 +5698,10 @@ let _orClass = null;        /* '2-4' */
 let _orOpen = null;         /* 서랍에 열린 학생 id */
 let _orKnown = null;        /* 지난번 그릴 때 이 반에 있던 질문 id — 새로 온 것 알림용 */
 let _orNdOpen = {};         /* 서랍에서 되묻기 칸을 연 질문 */
-let _orOpenSeen = 0;        /* 서랍을 연 순간의 «본 것» 시각 — 열자마자 NEW 표시가 꺼지지 않게 */
+let _orCard = null;         /* 큰 카드: {scope, word, ids, i, snap, emptyUid, pos} */
+let _orMode = 'trees';      /* 'trees' | 'cloud' */
+let _orWcScope = 'today';   /* 구름: 'today' | 'all' */
+let _orWcWords = [];        /* 구름 낱말 — onclick 은 번호로 넘긴다(따옴표 든 낱말 대비) */
 function _orGet(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } }
 function _orPut(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function _orMs(t){ const n = Date.parse(t || ''); return isNaN(n) ? 0 : n; }
@@ -5657,6 +5714,16 @@ function _orMarkSeen(uids){
   const m = _orGet(_orSeenKey(), {}) || {}; const now = Date.now();
   (uids || []).forEach(function(u){ m[u] = now; });
   _orPut(_orSeenKey(), m);
+}
+/* 카드로 «이 질문까지» 읽었다 — 그 학생의 뒤 질문은 아직 반짝인다.
+   지금 기준(없으면 오늘 0시)보다 뒤일 때만 올린다. 옛 질문을 본다고 기준이 뒤로 가면
+   어제·그제 질문이 «안 본 것» 으로 되살아난다. */
+function _orMarkSeenUpTo(uid, ms){
+  const m = _orGet(_orSeenKey(), {}) || {};
+  const cur = m[uid] || _orToday0();
+  if(!ms || cur >= ms) return false;
+  m[uid] = ms; _orPut(_orSeenKey(), m);
+  return true;
 }
 /* 칠판 화면은 토글이 아니라 따로 연 창(?board=2-4)이다. 토글은 한 번 끄면 이름이 뜬다. */
 const _orBoardOnly = /[?&]board(=|&|$)/.test(location.search);
@@ -5714,6 +5781,7 @@ function _orDefaultClass(classes, byUser){
   classes.forEach(function(c){ c.people.forEach(function(p){ const q = (byUser[p.id] || [])[0]; const ms = q ? _orMs(q.created_at) : 0; if(ms > bestMs){ bestMs = ms; best = c.key; } }); });
   return best || classes[0].key;
 }
+try{ const _m = localStorage.getItem('qt_orch_mode_v1'); if(_m === '"cloud"') _orMode = 'cloud'; }catch(e){}
 function orPick(key){ _orClass = key; _orKnown = null; _orPut(OR_CLASS_KEY, key); orClose(); renderOrchard(); }
 
 function orSeenAll(){
@@ -5739,12 +5807,8 @@ function renderOrchard(){
   }).join('');
 
   const cls = classes.find(function(c){ return c.key === _orClass; });
-  const people = cls.people.slice().sort(board
-    ? function(a, b){ return _orShuffleKey(a.id) - _orShuffleKey(b.id); }
-    : function(a, b){ return (Number(a.number)||999) - (Number(b.number)||999); });
+  const people = _orPeople(cls);
   const t0 = _orToday0();
-  /* 서랍을 열어 둔 학생은 선생님이 지금 보고 있다 — 새 질문이 와도 반짝이지 않는다(서랍 안에서 NEW 로 보인다) */
-  if(_orOpen) _orMarkSeen([_orOpen]);
   let askedToday = 0, qToday = 0, newQ = 0, glowN = 0;
   const fresh = [];
   const nowIds = new Set();
@@ -5791,93 +5855,259 @@ function renderOrchard(){
                 : ('✨ ' + (f.p.number ? f.p.number + '번 ' : '') + (f.p.name || '') + ' 새 질문' + (fresh.length > 1 ? (' 외 ' + (fresh.length - 1) + '개') : '')));
   }
   _orKnown = nowIds;
-  if(_orOpen) orRenderDrawer(_orOpen, true);
+
+  /* 🌳 나무 | ☁️ 낱말 구름 */
+  const modes = $('orModes'), cloud = $('orCloud');
+  if(modes){
+    modes.innerHTML =
+      '<div class="or-seg">' +
+        '<button class="' + (_orMode === 'trees' ? 'on' : '') + '" onclick="orSetMode(\'trees\')">🌳 나무</button>' +
+        '<button class="' + (_orMode === 'cloud' ? 'on' : '') + '" onclick="orSetMode(\'cloud\')">☁️ 낱말 구름</button>' +
+      '</div>' +
+      ((_orMode === 'cloud' && !board) ?
+        ('<div class="or-seg sm">' +
+          '<button class="' + (_orWcScope === 'today' ? 'on' : '') + '" onclick="orSetWcScope(\'today\')">📅 오늘</button>' +
+          '<button class="' + (_orWcScope === 'all' ? 'on' : '') + '" onclick="orSetWcScope(\'all\')">🗂 전체</button>' +
+        '</div><span class="or-hint">낱말을 누르면 그 낱말이 든 질문이 카드로 열려요</span>') : '');
+  }
+  field.style.display = (_orMode === 'cloud') ? 'none' : '';
+  if(cloud){
+    cloud.style.display = (_orMode === 'cloud') ? '' : 'none';
+    if(_orMode === 'cloud') cloud.innerHTML = _orCloudHTML(cls);
+  }
+  if(_orCard) orCardRender(true);
 }
 
+/* 과수원과 카드가 같은 순서를 쓴다 — 칠판은 섞고, 선생님 화면은 번호순 */
+function _orPeople(cls){
+  return cls.people.slice().sort(_orBoard()
+    ? function(a, b){ return _orShuffleKey(a.id) - _orShuffleKey(b.id); }
+    : function(a, b){ return (Number(a.number)||999) - (Number(b.number)||999); });
+}
+function _orCurClass(){
+  return _orClasses(_orByUser()).find(function(c){ return c.key === _orClass; }) || null;
+}
+function _orQ(id){ return (allQuestions || []).find(function(q){ return q.id === id; }) || null; }
+/* 질문 구름엔 «될까·흐를까·하면» 같은 물음 끝말이 맨 앞에 선다 — 내용 낱말만 남긴다 */
+const OR_WC_SKIP = new Set(['하면','되면','하는','되는','하고','되고','해서','돼서','했을','됐을','질문','궁금','궁금해','궁금한','생각','어떻게','이유','방법']);
+function _orKeepWord(w){
+  if(OR_WC_SKIP.has(w)) return false;
+  if(/(까|까요|는지|을지|ㄹ지|나요|가요|을까|일까|할까|될까|는가|은가)$/.test(w)) return false;
+  return true;
+}
+function _orWordsOf(q){
+  const s = new Set();
+  tokenize(q.refined_text || q.text || '').forEach(function(w){ const b = wcBase(w); if(b && _orKeepWord(b)) s.add(b); });
+  return s;
+}
+/* 카드가 넘겨 볼 질문 id — 나무 순서, 한 학생 안에서는 먼저 쓴 것부터 */
+function _orSeqIds(scope, word){
+  const cls = _orCurClass(); if(!cls) return [];
+  const byUser = _orByUser(), board = _orBoard(), t0 = _orToday0(), out = [];
+  _orPeople(cls).forEach(function(p){
+    let qs = (byUser[p.id] || []).slice().sort(function(a, b){ return _orMs(a.created_at) - _orMs(b.created_at); });
+    if(board) qs = qs.filter(function(q){ return !q.is_anonymous; });
+    if(board || scope === 'today') qs = qs.filter(function(q){ return _orMs(q.created_at) >= t0; });
+    if(word) qs = qs.filter(function(q){ return _orWordsOf(q).has(word); });
+    qs.forEach(function(q){ out.push(q.id); });
+  });
+  return out;
+}
+
+/* ── ☁️ 낱말 구름 ── */
+function orSetMode(m){ _orMode = (m === 'cloud') ? 'cloud' : 'trees'; _orPut('qt_orch_mode_v1', _orMode); renderOrchard(); }
+function orSetWcScope(s){ _orWcScope = (s === 'all') ? 'all' : 'today'; renderOrchard(); }
+function _orCloudHTML(cls){
+  const byUser = _orByUser(), board = _orBoard(), t0 = _orToday0();
+  const scope = board ? 'today' : _orWcScope;
+  const counts = {}; let nQ = 0;
+  cls.people.forEach(function(p){
+    (byUser[p.id] || []).forEach(function(q){
+      if(board && q.is_anonymous) return;
+      if(scope === 'today' && _orMs(q.created_at) < t0) return;
+      nQ++;
+      _orWordsOf(q).forEach(function(w){ counts[w] = (counts[w] || 0) + 1; });
+    });
+  });
+  const minC = nQ >= 15 ? 2 : 1;
+  const sorted = Object.keys(counts).filter(function(w){ return counts[w] >= minC; })
+    .sort(function(a, b){ return counts[b] - counts[a] || a.localeCompare(b, 'ko'); }).slice(0, 50);
+  _orWcWords = sorted;
+  if(!sorted.length){
+    return '<div class="or-cloud-empty">☁️ ' + (scope === 'today' ? '오늘 심은 질문이 아직 없어요' : '낱말을 뽑을 질문이 아직 없어요') + '</div>';
+  }
+  const maxC = counts[sorted[0]], lo = counts[sorted[sorted.length - 1]], rg = Math.max(1, maxC - lo);
+  const pal = ['#1E3932','#006241','#C8901A','#2563EB','#7C3AED','#0E9488','#DB2777','#00754A','#B45309'];
+  /* 큰 낱말이 가운데 오게 — 크기순으로 양옆에 번갈아 놓는다 */
+  const items = sorted.map(function(w, i){ return { w:w, i:i, c:counts[w] }; });
+  const arranged = [];
+  items.forEach(function(it, k){ if(k % 2) arranged.push(it); else arranged.unshift(it); });
+  return arranged.map(function(it){
+    const t = (it.c - lo) / rg;
+    const size = Math.round(18 + t * 46);
+    return '<button class="or-w" style="font-size:' + size + 'px;color:' + pal[it.i % pal.length] + ';opacity:' + (0.6 + t * 0.4).toFixed(2) + '"' +
+           ' onclick="orWord(' + it.i + ')" title="' + it.c + '개 질문">' + esc(it.w) + (board ? '' : '<small>' + it.c + '</small>') + '</button>';
+  }).join('');
+}
+function orWord(i){
+  const w = _orWcWords[i]; if(!w) return;
+  if(!_orCardStart(_orBoard() ? 'today' : _orWcScope, w, null)) toast('이 낱말이 든 질문을 띄울 수 없어요');
+}
+
+/* ══ 🔍 큰 질문 카드 ════════════════════════════════════════════════════
+   나무를 누르면 그 학생의 (안 본) 질문부터. ‹ › 는 반의 질문을 나무 순서대로 —
+   옆 나무의 질문으로 이어진다. 카드로 읽은 질문까지만 «본 것» 이 된다. */
 function orOpen(uid){
-  _orOpen = uid; _orNdOpen = {};
-  _orOpenSeen = _orSeen(uid);
-  orRenderDrawer(uid);
-  const d = $('orDrawer'); if(d){ d.classList.add('show'); d.setAttribute('aria-hidden', 'false'); }
-  document.querySelectorAll('.or-tree').forEach(function(b){ b.classList.toggle('open', b.getAttribute('onclick').indexOf(uid) >= 0); });
+  const board = _orBoard(), t0 = _orToday0();
+  const mine = (_orByUser()[uid] || []);
+  const hasToday = mine.some(function(q){ return _orMs(q.created_at) >= t0 && !(board && q.is_anonymous); });
+  _orCardStart((board || hasToday) ? 'today' : 'all', null, uid);
+}
+/* 카드를 연다. 띄울 것이 하나도 없으면 false */
+function _orCardStart(scope, word, uid){
+  const ids = _orSeqIds(scope, word);
+  const snap = _orGet(_orSeenKey(), {}) || {};
+  let i = -1, emptyUid = null, pos = 0;
+  if(uid){
+    const seen = snap[uid] || _orToday0();
+    i = ids.findIndex(function(id){ const q = _orQ(id); return q && q.user_id === uid && _orMs(q.created_at) > seen; });
+    if(i < 0) i = ids.findIndex(function(id){ const q = _orQ(id); return q && q.user_id === uid; });
+    if(i < 0){
+      /* 이 범위에 질문이 없는 학생 — 빈 카드를 그 학생 자리에 세우고 ‹ › 는 옆 질문으로 */
+      emptyUid = uid;
+      const cls = _orCurClass(); const order = cls ? _orPeople(cls).map(function(p){ return p.id; }) : [];
+      const me = order.indexOf(uid);
+      pos = ids.findIndex(function(id){ const q = _orQ(id); return q && order.indexOf(q.user_id) > me; });
+      if(pos < 0) pos = ids.length;
+    }
+  }
+  if(!ids.length && !emptyUid) return false;
+  _orCard = { scope:scope, word:word || null, ids:ids, i:Math.max(0, i), snap:snap, emptyUid:emptyUid, pos:pos };
+  _orNdOpen = {};
+  const w = $('orCardWrap'); if(w){ w.classList.add('show'); w.setAttribute('aria-hidden', 'false'); }
+  orCardRender(false);
+  return true;
+}
+function orCardStep(d){
+  const c = _orCard; if(!c) return;
+  if(c.emptyUid){
+    const ni = (d > 0) ? c.pos : c.pos - 1;
+    if(ni < 0 || ni >= c.ids.length) return;
+    c.emptyUid = null; c.i = ni;
+  } else {
+    const ni = c.i + d;
+    if(ni < 0 || ni >= c.ids.length) return;
+    c.i = ni;
+  }
+  _orNdOpen = {};
+  orCardRender(false);
+}
+function orCardScope(scope, keepWord){
+  const c = _orCard; if(!c) return;
+  const curId = c.emptyUid ? null : c.ids[c.i];
+  const word = keepWord ? c.word : null;
+  const ids = _orSeqIds(scope, word);
+  if(!ids.length){ toast(scope === 'today' ? '오늘 심은 질문이 없어요' : '질문이 없어요'); return; }
+  let i = curId != null ? ids.indexOf(curId) : -1;
+  if(i < 0 && c.emptyUid){
+    const uidQs = ids.filter(function(id){ const q = _orQ(id); return q && q.user_id === c.emptyUid; });
+    if(uidQs.length) i = ids.indexOf(uidQs[0]);
+  }
+  _orCard = { scope:scope, word:word, ids:ids, i:Math.max(0, i), snap:c.snap, emptyUid:null, pos:0 };
+  orCardRender(false);
 }
 function orClose(){
-  const d = $('orDrawer'); if(d){ d.classList.remove('show'); d.setAttribute('aria-hidden', 'true'); }
-  _orOpen = null;
+  const w = $('orCardWrap'); if(w){ w.classList.remove('show'); w.setAttribute('aria-hidden', 'true'); }
+  _orCard = null; _orOpen = null;
   document.querySelectorAll('.or-tree.open').forEach(function(b){ b.classList.remove('open'); });
 }
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && _orOpen) orClose(); });
+document.addEventListener('keydown', function(e){
+  if(!_orCard) return;
+  if(e.key === 'Escape'){ orClose(); return; }
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if(/INPUT|TEXTAREA/.test(tag)) return;          /* 되묻기 쓰는 중엔 화살표가 글자 사이를 움직여야 한다 */
+  if(e.key === 'ArrowLeft'){ e.preventDefault(); orCardStep(-1); }
+  else if(e.key === 'ArrowRight'){ e.preventDefault(); orCardStep(1); }
+});
 
-/* soft = 자동 갱신으로 다시 그리는 중. 선생님이 되묻기를 쓰고 있으면 건드리지 않는다 */
-function orRenderDrawer(uid, soft){
-  const body = $('orDrBody'), ttl = $('orDrTitle'); if(!body) return;
-  if(soft && body.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
-  const p = (allProfiles || []).find(function(x){ return x.id === uid; }); if(!p) return;
-  const qsAll = (_orByUser()[uid] || []);
-  /* 칠판: 오늘 심은 것만, 익명은 빼고 — 지난 질문까지 펼치면 누군지 드러난다 */
-  const qs = _orBoard()
-    ? qsAll.filter(function(q){ return !q.is_anonymous && _orMs(q.created_at) >= _orToday0(); })
-    : qsAll;
-  const seen = (uid === _orOpen && _orOpenSeen) ? _orOpenSeen : _orSeen(uid);
+/* soft = 자동 갱신으로 다시 그림. 되묻기를 쓰고 있으면 건드리지 않는다 */
+function orCardRender(soft){
+  const c = _orCard, box = $('orCard'); if(!c || !box) return;
+  if(soft && box.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
   const board = _orBoard();
-  const total = qs.length, resolved = qs.filter(function(q){ return q.resolved; }).length;
-  const lv = Math.min(Math.floor(total / 2) + 1, 10);
-  ttl.innerHTML = board ? '🌳 친구의 나무'
-    : ('🌳 ' + p.grade + '-' + p.class_no + ' ' + (p.number ? p.number + '번 ' : '') + esc(p.name || ''));
-  let h = board ? '' : '<div class="or-dr-sum">Lv.' + lv + ' · ❓ 질문 ' + total + ' · 🍎 열매 ' + resolved + '</div>';
-  if(!qs.length) h += '<div class="or-empty">' + (board ? '🌱 오늘 심은 질문이 없어요' : '🌱 아직 심은 질문이 없어요') + '</div>';
-  if(board){
-    qs.forEach(function(q){
-      h += '<div class="or-q' + (_orMs(q.created_at) > seen ? ' new' : '') + '">' +
-        '<div class="or-q-top">' + (q.phase === 'after' ? '🌙' : '🌅') + (q.unit ? '<span class="or-unit">📑 ' + esc(q.unit) + '</span>' : '') +
-          '<span class="or-time">' + _orRel(q.created_at) + '</span></div>' +
-        '<div class="or-q-t">' + esc(q.refined_text || q.text || '') + '</div>' +
-      '</div>';
-    });
-    body.innerHTML = h;
-    if(qsAll.some(function(q){ return _orMs(q.created_at) > _orSeen(uid); })){ _orMarkSeen([uid]); if(!soft) setTimeout(renderOrchard, 0); }
-    return;
+  if(soft){
+    /* 새 질문이 들어왔을 수 있다 — 보던 질문 자리는 지킨다 */
+    const curId = c.emptyUid ? null : c.ids[c.i];
+    c.ids = _orSeqIds(c.scope, c.word);
+    if(curId != null){ const k = c.ids.indexOf(curId); c.i = k >= 0 ? k : Math.min(c.i, Math.max(0, c.ids.length - 1)); }
   }
-  qs.forEach(function(q){
-    const isNew = _orMs(q.created_at) > seen;
-    const txt = q.refined_text || q.text || '';
-    const ans = q.solve && (q.solve.answer || '').trim();
-    h += '<div class="or-q' + (isNew ? ' new' : '') + '">' +
-      '<div class="or-q-top">' +
-        (isNew ? '<span class="or-new">✨ NEW</span>' : '') +
-        '<span title="' + (q.phase === 'after' ? '수업 닫기' : '수업 열기') + '">' + (q.phase === 'after' ? '🌙' : '🌅') + '</span>' +
-        (q.unit ? '<span class="or-unit">📑 ' + esc(q.unit) + '</span>' : '') +
-        (q.is_anonymous ? '<span class="or-unit">🕊️ 익명</span>' : '') +
-        '<span class="or-time">' + _orRel(q.created_at) + '</span>' +
-      '</div>' +
-      '<div class="or-q-t">' + esc(txt) + '</div>' +
-      (q.refined_text && q.text ? '<div class="or-q-was">처음: ' + esc(q.text) + '</div>' : '') +
-      (q.resolved ? '<div class="or-q-row">🍎 <b>알아낸 것</b> ' + esc(q.finding || ans || '') + '</div>' : (ans ? '<div class="or-q-row">🔬 <b>답</b> ' + esc(ans) + '</div>' : '')) +
-      ((q.teacher_nudge || '').trim() ? '<div class="or-q-row nd">🌿 <b>되묻기</b> ' + esc(q.teacher_nudge) + '</div>' : '') +
-      '<div class="or-q-act">' +
-        '<button class="or-a' + (q.starred ? ' on' : '') + '" onclick="orStar(' + q.id + ')">' + (q.starred ? '⭐ 별표 해제' : '☆ 별표') + '</button>' +
-        '<button class="or-a" onclick="orNdToggle(' + q.id + ')">🌿 ' + ((q.teacher_nudge || '').trim() ? '되묻기 고치기' : '되묻기') + '</button>' +
-      '</div>' +
-      (_orNdOpen[q.id] ?
-        ('<div class="or-nd"><input id="orNdIn-' + q.id + '" value="' + esc(q.teacher_nudge || '').replace(/"/g, '&quot;') + '" placeholder="답 말고, 한 걸음 더 가게 하는 물음 하나" onkeydown="if(event.key===\'Enter\')orNdSave(' + q.id + ')">' +
-         '<button class="or-a pr" onclick="orNdSave(' + q.id + ')">저장</button></div>') : '') +
+  const q = c.emptyUid ? null : _orQ(c.ids[c.i]);
+  const uid = c.emptyUid || (q && q.user_id);
+  const p = (allProfiles || []).find(function(x){ return x.id === uid; }) || {};
+  _orOpen = uid || null;
+  document.querySelectorAll('.or-tree').forEach(function(b){ b.classList.toggle('open', !!uid && b.getAttribute('onclick').indexOf(uid) >= 0); });
+
+  /* 읽은 질문까지 «본 것» — 반짝임이 바뀌었으면 과수원을 다시 그린다 */
+  if(q && _orMarkSeenUpTo(q.user_id, _orMs(q.created_at)) && !soft) setTimeout(renderOrchard, 0);
+
+  const who = board ? '🌳 친구의 질문'
+    : ('🌳 ' + (p.grade ? p.grade + '-' + p.class_no + ' · ' : '') + (p.number ? p.number + '번 ' : '') + esc(p.name || ''));
+  let h = '<div class="or-ch">' +
+    '<span class="who">' + who + '</span>' +
+    (q ? ('<span>' + (q.phase === 'after' ? '🌙 수업 닫기' : '🌅 수업 열기') + '</span>' +
+          (q.unit ? '<span class="or-unit">📑 ' + esc(q.unit) + '</span>' : '') +
+          (!board && q.is_anonymous ? '<span class="or-unit">🕊️ 익명</span>' : '') +
+          '<span>' + _orRel(q.created_at) + '</span>' +
+          (_orMs(q.created_at) > (c.snap[q.user_id] || _orToday0()) ? '<span class="or-new">✨ NEW</span>' : '')) : '') +
+    '<button class="or-cx" onclick="orClose()" aria-label="닫기">✕</button>' +
+  '</div>';
+  if(!board){
+    const nT = _orSeqIds('today', c.word).length, nA = _orSeqIds('all', c.word).length;
+    h += '<div class="or-scope">' +
+      '<button class="or-sc' + (c.scope === 'today' ? ' on' : '') + '" onclick="orCardScope(\'today\', true)">📅 오늘 ' + nT + '</button>' +
+      '<button class="or-sc' + (c.scope === 'all' ? ' on' : '') + '" onclick="orCardScope(\'all\', true)">🗂 전체 ' + nA + '</button>' +
+      (c.word ? '<button class="or-sc word" onclick="orCardScope(\'' + c.scope + '\', false)" title="낱말 거르기 풀기">☁️ «' + esc(c.word) + '» ✕</button>' : '') +
     '</div>';
-  });
-  if(!board) h += '<button class="or-dd" onclick="orToDrilldown(\'' + uid + '\')">📋 학생 상세 열기 (도장·메모·꼬리질문)</button>';
-  body.innerHTML = h;
-  /* 열어 본 순간 «본 것» — 나무 반짝임이 꺼진다 */
-  if(qs.some(function(q){ return _orMs(q.created_at) > _orSeen(uid); })){
-    _orMarkSeen([uid]);
-    if(!soft) setTimeout(renderOrchard, 0);
+  } else if(c.word){
+    h += '<div class="or-scope"><span class="or-sc word on">☁️ «' + esc(c.word) + '»</span></div>';
   }
+  if(!q){
+    h += '<div class="or-big-empty">🌱 ' + (c.scope === 'today' ? '오늘은 아직 심은 질문이 없어요' : '아직 심은 질문이 없어요') + '</div>';
+  } else {
+    h += '<div class="or-big">' + esc(q.refined_text || q.text || '') + '</div>';
+    if(!board){
+      const ans = q.solve && (q.solve.answer || '').trim();
+      h += (q.refined_text && q.text ? '<div class="or-was">처음 쓴 질문: ' + esc(q.text) + '</div>' : '') +
+        '<div class="or-rows">' +
+          (q.resolved ? '<div class="or-q-row">🍎 <b>알아낸 것</b> ' + esc(q.finding || ans || '') + '</div>' : (ans ? '<div class="or-q-row">🔬 <b>답</b> ' + esc(ans) + '</div>' : '')) +
+          ((q.teacher_nudge || '').trim() ? '<div class="or-q-row nd">🌿 <b>되묻기</b> ' + esc(q.teacher_nudge) + '</div>' : '') +
+        '</div>' +
+        (_orNdOpen[q.id] ?
+          ('<div class="or-nd"><input id="orNdIn-' + q.id + '" value="' + esc(q.teacher_nudge || '').replace(/"/g, '&quot;') + '" placeholder="답 말고, 한 걸음 더 가게 하는 물음 하나" onkeydown="if(event.key===\'Enter\')orNdSave(' + q.id + ')">' +
+           '<button class="or-a pr" onclick="orNdSave(' + q.id + ')">저장</button></div>') : '');
+    }
+  }
+  const pos = c.emptyUid ? null : (c.i + 1);
+  h += '<div class="or-cf">' +
+    ((!board && q) ?
+      ('<button class="or-a' + (q.starred ? ' on' : '') + '" onclick="orStar(' + q.id + ')">' + (q.starred ? '⭐ 별표 해제' : '☆ 별표') + '</button>' +
+       '<button class="or-a" onclick="orNdToggle(' + q.id + ')">🌿 ' + ((q.teacher_nudge || '').trim() ? '되묻기 고치기' : '되묻기') + '</button>') : '') +
+    ((!board && uid) ? '<button class="or-a" onclick="orToDrilldown(\'' + uid + '\')">📋 학생 상세</button>' : '') +
+    '<span class="or-cnt">' + (pos ? (pos + ' / ' + c.ids.length) : ('— / ' + c.ids.length)) + '<small>  ← → 키로 넘겨요</small></span>' +
+  '</div>';
+  box.innerHTML = h;
+
+  const prev = $('orPrev'), next = $('orNext');
+  if(prev) prev.disabled = c.emptyUid ? (c.pos <= 0) : (c.i <= 0);
+  if(next) next.disabled = c.emptyUid ? (c.pos >= c.ids.length) : (c.i >= c.ids.length - 1);
 }
 async function orStar(qid){
   await toggleStar(qid);
-  if(_orOpen) orRenderDrawer(_orOpen);
+  orCardRender(false);
 }
 function orNdToggle(qid){
   _orNdOpen[qid] = !_orNdOpen[qid];
-  orRenderDrawer(_orOpen);
+  orCardRender(false);
   if(_orNdOpen[qid]) setTimeout(function(){ const i = $('orNdIn-' + qid); if(i){ i.focus(); i.select(); } }, 30);
 }
 async function orNdSave(qid){
@@ -5888,7 +6118,7 @@ async function orNdSave(qid){
   _applyQField(qid, { teacher_nudge: v || null });
   _orNdOpen[qid] = false;
   toast(v ? '🌿 되묻기를 남겼어요 — 학생 화면에 보여요' : '되묻기를 지웠어요');
-  orRenderDrawer(_orOpen);
+  orCardRender(false);
 }
 function orToDrilldown(uid){ orClose(); openDrilldown(uid); }
 
