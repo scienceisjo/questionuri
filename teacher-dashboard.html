@@ -445,29 +445,10 @@ body.or-board-only .or-c{font-size:15px;padding:8px 16px}
 .loader-spin{width:36px;height:36px;border:3px solid var(--rule);border-top-color:var(--pr);border-radius:50%;animation:spin 1s linear infinite}
 .loader-txt{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;font-weight:700}
 
-/* ═══ ALERTS (주목 학생) ═══ */
-.alerts-section{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--ac);border-radius:3px;margin-bottom:20px;overflow:hidden;animation:fadeUp .4s ease both;box-shadow:0 1px 2px rgba(0,0,0,.02)}
-.alerts-hdr{padding:12px 18px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,rgba(217,119,6,.06),transparent)}
-.alerts-hdr h2{font-family:var(--serif);font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--ink)}
-.alerts-hdr .count{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ac);padding:3px 9px;background:rgba(217,119,6,.12);border-radius:2px;letter-spacing:.06em}
-.alerts-hdr .empty{font-family:var(--mono);font-size:10.5px;color:var(--pr);padding:3px 9px;background:rgba(45,106,62,.08);border-radius:2px;letter-spacing:.06em;font-weight:700}
-.alerts-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0;padding:0}
-.alert-card{padding:12px 16px;border-right:1px solid var(--rule2);border-bottom:1px solid var(--rule2);cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:10px}
-.alert-card:hover{background:rgba(217,119,6,.04)}
-.alert-icon{font-size:22px;line-height:1;flex-shrink:0}
-.alert-body{flex:1;min-width:0}
-.alert-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
-.alert-name .meta{font-family:var(--mono);font-size:10px;color:var(--ink3);font-weight:500;margin-left:4px}
-.alert-reason{font-size:11.5px;color:var(--ink2);line-height:1.5}
-.alert-reason .tag{display:inline-block;background:rgba(217,119,6,.1);color:#9a5608;padding:1px 6px;border-radius:2px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.04em;margin-right:3px;margin-bottom:2px}
-.alert-reason .tag.red{background:rgba(185,28,28,.1);color:var(--ar)}
-.alert-reason .tag.blue{background:rgba(37,99,235,.1);color:var(--blue)}
-.alert-reason .tag.purple{background:rgba(124,58,237,.1);color:var(--purple)}
 
 /* ═══ CLICKABLE STUDENT ROW ═══ */
 #studentTable tbody tr{cursor:pointer}
 #studentTable tbody tr:hover td strong{color:var(--pr)}
-.row-alert{color:var(--ac);font-size:11px;margin-left:4px;cursor:help}
 
 /* ═══ DRILLDOWN MODAL ═══ */
 .dd-overlay{position:fixed;inset:0;background:rgba(26,36,33,.55);z-index:50;display:none;align-items:flex-start;justify-content:center;padding:0;backdrop-filter:blur(4px)}
@@ -504,12 +485,6 @@ body.or-board-only .or-c{font-size:15px;padding:8px 16px}
 
 .dd-tree-info{font-family:var(--mono);font-size:10.5px;color:var(--ink3);letter-spacing:.04em;margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
 .dd-tree-info span strong{color:var(--ink);font-weight:700}
-
-/* AI insight */
-.dd-insight{background:linear-gradient(135deg,rgba(45,106,62,.06),rgba(217,119,6,.05));border:1px solid rgba(45,106,62,.18);border-radius:3px;padding:16px 20px;margin-bottom:20px;font-size:13px;color:var(--ink);line-height:1.7;display:flex;gap:14px;align-items:flex-start}
-.dd-insight .ins-icon{font-size:22px;flex-shrink:0}
-.dd-insight strong{color:var(--pd);font-weight:700}
-.dd-insight .sep{display:block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.05em;font-weight:600}
 
 /* Timeline chart */
 .dd-chart-sec{background:var(--surface);border:1px solid var(--rule);border-radius:3px;overflow:hidden;margin-bottom:20px}
@@ -631,8 +606,6 @@ body.or-board-only .or-c{font-size:15px;padding:8px 16px}
 .cls-n{font-size:11.5px;font-weight:700;color:var(--pr);background:rgba(45,106,62,.10);
        border-radius:10px;padding:2px 9px}
 .cls-q{font-size:11.5px;color:var(--ink3)}
-.cls-al{font-size:11.5px;font-weight:700;color:#B45309;background:#FFF8E9;
-        border-radius:10px;padding:2px 9px}
 .cls-fold .students-grid{padding:14px 16px 16px}
 /* ══ 📑 지금 차시 ═════════════════════════════════════════════════════════ */
 .nowunit-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
@@ -769,7 +742,6 @@ body.or-board-only .or-c{font-size:15px;padding:8px 16px}
   .dd-modal{max-height:none !important;overflow:visible !important;box-shadow:none !important;max-width:100% !important}
   .dd-body{padding:0 !important}
   .dd-hero{border:1px solid #ccc !important;padding:16px !important;page-break-inside:avoid}
-  .dd-insight{page-break-inside:avoid}
   .dd-chart-sec,.dd-qs-sec{border:1px solid #ccc !important;page-break-inside:avoid}
   .dd-print-header{display:block !important;padding:20px 0 14px;border-bottom:2px solid #000;margin-bottom:18px;text-align:center}
   .dd-print-header h1{font-family:var(--serif);font-size:22px;font-weight:800}
@@ -841,12 +813,10 @@ body.print-report-mode .dd-overlay{display:none !important}
 .students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
 .stu-card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:14px;cursor:pointer;transition:all .15s;position:relative}
 .stu-card:hover{border-color:var(--pr);transform:translateY(-2px);box-shadow:0 6px 20px rgba(45,106,62,.1)}
-.stu-card.alert-yes{border-left:3px solid var(--ac)}
 .stu-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .stu-card-avatar{width:44px;height:44px;background:linear-gradient(135deg,rgba(92,184,110,.2),rgba(217,119,6,.15));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .stu-card-nm{font-family:'Fraunces',Georgia,serif;font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
 .stu-card-ref{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-top:2px}
-.stu-card-alert-icon{position:absolute;top:10px;right:12px;font-size:15px}
 .stu-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule2);border-radius:2px;overflow:hidden;margin-bottom:10px}
 .stu-card-stat{padding:8px 10px;border-right:1px solid var(--rule2);border-bottom:1px solid var(--rule2);background:var(--surface2);text-align:center}
 .stu-card-stat:nth-child(2n){border-right:none}
@@ -1180,6 +1150,34 @@ body{letter-spacing:-0.01em}
 .filter-bar .lbl,.scard-lbl,.section-hdr .sub,.section-hdr .badge,th,.cat-panel-h,.loader-txt,.alerts-hdr .count,.alerts-hdr .empty,
 .dd-back,.dd-tag,.dd-btn,.dd-hero-ref,.dd-stat-lbl,.dd-qs-tab,.btn-export,.exp-btn,.mat-form label,.hm-legend,.forest-legend{letter-spacing:0!important;text-transform:none!important}
 .auth-box .sub{font-size:12.5px}.auth-box .fl{font-size:12px}
+
+/* ══ 상단바 — 칸이 모자라면 글자를 세로로 꺾지 말고 «줄» 을 바꾼다 (10-21) ══
+   예전엔 높이 60px 고정 + 한 줄에 단추 여덟 개라, 창이 좁거나 확대하면
+   「질/문/과/수/원」 처럼 글자가 한 자씩 내려앉았다. */
+.topbar-in{height:auto;min-height:60px;flex-wrap:wrap;row-gap:6px;padding:8px 0}
+.topbar-logo,.topbar-logo .title,.topbar-logo .tag{white-space:nowrap;flex-shrink:0}
+.topbar-r{flex:1 1 0;min-width:min(100%,320px);flex-wrap:wrap;justify-content:flex-end;row-gap:6px}
+.topbar-r>*{flex-shrink:0;white-space:nowrap}
+.topbar-r #lastUpdate{flex-shrink:1;min-width:0;max-width:310px;overflow:hidden;text-overflow:ellipsis}
+/* 이름표가 이미 이름을 보여 주면 «정상» whoAmI 는 겹친다. 경고(학생 계정)일 때만 보인다 */
+.topbar-r .teacher-badge ~ .whoami.ok{display:none}
+.topbar .whoami.bad{color:#B3261E!important}
+/* 짙은 초록 띠 위 빨간 글씨는 안 읽힌다 — 빨강은 🔴 하나로 */
+.topbar .btn-live{color:#fff!important}
+.tb-more{position:relative}
+.tb-more>summary{list-style:none;cursor:pointer;user-select:none}
+.tb-more>summary::-webkit-details-marker{display:none}
+.tb-more[open]>summary{background:rgba(255,255,255,.18)}
+.tb-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:190px;z-index:40;
+  background:var(--ph);border:1px solid rgba(255,255,255,.22);border-radius:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.30);padding:6px;display:flex;flex-direction:column;gap:2px}
+.tb-menu .btn-ghost{width:100%;justify-content:flex-start;background:transparent;padding:10px 12px;font-size:13px;border-radius:6px}
+.tb-menu .btn-ghost:hover{background:rgba(255,255,255,.14)}
+.tb-menu .btn-ghost.logout{margin-top:4px;border-top:1px solid rgba(255,255,255,.14);border-radius:0 0 6px 6px}
+/* 오른쪽 둘째 로고는 넓을 때만 — 좁으면 혼자 아랫줄로 내려가 띠만 두꺼워진다 */
+@media(max-width:1500px){ .tb-logo2{display:none} }
+/* 폰에선 띠가 두세 줄이 되니 따라 내려오지 않게 */
+@media(max-width:720px){ .topbar{position:static} .topbar-logo .tag{display:none} .topbar-r #lastUpdate{max-width:150px} }
 </style>
 </head>
 <body>
@@ -1250,13 +1248,19 @@ body{letter-spacing:-0.01em}
       <span class="info" id="lastUpdate">연결 대기</span>
       <button class="btn-ghost btn-live" onclick="openLiveModal()"><span>🔴</span> 라이브 세션</button>
       <button class="btn-ghost" onclick="openMaterials()"><span>📚</span> 수업 자료</button>
-      <button class="btn-ghost" onclick="openGoodQ()"><span>🎯</span> 좋은 질문 예시</button>
-      <button class="btn-ghost" id="bulkOpenBtn" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
-      <button class="btn-ghost" id="adminOpenBtn" onclick="openAdmin()" style="display:none"><span>⚙️</span> 관리</button>
-      <button class="btn-ghost" onclick="openWeeklyReport()"><span>📄</span> 주간 리포트</button>
       <button class="btn-ghost" id="refreshBtn" onclick="loadAll()"><span class="ico">↻</span> 새로고침</button>
-      <button class="btn-ghost logout" onclick="teacherLogout()">로그아웃</button>
-      <img src="assets/logo.webp" class="hn-logo-t" alt="해누리중학교" style="margin-left:4px">
+      <!-- 자주 안 쓰는 것은 한 칸 안으로 — 한 줄에 다 늘어놓으면 글자가 세로로 꺾인다 (10-21) -->
+      <details class="tb-more" id="tbMore">
+        <summary class="btn-ghost" title="그 밖의 메뉴">☰ 더보기</summary>
+        <div class="tb-menu" onclick="if(event.target.closest('button')) this.parentNode.open=false">
+          <button class="btn-ghost" onclick="openGoodQ()"><span>🎯</span> 좋은 질문 예시</button>
+          <button class="btn-ghost" id="bulkOpenBtn" onclick="openBulkCreate()"><span>📋</span> 학생 일괄 생성</button>
+          <button class="btn-ghost" id="adminOpenBtn" onclick="openAdmin()" style="display:none"><span>⚙️</span> 관리</button>
+          <button class="btn-ghost" onclick="openWeeklyReport()"><span>📄</span> 주간 리포트</button>
+          <button class="btn-ghost logout" onclick="teacherLogout()"><span>🚪</span> 로그아웃</button>
+        </div>
+      </details>
+      <img src="assets/logo.webp" class="hn-logo-t tb-logo2" alt="해누리중학교" style="margin-left:4px">
     </div>
   </div></div>
 
@@ -1341,15 +1345,6 @@ body{letter-spacing:-0.01em}
       <button class="vm-tab" data-view="label" onclick="switchView('label')">🏷️ 라벨</button>
       <button class="vm-tab" data-view="repair" onclick="switchView('repair')">🔧 깨진 질문</button>
       <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
-    </div>
-
-    <!-- ALERTS (주목 학생) -->
-    <div class="alerts-section" id="alertsSec" style="display:none">
-      <div class="alerts-hdr">
-        <h2>👀 주목할 학생</h2>
-        <span class="count" id="alertsCount">0</span>
-      </div>
-      <div class="alerts-list" id="alertsList"></div>
     </div>
 
     <!-- ═════════ VIEW: 종합 현황 (기본) ═════════ -->
@@ -1811,7 +1806,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '10-15 a · 큰 질문 카드·낱말 구름';
+const BUILD = '10-21 b · 상단바 줄바꿈·더보기 / 주목할 학생·한 줄 소견 뺌';
 let allSubjects = [];
 let allBranches = [];
 
@@ -2381,7 +2376,10 @@ async function loadAll(){
     applyFilters();
     const now = new Date();
     const teacherInfo = currentTeacher?.name ? ` · ${currentTeacher.subject_icon||''} ${currentTeacher.name}` : (isServiceKey ? ' · 🔑 관리자' : '');
-    $('lastUpdate').textContent = `${now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo} · v${BUILD}`;
+    const _tStr = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    /* 상단바엔 짧게 — 과목 수·교사·판 번호까지 다 쓰면 한 줄이 넘친다. 마우스를 올리면 다 보인다 */
+    $('lastUpdate').textContent = `${_tStr} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · v${BUILD.split(' · ')[0]}`;
+    $('lastUpdate').title = `${_tStr} 갱신 · ${allProfiles.length}명 · ${allQuestions.length}Q · ${allSubjects.length}과목${teacherInfo} · v${BUILD}`;
     fillLabelFilter();
     fillNowUnitSelects();
     loadNowUnits();
@@ -2574,7 +2572,6 @@ function applyFilters(){
   const activeView = currentView || 'default';
   if(activeView === 'default'){
     renderSummary();
-    renderAlerts();
     /* 접혀 있으면 그리지 않는다 — 필터 바꿀 때마다 헛일을 하지 않게 */
     if($('foldStats') && $('foldStats').open){ renderTimeChart(); renderHeatmap(); }
     renderTopLists();
@@ -2587,29 +2584,22 @@ function applyFilters(){
     renderSubjects();
   } else if(activeView === 'subjects'){
     renderSummary();
-    renderAlerts();
     renderSubjectsView();
   } else if(activeView === 'students'){
     renderSummary();
-    renderAlerts();
     renderStudentsView();
   } else if(activeView === 'selfcheck'){
     renderSummary();
-    renderAlerts();
     renderSelfcheckView();
   } else if(activeView === 'board'){
-    renderAlerts();
     renderBoardView();
   } else if(activeView === 'picked'){
-    renderAlerts();
     renderPicked();
   } else if(activeView === 'stamp'){
-    renderAlerts();
     stBuild(false);
   } else if(activeView === 'top5' || activeView === 'deep'){
     /* 같은 껍데기의 다른 줄 묶음을 본다 — 그리는 일은 종합과 같다 */
     renderSummary();
-    renderAlerts();
     renderTopLists();
     renderWordcloud();
     renderCategories();
@@ -2617,16 +2607,13 @@ function applyFilters(){
     sortAndRenderStudents();
     renderTags();
   } else if(activeView === 'label'){
-    renderAlerts();
     renderLabelView();
   } else if(activeView === 'orchard'){
     renderOrchard();
   } else if(activeView === 'nudge'){
-    renderAlerts();
     renderNudgeView();
   } else if(activeView === 'growth'){
     renderSummary();
-    renderAlerts();
     renderGrowthView();
   }
 }
@@ -3585,6 +3572,16 @@ function paintAutoBadge(){
   el.textContent = _autoNew ? ('🌱 새 질문 ' + _autoNew + '개') : '🔄 자동 갱신 중';
   el.className = 'info auto' + (_autoNew ? ' hit' : '');
 }
+
+/* ☰ 더보기 — 바깥을 누르거나 Esc 면 닫는다 */
+document.addEventListener('click', function(e){
+  const m = document.getElementById('tbMore');
+  if(m && m.open && !m.contains(e.target)) m.open = false;
+}, true);
+document.addEventListener('keydown', function(e){
+  const m = document.getElementById('tbMore');
+  if(e.key === 'Escape' && m && m.open) m.open = false;
+});
 
 function toggleAuto(){
   _autoOn = !_autoOn;
@@ -4768,12 +4765,10 @@ function paintRowGroups(view){
                  (view === 'deep'    && g === 'deep');
     el.style.display = show ? '' : 'none';
   });
-  /* 요약 카드와 접이식 그래프는 종합에서만. 주목할 학생은 renderAlerts 가
-     보일지 말지를 정하므로 여기서는 «감추기만» 한다 — 빈 상자를 펴 놓지 않게 */
+  /* 요약 카드와 접이식 그래프는 종합에서만 */
   ['summary','foldStats'].forEach(function(id){
     const el = $(id); if(el) el.style.display = (view === 'default') ? '' : 'none';
   });
-  if(view !== 'default'){ const a = $('alertsSec'); if(a) a.style.display = 'none'; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -5112,18 +5107,10 @@ function renderStudentsView(){
   const _one = _byCls.length <= 1;
 
   const _card = (s) => {
-        const alerts = computeStudentAlerts ? computeStudentAlerts(s) : [];
         const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
         const lastTxt = s.last_active ? (lastDays === 0 ? '오늘' : `${lastDays}일 전`) : '기록 없음';
-        const alertIcon = alerts.length
-          ? (alerts.some(f => f.severity === 'high') ? '🚨'
-             : alerts.some(f => f.type === 'inactive') ? '💤'
-             : alerts.some(f => f.type === 'allanon') ? '🕊️'
-             : '⚠️')
-          : '';
         return `
-          <div class="stu-card ${alerts.length ? 'alert-yes' : ''}" onclick="openDrilldown('${s.id}')">
-            ${alertIcon ? `<div class="stu-card-alert-icon">${alertIcon}</div>` : ''}
+          <div class="stu-card" onclick="openDrilldown('${s.id}')">
             <div class="stu-card-hdr">
               <div class="stu-card-avatar">👤</div>
               <div style="min-width:0;flex:1">
@@ -5152,19 +5139,15 @@ function renderStudentsView(){
         `;
   };
 
-  /* 반 줄에 «지금 봐야 할 것» 을 미리 적는다 — 열어봐야 아는 건 안 열어본다 */
+  /* 반 줄에 인원·질문 수를 미리 적는다 — 열어봐야 아는 건 안 열어본다 */
   const _sum = function(g){
-    let al = 0, qs = 0;
-    g.list.forEach(function(s){
-      qs += (s.total || 0);
-      if(typeof computeStudentAlerts === 'function' && computeStudentAlerts(s).length) al++;
-    });
+    let qs = 0;
+    g.list.forEach(function(s){ qs += (s.total || 0); });
     return '<summary class="cls-sum">' +
       '<span class="cls-nm">' + (g.grade != null ? g.grade + '학년 ' : '') +
         (g.cls != null ? g.cls + '반' : '반 없음') + '</span>' +
       '<span class="cls-n">' + g.list.length + '명</span>' +
       '<span class="cls-q">질문 ' + qs + '</span>' +
-      (al ? '<span class="cls-al">⚠️ ' + al + '</span>' : '') +
     '</summary>';
   };
 
@@ -6264,14 +6247,11 @@ function sortAndRenderStudents(){
     const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
     const dotClass = lastDays<=1?'dot-active':lastDays<=7?'dot-warm':lastDays<=30?'dot-cold':'dot-inactive';
     const lastStr = s.last_active||'—';
-    const alertFlags = computeStudentAlerts(s);
-    const alertBadge = alertFlags.length
-      ? `<span class="row-alert" title="${alertFlags.map(a=>a.label).join(' / ')}">⚠️</span>` : '';
     return `<tr onclick="openDrilldown('${s.id}')">
       <td>${s.grade??''}</td>
       <td>${s.class_no??''}</td>
       <td>${s.number??''}</td>
-      <td><strong>${esc(s.name)}</strong>${alertBadge}<button class="pw-reset-btn row" onclick="resetStudentPw('${s.id}',event)" title="비밀번호 초기화">🔑</button></td>
+      <td><strong>${esc(s.name)}</strong><button class="pw-reset-btn row" onclick="resetStudentPw('${s.id}',event)" title="비밀번호 초기화">🔑</button></td>
       <td>${s.total}</td>
       <td>${s.resolved}</td>
       <td><div class="resolved-bar"><div class="bar-bg"><div class="bar-fg" style="width:${s.pct}%"></div></div><span class="pct">${s.pct}%</span></div></td>
@@ -6519,122 +6499,6 @@ function exportCSV(type){
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 👀 ALERTS — 주목할 학생 자동 플래그
-// ═══════════════════════════════════════════════════════════════════
-function computeStudentAlerts(s){
-  const flags=[];
-  const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
-
-  // 규칙 1: 7일 이상 미접속 (등록은 했음)
-  if(s.last_active && lastDays >= 7){
-    flags.push({
-      type:'inactive',
-      label:`${lastDays}일 미접속`,
-      severity: lastDays >= 14 ? 'high' : 'mid',
-      tag:'red'
-    });
-  } else if(!s.last_active){
-    flags.push({type:'never', label:'접속 기록 없음', severity:'mid', tag:'red'});
-  }
-
-  // 규칙 2: 해결률 낮음 (질문은 5개+ 있는데 해결률 30% 미만)
-  if(s.total >= 5 && s.pct < 30){
-    flags.push({
-      type:'lowpct',
-      label:`해결률 ${s.pct}%`,
-      severity:'mid',
-      tag:'default'
-    });
-  }
-
-  // 규칙 3: 질문 매우 적음 (다른 학생은 많이 하는데 본인은 2개 미만)
-  const avgTotal = filteredStudents.length
-    ? filteredStudents.reduce((a,x)=>a+x.total,0)/filteredStudents.length : 0;
-  if(avgTotal >= 5 && s.total <= 2){
-    flags.push({
-      type:'few',
-      label:`질문 ${s.total}개 (반 평균 ${avgTotal.toFixed(1)})`,
-      severity:'mid',
-      tag:'default'
-    });
-  }
-
-  // 규칙 4: 익명만 쓰는 경향 (질문 3개+, 모두 익명)
-  if(s.total >= 3 && s.anon === s.total){
-    flags.push({
-      type:'allanon',
-      label:`익명 ${s.anon}/${s.total} (전부 익명)`,
-      severity:'low',
-      tag:'purple'
-    });
-  }
-
-  // 규칙 5: 받은 공감 0 (질문 5개 이상 + 공감 0)
-  if(s.total >= 5 && (s.waters_got||0) === 0){
-    flags.push({
-      type:'nowater',
-      label:'공감 없음',
-      severity:'low',
-      tag:'blue'
-    });
-  }
-
-  return flags;
-}
-
-function renderAlerts(){
-  const flagged = filteredStudents
-    .map(s=>({s, flags:computeStudentAlerts(s)}))
-    .filter(x=>x.flags.length>0)
-    .sort((a,b)=>{
-      // 심각도 + 플래그 수 기준
-      const severityScore = {high:3, mid:2, low:1};
-      const aS = a.flags.reduce((t,f)=>t+(severityScore[f.severity]||1),0);
-      const bS = b.flags.reduce((t,f)=>t+(severityScore[f.severity]||1),0);
-      return bS - aS;
-    });
-
-  const sec = $('alertsSec');
-  const list = $('alertsList');
-
-  if(!filteredStudents.length){
-    sec.style.display='none';
-    return;
-  }
-
-  sec.style.display='';
-
-  if(!flagged.length){
-    list.innerHTML = `<div style="padding:18px;text-align:center;font-size:13px;color:var(--pr);font-weight:600;grid-column:1/-1">✨ 모든 학생이 안정적으로 참여하고 있어요!</div>`;
-    $('alertsCount').innerHTML = '<span style="color:var(--pr)">0 ALERTS</span>';
-    $('alertsCount').className = 'empty';
-    $('alertsCount').textContent = '모두 양호 ✓';
-    return;
-  }
-
-  $('alertsCount').className = 'count';
-  $('alertsCount').textContent = `${flagged.length}명 주목`;
-
-  list.innerHTML = flagged.slice(0,12).map(({s,flags})=>{
-    const icon = flags.some(f=>f.severity==='high') ? '🚨'
-               : flags.some(f=>f.type==='inactive' || f.type==='never') ? '💤'
-               : flags.some(f=>f.type==='allanon') ? '🕊️'
-               : flags.some(f=>f.type==='few') ? '🌱'
-               : flags.some(f=>f.type==='nowater') ? '💧'
-               : '⚠️';
-    const tagsHtml = flags.map(f=>`<span class="tag ${f.tag||''}">${esc(f.label)}</span>`).join('');
-    return `
-      <div class="alert-card" onclick="openDrilldown('${s.id}')">
-        <div class="alert-icon">${icon}</div>
-        <div class="alert-body">
-          <div class="alert-name">${esc(s.name)} <span class="meta">${s.grade}-${s.class_no} · ${s.number}번</span></div>
-          <div class="alert-reason">${tagsHtml}</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ═══════════════════════════════════════════════════════════════════
 // 🔎 STUDENT DRILLDOWN
 // ═══════════════════════════════════════════════════════════════════
 let currentDrilldown = null;  // {student, questions, branches}
@@ -6754,9 +6618,6 @@ function renderDrilldownBody(){
   const ts = TREE_STYLES[sp];
   const companion = s.active_companion ? ({bird:'🐦 파랑새',squirrel:'🐿️ 다람쥐',butterfly:'🦋 나비',owl:'🦉 부엉이',swing:'🪢 그네',beehive:'🍯 벌집'}[s.active_companion]||'없음') : '없음';
 
-  // AI 인사이트 생성
-  const insight = buildStudentInsight(s, questions);
-
   // 질문 정리 (최신순)
   const sortedQs = [...questions].sort((a,b)=>new Date(b.created_at||0) - new Date(a.created_at||0));
   const brByQid = {};
@@ -6796,16 +6657,6 @@ function renderDrilldownBody(){
           <span>도토리 🌰 <strong>${s.seeds||0}</strong></span>
           <span>익명 질문: <strong>${anon}/${total}</strong></span>
         </div>
-      </div>
-    </div>
-
-    <!-- INSIGHT -->
-    <div class="dd-insight">
-      <span class="ins-icon">${insight.icon}</span>
-      <div>
-        <strong>${esc(insight.headline)}</strong>
-        ${insight.body}
-        <span class="sep">${insight.tag}</span>
       </div>
     </div>
 
@@ -7100,73 +6951,6 @@ function renderDDChart(qs){
   });
 }
 
-function buildStudentInsight(s, questions){
-  const pct = s.pct;
-  const totalQ = s.total;
-  const anon = s.anon || 0;
-  const waters = s.waters_got || 0;
-  const given = s.waters_given || 0;
-  const streak = s.streak || 0;
-  const lastDays = s.last_active ? daysBetween(s.last_active, today()) : 999;
-  const branchesByMe = (s.branches||0);
-  const flags = computeStudentAlerts(s);
-
-  // 사고 수준 분포
-  const lvCount = {'사실·이해':0,'분석·탐구':0,'평가·창의':0};
-  questions.forEach(q=>{ const c=classifyQuestion(q.text||''); lvCount[c.level]++; });
-  const topL = Object.entries(lvCount).sort((a,b)=>b[1]-a[1])[0];
-
-  let icon='🌱', headline='', body='', tag='';
-
-  if(flags.some(f=>f.type==='inactive'||f.type==='never')){
-    icon='💤';
-    headline='최근 접속이 뜸해요';
-    body = `마지막 접속이 <strong>${lastDays}일 전</strong>이에요. 짧은 안부 메시지나 수업 도입에서 질문을 직접 호명해주면 다시 참여할 가능성이 높아요.`;
-    tag = 'TEACHER ACTION · 개별 대화 권장';
-  } else if(totalQ === 0){
-    icon='🌰';
-    headline='아직 질문을 시작하지 않았어요';
-    body = `등록은 했지만 첫 질문이 없는 상태입니다. 오늘 수업에서 눈에 띄었던 호기심 한 줄을 같이 적어보도록 1:1 안내해볼 수 있어요.`;
-    tag = 'TEACHER ACTION · 첫 질문 안내';
-  } else if(pct < 30 && totalQ >= 5){
-    icon='🤔';
-    headline='질문은 많지만 해결로 이어지지 않아요';
-    body = `질문 ${totalQ}개 중 <strong>${s.resolved}개만 해결</strong>(${pct}%). 오래된 미해결 질문을 함께 열어보며 추가 힌트나 친구 토론을 연결해보면 좋겠어요.`;
-    tag = 'TEACHER ACTION · 미해결 질문 복기';
-  } else if(pct >= 70 && totalQ >= 5){
-    icon='⭐';
-    headline='질문도 해결도 활발해요';
-    body = `총 <strong>${totalQ}개 질문 중 ${pct}% 해결</strong>. 주된 사고 유형은 <strong>${topL?.[0]||'—'}</strong>입니다. 심화 탐구나 반 발표 기회를 제안해볼 수 있어요.`;
-    tag = 'STRENGTH · 심화 탐구 추천';
-  } else if(anon >= 3 && anon === totalQ){
-    icon='🕊️';
-    headline='익명으로만 질문하고 있어요';
-    body = `모든 질문(${totalQ}개)이 익명(바람의 나뭇잎)이에요. 공개적으로 말하기 어려운 주제를 마음에 담고 있을 수 있습니다. 익명 질문의 내용을 눈여겨보고, 조심스럽게 반 토론 소재로 꺼내주는 게 도움이 될 수 있어요.`;
-    tag = 'CARE · 심리적 안전감 체크';
-  } else if(given >= 10){
-    icon='💧';
-    headline='친구들의 질문에 잘 공감해줘요';
-    body = `지금까지 <strong>${given}회</strong>나 친구의 질문에 물을 줬어요. 공감·협력적 학습자로서의 모습이 뚜렷합니다. 생기부 기록 시 "동료 학습자로서의 태도" 근거로 활용 가능해요.`;
-    tag = 'STRENGTH · 공감 리더십';
-  } else if(branchesByMe >= 3){
-    icon='🌿';
-    headline='다른 친구의 질문을 잘 확장해요';
-    body = `친구들의 질문에 꼬리질문을 <strong>${branchesByMe}개</strong> 달았어요. 연쇄적 사고와 토론을 주도하는 성향이 보입니다.`;
-    tag = 'STRENGTH · 탐구 리더십';
-  } else if(streak >= 7){
-    icon='🔥';
-    headline='꾸준함이 돋보여요';
-    body = `연속 <strong>${streak}일</strong>이나 접속하며 질문을 이어가고 있어요. 규칙적인 학습 루틴을 만들었습니다.`;
-    tag = 'STRENGTH · 학습 지속성';
-  } else {
-    icon='🌱';
-    headline='꾸준히 자라는 중이에요';
-    body = `질문 ${totalQ}개 · 해결률 ${pct}% · 주된 사고 유형은 <strong>${topL?.[0]||'—'}</strong>. 더 깊은 질문으로 확장할 수 있도록 "왜 그럴까?"를 던져주면 좋아요.`;
-    tag = 'BASELINE · 일반 관찰';
-  }
-  return {icon, headline, body, tag};
-}
-
 function exportStudentCSV(){
   if(!currentDrilldown) return;
   const {student:s, questions} = currentDrilldown;
@@ -7244,12 +7028,6 @@ function openWeeklyReport(){
   });
   const sortedTopics = Object.entries(topicCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  // 주목할 학생 (알림)
-  const flagged = filteredStudents
-    .map(s=>({s, flags:computeStudentAlerts(s)}))
-    .filter(x=>x.flags.length>0)
-    .slice(0,6);
-
   // 필터 맥락
   const gF = $('fGrade').value, cF=$('fClass').value;
   const ctx = [gF?`${gF}학년`:'', cF?`${cF}반`:'', !gF&&!cF?'전체':''].filter(Boolean).join(' ');
@@ -7299,19 +7077,6 @@ function openWeeklyReport(){
         return `<div class="pr-bar"><div class="pr-bar-lbl">${esc(k)}</div><div class="pr-bar-track"><div class="pr-bar-fill" style="width:${pct}%"></div></div><div class="pr-bar-cnt">${v}</div></div>`;
       }).join('') : '<p style="font-size:11px;color:#666">질문이 없습니다</p>'}
     </div>
-
-    ${flagged.length ? `
-    <div class="pr-sec">
-      <h2>👀 주목할 학생</h2>
-      <ul class="pr-top-list">
-        ${flagged.map(({s,flags})=>`
-          <li style="flex-direction:column;align-items:flex-start;gap:4px">
-            <div><strong>${esc(s.name)}</strong> <span style="color:#666;font-size:10px">${s.grade}-${s.class_no} ${s.number}번</span></div>
-            <div style="font-size:10.5px;color:#666">${flags.map(f=>f.label).join(' · ')}</div>
-          </li>
-        `).join('')}
-      </ul>
-    </div>` : ''}
 
     <div class="pr-footer">Haenuri Orchard · Teacher Dashboard · 이 리포트는 인쇄 대화상자에서 "PDF로 저장"을 선택하면 PDF로 저장됩니다.</div>
   `;
@@ -8204,7 +7969,7 @@ async function rlsExplain(err){
            '현재 계정: <b>' + esc(me.email || '(알 수 없음)') + '</b><br>' +
            '같은 브라우저에서 <b>학생 계정으로 로그인</b>하면 이 화면도 그 계정으로 바뀝니다' +
            '(세 앱이 로그인을 함께 씁니다).<br>' +
-           '오른쪽 위 <b>로그아웃</b> 후 교사 계정으로 다시 로그인해 주세요.';
+           '오른쪽 위 <b>☰ 더보기 → 로그아웃</b> 후 교사 계정으로 다시 로그인해 주세요.';
   }
   return '⚠ 저장이 거부됐어요. 교사 계정은 맞는데 정책에 걸렸습니다 — ' +
          '자료 내용을 그대로 두고 새로고침 후 다시 시도해 주세요.<br>' +
@@ -8411,7 +8176,7 @@ async function notTeacherAlert(what){
     alert(what + ' 권한이 없습니다.\n\n지금 로그인된 계정: ' + (me.email || '(알 수 없음)') +
           '\n이 계정은 교사가 아닙니다.\n\n세 앱(질문 과수원 학생·교사, 칭찬도장판)이 로그인을 함께 씁니다.' +
           '\n같은 브라우저에서 학생 계정으로 로그인하면 이 화면도 그 계정으로 바뀝니다.' +
-          '\n\n오른쪽 위 로그아웃 후 교사 계정으로 다시 로그인해 주세요.');
+          '\n\n오른쪽 위 ☰ 더보기 → 로그아웃 후 교사 계정으로 다시 로그인해 주세요.');
   } else {
     alert(what + '이(가) 처리되지 않았어요.\n이미 지워졌거나 권한이 없는 자료일 수 있어요.\n새로고침 후 다시 확인해 주세요.');
   }
