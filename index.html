@@ -1709,30 +1709,72 @@ body.ask-open .fab-ask{display:none!important}
         background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;font-size:var(--fs-xxs);font-weight:800;
         cursor:pointer;box-shadow:0 2px 8px rgba(93,184,110,.3);white-space:nowrap}
 .ql-ask:hover{filter:brightness(1.05)}
-/* 🌱 심은 다음 */
-.ap-wrap{position:absolute;left:0;right:0;bottom:0;top:56px;z-index:6;background:var(--bg);overflow-y:auto;
-         padding:18px 16px 32px;display:flex;justify-content:center;animation:apIn .18s ease}
-.ap-wrap[hidden]{display:none!important}
-@keyframes apIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.ap-card{width:100%;max-width:520px}
-.ap-ok{font-size:22px;font-weight:900;color:var(--pd);text-align:center;margin:10px 0 8px}
-.ap-q{background:#fff;border:1.5px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:700;color:var(--tx);
-      line-height:1.5;margin:4px 0 20px;word-break:keep-all}
-.ap-ask{font-size:19px;font-weight:800;color:var(--tx);text-align:center;margin:4px 0 16px;line-height:1.45}
-.ap-yn{display:flex;gap:10px}
-.ap-yn button{flex:1;min-height:60px;border-radius:16px;font-size:16.5px;font-weight:800;cursor:pointer;font-family:inherit}
-.ap-yes{background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;border:none;box-shadow:0 4px 12px rgba(93,184,110,.3)}
-.ap-no{background:#fff;color:var(--tx);border:1.5px solid var(--bd)}
-.ap-yn button:active{transform:scale(.97)}
-.ap-task{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--bd);border-radius:16px;
-         padding:14px 15px;margin-bottom:10px;cursor:pointer;font-family:inherit;transition:border-color .12s,transform .1s}
-.ap-task:hover{border-color:var(--pr)}
-.ap-task:active{transform:scale(.98)}
-.ap-task.first{border-color:var(--pr);box-shadow:0 0 0 3px rgba(93,184,110,.16)}
-.ap-task .ic{font-size:28px;line-height:1;flex:0 0 auto}
-.ap-task b{display:block;font-size:15.5px;color:var(--tx)}
-.ap-task small{display:block;font-size:12.5px;color:var(--tl);margin-top:3px;line-height:1.4}
-.ap-close{display:block;margin:8px auto 0;background:none;border:none;color:var(--tl);font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit}
+/* 👣 다음 한 걸음 — 심은 뒤·끝낸 뒤·못 심을 때 같이 쓰는 창 */
+.ns-wrap{position:fixed;inset:0;z-index:1100;background:rgba(20,40,30,.5);display:flex;align-items:center;justify-content:center;
+         padding:12px;animation:nsIn .18s ease}
+.ns-wrap[hidden]{display:none!important}
+@keyframes nsIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ns-card{background:var(--bg);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;
+         border-radius:22px;padding:14px 14px 12px;box-shadow:0 16px 48px rgba(0,0,0,.28)}
+.ns-h{font-size:21px;font-weight:900;color:var(--pd);text-align:center;margin:6px 0 10px;line-height:1.35}
+.ns-q{background:#fff;border:1.5px solid var(--bd);border-radius:14px;padding:11px 13px;font-size:14.5px;font-weight:700;color:var(--tx);
+      line-height:1.5;margin:0 0 14px;word-break:keep-all}
+.ns-b{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--bd);border-radius:16px;
+      padding:13px 15px;margin-bottom:9px;cursor:pointer;font-family:inherit;transition:border-color .12s,transform .1s}
+.ns-b:hover{border-color:var(--pr)}
+.ns-b:active{transform:scale(.98)}
+.ns-b .ic{font-size:27px;line-height:1;flex:0 0 auto}
+.ns-b b{display:block;font-size:16px;color:var(--tx)}
+.ns-b small{display:block;font-size:12.5px;color:var(--tl);margin-top:3px;line-height:1.4}
+.ns-b.green{background:linear-gradient(135deg,#5CB86E,#3D8B4F);border-color:transparent;box-shadow:0 4px 12px rgba(93,184,110,.3)}
+.ns-b.green b,.ns-b.green small{color:#fff}
+.ns-b:disabled{opacity:.55;cursor:default}
+.ns-b:disabled:active{transform:none}
+.ns-say{background:#FFF8E4;border:1.5px solid #EBD38A;border-radius:18px;padding:13px 13px 11px;margin:2px 0 10px}
+.ns-say.plain{background:#fff;border-color:var(--bd)}
+.ns-say-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:14px;color:#7A5A12}
+.ns-av{width:34px;height:34px;border-radius:50%;background:#fff;border:1.5px solid #EBD38A;display:inline-flex;align-items:center;justify-content:center;font-size:20px}
+.ns-say-t{font-size:15px;font-weight:700;color:var(--tx);line-height:1.65;word-break:keep-all}
+.ns-say-n{font-size:13px;color:#7A5A12;margin-top:6px;line-height:1.5}
+.ns-open-h{font-size:14px;font-weight:800;color:var(--tx);margin:12px 0 7px}
+.ns-open-h b{color:#C0392B}
+.ns-oq{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--bd);border-radius:12px;
+       padding:9px 11px;margin-bottom:6px;cursor:pointer;font-family:inherit}
+.ns-oq:hover{border-color:var(--pr)}
+.ns-oq .t{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--tx);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ns-oq .go{flex:0 0 auto;font-size:12.5px;font-weight:800;color:var(--pd)}
+.ns-all{display:block;width:100%;margin-top:4px;padding:9px;border:none;background:none;color:var(--pd);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline}
+.ns-allclear{background:#EAF6EC;border-radius:14px;padding:12px;margin:0 0 10px;text-align:center;font-weight:800;color:var(--pd)}
+.ns-link{display:block;width:100%;margin:2px 0 4px;padding:10px;border:1.5px dashed var(--bd);border-radius:12px;background:none;color:var(--tx);
+         font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.ns-link:hover{border-color:var(--pr)}
+.ns-close{display:block;margin:6px auto 0;background:none;border:none;color:var(--tl);font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:6px 10px}
+.ns-say-inline{margin:0 0 12px}
+.toast{z-index:1300}
+.ns-card{overflow-x:hidden}
+.ns-card:focus{outline:none}
+.ns-q,.ns-oq .t,.ns-say-t{overflow-wrap:anywhere}
+/* 질문 탭 맨 위 띠 */
+.ns-bar{margin:0 0 12px;background:#fff;border:1.5px solid var(--bd);border-radius:16px;padding:9px 12px 4px}
+.ns-bar[hidden]{display:none!important}
+.ns-bar-h{font-size:12.5px;font-weight:800;color:var(--tl);margin-bottom:2px}
+.ns-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--bd);flex-wrap:wrap}
+.ns-bar-h + .ns-row{border-top:none}
+.ns-row .t{flex:1 1 160px;min-width:0;font-size:14px;font-weight:700;color:var(--tx);line-height:1.4}
+.ns-row .t b{color:#C0392B;margin-left:3px}
+.ns-row button{flex:0 0 auto;padding:7px 13px;border-radius:12px;border:none;background:linear-gradient(135deg,#5CB86E,#3D8B4F);color:#fff;
+               font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ns-row.fb .t{color:#B03A2E}
+.ns-row.fb button{background:linear-gradient(135deg,#EF6C5B,#D94A38)}
+/* 하단 «질문» 탭의 붉은 점 — 선생님 피드백이 도착했는데 아직 질문 탭을 안 열었을 때 */
+.tn{position:relative}
+.tn-dot{position:absolute;top:4px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:#E53935;color:#fff;
+        font-size:10.5px;font-weight:900;font-style:normal;line-height:17px;text-align:center;box-shadow:0 0 0 2px #fff}
+.tn-dot[hidden]{display:none!important}
+/* 안 심을 때 안내 아래 단추 / 자료 시트 「다 심었어요」 */
+.qf-next{margin-top:10px;padding:9px 14px;border:none;border-radius:12px;background:var(--pr);color:#fff;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
+.ms-done-row{display:block;width:100%;margin:8px 0 0;padding:11px;border:none;border-radius:12px;background:var(--pr);color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
+.ms-done-row[hidden]{display:none!important}
 /* 목록 머리 — 폰 폭에서 «나의 질문 들 / 해 결 / 목 록» 으로 낱자가 쪼개지지 않게 */
 .ql-h{flex-wrap:wrap;gap:6px 10px}
 .ql-h h4{white-space:nowrap;margin:0}
@@ -2336,7 +2378,7 @@ body.ask-open .fab-ask{display:none!important}
   <div class="sub-row"><div class="sub-in" id="subTabs"></div></div>
   <div class="tab-nav"><div class="tab-nav-in">
     <button class="tn on" data-tab="tree" onclick="swTab('tree')"><span>🌳</span>나무</button>
-    <button class="tn" data-tab="questions" onclick="swTab('questions')"><span>❓</span>질문</button>
+    <button class="tn" data-tab="questions" onclick="swTab('questions')"><span>❓</span>질문<i class="tn-dot" id="tnDotQ" hidden></i></button>
     <button class="tn" data-tab="forest" onclick="swTab('forest')"><span>🌲</span>우리반 숲</button>
     <button class="tn" data-tab="materials" onclick="swTab('materials')"><span>📚</span>자료</button>
     <button class="tn" id="moreTab" onclick="openMore()"><span>☰</span>더보기</button>
@@ -2461,6 +2503,8 @@ body.ask-open .fab-ask{display:none!important}
     <div class="tp" id="tp-questions"><div class="tp-inner"><div class="q-area">
       <!-- 🌳 오늘의 탐구 성장 리포트 -->
       <div id="growthCard"></div>
+      <!-- 👣 오늘의 다음 한 걸음 — 시트를 닫아도, 다시 들어와도 «다음에 뭐 하지?» 가 보이게 -->
+      <div class="ns-bar" id="nsBar" hidden></div>
       <div class="cs">
         <!-- 🙋/🏫 범위 — «내 질문 보고 친구 질문 보기» 가 이 앱의 중심이라 맨 위에 둔다 -->
         <div class="scope-seg" id="qScopeSeg">
@@ -2974,6 +3018,7 @@ const S = {
   qView:'list',            // 📋 질문 보기 방식: 'list' | 'board'
   qScope:'mine',           // 🙋 나 | 🏫 우리 반 | 📑 이 차시 — 질문 탭의 범위
   cUnit:null, cPhase:null, cStatus:null, // 우리 반 흐름의 칩 상태 (차시 / 단계 / 상태)
+  mineStatus:null,         // 🙋 나 목록의 «안 푼 질문» 거르기 (null 또는 open)
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
   expandedBranches:new Set(),
@@ -4149,6 +4194,9 @@ async function doLogout(){
   stopLivePolling();
   await sb.auth.signOut();
   document.body.classList.remove("is-guest");Object.assign(S,{guest:false,user:null,profile:null,name:'',grade:'',cls:'',num:'',questions:{},subjects:[],stickers:[],activeSub:'integrated',seeds:0,unlocked:['default'],activeTree:'default',frView:null});
+  /* 다음 한 걸음 — 앞사람의 거르기·읽음·반 캐시가 다음 학생에게 이어지면 안 된다 */
+  S.mineStatus = null; S.cStatus = null; S.cPhase = null; S.cUnit = null; S.qScope = 'mine';
+  _nsFbTapped = false; _nsFbVisited = false; _classBoardCache = null; _peerLoaded = {}; _nsHide();
   goTo('welcome');
 }
 
@@ -4460,6 +4508,8 @@ function swTab(t){
   if(t==='growth') renderGrowthMirror();
   /* 작성 폼이 시트로 들어갔으니 질문 탭에서도 FAB 가 곧 «심기» 다 */
   const fab=$('fabAsk'); if(fab) fab.style.display = '';
+  if(t === 'questions'){ _nsFbVisited = true; nsPaintBar(); }
+  nsPaintBadge();
 }
 function openMore(){ $('moreSheet')?.classList.add('show'); }
 // 🔑 학생 본인 비밀번호 변경
@@ -4593,92 +4643,284 @@ function openAskSheet(){
   try{ renderTagPresets();renderFruitPicker();renderAnonTog();renderTreePicker();renderStems();renderSourcePicker();renderUnitPicker(); }catch(e){}
   setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 80);
 }
-/* ══ 🌱 심은 다음 ════════════════════════════════════════════════════════ */
-let _apQ = null;
-function apHide(){ const w = $('apWrap'); if(w) w.hidden = true; _apQ = null; }
-async function apShow(q){
-  const w = $('apWrap'), card = $('apCard'), sheet = $('askSheet');
-  if(!w || !card || !q){ closeAskSheet(); return; }
-  _apQ = q;
-  const top = sheet ? sheet.querySelector('.ms-top') : null;
-  w.style.top = (top ? top.offsetHeight : 56) + 'px';
-  const qText = esc(String(q.text || '').slice(0, 120));
-  card.innerHTML =
-    '<div class="ap-ok">🌱 심었어요!</div>' +
-    '<div class="ap-q">' + qText + '</div>' +
-    '<div class="ap-ask">오늘 수업에 대한 질문을<br>더 심을 건가요?</div>' +
-    '<div class="ap-yn">' +
-      '<button class="ap-yes" onclick="apYes()">🌱 네, 더 심을래요</button>' +
-      '<button class="ap-no" onclick="apNo()">🙂 아니요</button>' +
-    '</div>';
-  w.hidden = false;
-  /* 오늘·이 차시 상한에 닿았으면 «네» 가 헛걸음이다 — 묻지 않고 바로 다음 과제 */
-  if(await _apFull(q) && _apQ === q) apNo(true);
+/* ══ 👣 다음 한 걸음 ═══════════════════════════════════════════════════════
+   (옛 이름 «심은 다음» — apShow/apHide 는 그대로 부른다)
+   질문 하나를 올리고 나면 «이제 뭘 하지?» 가 비어서 멍때리는 학생이 많았다.
+   심은 직후 · 다듬기/해결을 끝낸 직후 · 하루 상한에 걸려 못 심을 때 · 자료 시트에서 다 심었을 때가
+   모두 같은 창을 쓴다. 창에는 이 순서로 단추가 뜬다 —
+     🌱 또 다른 질문 / 👀 친구 질문 보러 / 💧 물주러 / 🔬 아직 안 푼 내 질문(승재쌤 말풍선)
+   «안 푼 질문» 은 내 질문만 센다 — 해결하지 않은 채 쌓이는 게 이 앱에서 제일 아까워서다. */
+const NS_SAY = '얘들아, 승재쌤이야. 질문을 하고, 그것에 대해 스스로 답을 꼭 해보자. 그 과정에서 선생님 수업 그 어떤 학원 수업보다 큰 성장이 있을 거야.';
+let _ns = null;              /* 열려 있는 창 {mode,q,full,n,stuck} — mode: planted|full|sheetdone|bar|afterRefine|afterSolve */
+let _nsFbTapped = false;     /* 「읽으러 가기」 를 눌렀다 — 이번 접속에서는 띠에서 뺀다 */
+let _nsFbVisited = false;    /* 질문 탭을 열어 봤다 — 하단 탭의 붉은 점을 끈다 */
+
+/* «안 푼 질문» = 열매를 안 맺은 질문. 해결 패널은 쓰는 도중에도 답을 자동저장하므로 solve.answer 는 «끝냈다» 의 증거가 못 된다 */
+function _nsIsOpenQ(q){ return !!q && !q.resolved; }
+function _nsId(q){ return Number(q && q.id) || 0; }
+/* 아직 안 푼 내 질문 — 오늘 것부터, 같은 날은 새 것부터. 수업 닫기 때는 «오늘 열기에 심은 것» 이 맨 앞 */
+function nsOpenQs(skipId, afterPhase){
+  const t = td();
+  const rank = function(q){
+    const today = (q.date === t), before = ((q.phase || 'before') === 'before');
+    if(afterPhase) return (today && before) ? 0 : (today ? 1 : 2);
+    return today ? 0 : 1;
+  };
+  return allMyQs().filter(function(q){ return _nsIsOpenQ(q) && (skipId == null || String(q.id) !== String(skipId)); })
+    .sort(function(a, b){ return (rank(a) - rank(b)) || (_nsId(b) - _nsId(a)); });
 }
+/* 내가 아직 물을 안 준 친구 질문 — 우리 반 질문을 받아 둔 뒤에만 센다(null = 아직 모름) */
+function _nsDry(q){ const me = S.user && S.user.id; return !!me && q.user_id !== me && !(q.watered_by || []).includes(me); }
+function nsDryList(){ const c = _classBoardCache; return (c && c.list) ? c.list.filter(_nsDry) : null; }
+/* 친구 질문을 보러 갈 때, 이 차시에 볼 게 있으면 이 차시로 — 비어 있으면 우리 반 전체로 (빈 화면으로 보내지 않는다) */
+function _nsFriendScope(dry){
+  const c = _classBoardCache, cu = currentUnit(), me = S.user && S.user.id;
+  if(c && c.list && cu){
+    const n = c.list.filter(function(q){
+      return (q.unit || '').trim() === cu.u && q.user_id !== me && (!dry || _nsDry(q));
+    }).length;
+    if(n) return 'unit';
+  }
+  return 'class';
+}
+function _nsRefineTodo(){
+  const t = td();
+  return allMyQs().filter(function(x){ return x.date === t && !isRefined(x) && !x.resolved; })
+    .sort(function(a, b){ return _nsId(b) - _nsId(a); });
+}
+
+function _nsBtn(cls, ic, title, sub, fn, off){
+  return '<button class="ns-b ' + cls + '"' + (off ? ' disabled' : ' onclick="' + fn + '"') + '>' +
+    '<span class="ic">' + ic + '</span><span class="tx"><b>' + title + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span></button>';
+}
+/* 🧑‍🏫 승재쌤 말풍선 + 아직 해결하지 않은 내 질문 */
+function _nsSolveCard(skipId, afterPhase, say, firstId){
+  const list = nsOpenQs(skipId, afterPhase);
+  if(!list.length) return '';
+  if(firstId != null){          /* 방금 심은 질문이 맨 앞 — «이걸 풀어 보자» */
+    const i = list.findIndex(function(x){ return String(x.id) === String(firstId); });
+    if(i > 0) list.unshift(list.splice(i, 1)[0]);
+  }
+  let h = '<div class="ns-say' + (say ? '' : ' plain') + '">';
+  if(say){
+    h += '<div class="ns-say-h"><span class="ns-av">🧑‍🏫</span><b>승재쌤</b></div>' +
+         '<div class="ns-say-t">' + NS_SAY + '</div>';
+    if(afterPhase) h += '<div class="ns-say-n">🌙 수업을 닫았으니, 오늘 열기에 심은 질문 중에 풀린 게 있는지 먼저 봐요.</div>';
+  }
+  h += '<div class="ns-open-h">🔬 아직 해결하지 않은 내 질문 <b>' + list.length + '</b>개</div>';
+  list.slice(0, 3).forEach(function(x){
+    h += '<button class="ns-oq" onclick="nsSolve(' + x.id + ')"><span class="t">' + esc(String(qShow(x) || x.text || '').slice(0, 70)) +
+         '</span><span class="go">해결하기 ›</span></button>';
+  });
+  if(list.length > 3) h += '<button class="ns-all" onclick="nsGoOpen()">안 푼 질문 ' + list.length + '개 모두 보기</button>';
+  return h + '</div>';
+}
+function nsHTML(){
+  const o = _ns || {}, mode = o.mode || 'bar';
+  const mq = o.q ? (findQ(o.q.id) || o.q) : null;
+  const afterPhase = ((mq && mq.phase) || S.phase) === 'after';
+  const fullKind = o.full || (mode === 'full' ? 'day' : '');   /* 'day' 하루 상한 | 'unit' 이 차시 상한 */
+  const full = (fullKind === 'day');
+  const guest = !!S.guest;
+  const sayMode = (mode === 'planted' || mode === 'full' || mode === 'sheetdone' || mode === 'bar');
+  let head;
+  const fullHead = (fullKind === 'unit') ? '🌱 이 차시 질문은 다 심었어요!' : '🌱 오늘 이 수업 질문은 다 심었어요!';
+  if(mode === 'planted') head = fullKind ? fullHead : (afterPhase ? '🌙 수업 닫기 질문을 심었어요!' : '🌱 심었어요!');
+  else if(mode === 'full') head = fullHead;
+  else if(mode === 'sheetdone') head = '🌱 질문 ' + (o.n || 0) + '개를 심었어요!';
+  else if(mode === 'afterRefine') head = '✨ 다듬었어요!';
+  else if(mode === 'afterSolve') head = o.stuck ? '🌫 여기까지 기록했어요' : '🍎 해결했어요!';
+  else head = '👣 다음 한 걸음';
+  let h = '<div class="ns-h">' + head + '</div>';
+  if(mq && (mode === 'planted' || mode === 'afterRefine' || mode === 'afterSolve'))
+    h += '<div class="ns-q">' + esc(String(qShow(mq) || mq.text || '').slice(0, 120)) + '</div>';
+
+  const dry = nsDryList(), dN = dry ? dry.length : null;
+  const waterSub = (dN === null) ? '친구 질문에 「나도 궁금해」를 눌러 응원해요'
+                 : (dN ? ('아직 물 안 준 친구 질문 ' + dN + '개') : '지금은 물 줄 질문이 없어요');
+  const cu = currentUnit();
+  const frSub = cu ? ('📑 ' + esc(unitShort(cu.u)) + ' · 우리 반이 심은 질문') : '우리 반이 심은 질문';
+  const afterTask = (mode === 'afterRefine' || mode === 'afterSolve');
+  const bMore = full
+    ? _nsBtn('', '🌱', '또 다른 질문도 올려요!', '오늘 심을 질문은 다 썼어요 — 새 씨앗은 내일 생겨요', '', true)
+    : _nsBtn((afterTask || fullKind) ? '' : 'green', '🌱', '또 다른 질문도 올려요!',
+             fullKind === 'unit' ? '이 차시는 다 심었어요 — 다른 차시 자료에는 새로 심을 수 있어요' : (afterTask ? '' : '오늘 수업에서 더 궁금한 게 있나요?'), 'nsMore()');
+  const bFr = guest ? '' : _nsBtn('', '👀', '친구들의 질문 보러가요!', frSub, 'nsGoFriends()');
+  const bWa = guest ? '' : _nsBtn('', '💧', '친구의 질문 물주러 가요!', waterSub, 'nsGoWater()', dN === 0);
+  const solve = _nsSolveCard(afterTask && mq ? mq.id : null, afterPhase, sayMode, (mode === 'planted' && mq && !afterPhase) ? mq.id : null);      /* 닫기 때는 «오늘 열기 질문» 이 먼저라 고정하지 않는다 */
+
+  let bRf = '';
+  if(!afterTask){
+    const todo = _nsRefineTodo();
+    if(todo.length){
+      const t0 = (mq && todo.some(function(x){ return x.id === mq.id; })) ? mq : todo[0];
+      bRf = '<button class="ns-link" onclick="nsRefine(' + t0.id + ')">✨ ' + ((mq && t0.id === mq.id) ? '방금 심은 질문' : '오늘 심은 질문') +
+            ' 다듬기' + (todo.length > 1 ? ' (안 다듬은 ' + todo.length + '개)' : '') + '</button>';
+    }
+  }
+  if(mode === 'afterRefine' && mq){
+    h += _nsBtn('green', '🔬', '이 질문, 바로 해결하러 가요!', '다듬은 질문으로 답을 찾아봐요', 'nsSolve(' + mq.id + ')') + solve + bWa + bFr + bMore;
+  } else if(mode === 'afterSolve'){
+    h += (solve || (o.stuck ? '' : '<div class="ns-allclear">🎉 내 질문을 모두 풀었어요!</div>')) + bWa + bFr + bMore;
+  } else {
+    h += bMore + bFr + bWa + solve + bRf;
+  }
+  return h + '<button class="ns-close" onclick="nsDone()">괜찮아요, 닫을게요</button>';
+}
+function nsRender(){
+  const card = $('nsCard'); if(!card || !_ns) return;
+  const keep = card.scrollTop;
+  card.innerHTML = nsHTML();
+  card.scrollTop = keep;
+}
+function nsOpen(o){
+  const w = $('nsWrap'); if(!w) return;
+  _ns = Object.assign({mode:'bar'}, o || {});
+  w.hidden = false;
+  nsRender();
+  /* 포커스는 창 자체에만 — 단추에 두면 Enter 를 꾹 누른 채 심은 학생의 반복 입력이 단추를 눌러 버린다 */
+  const card = $('nsCard');
+  if(card){ card.setAttribute('tabindex', '-1'); try{ card.focus({preventScroll:true}); }catch(e){} }
+  if(!_classBoardCache && S.user && !S.guest){
+    const my = _ns;
+    loadClassQs().then(function(){ if(_ns === my) nsRender(); }).catch(function(){});
+  }
+  /* 하루·차시 상한 — 닿았으면 「또 다른 질문」을 미리 끈다(눌러 보고 적은 뒤에야 막히지 않게) */
+  if(_ns.mode !== 'full'){
+    const mine = _ns;
+    _apFull(mine.q).then(function(kind){ if(kind && _ns === mine){ mine.full = kind; nsRender(); } }).catch(function(){});
+  }
+}
+function _nsHide(){ const w = $('nsWrap'); if(w) w.hidden = true; _ns = null; }
+function apHide(){ _nsHide(); }
+/* 창과 열려 있던 시트를 모두 닫는다 */
+function _nsLeave(){
+  _nsHide();
+  closeAskSheet();
+  const m = $('matSheet'); if(m && m.classList.contains('show')) closeMatSheet();
+}
+function nsDone(){ _nsLeave(); }
+function nsFull(kind){ nsOpen({mode:'full', full:kind || 'day'}); }
+function nsFullUnit(){ nsFull('unit'); }
+function nsBarOpen(){ nsOpen({mode:'bar'}); }
+function nsSheetDone(){ nsOpen({mode:'sheetdone', n:(typeof _sheetPlanted !== 'undefined' ? _sheetPlanted.length : 0)}); }
+
+/* 심은 직후 — addQ 가 부른다. 상한에 닿았으면 «더 올려요» 가 꺼진다 */
+function apShow(q){
+  if(!q){ closeAskSheet(); return; }
+  nsOpen({mode:'planted', q:q});
+}
+/* 하루 상한 'day' / 이 차시 상한 'unit' / 아니면 false */
 async function _apFull(q){
   try{
     for(let i = 0; i < 15 && typeof _quotaBusy !== 'undefined' && _quotaBusy; i++) await new Promise(function(r){ setTimeout(r, 100); });
     await fetchQuota();
-    if(quotaBlocked()) return true;
+    if(quotaBlocked()) return 'day';
     const u = (q && q.unit) || S.pendingUnit || null;
-    return !!(await unitBlocked(u));
+    return (await unitBlocked(u)) ? 'unit' : false;
   }catch(e){ return false; }      /* 못 세면 묻는 쪽으로 — 막지 않는다 */
 }
-function apYes(){
-  apHide();
-  setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 50);
-}
-function apNo(full){
-  const card = $('apCard'); if(!card || !_apQ) return;
-  const q = _apQ;
-  card.innerHTML =
-    '<div class="ap-ok">' + (full ? '🌱 오늘 이 수업 질문은 다 심었어요!' : '👍 좋아요!') + '</div>' +
-    '<div class="ap-ask">그럼 이제 이걸 해 봐요</div>' +
-    '<button class="ap-task first" onclick="apGo(\'refine\')"><span class="ic">✨</span><span><b>방금 심은 질문 다듬기</b>' +
-      '<small>친구가 읽어도 무엇이 궁금한지 딱 보이게, 확인해 볼 수 있게 고쳐요</small></span></button>' +
-    '<button class="ap-task" onclick="apGo(\'help\')"><span class="ic">🙋</span><span><b>친구 질문 도와주기</b>' +
-      '<small id="apHelpN">아직 아무도 답하지 않은 친구 질문을 찾는 중…</small></span></button>' +
-    '<button class="ap-task" onclick="apGo(\'solve\')"><span class="ic">⚡</span><span><b>내 질문 답 찾아 적기</b>' +
-      '<small>찾아보고, 친구에게 말하듯 한 줄로</small></span></button>' +
-    '<button class="ap-close" onclick="apGo(\'close\')">괜찮아요, 닫을게요</button>';
-  _apHelpCount();
-}
-/* 도와줄 질문 수 — 이 차시가 있으면 이 차시, 없으면 우리 반 */
-async function _apHelpCount(){
-  const el = $('apHelpN'); if(!el) return;
-  try{
-    const r = await loadClassQs();
-    if(!$('apHelpN')) return;
-    if(!r || r.error){ el.textContent = '우리 반 친구들의 질문에 💧나도 궁금해·💬 한 마디를 남겨요'; return; }
-    const cu = currentUnit();
-    const pool = (r.list || []).filter(function(x){ return !cu || (x.unit || '').trim() === cu.u; });
-    const n = pool.filter(function(x){ return _waitForFriend(x, r.peerN); }).length;
-    el.textContent = n ? ('아직 아무도 답하지 않은 친구 질문 ' + n + '개가 기다려요' + (cu ? ' (이 차시)' : ''))
-                       : '지금은 기다리는 질문이 없어요 — 친구 질문에 💧나도 궁금해를 눌러 봐요';
-  }catch(e){}
-}
-function apGo(what){
-  const q = _apQ;
-  apHide();
-  closeAskSheet();
-  if(what === 'close' || !q) return;
-  swTab('questions');
-  if(what === 'help'){
-    S.qScope = currentUnit() ? 'unit' : 'class';
-    S.cStatus = 'wait'; S.cPhase = null; S.cUnit = null;
-    renderQs();
-    setTimeout(function(){ const l = $('qScopeSeg'); if(l) l.scrollIntoView({behavior:'smooth', block:'start'}); }, 80);
-    return;
-  }
-  /* 다듬기·해결은 «나» 목록 안에서 열린다 — 거르기를 풀어 방금 심은 카드가 보이게 */
-  S.qScope = 'mine'; S.subFilter = null; S.treeFilter = null; S.phaseFilter = null; S.filterTag = null;
-  if(what === 'refine') openRefine(q.id);
-  else if(what === 'solve') openSolve(q.id);
+
+/* 단추들이 가는 곳 */
+function _nsScroll(sel, fallbackId){
   setTimeout(function(){
-    const el = document.querySelector('#qList [data-qid="' + q.id + '"]') || $(what === 'refine' ? ('rfText-' + q.id) : ('svPanel-' + q.id));
+    const el = document.querySelector(sel) || (fallbackId ? $(fallbackId) : null);
     if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
-  }, 120);
+  }, 140);
 }
+function nsMore(){
+  _nsHide();
+  const mat = $('matSheet');
+  if(mat && mat.classList.contains('show')){ const i = $('msInp'); if(i) i.focus(); return; }
+  const ask = $('askSheet');
+  if(ask && ask.classList.contains('show')){ setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 50); return; }
+  swTab('questions'); openAskSheet();
+}
+function _nsToMine(){
+  _nsLeave();
+  swTab('questions');
+  S.qScope = 'mine'; S.subFilter = null; S.treeFilter = null; S.phaseFilter = null; S.filterTag = null; S.editId = null;
+  S.qView = 'list';     /* 보드 보기에는 피드백·해결 패널이 안 그려진다 */
+}
+function _nsToFeed(scope, status){
+  _nsLeave();
+  swTab('questions');
+  S.qScope = scope; S.cStatus = status || null; S.cPhase = null; S.cUnit = null; S.editId = null;
+  _classFeedN = 40;
+  renderQs();
+  _nsScroll('#qScopeSeg');
+}
+function nsGoFriends(){ _nsToFeed(_nsFriendScope(false), null); }
+function nsGoWater(){ _nsToFeed('class', 'dry'); }      /* 세는 범위(우리 반 전체)와 같게 — 이 차시만 보내면 숫자와 화면이 어긋난다 */
+function nsGoOpen(){
+  _nsToMine(); S.mineStatus = 'open'; renderQs();
+  _nsScroll('#qScopeSeg');
+}
+function nsGoFb(){
+  _nsFbTapped = true;
+  _nsToMine(); S.mineStatus = null; renderQs();
+  setTimeout(function(){
+    const el = document.querySelector('#qList .fb-new');
+    if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 160);
+}
+function nsSolve(id){
+  _nsToMine(); S.solveId = null; openSolve(id);      /* openSolve 는 토글 — 이미 열려 있으면 닫아 버리니 먼저 비운다 */
+  _nsScroll('#qList [data-qid="' + id + '"]', 'svPanel-' + id);
+}
+function nsRefine(id){
+  _nsToMine(); S.refineId = null; openRefine(id);
+  _nsScroll('#qList [data-qid="' + id + '"]', 'rfText-' + id);
+}
+/* 다듬기·해결을 끝낸 직후 — 다음 안 푼 질문 / 친구 질문 / 새 질문으로 이어 준다 */
+function nsAfter(kind, q, opt){
+  if(S.guest || !q) return;
+  opt = opt || {};
+  setTimeout(function(){
+    if(S.tab !== 'questions' || _ns) return;       /* 딴 데 갔거나 이미 창이 떠 있으면 방해하지 않는다 */
+    if(document.querySelector('.msheet.show')) return;
+    const ae = document.activeElement;
+    if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;      /* 다른 글을 쓰는 중이면 가로채지 않는다 */
+    nsOpen({mode:(kind === 'refine' ? 'afterRefine' : 'afterSolve'), q:q, stuck:!!opt.stuck});
+  }, (kind === 'solve' && opt.first) ? 2300 : 500);      /* 열매 연출이 끝난 뒤에 */
+}
+
+/* 질문 탭 맨 위 띠 — 창을 닫아 버려도, 다시 들어와도 다음 할 일이 보이게 */
+function nsPaintBar(){
+  const el = $('nsBar'); if(!el) return;
+  if(S.qScope !== 'mine' || !S.user || S.guest){ el.hidden = true; return; }
+  const mine = allMyQs();
+  if(!mine.length){ el.hidden = true; return; }
+  const rows = [];
+  const fb = mine.filter(function(q){ return q.fb_unread; }).length;
+  if(fb && !_nsFbTapped)
+    rows.push('<div class="ns-row fb"><span class="t">📮 선생님 피드백이 도착했어요 <b>' + fb + '</b></span><button onclick="nsGoFb()">읽으러 가기</button></div>');
+  const open = nsOpenQs(null, false).length;
+  if(open)
+    rows.push('<div class="ns-row"><span class="t">🔬 아직 해결하지 않은 내 질문 <b>' + open + '</b></span><button onclick="nsGoOpen()">해결하러 가기</button></div>');
+  const dry = nsDryList();
+  if(dry === null || dry.length)
+    rows.push('<div class="ns-row"><span class="t">💧 ' + (dry === null ? '친구 질문에 물 주기' : '아직 물 안 준 친구 질문 <b>' + dry.length + '</b>') +
+              '</span><button onclick="nsGoWater()">물주러 가기</button></div>');
+  if(!rows.length){ el.hidden = true; return; }
+  el.innerHTML = '<div class="ns-bar-h">👣 오늘의 다음 한 걸음</div>' + rows.join('');
+  el.hidden = false;
+}
+/* 하단 «질문» 탭의 붉은 점 — 선생님 피드백이 왔는데 아직 질문 탭을 안 열었을 때 */
+function nsPaintBadge(){
+  const d = $('tnDotQ'); if(!d) return;
+  let n = 0;
+  try{ n = _nsFbVisited ? 0 : allMyQs().filter(function(q){ return q.fb_unread; }).length; }catch(e){}
+  d.hidden = !n; d.textContent = n > 9 ? '9+' : String(n);
+}
+/* 나 목록 맨 위 — 승재쌤 말풍선 (안 푼 질문만 보는 중일 때) */
+function _nsBubbleHTML(n){
+  return '<div class="ns-say ns-say-inline"><div class="ns-say-h"><span class="ns-av">🧑‍🏫</span><b>승재쌤</b></div>' +
+    '<div class="ns-say-t">' + NS_SAY + '</div>' +
+    '<div class="ns-open-h">🔬 아직 해결하지 않은 내 질문 <b>' + n + '</b>개 — 아래 카드에서 ✨ 다듬고 🔬 해결해 봐요</div></div>';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && _ns) nsDone(); });
+
 
 function closeAskSheet(){
   const s = $('askSheet'); if(!s) return;
@@ -4716,6 +4958,7 @@ function render(){
   })();
   paintLoadBanner();   /* 못 불러온 게 있으면 화면 맨 위에 알린다 */
   checkOldQ();
+  nsPaintBadge();
 }
 
 function openLink(t){
@@ -7112,7 +7355,8 @@ function showUnitFull(msgId, unit, info){
     '<div class="qf-b"><b>' + esc(code) + '</b> 에 이미 ' + info.n + '개를 심었어요.<br>' +
       '새로 심는 대신, <b>가장 궁금한 질문 하나를 키워</b> 보면 어때요? ' +
       '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 한 걸음 더 갈 수 있어요.</div>' +
-    '<div class="qf-n">다른 차시 자료에는 새로 심을 수 있어요.</div>';
+    '<div class="qf-n">다른 차시 자료에는 새로 심을 수 있어요.</div>' +
+    '<button class="qf-next" onclick="nsFullUnit()">👣 그럼 이제 뭘 할까요?</button>';
   m.className = (msgId === 'msMsg' ? 'ms-msg ' : 'q-msg ') + 'err qf';
   m.style.display = '';
   if(typeof shk === 'function') shk(m);
@@ -7378,6 +7622,7 @@ function paintQScope(){
 
 function renderQs(){
   paintQScope();
+  nsPaintBar();
   if(S.qScope === 'class' || S.qScope === 'unit'){ renderClassFeed(); return; }
   /* 나무는 모든 과목을 한 화면에 놓았으니, 질문도 과목을 넘어 모아서 보여주고
      대신 «과목 필터» 로 갈라 볼 수 있게 한다. 안 그러면 나무는 보이는데
@@ -7453,6 +7698,17 @@ function renderQs(){
   }
 
   // 🏷️ 태그 필터 칩
+  /* 🔬 안 푼 질문 — 누르면 아직 해결하지 않은 것만, 승재쌤 말풍선과 함께 */
+  const _openN = qs.filter(_nsIsOpenQ).length;
+  if(_openN || S.mineStatus === 'open'){
+    const ob = document.createElement('button');
+    ob.className = 'filter-chip status-chip' + (S.mineStatus === 'open' ? ' on' : '');
+    ob.textContent = '🔬 안 푼 질문 ' + _openN;
+    ob.title = '아직 해결하지 않은 내 질문만 보기';
+    ob.onclick = function(){ S.mineStatus = (S.mineStatus === 'open' ? null : 'open'); renderQs(); };
+    fr.appendChild(ob);
+  }
+
   const _tset = {};
   qs.forEach(function(q){ (q.tags||[]).forEach(function(x){ _tset[x]=1; }); });
   const tags = Object.keys(_tset);
@@ -7483,6 +7739,7 @@ function renderQs(){
 
   let filtered=S.filterTag?qs.filter(q=>(q.tags||[]).includes(S.filterTag)):qs;
   if(S.phaseFilter) filtered=filtered.filter(q=>(q.phase||'before')===S.phaseFilter);
+  if(S.mineStatus === 'open') filtered = filtered.filter(_nsIsOpenQ);
 
   // 뷰 토글 UI 동기화
   $('vsegList')?.classList.toggle('on', S.qView!=='board');
@@ -7491,10 +7748,15 @@ function renderQs(){
   if(S.qView==='board'){ renderBoard(filtered, childCount, parentText); return; }
 
   if(!filtered.length){
-    c.innerHTML='<div class="empty"><div class="em">🌱</div><div style="font-size:var(--fs-xs)">'+(S.filterTag?'이 태그의 질문이 없어요':'아직 질문이 없어요')+'</div></div>';
+    c.innerHTML = (S.mineStatus === 'open')
+      ? ((S.filterTag || S.phaseFilter)
+          ? '<div class="empty"><div class="em">🔎</div><div style="font-size:var(--fs-xs)">이 조건에 맞는 안 푼 질문이 없어요<br>열기·닫기·태그 칩을 다시 눌러 끄면 보여요</div></div>'
+          : '<div class="empty"><div class="em">🎉</div><div style="font-size:var(--fs-xs)">안 푼 질문이 하나도 없어요!</div></div>')
+      : '<div class="empty"><div class="em">🌱</div><div style="font-size:var(--fs-xs)">'+(S.filterTag?'이 태그의 질문이 없어요':'아직 질문이 없어요')+'</div></div>';
     return;
   }
 
+  if(S.mineStatus === 'open') c.insertAdjacentHTML('beforeend', _nsBubbleHTML(filtered.length));
   [...filtered].reverse().forEach((q,i)=>{
     const d=document.createElement('div');
     let cls='qc '+(_qsPainted?'':'slide-up ')+(q.resolved?'res':'unr');
@@ -7948,7 +8210,8 @@ function quotaFullHTML(){
          '오늘 심은 질문 아래에 이어 붙이면 그게 <b>«키우기»</b>예요 🌿<br>' +
          '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 돼요.</div>' +
          '<div class="qf-n">🌙 «수업 닫기» 질문 한 개는 따로 남겨 뒀어요. ' +
-         '결석해서 밀렸다면 선생님께 말하세요.</div>';
+         '결석해서 밀렸다면 선생님께 말하세요.</div>' +
+         '<button class="qf-next" onclick="nsFull()">👣 그럼 이제 뭘 할까요?</button>';
 }
 
 function showQuotaFull(msgId){
@@ -8686,6 +8949,11 @@ async function waterQ(ev, qid, ownerId){
     return;
   }
   q.water_count=newCnt; q.watered_by=newBy;
+  /* 친구 나무 창의 질문은 우리 반 캐시와 «다른 객체» 다 — 캐시도 맞춰야 「물 안 줌」 세기·중복 물주기가 안 틀어진다 */
+  try{
+    const _cq = _classBoardCache && _classBoardCache.list && _classBoardCache.list.find(function(x){ return x.id === qid; });
+    if(_cq && _cq !== q){ _cq.water_count = newCnt; _cq.watered_by = newBy; }
+  }catch(_){}
 
   // 물 주는 사람에게 도토리 +1
   await addSeeds(1, '💧 물 주기 +1 🌰');
@@ -8866,7 +9134,7 @@ async function renderClassFeed(){
     fr.innerHTML = '';
     c.innerHTML = '<div class="cb-loading">🏫 우리 반 질문을 모으는 중...</div>';
     const r = await loadClassQs();
-    if(S.qScope !== 'class') return;               /* 기다리는 사이 «나» 로 돌아갔다 */
+    if(S.qScope === 'mine') return;               /* 기다리는 사이 «나» 로 돌아갔다 */
     if(r.error){
       if(r.error === 'gc' || S.guest || !S.user){
         c.innerHTML = emptyStateHTML(EMPTY_FOREST, '우리 반 질문은 로그인하면 보여요', '같은 반 친구들이 심은 질문을 최신순으로 볼 수 있어요.', null, null);
@@ -8933,12 +9201,18 @@ async function renderClassFeed(){
   const rN = list.filter(function(q){ return q.resolved; }).length;
   const sN = list.filter(function(q){ return q.solve && q.solve.stuck; }).length;
   chip('status-chip wait', '🙋 답 기다림 ' + wN, S.cStatus === 'wait', function(){ S.cStatus = (S.cStatus === 'wait' ? null : 'wait'); again(); }, '되묻기도 답도 아직 없는 질문 — 아는 게 있으면 답해 주세요');
+  chip('status-chip dry', '💧 물 안 줌 ' + list.filter(_nsDry).length, S.cStatus === 'dry', function(){ S.cStatus = (S.cStatus === 'dry' ? null : 'dry'); again(); }, '내가 아직 물을 주지 않은 친구 질문');
   chip('status-chip', '🍎 열매 ' + rN, S.cStatus === 'res', function(){ S.cStatus = (S.cStatus === 'res' ? null : 'res'); again(); });
   if(sN) chip('status-chip', '🌫 막힘 ' + sN, S.cStatus === 'stuck', function(){ S.cStatus = (S.cStatus === 'stuck' ? null : 'stuck'); again(); }, '해결하다가 막혔다고 적은 질문');
   if(S.cStatus === 'wait')  list = list.filter(function(q){ return _waitForFriend(q, peerN); });
+  if(S.cStatus === 'dry')   list = list.filter(_nsDry);
   if(S.cStatus === 'res')   list = list.filter(function(q){ return q.resolved; });
   if(S.cStatus === 'stuck') list = list.filter(function(q){ return q.solve && q.solve.stuck; });
 
+  if(!list.length && S.cStatus === 'dry'){
+    c.innerHTML = unitNote + emptyStateHTML(EMPTY_SPROUT, '💧 물 줄 질문을 다 줬어요!', '친구들이 새 질문을 심으면 또 줄 수 있어요', '👣 다음 한 걸음', 'nsBarOpen()');
+    return;
+  }
   if(!list.length){
     c.innerHTML = unitNote + emptyStateHTML(EMPTY_SPROUT,
       (S.cStatus || S.cPhase) ? '이 조건에 맞는 질문이 없어요' : (unitScope ? '이 차시에 심긴 질문이 아직 없어요' : '아직 모인 질문이 없어요'),
@@ -8969,7 +9243,7 @@ async function renderClassFeed(){
 
   /* 또래 답은 보이는 카드 것만 — 한 번 받은 건 다시 안 받는다 */
   if(await ensurePeerAnswers(shown)){
-    if(S.qScope === 'class' && S.tab === 'questions') renderClassFeed();
+    if((S.qScope === 'class' || S.qScope === 'unit') && S.tab === 'questions') renderClassFeed();
   }
 }
 
@@ -8987,7 +9261,7 @@ function _peerRerender(){
     if(board && board.style.display !== 'none' && _classBoardCache && modeBtn && modeBtn.dataset.mode === 'board'){
       _renderClassKanban(board, _classBoardCache.list, _classBoardCache.nameById);
     }
-    if(S.tab === 'questions' && S.qScope === 'class') renderClassFeed();
+    if(S.tab === 'questions' && (S.qScope === 'class' || S.qScope === 'unit')) renderClassFeed();
   }catch(e){}
 }
 
@@ -9784,6 +10058,7 @@ function onSheetPlanted(data){
 }
 function renderSheetPlanted(){
   var box = $('msMine'); if(!box) return;
+  var dn = $('msDone'); if(dn) dn.hidden = !_sheetPlanted.length;      /* 스크롤 영역 밖 — 질문이 쌓여도 안 가려진다 */
   if(!_sheetPlanted.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
   box.style.display = '';
   box.innerHTML = '<div class="ms-mine-t">이 자료로 심은 질문 ' + _sheetPlanted.length + '개</div>' +
@@ -11395,6 +11670,7 @@ async function saveRefine(qid){
   toast(n >= 4 ? ('✨ 다듬었어요! 통과 ' + n + '/6 — 이제 해결하러 갈 수 있어요')
                 : ('✨ 다듬었어요! 통과 ' + n + '/6'));
   render();
+  nsAfter('refine', q);
 }
 
 /* 다듬기를 되돌린다 — 원본으로 */
@@ -11723,6 +11999,7 @@ async function saveSolve(qid, done, quiet){
       : (firstTime ? '🍎 해결 완료! 열매가 맺혔어요' : '🔬 해결 내용을 고쳤어요'));
     if((d.newq||'').trim()) setTimeout(function(){ toast('🌱 새로 생긴 질문은 «키우기» 로 심어보세요'); }, 1600);
     render();
+    nsAfter('solve', q, {stuck:!!d.stuck, first:!!firstTime});
   } else {
     if(!quiet) toast('💾 여기까지 저장했어요');
   }
@@ -12714,8 +12991,6 @@ applyBranding();
     <h3 id="askTitle">✏️ 질문 심기</h3>
     <button class="ms-x" onclick="closeAskSheet()" aria-label="닫기">✕</button>
   </div>
-  <!-- 🌱 심은 다음 — 더 심을지 묻고, 아니면 다음 과제 (심고 멍때리는 시간을 없앤다) -->
-  <div class="ap-wrap" id="apWrap" hidden><div class="ap-card" id="apCard"></div></div>
   <div class="ms-body ask-body" id="askBody">
       <div class="cs">
         <!-- 🌅🌙 수업 단계 토글 -->
@@ -12804,10 +13079,14 @@ applyBranding();
       <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
       <button id="msBtn" onclick="addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">심기</button>
     </div>
+    <button class="ms-done-row" id="msDone" onclick="nsSheetDone()" hidden>✅ 다 심었어요 — 다음은 뭘 할까요?</button>
     <div class="ms-msg" id="msMsg"></div>
     <div class="ms-mine" id="msMine" style="display:none"></div>
   </div>
 </div>
+
+<!-- 👣 다음 한 걸음 — 심은 뒤·끝낸 뒤·못 심을 때 같이 쓴다. 바깥을 누르거나 Esc 면 닫힌다 -->
+<div class="ns-wrap" id="nsWrap" hidden onclick="if(event.target===this)nsDone()"><div class="ns-card" id="nsCard" role="dialog" aria-modal="true"></div></div>
 
 <footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-09-25</span></footer>
 </body>
