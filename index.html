@@ -3048,6 +3048,8 @@ const S = {
 
 const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','🍐','🌸','⭐','💎','🌰','🌻'];
 // 🌿 질문 키우기(확장) 사고 스캐폴드 — 더 나은 질문을 낳도록 돕는 출발 문구
+/* 🏠 풀고 난 질문을 «우리 생활» 로 넓히는 시작틀 — 질문을 만들라고만 하면 막히는 학생에게 첫 말을 준다 */
+const LIFE_PROMPTS = ['우리 집이나 학교에서는 어디서 볼 수 있을까?','이걸 이용한 물건은 뭐가 있을까?','내가 ~할 때도 똑같을까?','이게 없다면 우리 생활은 어떻게 달라질까?'];
 const EXPAND_PROMPTS = ['그래서 만약 ~라면?','왜 꼭 그래야 할까?','다른 경우에도 그럴까?','반대로 생각하면?','이건 무엇과 연결될까?','한 단계 더 들어가면?'];
 // 🔬 질문 정교화(좁히기) 비계 — 탐구가능하도록 질문을 다듬는 출발 문구(정혜승 '평가' 영역)
 const REFINE_PROMPTS = ['무엇을 바꾸고 무엇을 볼까?','어디·언제로 좁히면?','무엇과 비교하면?','어떻게 측정·조사할까?','숫자로 나타내면?','한 가지 조건만 바꾼다면?'];
@@ -7853,6 +7855,8 @@ function renderQs(){
           <div class="qc-expand-hdr">🌿 이 질문을 <b>한 걸음 더</b> 키워볼까요?</div>
           <div class="qc-expand-scaffold">
             ${EXPAND_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
+            <div style="flex-basis:100%;font-size:10px;color:var(--tl);margin:6px 0 1px">🏠 우리 생활로 넓히기 <span style="opacity:.7">(풀고 난 질문을 집·학교 이야기로)</span></div>
+            ${LIFE_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
             <div style="flex-basis:100%;font-size:10px;color:var(--tl);margin:6px 0 1px">🔬 탐구가능하게 좁히기 <span style="opacity:.7">(칩은 뒤에 붙어요 — 아래 네 칸이 더 쉬워요)</span></div>
             ${REFINE_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
           </div>
