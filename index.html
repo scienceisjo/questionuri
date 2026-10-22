@@ -1956,6 +1956,9 @@ body.ask-open .fab-ask{display:none!important}
 .cb-col-body .qbp{padding:3px 8px;font-size:10.5px;min-height:28px}
 .fv-list .ql,#fvList .ql{display:flex;flex-direction:column;gap:8px}
 .qbp-solve.done{background:#EDE7F6;border-color:#B39DDB;color:#5E35B1}
+.qbp-life{background:#E8F5E9;border-color:#A5D6A7;color:#2E7D32}
+.qbp-life:hover,.qbp-life.on{background:#2E7D32;border-color:#2E7D32;color:#fff}
+.qc-life-hint{font-size:12.5px;color:var(--tl);margin:2px 0 8px;line-height:1.5}
 .qbp-pick.on{background:#FFF3E0;border-color:#F0B357;color:#B45309}
 .qbp-more{padding:0 15px;font-size:var(--fs-sm);color:var(--tl);letter-spacing:2px;font-weight:800}
 .qbp-more.on{background:#F4F4EF;border-color:var(--tl);color:var(--tx)}
@@ -3019,6 +3022,7 @@ const S = {
   qScope:'mine',           // 🙋 나 | 🏫 우리 반 | 📑 이 차시 — 질문 탭의 범위
   cUnit:null, cPhase:null, cStatus:null, // 우리 반 흐름의 칩 상태 (차시 / 단계 / 상태)
   mineStatus:null,         // 🙋 나 목록의 «안 푼 질문» 거르기 (null 또는 open)
+  expandLife:false,        // 🏠 키우기 작성칸이 «실생활 질문으로 확장» 모드인가
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
   expandedBranches:new Set(),
@@ -7832,6 +7836,7 @@ function renderQs(){
         <div class="qc-a">
           <button class="qbp qbp-rf${isRefined(q)?' done':''}" onclick="openRefine(${q.id})" title="탐구할 수 있는 질문으로 다듬기">✨ ${isRefined(q)?'다듬음':'다듬기'}</button>
           <button class="qbp qbp-solve${q.solve&&(q.solve.answer||'').trim()?' done':''}" onclick="openSolve(${q.id})" title="스스로 해결하기">🔬 ${q.solve&&(q.solve.answer||'').trim()?'해결함':'해결하기'}</button>
+          <button class="qbp qbp-life${S.expandParentId===q.id&&S.expandLife?' on':''}" onclick="openLife(${q.id})" title="알아낸 것을 우리 생활 속 질문으로 넓혀 보기">🏠 실생활 질문으로 확장하기</button>
           ${q.unit?`<button class="qbp qbp-pick${q.is_picked?' on':''}" onclick="togglePick(${q.id})" title="이 차시의 대표 질문으로 고르기 (차시당 ${PICK_MAX}개)">⭐ 대표</button>`:''}
           <button class="qbp qbp-more" id="moreB-${q.id}" onclick="togMore(${q.id})" title="이 질문으로 할 수 있는 다른 것들" aria-expanded="false" aria-controls="more-${q.id}">⋯</button>
         </div>
@@ -7850,7 +7855,19 @@ function renderQs(){
       </div>
 
       ${/* 🌿 인라인 확장(키우기) 작성기 */
-        S.expandParentId===q.id ? `
+        S.expandParentId===q.id ? (S.expandLife ? `
+        <div class="qc-expand qc-expand-life">
+          <div class="qc-expand-hdr">🏠 알아낸 것을 <b>우리 생활</b>로 넓혀 볼까요?</div>
+          <div class="qc-life-hint">내 질문과 닮은 장면을 <b>집·학교·길</b>에서 떠올려 보세요. 첫 말은 아래 칩에서 골라요.</div>
+          <div class="qc-expand-scaffold">
+            ${LIFE_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
+          </div>
+          <textarea class="qc-expand-input" id="expText-${q.id}" placeholder="집이나 학교에서 본 장면으로 질문을 적어 보세요 🏠"></textarea>
+          <div class="qc-expand-btns">
+            <button class="exp-cancel" onclick="closeExpand()">취소</button>
+            <button class="exp-save" onclick="submitExpand(${q.id})">🏠 생활 질문 심기</button>
+          </div>
+        </div>` : `
         <div class="qc-expand">
           <div class="qc-expand-hdr">🌿 이 질문을 <b>한 걸음 더</b> 키워볼까요?</div>
           <div class="qc-expand-scaffold">
@@ -7866,7 +7883,7 @@ function renderQs(){
             <button class="exp-cancel" onclick="closeExpand()">취소</button>
             <button class="exp-save" onclick="submitExpand(${q.id})">🌱 더 깊은 질문 심기</button>
           </div>
-        </div>` : ''}
+        </div>`) : ''}
 
       ${/* 🎯 좋은 질문 자가체크 */
         S.checkId===q.id ? renderSelfCheckPanel(q) : ''}
@@ -8038,9 +8055,18 @@ function setPhase(p){
 // ============================================================================
 // 🌿 질문 키우기 (확장) — 질문을 닫는 대신 더 깊은 질문으로 자라게 하기
 // ============================================================================
-function openExpand(qid){ S.qView='list'; S.expandParentId = (S.expandParentId===qid?null:qid); S.checkId=null; renderQs();
+/* 🏠 실생활 질문으로 확장하기 — 해결하기 옆 버튼. 키우기(🌿+)와 같은 저장 길, 작성칸만 생활 칩으로 */
+function openLife(qid){
+  S.qView = 'list';
+  const same = (S.expandParentId === qid && S.expandLife);
+  S.expandLife = !same; S.expandParentId = same ? null : qid;
+  S.checkId = null;
+  renderQs();
+  if(S.expandParentId === qid) setTimeout(function(){ const t = $('expText-' + qid); if(t) t.scrollIntoView({behavior:'smooth', block:'center'}); }, 80);
+}
+function openExpand(qid){ S.expandLife = false; S.qView='list'; S.expandParentId = (S.expandParentId===qid?null:qid); S.checkId=null; renderQs();
   if(S.expandParentId===qid) setTimeout(()=>$('expText-'+qid)?.focus(),50); }
-function closeExpand(){ S.expandParentId=null; renderQs(); }
+function closeExpand(){ S.expandParentId=null; S.expandLife=false; renderQs(); }
 function expChip(qid, prompt){
   const t=$('expText-'+qid); if(!t) return;
   t.value = (t.value.trim()? t.value.trim()+' ' : '') + prompt + ' ';
@@ -8048,6 +8074,7 @@ function expChip(qid, prompt){
 }
 async function submitExpand(parentId){
   if(guestNudge()) return;
+  const wasLife = !!S.expandLife;
   const ta=$('expText-'+parentId); if(!ta) return;
   let t=ta.value.trim();
   t = await imeAsk(t, '키운 질문');
@@ -8060,7 +8087,7 @@ async function submitExpand(parentId){
   const treeId = parent.tree_id || curTreeId();
   const payload={
     user_id:S.user.id, subject_id:S.activeSub, text:t,
-    tags:(parent.tags||[]), question_date:td(),
+    tags:(wasLife ? Array.from(new Set((parent.tags||[]).concat(['#일상']))) : (parent.tags||[])), question_date:td(),
     fruit_emoji:S.fruit||null, is_anonymous:false,
     phase:'after', parent_id:parentId,
     water_count:0, watered_by:[]
@@ -8078,10 +8105,23 @@ async function submitExpand(parentId){
     refined_text:null, refine_check:null, refined_at:null, is_picked:false, solve:null,
   });
   S.activeTreeId[S.activeSub]=treeId;
-  S.expandParentId=null;
-  await addSeeds(2, '🌿 질문이 한 걸음 더 자랐어요! +2 🌰');
-  toast('🌱 더 깊은 질문이 나무에 열렸어요!');
+  S.expandParentId=null; S.expandLife=false;
+  await addSeeds(2, wasLife ? '🏠 생활 질문이 심어졌어요! +2 🌰' : '🌿 질문이 한 걸음 더 자랐어요! +2 🌰');
+  toast(wasLife ? '🏠 생활 질문이 심어졌어요! 이제 🔬 한 줄로 풀어 봐요' : '🌱 더 깊은 질문이 나무에 열렸어요!');
   render();
+  if(wasLife){
+    /* 새 카드의 «⚡ 답만 적기» 를 바로 연다 — 심고 «그다음 뭐 해요?» 가 나오지 않게 */
+    setTimeout(function(){
+      const nq = findQ(data.id); if(!nq) return;
+      try{ solveDraft(nq).mode = 'quick'; }catch(e){}
+      S.solveId = null; S.refineId = null;
+      openSolve(data.id);
+      setTimeout(function(){
+        const el = document.querySelector('#qList [data-qid="' + data.id + '"]') || $('svPanel-' + data.id);
+        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 160);
+    }, 350);
+  }
 }
 
 // ============================================================================
