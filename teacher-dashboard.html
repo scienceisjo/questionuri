@@ -1806,7 +1806,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '10-21 b · 상단바 줄바꿈·더보기 / 주목할 학생·한 줄 소견 뺌';
+const BUILD = '10-23 a · 질문 CSV 열 추가(고친 질문·해결 답변)';
 let allSubjects = [];
 let allBranches = [];
 
@@ -6500,13 +6500,13 @@ function exportCSV(type){
   } else {
     const pm=profileMap();
     const brByQ={}; allBranches.forEach(b=>brByQ[b.question_id]=(brByQ[b.question_id]||0)+1);
-    csv='학년,반,번호,이름,과목,질문,태그,열매,익명,해결,물주기,꼬리질문,날짜\n';
+    csv='학년,반,번호,이름,과목,질문(고치기 전),고친 질문,해결 답변,알아낸 것,아직 모르는 것,태그,열매,익명,해결,물주기,꼬리질문,차시,단계,출처,선생님 되묻기,날짜\n';
+    /* 글 칸은 따옴표로 감싸고, =+-@ 로 시작하면 엑셀이 수식으로 읽으니 앞에 ' 를 붙인다 */
+    const Q=s=>{ let v=String(s==null?'':s).replace(/\r?\n/g,' ').trim(); if(/^[=+\-@]/.test(v)) v="'"+v; return '"'+v.replace(/"/g,'""')+'"'; };
     filteredQuestions.forEach(q=>{
       const p=pm[q.user_id]||{};
       const tags=(q.tags||[]).join(' ');
-      const text=(q.text||'').replace(/"/g,'""');
-      const nm=(p.name||'').replace(/"/g,'""');
-      csv+=`${p.grade??''},${p.class_no??''},${p.number??''},"${nm}",${q.subject_id||''},"${text}","${tags}",${q.fruit_emoji||''},${q.is_anonymous?'Y':'N'},${q.resolved?'Y':'N'},${q.water_count||0},${brByQ[q.id]||0},${q.question_date||''}\n`;
+      csv+=`${p.grade??''},${p.class_no??''},${p.number??''},${Q(p.name)},${q.subject_id||''},${Q(q.text)},${Q(q.refined_text)},${Q(q.solve&&q.solve.answer)},${Q(q.finding)},${Q(q.still_wondering)},${Q(tags)},${q.fruit_emoji||''},${q.is_anonymous?'Y':'N'},${q.resolved?'Y':'N'},${q.water_count||0},${brByQ[q.id]||0},${Q(q.unit)},${q.phase==='after'?'닫기':'열기'},${Q(q.answer_source)},${Q(q.teacher_nudge)},${q.question_date||''}\n`;
     });
   }
   const BOM='\uFEFF';
