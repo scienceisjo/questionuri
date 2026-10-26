@@ -1960,6 +1960,53 @@ body.ask-open .fab-ask{display:none!important}
 .qbp-life:hover,.qbp-life.on{background:#2E7D32;border-color:#2E7D32;color:#fff}
 .qbp-social{background:#E3F2FD;border-color:#90CAF9;color:#1565C0}
 .qbp-social:hover,.qbp-social.on{background:#1565C0;border-color:#1565C0;color:#fff}
+/* 📝 질문 탭 빠른 심기 */
+.qq-bar{background:#fff;border:1.5px solid var(--bd);border-radius:16px;padding:10px 12px 6px;margin:0 0 12px}
+.qq-bar[hidden]{display:none!important}
+.qq-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.qq-ph{display:inline-flex;gap:3px;background:var(--bg);border-radius:12px;padding:3px}
+.qq-ph button{border:none;background:none;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:800;color:var(--tl);cursor:pointer;font-family:inherit;white-space:nowrap}
+.qq-ph button.on{background:var(--pr);color:#fff}
+.qq-more{margin-left:auto;padding:9px 6px;border:none;background:none;color:var(--tl);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.qq-units{position:relative;display:flex;align-items:center;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.qq-units .up-opt{flex:0 0 auto;white-space:nowrap}
+.qq-sel{flex:1 1 auto;min-width:0;padding:9px 10px;border:1.5px solid var(--bd);border-radius:12px;background:#fff;font-family:inherit;font-size:13px;font-weight:700;color:var(--tx,#2b3a2f);text-overflow:ellipsis}
+.qq-sel.need{border-color:#E0A33A;background:#FFF8E6}
+.qq-lbl{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--tl);white-space:nowrap}
+.qq-hint{font-size:12px;color:var(--tl);line-height:1.4}
+.qq-iw{display:flex;gap:8px}
+.qq-iw .q-i{min-width:0}
+.qq-bar .q-msg{margin-top:4px}
+/* 📋 간단히 보기 — 카드를 한 줄 요약으로 */
+.qc-mini{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;min-height:58px}
+.qc-mini .qm-ph{font-size:18px;flex:0 0 auto}
+.qc-mini .qm-body{flex:1;min-width:0}
+.qc-mini .qm-t{font-size:14.5px;font-weight:700;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:keep-all;overflow-wrap:anywhere}
+.qc-mini .qm-m{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.qm-b{font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;background:var(--bg);color:var(--tl);white-space:nowrap}
+.qm-b.ok{background:#E8F5E9;color:#2E7D32}
+.qm-b.fb{background:#FDECEA;color:#B03A2E}
+.qc-mini .qm-go{flex:0 0 auto;font-size:11.5px;color:var(--tl);font-weight:700;white-space:nowrap}
+.qm-foldrow{text-align:right;margin:-2px 0 4px}
+.qm-foldrow button{padding:9px 4px;border:none;background:none;color:var(--tl);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.filter-chip.dense-chip{background:var(--pr);border-color:var(--pr);color:#fff}
+.to-top{position:fixed;left:16px;bottom:92px;z-index:55;border:none;border-radius:99px;padding:9px 14px;background:rgba(36,97,47,.92);color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.to-top[hidden]{display:none!important}
+.qq-note{font-size:12px;color:var(--tl);margin:-2px 0 6px;line-height:1.4}
+.qq-note[hidden]{display:none}
+.qq-flags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--pd);background:rgba(93,184,110,.12);border-radius:10px;padding:5px 9px;margin:0 0 8px}
+.qq-flags[hidden]{display:none}
+.qq-flags button{border:none;background:none;color:var(--tl);font-weight:800;font-size:12px;text-decoration:underline;cursor:pointer;font-family:inherit;padding:6px 4px}
+.ql-dense{border:none;background:var(--pr);color:#fff;font-family:inherit;font-size:var(--fs-xxs);font-weight:800;padding:6px 11px;border-radius:14px;cursor:pointer;white-space:nowrap}
+.ql-dense[hidden]{display:none}
+.qc-mini:focus-visible{outline:2px solid var(--pr);outline-offset:2px}
+#tp-questions.has-qq .ql-ask{display:none}   /* 빠른 심기 줄이 있으면 «질문 심기» 단추는 겹친다(오른쪽 아래 ✏️ 는 그대로) */
+/* 간단히 보기일 때는 목록 위쪽(성장 카드·다음 한 걸음 띠)을 얇게 — 첫 화면에서 내 질문이 보이게 */
+#tp-questions.qt-mini #growthCard .growth-grew,#tp-questions.qt-mini #growthCard .growth-msg{display:none}   /* «수업 닫기» 안내는 빠른 심기 줄(.qq-note)이 맡는다 */
+#tp-questions.qt-mini #growthCard .growth-card{padding:8px 14px}
+#tp-questions.qt-mini .ns-bar{padding:4px 10px 0}
+#tp-questions.qt-mini .ns-bar-h{display:none}
+#tp-questions.qt-mini .ns-row{padding:5px 0}
 .qc-life-hint{font-size:12.5px;color:var(--tl);margin:2px 0 8px;line-height:1.5}
 .qbp-pick.on{background:#FFF3E0;border-color:#F0B357;color:#B45309}
 .qbp-more{padding:0 15px;font-size:var(--fs-sm);color:var(--tl);letter-spacing:2px;font-weight:800}
@@ -2506,6 +2553,25 @@ body.ask-open .fab-ask{display:none!important}
     </div></div></div>
     <!-- 질문 탭 -->
     <div class="tp" id="tp-questions"><div class="tp-inner"><div class="q-area">
+      <!-- 📝 빠른 심기 — 시트를 열지 않고 질문 탭에서 바로. 열기/닫기·차시는 시트와 같은 값 -->
+      <div class="qq-bar" id="qqBar" hidden>
+        <div class="qq-top">
+          <div class="qq-ph">
+            <button data-phase="before" onclick="setPhase('before')">🌅 수업 열기</button>
+            <button data-phase="after" onclick="setPhase('after')">🌙 수업 닫기</button>
+          </div>
+          <button class="qq-more" onclick="qqMore()" title="익명·나무·태그·열매">⚙️ 옵션</button>
+        </div>
+        <div class="qq-note" id="qqNote">수업을 다 마친 뒤에 올리는 질문이면 <b>🌙 수업 닫기</b>를 눌러요</div>
+        <div class="qq-units" id="qqUnits"></div>
+        <div class="qq-flags" id="qqFlags" hidden></div>
+        <div class="qq-iw">
+          <input class="q-i" id="qqInp" placeholder="궁금한 것을 적어요" onkeydown="if(event.key==='Enter'&&!event.repeat)qqPlant()">
+          <button class="ba" id="qqBtn" onclick="qqPlant()">심기</button>
+        </div>
+        <div class="q-quota" id="qqQuota" style="display:none"></div>
+        <div class="q-msg" id="qqMsg"></div>
+      </div>
       <!-- 🌳 오늘의 탐구 성장 리포트 -->
       <div id="growthCard"></div>
       <!-- 👣 오늘의 다음 한 걸음 — 시트를 닫아도, 다시 들어와도 «다음에 뭐 하지?» 가 보이게 -->
@@ -2521,6 +2587,7 @@ body.ask-open .fab-ask{display:none!important}
           <h4 id="qlTitle">📋 나의 질문들</h4>
           <div class="ql-tools">
             <button class="ql-ask" onclick="openAskSheet()">✏️ 질문 심기</button>
+            <button class="ql-dense" id="denseBtn" onclick="setDense(qDense()==='mini'?'full':'mini')" hidden></button>
             <span id="qCnt">0/0</span>
             <div class="view-seg">
               <button class="vseg on" id="vsegList" onclick="setQView('list')">📋 목록</button>
@@ -3026,6 +3093,7 @@ const S = {
   mineStatus:null,         // 🙋 나 목록의 «안 푼 질문» 거르기 (null 또는 open)
   expandLife:false,        // 🏠 키우기 작성칸이 «실생활 질문으로 확장» 모드인가
   expandSocial:false,      // 🌍 키우기 작성칸이 «사회 문제 질문으로 확장» 모드인가
+  qDense:null,             // 📋 내 질문 보기 밀도 — 'mini'(한 줄 요약) | 'full'(자세히). null 이면 처음 한 번 정한다
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
   expandedBranches:new Set(),
@@ -3908,7 +3976,10 @@ function showStuck(i){
 function stuckStart(stem){
   closeMCInfo();
   const sheetOpen = $('matSheet') && $('matSheet').classList.contains('show');
-  const id = sheetOpen ? 'msInp' : 'qInp';
+  /* 어느 칸에서 막혔나: 자료 시트 → msInp, 작성 시트가 열려 있으면 qInp, 아니면 눈에 보이는 빠른 줄 qqInp */
+  const askOpen = $('askSheet') && $('askSheet').classList.contains('show');
+  const qb = $('qqBar');
+  const id = sheetOpen ? 'msInp' : ((!askOpen && qb && !qb.hidden) ? 'qqInp' : 'qInp');
   if (!sheetOpen) swTab('questions');
   setTimeout(function(){
     const inp = $(id);
@@ -4209,6 +4280,20 @@ async function doLogout(){
   S.mineStatus = null; S.cStatus = null; S.cPhase = null; S.cUnit = null; S.qScope = 'mine';
   S.expandParentId = null; S.expandLife = false; S.expandSocial = false;
   _nsFbTapped = false; _nsFbVisited = false; _classBoardCache = null; _peerLoaded = {}; _nsHide();
+  /* 빠른 심기 줄·간단히 보기 — 앞사람이 쓰던 글·펼친 카드가 다음 학생에게 남으면 안 된다 */
+  try{
+    _qOpenCards.clear(); _qMineN = 20; S.qDense = null; S.pendingUnit = null; S.pendingUnitSet = false;
+    S.pendingAnon = false; S.pendingTags = []; S.pendingFruit = null; S.pendingSource = null;
+    /* 앞 반의 지금 차시·차시 목록·자료가 다음 학생의 첫 칩 줄에 뜨면 안 된다 */
+    _nowUnit = null; _lessonUnits = []; _lessonUnitsFallback = false; _materials = [];
+    ['qqInp', 'qInp', 'msInp', 'tagInp'].forEach(function(id){ const e = $(id); if(e) e.value = ''; });
+    const _qm = $('qqMsg'); if(_qm){ _qm.innerHTML = ''; _qm.className = 'q-msg'; _qm.style.display = ''; }
+    const _qu = $('qqUnits'); if(_qu) _qu._qqHTML = null;
+    /* 값만 바꾸면 시트 화면(🌙 켜짐·태그 칩·자료 배너)이 앞사람 그대로 남는다 — 화면까지 되돌린다 */
+    clearMaterialLink(); setPhase('before'); renderPendingTags(); renderAnonTog(); renderFruitPicker(); renderSourcePicker();
+    const _tb = $('toTopBtn'); if(_tb) _tb.hidden = true;
+    const _tq = $('tp-questions'); if(_tq) _tq.scrollTop = 0;
+  }catch(e){}
   goTo('welcome');
 }
 
@@ -4520,8 +4605,9 @@ function swTab(t){
   if(t==='growth') renderGrowthMirror();
   /* 작성 폼이 시트로 들어갔으니 질문 탭에서도 FAB 가 곧 «심기» 다 */
   const fab=$('fabAsk'); if(fab) fab.style.display = '';
-  if(t === 'questions'){ _nsFbVisited = true; nsPaintBar(); }
+  if(t === 'questions'){ _nsFbVisited = true; nsPaintBar(); try{ qqPaint(); }catch(e){} }
   nsPaintBadge();
+  try{ toTopPaint(); }catch(e){}
 }
 function openMore(){ $('moreSheet')?.classList.add('show'); }
 // 🔑 학생 본인 비밀번호 변경
@@ -4846,7 +4932,13 @@ function nsMore(){
   if(mat && mat.classList.contains('show')){ const i = $('msInp'); if(i) i.focus(); return; }
   const ask = $('askSheet');
   if(ask && ask.classList.contains('show')){ setTimeout(function(){ const i = $('qInp'); if(i) i.focus(); }, 50); return; }
-  swTab('questions'); openAskSheet();
+  swTab('questions');
+  const qb = $('qqBar');
+  if(qb && !qb.hidden){          /* 질문 탭 빠른 심기 줄이 있으면 거기서 이어서 */
+    setTimeout(function(){ qb.scrollIntoView({behavior:'smooth', block:'center'}); const i = $('qqInp'); if(i) i.focus({preventScroll:true}); }, 80);
+    return;
+  }
+  openAskSheet();
 }
 function _nsToMine(){
   _nsLeave();
@@ -4864,8 +4956,9 @@ function _nsToFeed(scope, status){
 }
 function nsGoFriends(){ _nsToFeed(_nsFriendScope(false), null); }
 function nsGoWater(){ _nsToFeed('class', 'dry'); }      /* 세는 범위(우리 반 전체)와 같게 — 이 차시만 보내면 숫자와 화면이 어긋난다 */
+let _qExpandFirst = false;
 function nsGoOpen(){
-  _nsToMine(); S.mineStatus = 'open'; renderQs();
+  _nsToMine(); S.mineStatus = 'open'; _qExpandFirst = true; renderQs();
   _nsScroll('#qScopeSeg');
 }
 function nsGoFb(){
@@ -4929,8 +5022,189 @@ function nsPaintBadge(){
 function _nsBubbleHTML(n){
   return '<div class="ns-say ns-say-inline"><div class="ns-say-h"><span class="ns-av">🧑‍🏫</span><b>승재쌤</b></div>' +
     '<div class="ns-say-t">' + NS_SAY + '</div>' +
-    '<div class="ns-open-h">🔬 아직 해결하지 않은 내 질문 <b>' + n + '</b>개 — 아래 카드에서 ✨ 다듬고 🔬 해결해 봐요</div></div>';
+    '<div class="ns-open-h">🔬 아직 해결하지 않은 내 질문 <b>' + n + '</b>개 — ' + ((qDense() === 'mini') ? '카드를 눌러 펼친 다음 ' : '아래 카드에서 ') + '✨ 다듬고 🔬 해결해 봐요</div></div>';
 }
+/* ══ 📝 질문 탭 빠른 심기 ═══════════════════════════════════════════════════
+   수업을 다 마치고 질문을 올리는 날 — 자료도 없고, 시트를 열 이유도 없다.
+   차시를 고르고 한 줄 쓰고 «심기». 열기/닫기·차시는 시트와 같은 상태(S.phase·S.pendingUnit).
+   익명·나무·태그·열매가 필요하면 「옵션」 으로 시트를 연다(쓴 글은 그대로 옮겨 준다). */
+function qqPlant(){ addQ({inp:'qqInp', msg:'qqMsg', btn:'qqBtn'}); }
+function qqMore(){
+  const a = $('qqInp'), v = (a && a.value) || '';
+  openAskSheet();
+  if(v){ setTimeout(function(){ const i = $('qInp'); if(i){ i.value = v; i.focus(); } if(a) a.value = ''; }, 120); }
+}
+/* 시트에서 골라 둔 것(익명·태그·출처·자료 연결)은 빠른 줄로 그대로 따라온다 — 안 보이면 모르고 올린다 */
+function qqFlags(){
+  const f = [];
+  if(S.pendingAnon) f.push('🕊️ 익명으로');
+  if(S.pendingTags && S.pendingTags.length) f.push('🏷️ 태그 ' + S.pendingTags.length + '개');
+  const _ti = $('tagInp'); if(_ti && _ti.value.trim()) f.push('🏷️ 쓰다 만 태그');
+  if(S.pendingFruit) f.push(S.pendingFruit + ' 열매 모양');
+  if(S.pendingSource) f.push('🧺 출처 골라 둠');
+  if(typeof _pendingMaterialId !== 'undefined' && _pendingMaterialId) f.push('📚 자료와 이어서');
+  return f;
+}
+function qqClearOpts(){
+  S.pendingAnon = false; S.pendingTags = []; S.pendingFruit = null; S.pendingSource = null;
+  const ti = $('tagInp'); if(ti) ti.value = '';
+  try{ clearMaterialLink(); }catch(e){}
+  try{ renderAnonTog(); renderPendingTags(); renderFruitPicker(); renderSourcePicker(); }catch(e){}
+  setPhase(S.phase || 'before');     /* clearMaterialLink 가 시트 안내문을 열기용으로 되돌리니 단계에 맞게 다시 + 빠른 줄 갱신 */
+}
+/* 칩 줄은 내용이 같으면 다시 그리지 않는다(40초마다·목록이 바뀔 때마다 가로 위치가 0 으로 돌아가고 누르던 칩이 사라졌다) */
+function qqPaint(){
+  const bar = $('qqBar'); if(!bar) return;
+  const _tpq = $('tp-questions');
+  if(S.qScope !== 'mine' || !S.user || S.guest){ bar.hidden = true; if(_tpq) _tpq.classList.remove('has-qq'); return; }
+  bar.hidden = false;
+  if(_tpq) _tpq.classList.add('has-qq');
+  const after = (S.phase === 'after');
+  bar.querySelectorAll('.qq-ph button').forEach(function(b){
+    const on = (b.dataset.phase === (after ? 'after' : 'before'));
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  const note = $('qqNote'); if(note) note.hidden = after;
+  const inp = $('qqInp');
+  if(inp) inp.placeholder = after ? '수업을 마치고 새로 생긴 질문을 적어요' : '궁금한 것을 적어요 ($수식$ 가능)';
+  if(!S.pendingUnitSet) S.pendingUnit = unitDefaultPlant();
+
+  const fl = qqFlags(), fbox = $('qqFlags');
+  if(fbox){
+    fbox.hidden = !fl.length;
+    if(fl.length) fbox.innerHTML = '<span>시트에서 고른 게 같이 올라가요 · ' + fl.join(' · ') + '</span><button onclick="qqClearOpts()">지우기</button>';
+  }
+
+  const opts = unitOptions();
+  const box = $('qqUnits'); if(!box) return;
+  let html;
+  if(!opts.length){
+    html = '<span class="qq-hint">📑 차시는 선생님이 정해 주면 여기서 고를 수 있어요</span>';
+  } else if(opts.length > 6){
+    const none = (S.pendingUnitSet && !S.pendingUnit);
+    const need = unitUnchosen();
+    html = '<span class="qq-lbl">📑 몇 차시?</span><select class="qq-sel' + (need ? ' need' : '') + '" onchange="qqPickUnit(this.value)" aria-label="몇 차시 질문인지 고르기">' +
+      '<option value=""' + (need ? ' selected' : '') + '>— 차시를 골라요 —</option>' +
+      opts.map(function(o){
+        return '<option value="' + esc(o.u).split('"').join('&quot;') + '"' + (S.pendingUnit === o.u ? ' selected' : '') + '>' + (o.now ? '지금 · ' : '') + esc(o.u) + '</option>';
+      }).join('') +
+      '<option value="__none__"' + (none ? ' selected' : '') + '>차시 없음</option></select>';
+  } else {
+    html = '<span class="qq-lbl">📑 몇 차시?</span>' + opts.map(function(o){
+      const on = (S.pendingUnit === o.u) ? ' on' : '';
+      return '<button class="up-opt' + on + '" onclick="setPendingUnit(' + JSON.stringify(o.u).split('"').join('&quot;') + ')">' +
+        (o.now ? '<span class="up-now">지금</span>' : '') + esc(o.u) + '</button>';
+    }).join('') + '<button class="up-opt' + (S.pendingUnit ? '' : ' on') + '" onclick="setPendingUnit(null)" title="수업과 상관없는 질문이면">차시 없음</button>';
+  }
+  if(box._qqHTML !== html){
+    const sl = box.scrollLeft;
+    box.innerHTML = html; box._qqHTML = html;
+    box.scrollLeft = sl;
+    box._qqFit = true;            /* 칩이 바뀌었으니 고른 칩이 보이는지 한 번 맞춘다 */
+  }
+  /* 질문 탭이 가려진 채 그려졌으면 폭이 0 이라 못 맞춘다 — 탭이 열릴 때(swTab) 다시 불려 와 그때 맞춘다 */
+  if(box._qqFit && box.clientWidth > 0){
+    box._qqFit = false;
+    const on = box.querySelector('.up-opt.on');
+    /* 고른 칩이 줄 밖이면 가로로만 끌어온다 — scrollIntoView 는 페이지까지 흔든다 */
+    if(on && (on.offsetLeft < box.scrollLeft || on.offsetLeft + on.offsetWidth > box.scrollLeft + box.clientWidth - 8))
+      box.scrollLeft = Math.max(0, on.offsetLeft - 70);
+  }
+}
+/* 차시를 아직 안 골랐을 때의 기본값: 지금 차시 → 최근 자료 → 선생님 차시 목록 맨 위 */
+function unitDefaultPlant(){
+  const d = unitDefault(); if(d) return d;
+  if(_lessonUnitsFallback) return null;      /* 내장 목록 맨 위는 «학기 첫 시간» — 대신 골라 주면 안 된다 */
+  const l = (_lessonUnits || [])[0];
+  return (l && (l.unit || '').trim()) || null;
+}
+/* 고를 차시가 있는데 아직 안 골랐다 — «차시 없음» 으로 조용히 올라가지 않게 한다 */
+function unitUnchosen(){
+  if(typeof _pendingMaterialId !== 'undefined' && _pendingMaterialId) return false;
+  return unitOptions().length > 0 && !S.pendingUnit && !S.pendingUnitSet;
+}
+/* 빠른 줄 드롭다운에서 고르기 */
+function qqPickUnit(v){
+  if(v === '__none__'){ setPendingUnit(null); return; }
+  if(!v){ S.pendingUnit = null; S.pendingUnitSet = false; renderUnitPicker(); qqPaint(); return; }
+  setPendingUnit(v);
+}
+
+/* ══ 📋 내 질문 보기 밀도 ═══════════════════════════════════════════════════
+   카드 하나가 평균 410px — 27개면 화면 13장이다. 기본은 «한 줄 요약»(질문 5개 넘으면), 눌러서 펼친다.
+   선생님 글이 온 카드·열려 있는 패널·우편함에서 찾아온 카드는 펼친 채 둔다. */
+let _qMineN = 20;
+const _qOpenCards = new Set();
+/* 설정은 계정별로 저장한다 — 공용 기기에서 앞사람 선택이 넘어가면 안 된다. 고르기 전의 기본값은 굳히지 않고 매번 센다. */
+function _qDenseKey(){ return 'qt_dense_v1:' + ((S.user && S.user.id) || ''); }
+function qDense(){
+  if(S.qDense) return S.qDense;
+  let v = null; try{ v = localStorage.getItem(_qDenseKey()); }catch(e){}
+  if(v === 'mini' || v === 'full'){ S.qDense = v; return v; }
+  return (allMyQs().length > 4) ? 'mini' : 'full';
+}
+function setDense(v){ S.qDense = v; try{ localStorage.setItem(_qDenseKey(), v); }catch(e){} _qMineN = 20; renderQs(); }
+function qDensePaint(){
+  const b = $('denseBtn'); if(!b) return;
+  const show = (S.qScope === 'mine' && S.qView !== 'board' && allMyQs().length > 0);
+  b.hidden = !show; if(!show) return;
+  const mini = (qDense() === 'mini');
+  b.textContent = mini ? '🗂 자세히' : '📋 간단히';
+  b.title = mini ? '카드를 모두 펼쳐서 봐요' : '카드를 한 줄로 줄여서 봐요';
+}
+function miniOpen(id){
+  _qOpenCards.add(String(id)); renderQs();
+  setTimeout(function(){
+    const el = document.querySelector('#qList .qc[data-qid="' + id + '"]');
+    if(el){ el.scrollIntoView({block:'nearest', behavior:'smooth'}); try{ el.tabIndex = -1; el.focus({preventScroll:true}); }catch(e){} }
+  }, 60);
+}
+function miniClose(id){ _qOpenCards.delete(String(id)); renderQs(); }
+/* 학생이 접을 수 없는 이유로 펼쳐진 카드 — 패널이 열려 있거나, 새 선생님 글이거나, 우편함에서 찾아온 카드 */
+function _qPanelOpen(q){
+  return S.editId === q.id || S.refineId === q.id || S.solveId === q.id || S.expandParentId === q.id || S.checkId === q.id || S.harvestId === q.id;
+}
+function _qForceOpen(q){
+  if(_qPanelOpen(q)) return true;
+  if(q.fb_unread) return true;
+  return !!(typeof _fbJumpId !== 'undefined' && _fbJumpId && String(_fbJumpId) === String(q.id));
+}
+function _qIsMini(q){
+  if(qDense() !== 'mini') return false;
+  if(_qForceOpen(q)) return false;
+  return !_qOpenCards.has(String(q.id));
+}
+function _qMiniHTML(q){
+  const shown = dispFix(qShow(q));
+  const unit = q.unit ? '<span class="qm-b">📑 ' + esc(unitShort(q.unit)) + '</span>' : '';
+  const done = q.resolved ? '<span class="qm-b ok">🍎 해결</span>' : '<span class="qm-b">○ 안 푼</span>';
+  const rf = isRefined(q) ? '<span class="qm-b">✨ 다듬음</span>' : '';
+  const fb = (q.teacher_nudge || q.teacher_refine_note || q.teacher_solve_note) ? '<span class="qm-b fb">📮 선생님 글</span>' : '';
+  const stm = (q.teacher_stamp && STAMP_MSG[q.teacher_stamp]) ? '<span class="qm-b fb">' + STAMP_MSG[q.teacher_stamp].e + ' 도장</span>' : '';
+  const pk = q.is_picked ? '<span class="qm-b ok">⭐ 대표</span>' : '';
+  const an = q.is_anonymous ? '<span class="qm-b">🕊️ 익명</span>' : '';
+  const w = q.water_count ? '<span class="qm-b">💧 ' + q.water_count + '</span>' : '';
+  const pa = (q.peer_answers && q.peer_answers.length) ? '<span class="qm-b">💬 ' + q.peer_answers.length + '</span>' : '';
+  return '<span class="qm-ph" title="' + (q.phase === 'after' ? '수업 닫기' : '수업 열기') + '">' + (q.phase === 'after' ? '🌙' : '🌅') + '</span>' +
+    '<div class="qm-body"><div class="qm-t" data-math="1">' + escWithMath(shown) + '</div><div class="qm-m">' + done + rf + fb + stm + pk + an + unit + w + pa + '</div></div>' +
+    '<span class="qm-go">펼치기 ▾</span>';
+}
+/* ↑ 맨 위로 — 질문 탭에서 많이 내려갔을 때만.
+   이 앱은 창이 아니라 #tp-questions 안에서 스크롤된다(html,body{overflow:hidden}). 스크롤 이벤트는 위로 안 올라오므로 캡처로 듣는다. */
+/* 한 줄 요약 모드일 때만 «카드를 눌러 펼치고» 가 맞는 말이다 */
+function _qCardLead(){ return (qDense() === 'mini') ? '질문 카드를 눌러 펼치고 ' : '질문 카드의 '; }
+function toTopPaint(){
+  const b = $('toTopBtn'); if(!b) return;
+  const sc = $('tp-questions');
+  const app = $('app');
+  b.hidden = !(S.tab === 'questions' && app && app.classList.contains('on') && sc && sc.scrollTop > 900);
+}
+function toTopGo(){
+  const sc = $('tp-questions'); if(sc) sc.scrollTo({top:0, behavior:'smooth'});
+}
+document.addEventListener('scroll', function(e){
+  if(e.target && e.target.id === 'tp-questions') toTopPaint();
+}, {capture:true, passive:true});
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && _ns) nsDone(); });
 
 
@@ -4938,6 +5212,7 @@ function closeAskSheet(){
   const s = $('askSheet'); if(!s) return;
   s.classList.remove('show');
   document.body.classList.remove('ask-open');
+  try{ qqPaint(); }catch(e){}     /* 시트에서 고른 익명·태그가 빠른 줄에도 보이게 */
 }
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape' && $('askSheet') && $('askSheet').classList.contains('show')) closeAskSheet();
@@ -4971,6 +5246,7 @@ function render(){
   paintLoadBanner();   /* 못 불러온 게 있으면 화면 맨 위에 알린다 */
   checkOldQ();
   nsPaintBadge();
+  try{ qqPaint(); }catch(e){}
 }
 
 function openLink(t){
@@ -6920,7 +7196,7 @@ async function loadNowUnit(){
       .gt('expires_at', new Date().toISOString())
       .order('set_at', {ascending:false}).limit(30);
     /* 표가 아직 없으면(SQL 미실행) 조용히 넘어간다 — 질문 심기를 막지 않는다 */
-    if(error){ _nowUnit = null; return; }
+    if(error){ _nowUnit = null; await loadLessonUnits(); try{ qqPaint(); }catch(e){} return; }
     const g = S.grade ? Number(S.grade) : null;
     const c = S.cls ? Number(S.cls) : null;
     _nowUnit = (data || []).find(function(a){
@@ -6933,17 +7209,29 @@ async function loadNowUnit(){
     }) || null;
   }catch(e){ _nowUnit = null; }
   await loadLessonUnits();
+  try{ qqPaint(); }catch(e){}
 }
 
 /* 📑 선생님이 «미리» 올려 둔 차시 목록 (16_차시목록.sql).
    지금 차시는 3시간이면 꺼지지만 이 목록은 학기 내내 남는다. */
 let _lessonUnits = [];
+/* 16_차시목록.sql 을 아직 안 돌렸거나 선생님 목록이 비었으면, 진도 트래커(scienceclass)의 2학년 차시를 내장 목록으로 쓴다.
+   DB 목록이 생기면 그쪽이 우선이다. 내장 목록은 «지금이 어느 차시인지» 모르니 자동으로 고르지 않는다. */
+const UNIT_FALLBACK_G2 = ["학기 첫 시간 · 과학을 왜 배우는 걸까?", "마찰 전기", "정전기 유도", "중단원 정리 ① · 회로 기호", "전류·전압·저항", "옴의 법칙", "옴의 법칙 실험 (연습)", "직렬과 병렬", "소비 전력", "중단원 정리 ②", "코일 주위의 자기장", "전동기", "중단원 정리 ③", "연주 시차", "별의 밝기와 등급", "겉보기·절대 등급과 별의 색", "우리은하", "성운과 성단", "우주 팽창"];
+let _lessonUnitsFallback = false;
+function _unitFallbackApply(){
+  _lessonUnitsFallback = false;
+  if(_lessonUnits && _lessonUnits.length) return;
+  if(Number(S.grade) !== 2) return;
+  _lessonUnits = UNIT_FALLBACK_G2.map(function(u){ return { unit: u }; });
+  _lessonUnitsFallback = true;
+}
 async function loadLessonUnits(){
   if(!S.user || S.guest) return;
   try{
     const {data, error} = await sb.from('lesson_units').select('*')
       .order('sort_order', {ascending:false}).order('id', {ascending:false}).limit(80);
-    if(error){ _lessonUnits = []; return; }        /* 표가 아직 없으면 조용히 */
+    if(error){ _lessonUnits = []; _unitFallbackApply(); return; }        /* 표가 아직 없으면 조용히 */
     const g = S.grade ? Number(S.grade) : null;
     _lessonUnits = (data || []).filter(function(a){
       const gOk = !a.target_grade || Number(a.target_grade) === g;
@@ -6951,7 +7239,8 @@ async function loadLessonUnits(){
                   S.myTeacherIds.has(Number(a.teacher_id));
       return gOk && tOk;
     });
-  }catch(e){ _lessonUnits = []; }
+    _unitFallbackApply();
+  }catch(e){ _lessonUnits = []; _unitFallbackApply(); }
 }
 
 /* 고를 수 있는 차시 — 지금 차시 → 선생님 차시 목록(맨 위가 먼저) → 자료의 차시 */
@@ -6982,7 +7271,7 @@ function renderUnitPicker(){
   if(!opts.length){ el.style.display = 'none'; return; }
   el.style.display = '';
 
-  if(!S.pendingUnitSet) S.pendingUnit = unitDefault();
+  if(!S.pendingUnitSet) S.pendingUnit = unitDefaultPlant();
 
   const box = $('unitPickerList');
   box.innerHTML = opts.map(function(o){
@@ -7009,6 +7298,7 @@ function renderUnitPicker(){
 function setPendingUnit(u){
   S.pendingUnit = u; S.pendingUnitSet = true;
   renderUnitPicker();
+  try{ qqPaint(); }catch(e){}
 }
 
 // 질문 작성 시 나무 선택 UI
@@ -7366,7 +7656,7 @@ function showUnitFull(msgId, unit, info){
     '<div class="qf-t">📚 이 차시에는 ' + info.cap + '개까지예요</div>' +
     '<div class="qf-b"><b>' + esc(code) + '</b> 에 이미 ' + info.n + '개를 심었어요.<br>' +
       '새로 심는 대신, <b>가장 궁금한 질문 하나를 키워</b> 보면 어때요? ' +
-      '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 한 걸음 더 갈 수 있어요.</div>' +
+      _qCardLead() + '<b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 한 걸음 더 갈 수 있어요.</div>' +
     '<div class="qf-n">다른 차시 자료에는 새로 심을 수 있어요.</div>' +
     '<button class="qf-next" onclick="nsFullUnit()">👣 그럼 이제 뭘 할까요?</button>';
   m.className = (msgId === 'msMsg' ? 'ms-msg ' : 'q-msg ') + 'err qf';
@@ -7613,7 +7903,7 @@ function setQScope(s){
 function currentUnit(){
   if(_nowUnit && (_nowUnit.unit||'').trim()) return { u:_nowUnit.unit.trim(), why:'선생님이 켜 둔 지금 차시' };
   try{ const d = unitDefault(); if(d) return { u:d, why:'가장 최근 자료의 차시' }; }catch(e){}
-  if(_lessonUnits && _lessonUnits.length && (_lessonUnits[0].unit||'').trim()) return { u:_lessonUnits[0].unit.trim(), why:'선생님 차시 목록 맨 위' };
+  if(_lessonUnits && _lessonUnits.length && !_lessonUnitsFallback && (_lessonUnits[0].unit||'').trim()) return { u:_lessonUnits[0].unit.trim(), why:'선생님 차시 목록 맨 위' };
   const list = _classBoardCache && _classBoardCache.list;
   if(list){ const q = list.find(function(x){ return x.unit && x.unit.trim(); }); if(q) return { u:q.unit.trim(), why:'우리 반에서 가장 최근 차시' }; }
   return null;
@@ -7633,8 +7923,14 @@ function paintQScope(){
 }
 
 function renderQs(){
+  /* 칩 줄을 옆으로 밀어 둔 자리 — paintQScope 가 one-line 을 잠깐 뗐다 붙여서 그 전에 읽어 둔다 */
+  const _fr0 = $('filterRow');
+  const _fsl = (_fr0 && _fr0._sc === S.qScope) ? _fr0.scrollLeft : 0;
+  if(_fr0) _fr0._sc = S.qScope;
   paintQScope();
   nsPaintBar();
+  qqPaint();
+  qDensePaint();
   if(S.qScope === 'class' || S.qScope === 'unit'){ renderClassFeed(); return; }
   /* 나무는 모든 과목을 한 화면에 놓았으니, 질문도 과목을 넘어 모아서 보여주고
      대신 «과목 필터» 로 갈라 볼 수 있게 한다. 안 그러면 나무는 보이는데
@@ -7645,7 +7941,7 @@ function renderQs(){
   const c=$('qList');c.innerHTML='';
   const fr=$('filterRow');
   fr.innerHTML='';
-  fr.classList.remove('one-line');
+  fr.classList.add('one-line');      /* 칩이 네 줄로 접혀 목록이 첫 화면 밖으로 밀리던 것 — 한 줄로 밀어서 본다 */
 
   /* 📚 과목 칩 — 과목이 둘 이상일 때만 */
   const _subs = subLabelsWithQs();
@@ -7737,6 +8033,7 @@ function renderQs(){
     });
   }
 
+  fr.scrollLeft = _fsl;
   // 🌿 같은 과목 내 부모→자식(확장) 관계 맵
   const subQs=allMyQs();      /* 부모 질문이 다른 과목에 있어도 이어지게 */
   const childCount={};         // parentId -> 자란 질문 수
@@ -7769,7 +8066,35 @@ function renderQs(){
   }
 
   if(S.mineStatus === 'open') c.insertAdjacentHTML('beforeend', _nsBubbleHTML(filtered.length));
-  [...filtered].reverse().forEach((q,i)=>{
+  /* 최신순 — 날짜 묶음과 «20개씩» 이 맞으려면 나무·과목을 가로질러 한 줄로 세워야 한다 */
+  const _ord = new Map(); filtered.forEach(function(x, k){ _ord.set(x, k); });
+  const _all = [...filtered].sort(function(a, b){
+    const da = a.date || '', db2 = b.date || '';
+    if(da !== db2) return da < db2 ? 1 : -1;
+    const na = Number(a.id), nb = Number(b.id);
+    return (isFinite(na) && isFinite(nb)) ? (nb - na) : (_ord.get(b) - _ord.get(a));
+  });
+  const _miniMode = (qDense() === 'mini');
+  if(_miniMode){
+    /* 안 푼 질문 보기로 들어왔으면 맨 위 한 장은 펼쳐서 «여기서 해결하면 돼요» 가 보이게 */
+    if(_qExpandFirst && S.mineStatus === 'open' && _all[0]) _qOpenCards.add(String(_all[0].id));
+    /* 패널을 열어서 펼쳐진 카드는 패널을 닫아도 펼친 채 둔다(말없이 쪼그라들지 않게) */
+    _all.forEach(function(x){ if(_qPanelOpen(x)) _qOpenCards.add(String(x.id)); });
+  }
+  _qExpandFirst = false;
+  { const _tq = $('tp-questions'); if(_tq) _tq.classList.toggle('qt-mini', _miniMode); }
+  /* 한 줄 요약 때는 20개씩 — 열려 있어야 하는 카드는 20개 밖에 있어도 보인다 */
+  const _pageList = _miniMode ? _all.filter(function(x, k){ return k < _qMineN || !_qIsMini(x); }) : _all;
+  const _dayN = {}; if(_miniMode) _all.forEach(function(x){ const k = x.date || ''; _dayN[k] = (_dayN[k] || 0) + 1; });
+  let _lastDay = null;
+  _pageList.forEach((q,i)=>{
+    if(_miniMode){
+      const _day = q.date || '';
+      if(_day !== _lastDay){
+        _lastDay = _day;
+        c.insertAdjacentHTML('beforeend', '<div class="feed-day">📅 ' + esc(relDay(_day) || _day || '날짜 없음') + ' <b>' + (_dayN[_day] || 0) + '</b></div>');
+      }
+    }
     const d=document.createElement('div');
     let cls='qc '+(_qsPainted?'':'slide-up ')+(q.resolved?'res':'unr');
     if(q.is_anonymous) cls+=' anon';
@@ -7779,6 +8104,16 @@ function renderQs(){
     d.className=cls;
     d.dataset.qid=q.id;   /* 허브 📮 우편함 → ?q=ID 로 바로 찾아오게 */
     d.style.animationDelay=(i*.03)+'s';
+
+    if(_qIsMini(q)){
+      d.className = 'qc qc-mini ' + (q.resolved ? 'res' : 'unr') + ' ph-' + (q.phase || 'before');
+      d.innerHTML = _qMiniHTML(q);
+      d.onclick = function(){ miniOpen(q.id); };
+      d.setAttribute('role', 'button'); d.tabIndex = 0; d.setAttribute('aria-expanded', 'false');
+      d.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); miniOpen(q.id); } };
+      c.appendChild(d);
+      return;
+    }
 
     if(S.editId===q.id){
       d.innerHTML=`<div>
@@ -7994,8 +8329,12 @@ function renderQs(){
         `).join('')}
       </div>`;
     }
+    if(_miniMode && _qOpenCards.has(String(q.id)) && !_qForceOpen(q))
+      d.insertAdjacentHTML('afterbegin', '<div class="qm-foldrow"><button onclick="miniClose(' + q.id + ')">▴ 접기</button></div>');
     c.appendChild(d);
   });
+  if(_miniMode && _all.length > _pageList.length)
+    c.insertAdjacentHTML('beforeend', '<button class="feed-more" onclick="_qMineN += 20; renderQs()">더 보기 · 남은 ' + (_all.length - _pageList.length) + '개</button>');
   // 🧮 KaTeX 수식 자동 렌더링
   if(window.renderMathInElement){
     c.querySelectorAll('[data-math="1"]').forEach(el => {
@@ -8069,6 +8408,8 @@ function setPhase(p){
     if(note) note.innerHTML='오늘 수업에서 무엇이 가장 궁금한가요? 🌱'+PHASE_LINK;
     if(inp) inp.placeholder='궁금한 것을 적어보세요... ($수식$ 가능)';
   }
+  try{ qqPaint(); }catch(e){}
+  try{ renderQuota(); }catch(e){}
 }
 
 // ============================================================================
@@ -8247,11 +8588,12 @@ function renderQuota(){
   let html = '', done = false;
   if(q && q.ok && q.newCap > 0){
     const left = Math.max(0, q.newCap - q.planted);
-    if(left === 0){ html = '🌳 오늘의 새 질문을 다 심었어요 — 이제 <b>키울</b> 시간이에요 🌿'; done = true; }
+    if(left === 0 && S.phase === 'after' && q.after === 0){ html = '🌙 «수업 닫기» 질문은 1개 더 심을 수 있어요'; }
+    else if(left === 0){ html = '🌳 오늘의 새 질문을 다 심었어요 — 이제 <b>키울</b> 시간이에요 🌿'; done = true; }
     else if(left === 1) html = '🌱 오늘의 <b>마지막</b> 새 질문 1개 — 가장 궁금한 걸로 골라요';
     else if(left === 2) html = '🌱 오늘 심을 수 있는 새 질문 <b>2개</b> 남았어요';
   }
-  ['qQuota','msQuota'].forEach(function(id){
+  ['qQuota','msQuota','qqQuota'].forEach(function(id){
     const el = $(id); if(!el) return;
     el.innerHTML = html;
     el.className = 'q-quota' + (done ? ' done' : '');
@@ -8280,7 +8622,7 @@ function quotaFullHTML(){
   return '<div class="qf-t">🌳 오늘 심을 새 질문 ' + cap + '개를 다 썼어요. 오늘 궁금한 게 참 많았네요!</div>' +
          '<div class="qf-b">새 씨앗은 <b>내일</b> 다시 생겨요. 지금 적은 문장은 지우지 마세요 — ' +
          '오늘 심은 질문 아래에 이어 붙이면 그게 <b>«키우기»</b>예요 🌿<br>' +
-         '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 돼요.</div>' +
+         _qCardLead() + '<b>⋯</b> → <b>🌿+ 키우기</b> 를 누르면 돼요.</div>' +
          '<div class="qf-n">🌙 «수업 닫기» 질문 한 개는 따로 남겨 뒀어요. ' +
          '결석해서 밀렸다면 선생님께 말하세요.</div>' +
          '<button class="qf-next" onclick="nsFull()">👣 그럼 이제 뭘 할까요?</button>';
@@ -8363,7 +8705,7 @@ function dupHTML(q){
   return '<div class="qf-t">🔁 이미 비슷한 질문을 심었어요</div>' +
          '<div class="qf-b">「' + t + '」<br>' +
          '같은 질문을 또 심는 대신, 그 질문을 <b>키워</b> 보면 어때요? ' +
-         '질문 카드의 <b>⋯</b> → <b>🌿+ 키우기</b> 로 «그래서 만약 ~라면?» 처럼 한 걸음 더 갈 수 있어요 🌿</div>' +
+         _qCardLead() + '<b>⋯</b> → <b>🌿+ 키우기</b> 로 «그래서 만약 ~라면?» 처럼 한 걸음 더 갈 수 있어요 🌿</div>' +
          '<div class="qf-n">정말 다른 질문이라면 조금 더 구체적으로 적어 주세요.</div>';
 }
 function showDup(msgId, q){
@@ -8633,7 +8975,7 @@ document.addEventListener('focusout', function(e){
   /* 비밀번호·숫자·메일은 한글로 고치면 안 된다. 질문 칸은 자기 흐름이 따로 있다. */
   const ty = (el.type || 'text').toLowerCase();
   if(ty === 'password' || ty === 'number' || ty === 'email' || ty === 'date') return;
-  if(el.id === 'qInp' || el.id === 'msInp') return;
+  if(el.id === 'qInp' || el.id === 'qqInp' || el.id === 'msInp') return;
   setTimeout(function(){ imeFixField(el); }, 0);   /* 버튼 클릭이 먼저 먹게 */
 }, true);
 
@@ -8697,7 +9039,7 @@ async function addQ(ctx){
   ctx = ctx || {};
   const _inpId = ctx.inp || 'qInp', _msgId = ctx.msg || 'qMsg', _btnId = ctx.btn || 'addBtn';
   const _setMsg = (txt, cls) => { const m=$(_msgId); if(!m) return null;
-    m.textContent=txt; m.className=(_msgId==='msMsg'?'ms-msg ':'q-msg ')+(cls||''); return m; };
+    m.textContent=txt; m.className=(_msgId==='msMsg'?'ms-msg ':'q-msg ')+(cls||''); m.style.display=''; return m; };
   if(guestNudge()) return;
   if(loadBlocked('질문 심기')) return;
   const inp=$(_inpId); if(!inp) return;
@@ -8713,6 +9055,12 @@ async function addQ(ctx){
   /* 한영전환이 안 된 글은 되돌릴 수 있지만 «진짜 영어» 일 수도 있다 — 물어본다 */
   const _ko = maybeKorean(t);
   if(_ko && _imeKeep !== t){ flashKbdBtn(); showImeAsk(_msgId, _inpId, _ko.text); return; }
+  /* 고를 차시가 있는데 안 골랐으면 «차시 없음» 으로 조용히 올라가지 않게 먼저 묻는다 */
+  if((_inpId === 'qInp' || _inpId === 'qqInp') && unitUnchosen()){
+    const m = _setMsg('몇 차시 질문인지 먼저 골라 주세요. 수업과 상관없는 질문이면 「차시 없음」을 골라요.', 'err');
+    if(m && typeof shk === 'function') shk(m);
+    return;
+  }
   const tagInp=$('tagInp');
   if(tagInp && tagInp.value.trim()){addPendingTag(tagInp.value);tagInp.value='';}
   const r=await chkQ(t);
@@ -8723,6 +9071,7 @@ async function addQ(ctx){
     const m = $(_msgId);
     if(m){
       m.className = (_msgId==='msMsg' ? 'ms-msg ' : 'q-msg ') + 'err';
+      m.style.display = '';
       m.innerHTML = rejectHTML(rejectKind(t, r.msg), t, _inpId);
       shk(m);
     }
@@ -8856,7 +9205,7 @@ async function addQ(ctx){
   /* 질문 탭 시트에서 심었으면 «더 심을래, 아니면 다음 과제?» 를 묻는다.
      예전엔 시트를 바로 닫았는데, 심고 나서 할 일이 안 보이니 멍때리는 학생이 많았다.
      자료 시트(msInp)는 연달아 심는 곳이라 그대로 둔다. */
-  if(_inpId === 'qInp'){ apShow(data); }
+  if(_inpId === 'qInp' || _inpId === 'qqInp'){ apShow(data); }
   /* 우리 반 흐름을 보던 중이면 방금 심은 것이 맨 위에 바로 보이게 — 다시 안 받아도 된다 */
   try{
     if(_classBoardCache && _classBoardCache.list && data && data.id){
@@ -13158,6 +13507,7 @@ applyBranding();
 </div>
 
 <!-- 👣 다음 한 걸음 — 심은 뒤·끝낸 뒤·못 심을 때 같이 쓴다. 바깥을 누르거나 Esc 면 닫힌다 -->
+<button class="to-top" id="toTopBtn" onclick="toTopGo()" hidden>↑ 맨 위로</button>
 <div class="ns-wrap" id="nsWrap" hidden onclick="if(event.target===this)nsDone()"><div class="ns-card" id="nsCard" role="dialog" aria-modal="true"></div></div>
 
 <footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-09-25</span></footer>
