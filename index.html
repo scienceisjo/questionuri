@@ -1958,6 +1958,8 @@ body.ask-open .fab-ask{display:none!important}
 .qbp-solve.done{background:#EDE7F6;border-color:#B39DDB;color:#5E35B1}
 .qbp-life{background:#E8F5E9;border-color:#A5D6A7;color:#2E7D32}
 .qbp-life:hover,.qbp-life.on{background:#2E7D32;border-color:#2E7D32;color:#fff}
+.qbp-social{background:#E3F2FD;border-color:#90CAF9;color:#1565C0}
+.qbp-social:hover,.qbp-social.on{background:#1565C0;border-color:#1565C0;color:#fff}
 .qc-life-hint{font-size:12.5px;color:var(--tl);margin:2px 0 8px;line-height:1.5}
 .qbp-pick.on{background:#FFF3E0;border-color:#F0B357;color:#B45309}
 .qbp-more{padding:0 15px;font-size:var(--fs-sm);color:var(--tl);letter-spacing:2px;font-weight:800}
@@ -3023,6 +3025,7 @@ const S = {
   cUnit:null, cPhase:null, cStatus:null, // 우리 반 흐름의 칩 상태 (차시 / 단계 / 상태)
   mineStatus:null,         // 🙋 나 목록의 «안 푼 질문» 거르기 (null 또는 open)
   expandLife:false,        // 🏠 키우기 작성칸이 «실생활 질문으로 확장» 모드인가
+  expandSocial:false,      // 🌍 키우기 작성칸이 «사회 문제 질문으로 확장» 모드인가
   boardGroup:'tag',        // 🗂️ 보드 분류 기준: 'tag' | 'phase' | 'status'
   guest:false,            // 👀 게스트(둘러보기) 모드
   expandedBranches:new Set(),
@@ -3054,6 +3057,8 @@ const FRUIT_OPTIONS = ['🍎','🍊','🍋','🍇','🍑','🍒','🫐','🥝','
 // 🌿 질문 키우기(확장) 사고 스캐폴드 — 더 나은 질문을 낳도록 돕는 출발 문구
 /* 🏠 풀고 난 질문을 «우리 생활» 로 넓히는 시작틀 — 질문을 만들라고만 하면 막히는 학생에게 첫 말을 준다 */
 const LIFE_PROMPTS = ['우리 집이나 학교에서는 어디서 볼 수 있을까?','이걸 이용한 물건은 뭐가 있을까?','내가 ~할 때도 똑같을까?','이게 없다면 우리 생활은 어떻게 달라질까?'];
+/* 🌍 알아낸 것을 «사회 문제» 와 이어 보는 시작틀 — 선택 과제 */
+const SOCIAL_PROMPTS = ['이게 우리 사회의 어떤 문제와 이어질까?','이 문제를 줄이려면 어떤 방법이 있을까?','이걸 이용하면 사람들의 불편이나 위험을 줄일 수 있을까?','내가 학교나 동네 담당자라면 어떻게 바꿀까?'];
 const EXPAND_PROMPTS = ['그래서 만약 ~라면?','왜 꼭 그래야 할까?','다른 경우에도 그럴까?','반대로 생각하면?','이건 무엇과 연결될까?','한 단계 더 들어가면?'];
 // 🔬 질문 정교화(좁히기) 비계 — 탐구가능하도록 질문을 다듬는 출발 문구(정혜승 '평가' 영역)
 const REFINE_PROMPTS = ['무엇을 바꾸고 무엇을 볼까?','어디·언제로 좁히면?','무엇과 비교하면?','어떻게 측정·조사할까?','숫자로 나타내면?','한 가지 조건만 바꾼다면?'];
@@ -4202,6 +4207,7 @@ async function doLogout(){
   document.body.classList.remove("is-guest");Object.assign(S,{guest:false,user:null,profile:null,name:'',grade:'',cls:'',num:'',questions:{},subjects:[],stickers:[],activeSub:'integrated',seeds:0,unlocked:['default'],activeTree:'default',frView:null});
   /* 다음 한 걸음 — 앞사람의 거르기·읽음·반 캐시가 다음 학생에게 이어지면 안 된다 */
   S.mineStatus = null; S.cStatus = null; S.cPhase = null; S.cUnit = null; S.qScope = 'mine';
+  S.expandParentId = null; S.expandLife = false; S.expandSocial = false;
   _nsFbTapped = false; _nsFbVisited = false; _classBoardCache = null; _peerLoaded = {}; _nsHide();
   goTo('welcome');
 }
@@ -7837,6 +7843,7 @@ function renderQs(){
           <button class="qbp qbp-rf${isRefined(q)?' done':''}" onclick="openRefine(${q.id})" title="탐구할 수 있는 질문으로 다듬기">✨ ${isRefined(q)?'다듬음':'다듬기'}</button>
           <button class="qbp qbp-solve${q.solve&&(q.solve.answer||'').trim()?' done':''}" onclick="openSolve(${q.id})" title="스스로 해결하기">🔬 ${q.solve&&(q.solve.answer||'').trim()?'해결함':'해결하기'}</button>
           <button class="qbp qbp-life${S.expandParentId===q.id&&S.expandLife?' on':''}" onclick="openLife(${q.id})" title="알아낸 것을 우리 생활 속 질문으로 넓혀 보기">🏠 실생활 질문으로 확장하기</button>
+          <button class="qbp qbp-social${S.expandParentId===q.id&&S.expandSocial?' on':''}" onclick="openSocial(${q.id})" title="알아낸 것으로 우리 사회의 문제를 줄이는 방법 생각하기">🌍 사회 문제 질문으로 확장하기</button>
           ${q.unit?`<button class="qbp qbp-pick${q.is_picked?' on':''}" onclick="togglePick(${q.id})" title="이 차시의 대표 질문으로 고르기 (차시당 ${PICK_MAX}개)">⭐ 대표</button>`:''}
           <button class="qbp qbp-more" id="moreB-${q.id}" onclick="togMore(${q.id})" title="이 질문으로 할 수 있는 다른 것들" aria-expanded="false" aria-controls="more-${q.id}">⋯</button>
         </div>
@@ -7867,6 +7874,18 @@ function renderQs(){
             <button class="exp-cancel" onclick="closeExpand()">취소</button>
             <button class="exp-save" onclick="submitExpand(${q.id})">🏠 생활 질문 심기</button>
           </div>
+        </div>` : (S.expandSocial ? `
+        <div class="qc-expand qc-expand-life qc-expand-social">
+          <div class="qc-expand-hdr">🌍 알아낸 것을 <b>우리 사회의 문제</b>와 이어 볼까요?</div>
+          <div class="qc-life-hint">내 질문과 이어지는 <b>사회 문제</b>(에너지·안전·환경 …)를 하나 떠올리고, 그 문제를 <b>줄이는 방법</b>을 물어보세요. 첫 말은 아래 칩에서 골라요.</div>
+          <div class="qc-expand-scaffold">
+            ${SOCIAL_PROMPTS.map(p=>`<button class="exp-chip" onclick="expChip(${q.id},'${esc(p)}')">${esc(p)}</button>`).join('')}
+          </div>
+          <textarea class="qc-expand-input" id="expText-${q.id}" placeholder="사회 문제를 줄이거나 해결하는 질문으로 적어 보세요 🌍"></textarea>
+          <div class="qc-expand-btns">
+            <button class="exp-cancel" onclick="closeExpand()">취소</button>
+            <button class="exp-save" onclick="submitExpand(${q.id})">🌍 사회 문제 질문 심기</button>
+          </div>
         </div>` : `
         <div class="qc-expand">
           <div class="qc-expand-hdr">🌿 이 질문을 <b>한 걸음 더</b> 키워볼까요?</div>
@@ -7883,7 +7902,7 @@ function renderQs(){
             <button class="exp-cancel" onclick="closeExpand()">취소</button>
             <button class="exp-save" onclick="submitExpand(${q.id})">🌱 더 깊은 질문 심기</button>
           </div>
-        </div>`) : ''}
+        </div>`)) : ''}
 
       ${/* 🎯 좋은 질문 자가체크 */
         S.checkId===q.id ? renderSelfCheckPanel(q) : ''}
@@ -8059,14 +8078,23 @@ function setPhase(p){
 function openLife(qid){
   S.qView = 'list';
   const same = (S.expandParentId === qid && S.expandLife);
-  S.expandLife = !same; S.expandParentId = same ? null : qid;
+  S.expandLife = !same; S.expandSocial = false; S.expandParentId = same ? null : qid;
   S.checkId = null;
   renderQs();
   if(S.expandParentId === qid) setTimeout(function(){ const t = $('expText-' + qid); if(t) t.scrollIntoView({behavior:'smooth', block:'center'}); }, 80);
 }
-function openExpand(qid){ S.expandLife = false; S.qView='list'; S.expandParentId = (S.expandParentId===qid?null:qid); S.checkId=null; renderQs();
+/* 🌍 사회 문제 질문으로 확장하기 — 선택 과제. 🏠 버튼과 같은 길 */
+function openSocial(qid){
+  S.qView = 'list';
+  const same = (S.expandParentId === qid && S.expandSocial);
+  S.expandSocial = !same; S.expandLife = false; S.expandParentId = same ? null : qid;
+  S.checkId = null;
+  renderQs();
+  if(S.expandParentId === qid) setTimeout(function(){ const t = $('expText-' + qid); if(t) t.scrollIntoView({behavior:'smooth', block:'center'}); }, 80);
+}
+function openExpand(qid){ const _same = (S.expandParentId===qid && !S.expandLife && !S.expandSocial); S.expandLife = false; S.expandSocial = false; S.qView='list'; S.expandParentId = (_same?null:qid);   /* 🏠·🌍 칸이 열려 있으면 닫지 않고 일반 키우기로 바꾼다 */ S.checkId=null; renderQs();
   if(S.expandParentId===qid) setTimeout(()=>$('expText-'+qid)?.focus(),50); }
-function closeExpand(){ S.expandParentId=null; S.expandLife=false; renderQs(); }
+function closeExpand(){ S.expandParentId=null; S.expandLife=false; S.expandSocial=false; renderQs(); }
 function expChip(qid, prompt){
   const t=$('expText-'+qid); if(!t) return;
   t.value = (t.value.trim()? t.value.trim()+' ' : '') + prompt + ' ';
@@ -8074,7 +8102,7 @@ function expChip(qid, prompt){
 }
 async function submitExpand(parentId){
   if(guestNudge()) return;
-  const wasLife = !!S.expandLife;
+  const wasLife = !!S.expandLife, wasSocial = !!S.expandSocial;
   const ta=$('expText-'+parentId); if(!ta) return;
   let t=ta.value.trim();
   t = await imeAsk(t, '키운 질문');
@@ -8087,7 +8115,7 @@ async function submitExpand(parentId){
   const treeId = parent.tree_id || curTreeId();
   const payload={
     user_id:S.user.id, subject_id:S.activeSub, text:t,
-    tags:(wasLife ? Array.from(new Set((parent.tags||[]).concat(['#일상']))) : (parent.tags||[])), question_date:td(),
+    tags:(wasLife ? Array.from(new Set((parent.tags||[]).concat(['#일상']))) : wasSocial ? Array.from(new Set((parent.tags||[]).concat(['#사회문제']))) : (parent.tags||[])), question_date:td(),
     fruit_emoji:S.fruit||null, is_anonymous:false,
     phase:'after', parent_id:parentId,
     water_count:0, watered_by:[]
@@ -8105,11 +8133,11 @@ async function submitExpand(parentId){
     refined_text:null, refine_check:null, refined_at:null, is_picked:false, solve:null,
   });
   S.activeTreeId[S.activeSub]=treeId;
-  S.expandParentId=null; S.expandLife=false;
-  await addSeeds(2, wasLife ? '🏠 생활 질문이 심어졌어요! +2 🌰' : '🌿 질문이 한 걸음 더 자랐어요! +2 🌰');
-  toast(wasLife ? '🏠 생활 질문이 심어졌어요! 이제 🔬 한 줄로 풀어 봐요' : '🌱 더 깊은 질문이 나무에 열렸어요!');
+  S.expandParentId=null; S.expandLife=false; S.expandSocial=false;
+  await addSeeds(2, wasLife ? '🏠 생활 질문이 심어졌어요! +2 🌰' : wasSocial ? '🌍 사회 문제 질문이 심어졌어요! +2 🌰' : '🌿 질문이 한 걸음 더 자랐어요! +2 🌰');
+  toast(wasLife ? '🏠 생활 질문이 심어졌어요! 이제 🔬 한 줄로 풀어 봐요' : wasSocial ? '🌍 사회 문제 질문이 심어졌어요! 이제 🔬 내 방법과 이유를 한 줄로 써 봐요' : '🌱 더 깊은 질문이 나무에 열렸어요!');
   render();
-  if(wasLife){
+  if(wasLife || wasSocial){
     /* 새 카드의 «⚡ 답만 적기» 를 바로 연다 — 심고 «그다음 뭐 해요?» 가 나오지 않게 */
     setTimeout(function(){
       const nq = findQ(data.id); if(!nq) return;
@@ -8883,7 +8911,7 @@ function openHarvest(id){
   if(!q) return;
   S.harvestEdit = !!q.resolved;   // 이미 해결된 질문이면 '기록 수정' 모드
   S.harvestId = id;
-  S.checkId = null; S.expandParentId = null;
+  S.checkId = null; S.expandParentId = null; S.expandLife = false; S.expandSocial = false;
   renderQs();
   setTimeout(()=>{ const t=$('hvFind-'+id); if(t) t.focus(); }, 60);
 }
@@ -11635,7 +11663,7 @@ function openRefine(qid){
   S.qView = 'list';
   S.refineId = (S.refineId === qid ? null : qid);
   _rfRestored = null;      /* 다시 열 때마다 되살림 안내를 새로 판단한다 */
-  S.checkId = null; S.expandParentId = null; S.solveId = null;
+  S.checkId = null; S.expandParentId = null; S.solveId = null; S.expandLife = false; S.expandSocial = false;
   renderQs();
   if(S.refineId) setTimeout(function(){ $('rfText-'+qid) && $('rfText-'+qid).focus(); }, 60);
 }
@@ -11850,7 +11878,7 @@ function openSolve(qid){
                 '그래도 바로 해결하러 갈까요?')) { openRefine(qid); return; }
   }
   S.qView = 'list'; S.solveId = qid; S.checkId = null;
-  S.expandParentId = null; S.refineId = null;
+  S.expandParentId = null; S.refineId = null; S.expandLife = false; S.expandSocial = false;
   const d = solveDraft(q);
   S.solveStep = (d.answer||'').trim() ? 5 : ((d.ai||'').trim() ? 4 : ((d.prompt||'').trim() ? 3 : 1));
   renderQs();
@@ -12720,7 +12748,7 @@ function renderSelfCheckPanel(q){
     </div>
   </div>`;
 }
-function openSelfCheck(qid){ S.qView='list'; S.checkId = (S.checkId===qid?null:qid); S.expandParentId=null; renderQs(); }
+function openSelfCheck(qid){ S.qView='list'; S.checkId = (S.checkId===qid?null:qid); S.expandParentId=null; S.expandLife=false; S.expandSocial=false; renderQs(); }
 function closeSelfCheck(){ S.checkId=null; renderQs(); }
 function toggleScRow(qid,n){
   const row=$('scRow-'+qid+'-'+n); if(!row) return;
