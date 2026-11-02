@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko" data-page="teacher">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>질문과수원 · 선생님</title>
+<meta name="theme-color" content="#F4F5EF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/teacher.css">
+</head>
+<body>
+<div class="mockbar" id="mockbar" hidden><button type="button" id="mockWho">시연 모드 · 실제 기록이 아니에요 <b id="mockName">선생님</b></button></div>
+<div class="tapp out" id="app">
+  <section class="login" id="login" aria-label="선생님 로그인">
+    <h1>질문과수원</h1>
+    <p class="lead">선생님 계정으로 들어가요.</p>
+    <div class="card">
+      <label class="fld">이메일<input class="inp" id="lgEmail" type="email" autocomplete="username"></label>
+      <label class="fld">비밀번호<input class="inp" id="lgPw" type="password" autocomplete="current-password"></label>
+      <button type="button" class="btn wide" id="lgBtn">들어가기</button>
+      <div class="err" id="lgErr" role="alert"></div>
+    </div>
+  </section>
+  <header class="top">
+    <h1>질문과수원</h1>
+    <span class="tname" id="tName"></span>
+    <div class="clspick"><select id="tGrade" aria-label="학년"></select><select id="tClass" aria-label="반"></select></div>
+    <button type="button" class="btn line sm" id="boardBtn">칠판 화면</button>
+    <button type="button" class="link" id="tOut">로그아웃</button>
+  </header>
+  <nav class="tnav" id="nav" aria-label="구역"></nav>
+  <main class="tbody" id="body"></main>
+  <section class="board" id="board" aria-label="칠판 화면"></section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="js/config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/api.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/selftest.js"></script>
+<script src="js/teacher.js"></script>
+<script>QO.app.boot();</script>
+<footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-11-02</span></footer>
+</body>
+</html>

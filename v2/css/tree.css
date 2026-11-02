@@ -1,0 +1,47 @@
+/* 내 나무 · 우리 반 숲 — tree 모듈 담당.
+   app.css 에 시제품 모양(.tree-wrap .stats .places .map-card …)이 이미 있다. 여기에는 덧붙일 것만. 넓은 화면은 html.wide. */
+
+/* ── 내 나무 ── */
+.tr-tree{margin-top:4px}
+.tr-cap{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tr-cap span{font-size:13.5px;font-weight:800;color:var(--sub)}
+.tr-cap b{font-size:14px;font-weight:800;color:var(--leaf-d)}
+.tree-wrap svg{max-width:100%;height:auto}
+html.wide .tr-tree .tree-wrap svg{width:100%;max-width:420px;height:auto}
+.stats span svg{vertical-align:-2px}
+.stats .tr-sub{display:block;font-size:12px;color:var(--mute);font-weight:700;margin-top:3px;line-height:1.35}
+.stats .tr-sub svg{vertical-align:-1px}
+.tr-hint{margin-top:10px;text-align:center}
+.tr-note{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;margin:4px 0 10px;font-size:13.5px}
+.tr-note span{flex:1 1 200px}
+.tr-note .link{padding:0 4px}
+.tr-fl{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);line-height:1.5}
+.tr-fl:first-child{border-top:none;padding-top:2px}
+.tr-fl .e{font-size:18px;line-height:1.3}
+.tr-fl b{display:block;font-size:14.5px;font-weight:700;color:var(--ink)}
+.tr-fl small{display:block;font-size:12.5px;color:var(--mute);margin-top:1px}
+.tr-more{margin-top:2px}
+.tr-fp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tr-fp-chips span{font-size:13px;font-weight:700;color:var(--mute);background:var(--bg);border-radius:99px;padding:4px 10px;line-height:1.4}
+.tr-fp-chips span.on{color:var(--leaf-d);background:var(--leaf-l)}
+.tr-lock{margin-top:10px}
+.tr-acorn{display:flex;gap:10px;align-items:center;margin-top:10px}
+.tr-acorn .e{font-size:22px;line-height:1}
+.tr-acorn b{font-size:15px;font-weight:800}
+.tr-fail{display:flex;flex-direction:column;gap:10px;align-items:flex-start;margin-top:4px}
+.tr-loading{padding-top:40px}
+
+/* ── 우리 반 숲 ── */
+.tr-places{margin-top:4px}
+.tr-next{font-size:15.5px;font-weight:800}
+.map-card{margin-top:10px}
+.tr-map{position:relative}
+.tr-map .tr-lbl{font-size:13px;font-weight:800;stroke:#fff;stroke-width:3px;stroke-linejoin:round;paint-order:stroke}
+.tr-pin{position:absolute;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:transparent}
+.tr-pin:focus-visible{outline:3px solid var(--clue-d);outline-offset:0}
+.tr-maphint{margin:8px 2px 0}
+.tr-fq{margin-top:10px}
+.tr-fq .tpl input[inputmode="numeric"]{min-width:56px}
+html.wide .tr-cols .map-card{margin-top:0}
+html.wide .tr-cols .tr-fq{margin-top:12px}
+html.wide .tr-cols .sec:first-child{margin-top:0}

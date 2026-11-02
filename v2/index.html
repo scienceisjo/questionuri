@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko" data-page="student">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>질문과수원</title>
+<meta name="theme-color" content="#F4F5EF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/explore.css">
+<link rel="stylesheet" href="css/together.css">
+<link rel="stylesheet" href="css/tree.css">
+</head>
+<body>
+<div class="mockbar" id="mockbar" hidden><button type="button" id="mockWho">시연 모드 · 실제 기록이 아니에요 <b id="mockName">학생 고르기</b></button></div>
+<div class="app out" id="app">
+  <section class="login" id="login" aria-label="로그인">
+    <div class="login-art" aria-hidden="true">
+      <svg width="96" height="80" viewBox="-48 -62 96 80"><ellipse cx="0" cy="14" rx="40" ry="6" fill="#E2E8D6"/><path d="M-5 14 Q-3 -6 -2 -16 L2 -16 Q3 -6 5 14 Z" fill="#8B6A4A"/><circle cx="0" cy="-30" r="22" fill="#5FA86D"/><circle cx="-18" cy="-22" r="14" fill="#6CB57A"/><circle cx="18" cy="-24" r="15" fill="#57A065"/><circle cx="-6" cy="-44" r="13" fill="#74BC80"/><circle cx="8" cy="-28" r="5" fill="#C9433A"/><circle cx="6.6" cy="-29.4" r="1.3" fill="#F19A93"/><circle cx="-12" cy="-20" r="5" fill="#6F84A0"/><path d="M-15 -19.6h6M-14 -17.6h4" stroke="#E9EEF5" stroke-width="1.2" stroke-linecap="round"/></svg>
+    </div>
+    <h1>질문과수원</h1>
+    <p class="lead">학년·반·번호와 비밀번호를 넣어요.</p>
+    <div class="card">
+      <div class="idrow">
+        <label class="fld">학년<input class="inp" id="lgG" inputmode="numeric" maxlength="1" autocomplete="off"></label>
+        <label class="fld">반<input class="inp" id="lgC" inputmode="numeric" maxlength="2" autocomplete="off"></label>
+        <label class="fld">번호<input class="inp" id="lgNum" inputmode="numeric" maxlength="2" autocomplete="off"></label>
+      </div>
+      <label class="fld">비밀번호<input class="inp" id="lgPw" type="password" autocomplete="current-password"></label>
+      <button type="button" class="btn wide" id="lgBtn">들어가기</button>
+      <div class="err" id="lgErr" role="alert"></div>
+      <button type="button" class="btn line wide" id="lgRetry" hidden>다시 해 보기</button>
+    </div>
+    <p class="hint">질문과수원에서 쓰던 비밀번호 그대로예요.</p>
+    <div class="demo" id="lgMock" hidden><div class="h">시연 모드 · 학생 고르기</div><div class="chips"></div></div>
+  </section>
+  <section class="login ny" id="notyet" aria-label="우리 반 안내">
+    <div class="login-art" aria-hidden="true">
+      <svg width="96" height="80" viewBox="-48 -62 96 80"><ellipse cx="0" cy="14" rx="40" ry="6" fill="#E2E8D6"/><path d="M-5 14 Q-3 -6 -2 -16 L2 -16 Q3 -6 5 14 Z" fill="#8B6A4A"/><circle cx="0" cy="-30" r="22" fill="#5FA86D"/><circle cx="-18" cy="-22" r="14" fill="#6CB57A"/><circle cx="18" cy="-24" r="15" fill="#57A065"/><circle cx="-6" cy="-44" r="13" fill="#74BC80"/></svg>
+    </div>
+    <h1>질문과수원</h1>
+    <p class="lead">우리 반은 아직 질문과수원 1을 써요.</p>
+    <div class="card">
+      <p class="ny-t">선생님이 우리 반을 옮기면 여기서 이어서 쓸 수 있어요. 그때까지는 쓰던 곳에서 탐구해요.</p>
+      <a class="btn wide" id="nyGo" href="../">질문과수원 1로 가기</a>
+      <button type="button" class="btn line wide" id="nyOut">다른 학생으로 들어가기</button>
+    </div>
+  </section>
+  <header class="top">
+    <h1>질문과수원</h1>
+    <div class="acorn" title="도토리">🌰 <span id="acorn">0</span></div>
+    <button type="button" class="me" id="meBtn" aria-label="내 정보">나</button>
+  </header>
+  <main class="body" id="body"></main>
+  <nav class="nav" id="nav" aria-label="탭"></nav>
+  <section class="sheet" id="sheet" aria-label="탐구 일지"></section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="js/config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/api.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/selftest.js"></script>
+<script src="js/explore.js"></script>
+<script src="js/together.js"></script>
+<script src="js/tree.js"></script>
+<script>QO.app.boot();</script>
+<footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-11-02</span></footer>
+</body>
+</html>

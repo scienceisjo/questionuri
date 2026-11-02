@@ -1,0 +1,54 @@
+/* 탐구 탭 + 탐구 일지 시트 — explore 모듈.
+   시제품 모양(.qcard .dots .sheet .step .form .cluebox .tchbox .flagbox .statusbar …)은 app.css 에 있다. 여기에는 덧붙일 것만. */
+
+/* 심기 카드 — 단원 고르기와 익명을 한 줄에(좁으면 두 줄) */
+.x-plant .x-opts{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px;margin-top:10px}
+.x-plant .unitpick{margin-top:0;flex:1 1 220px;min-width:0;white-space:nowrap}
+.x-plant .unitpick select{flex:1 1 auto;min-width:0;width:100%;text-overflow:ellipsis}
+.x-plant .chk{padding:0;align-items:center;font-weight:700;font-size:13.5px;white-space:nowrap}
+.x-plant .chk input{margin-top:0}
+.x-plant .err{margin-top:6px}
+
+/* 카드 표시 */
+.tag.new{background:var(--leaf-l);color:var(--leaf-d)}
+.tag.fog svg{flex:0 0 auto}
+
+/* 일지 머리 */
+.sh-top .x-head{flex:1;min-width:0}
+
+/* 옛 과수원 글 표시 */
+.xlegacy{display:inline-block;font-size:12px;font-weight:800;line-height:1.5;color:var(--sub);background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:0 8px;margin:0 6px 2px 0;vertical-align:1px;white-space:nowrap}
+.val .x-was{color:var(--mute)}
+.x-first{color:var(--mute)}
+
+/* 접힌 칸·펼친 칸 */
+.sumline b{color:var(--leaf-d);white-space:nowrap}
+.x-links{display:flex;flex-wrap:wrap;align-items:center;gap:0 18px}
+.link.x-quiet{color:var(--sub);font-weight:600}
+.form > .link.x-quiet{align-self:flex-start;padding:0;min-height:44px}
+
+/* 친구 단서 — 옅은 청록 위 글자는 진하게(대비) */
+#sheet .cluebox .who{color:var(--sub)}
+.x-cluewait{font-size:13px;line-height:1.5;color:var(--sub);margin-top:6px}
+.cluebox .ask{margin-top:10px}
+.x-later{background:var(--clue-l);color:var(--clue-d);border-radius:10px;padding:7px 10px;font-weight:700}
+
+/* 단원 없이 심은 질문 — 일지 맨 위 단원 고르기 */
+.x-unitset{margin:0 0 10px}
+.x-unitset .unitpick{margin-top:0}
+.x-unitset select{flex:1 1 auto;min-width:0}
+
+/* 막힘 표시 안 「표시 내리기」 */
+.flagbox .link.x-mini{font-size:13px;padding:0;min-height:44px;margin-left:2px;vertical-align:middle}
+
+/* 상태 띠 안 안개 아이콘 */
+.statusbar svg{vertical-align:-2px}
+
+/* 넓은 화면: 목록 칸이 좁을 때 심기 줄 */
+html.wide .app.split .x-plant .unitpick{flex-basis:100%}
+@media (max-width:960px){
+  html.wide .app.split .body{padding-left:14px;padding-right:14px}
+  html.wide .app.split .x-plant{padding:12px}
+  html.wide .app.split .x-plant .inp{padding-left:11px;padding-right:11px}
+  html.wide .app.split .x-plant .btn{padding:0 14px}
+}
