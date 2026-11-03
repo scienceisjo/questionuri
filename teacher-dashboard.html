@@ -530,6 +530,24 @@ body.or-board-only .or-c{font-size:15px;padding:8px 16px}
 .dd-q-meta .water{color:var(--blue)}
 .dd-q-meta .branch{color:var(--teal)}
 .dd-q-tags{margin-top:4px;display:flex;gap:3px;flex-wrap:wrap}
+.dd-proc-sum{padding:14px 18px;display:grid;gap:14px}
+.dd-proc-row{display:grid;grid-template-columns:118px 1fr 44px;align-items:center;gap:10px;font-size:12.5px}
+.dd-proc-row .lb{color:var(--ink2);font-weight:600}
+.dd-proc-row .bar{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.dd-proc-row .bar i{display:block;height:100%;background:#5CB86E;border-radius:6px}
+.dd-proc-row .n{text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.dd-proc-lvl{display:flex;flex-wrap:wrap;gap:8px}
+.dd-proc-lvl span{padding:6px 10px;border-radius:999px;background:var(--surface2);font-size:12px;color:var(--ink2)}
+.dd-proc-lvl b{color:var(--ink);margin-left:4px}
+.dd-proc-note{font-size:12px;color:var(--ink3);line-height:1.6}
+.dd-q-proc{margin-top:8px;border:1px solid var(--rule);border-radius:8px;background:var(--surface)}
+.dd-q-proc>summary{cursor:pointer;padding:7px 10px;font-size:12px;font-weight:700;color:#2D6A3E;list-style:none}
+.dd-q-proc>summary::-webkit-details-marker{display:none}
+.dd-q-proc .st{display:grid;grid-template-columns:86px 1fr;gap:8px;padding:6px 10px;border-top:1px dashed var(--rule);font-size:12.5px;line-height:1.55}
+.dd-q-proc .st .k{color:var(--ink3);font-weight:700}
+.dd-q-proc .st.off .k,.dd-q-proc .st.off .v{color:#b5b5b5}
+.dd-q-proc .dots{letter-spacing:2px;margin-left:6px;color:#5CB86E}
+.dd-q-refined{margin-top:4px;font-size:12.5px;color:#2D6A3E}
 .dd-q-record{margin-top:6px;padding:7px 10px;background:rgba(92,184,110,.07);border-left:3px solid #5CB86E;border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.5;color:#3a4a32}
 .dd-q-record strong{color:#2D6A3E}
 .dd-q-nudge-show{margin-top:6px;padding:7px 10px;background:rgba(124,111,217,.08);border-left:3px solid #7C6FD9;border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.5;color:#3a3050}
@@ -1622,6 +1640,8 @@ body{letter-spacing:-0.01em}
             <button class="exp-btn" onclick="exportQuestionsCSV()">📥 질문 상세 CSV</button>
             <button class="exp-btn" onclick="exportStudentsCSV()">📥 학생 요약 CSV</button>
             <button class="exp-btn" onclick="exportSelfcheckCSV()">📥 자가체크 근거 CSV</button>
+            <button class="exp-btn" onclick="exportProcessCSV()" title="질문 하나 = 한 줄. 예상·방법·찾기·정리·넓히기와 해결 정도까지 — AI 분석용">📥 탐구 과정 전체 CSV</button>
+            <label style="font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="procCsvNames">이름 넣기</label>
           </div>
         </div>
         <div class="section-body pad">
@@ -1806,7 +1826,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '10-23 a · 질문 CSV 열 추가(고친 질문·해결 답변)';
+const BUILD = '11-03 a · 학생별 상세 = 탐구 과정(그래프 뺌) · 탐구 과정 전체 CSV';
 let allSubjects = [];
 let allBranches = [];
 
@@ -6613,6 +6633,100 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+/* 🔬 탐구 과정 — 옛 앱의 solve 와 질문과수원 2 의 journal 을 같은 칸으로 읽는다.
+   칸: 다듬기 · 예상 · 알아볼 방법 · 찾기 · 정리 · 넓히기 (발자국으로 세는 칸은 예상~넓히기 5개) */
+const PROC_HOW = {exp:'실험', obs:'관찰', cmp:'비교', src:'조사', book:'책·교과서', web:'검색', ask:'물어보기'};
+const PROC_VERDICT = {same:'예상과 같음', half:'반쯤 같음', diff:'예상과 다름', right:'예상이 맞음', changed:'생각이 바뀜', wrong:'예상과 다름'};
+function _pt(v){ return (v == null ? '' : String(v)).trim(); }
+function qProcess(q){
+  const s = q.solve || {}, j = q.journal || {};
+  const steps = [];
+  const add = (key, label, text, counted) => steps.push({key, label, text:_pt(text), counted:!!counted, done:_pt(text).length >= (key === 'method' ? 2 : 5)});
+  add('refine', '다듬기', q.refined_text || '', false);
+  let pre = '';
+  if (Array.isArray(j.predict) && j.predict.length) pre = j.predict.map((p, i) => (j.predict.length > 1 ? (i + 1) + ') ' : '') + _pt(p.text)).join('  ');
+  else pre = [_pt(s.guess), _pt(s.why) ? '까닭: ' + _pt(s.why) : '', _pt(s.known) ? '아는 것: ' + _pt(s.known) : ''].filter(Boolean).join(' · ');
+  add('predict', '예상', pre, true);
+  let me = '';
+  if (j.method) me = [PROC_HOW[j.method.kind] || _pt(j.method.kind), _pt(j.method.plan)].filter(Boolean).join(' · ');
+  else { const h = Array.isArray(s.how) ? s.how : (s.how ? [s.how] : []); me = [h.map(x => PROC_HOW[x] || x).join('·'), _pt(s.change)].filter(Boolean).join(' · '); }
+  add('method', '알아볼 방법', me, true);
+  let fi = '';
+  if (Array.isArray(j.find) && j.find.length) fi = j.find.map(f => '[' + _pt(f.src) + (f.ai ? ' · AI' : '') + '] ' + _pt(f.text)).join('  ') + (_pt(j.aiCmp) ? '  · AI와 견줌: ' + _pt(j.aiCmp) : '') + (_pt(j.same) ? '  · 두 곳 비교: ' + _pt(j.same) : '');
+  else fi = [_pt(s.source) ? '[' + _pt(s.source) + ']' : '', s.tried === 'yes' ? '해 봄' : (s.tried === 'no' ? '안 해 봄' : ''), _pt(s.result), _pt(s.ai) ? 'AI 답 붙여 넣음(' + _pt(s.ai).length + '자)' : '', PROC_VERDICT[s.verdict] || ''].filter(Boolean).join(' · ');
+  add('find', '찾기', fi, true);
+  let wr = '';
+  if (j.wrap) wr = j.wrap.mode === 'unknown' ? '🌫️ 아직 모름 · 여기까지: ' + _pt(j.wrap.reached) + (_pt(j.wrap.stuckQ) ? ' · 막힌 곳: ' + _pt(j.wrap.stuckQ) : '') : _pt(j.wrap.text) + (PROC_VERDICT[j.wrap.cmp] ? ' · ' + PROC_VERDICT[j.wrap.cmp] : '');
+  else if (_pt(s.answer)) wr = _pt(s.answer) + (s.mode === 'quick' ? ' (⚡ 답만 적기)' : '');
+  else if (String(s.stuck) === '1') wr = '🌫️ 못 찾고 마침 · 어디까지: ' + _pt(s.stuckWhere);
+  add('wrap', '정리', wr, true);
+  add('extend', '넓히기', j.extend ? _pt(j.extend.text) : _pt(s.newq), true);
+  const n = steps.filter(x => x.counted && x.done).length;
+  const ai = !!(_pt(s.ai) || (Array.isArray(j.find) && j.find.some(f => f.ai)));
+  const srcN = Array.isArray(j.find) ? new Set(j.find.filter(f => !f.ai).map(f => _pt(f.src))).size : (_pt(s.source) ? 1 : 0);
+  const fog = (j.wrap && j.wrap.mode === 'unknown') || String(s.stuck) === '1' || q.fruit_kind === 'fog';
+  const how = j.predict || j.method || j.find || j.wrap ? '일지(질문과수원 2)' : (s.mode === 'quick' ? '⚡ 답만 적기' : (Object.keys(s).length ? '🔬 5단계' : ''));
+  return {steps, n, ai, srcN, fog, flag:j.flag ? (j.flag.step || '') : '', peeked:Number(s.peeked) || 0, how, saved:(s.saved_at || '').slice(0, 10)};
+}
+/* 해결 정도 — 질문만 / 탐구 중 / 거의 다 / 정리까지 / 안개(못 찾았지만 여기까지) */
+function qLevel(q, pr){
+  pr = pr || qProcess(q);
+  if (pr.fog) return '안개';
+  if (pr.steps.find(x => x.key === 'wrap').done || q.resolved) return '정리까지';
+  if (pr.n >= 3) return '거의 다';
+  if (pr.n >= 1) return '탐구 중';
+  return '질문만';
+}
+function procSummaryHTML(qs){
+  const total = qs.length || 1;
+  const prs = qs.map(q => ({q, pr:qProcess(q)}));
+  const keys = [['refine','다듬기'],['predict','예상'],['method','알아볼 방법'],['find','찾기'],['wrap','정리'],['extend','넓히기']];
+  const bars = keys.map(([k, lb]) => {
+    const c = prs.filter(x => x.pr.steps.find(t => t.key === k).done).length;
+    return '<div class="dd-proc-row"><span class="lb">' + lb + '</span><span class="bar"><i style="width:' + Math.round(c / total * 100) + '%"></i></span><span class="n">' + c + '/' + qs.length + '</span></div>';
+  }).join('');
+  const lv = {}; ['질문만','탐구 중','거의 다','정리까지','안개'].forEach(k => lv[k] = 0);
+  prs.forEach(x => lv[qLevel(x.q, x.pr)]++);
+  const ai = prs.filter(x => x.pr.ai).length, two = prs.filter(x => x.pr.srcN >= 2).length, peek = prs.reduce((a, x) => a + x.pr.peeked, 0);
+  return '<div class="dd-proc-sum">' +
+    '<div class="dd-proc-lvl">' + Object.keys(lv).map(k => '<span>' + k + '<b>' + lv[k] + '</b></span>').join('') + '</div>' +
+    '<div>' + bars + '</div>' +
+    '<div class="dd-proc-note">칸마다 막대는 「그 칸을 채운 질문 수 / 전체 질문 수」예요. AI 답을 쓴 질문 ' + ai + '개 · 출처를 두 곳 이상 견준 질문 ' + two + '개' + (peek ? ' · 5단계에서 AI 답을 미리 본 횟수 ' + peek + '번' : '') + '.</div>' +
+    '</div>';
+}
+function procDetailHTML(q){
+  const pr = qProcess(q);
+  const dots = pr.steps.filter(x => x.counted).map(x => x.done ? '●' : '○').join('');
+  return '<details class="dd-q-proc"><summary>🔬 탐구 과정 · ' + qLevel(q, pr) + '<span class="dots">' + dots + '</span>' + (pr.how ? ' <span style="color:var(--ink3);font-weight:600">' + esc(pr.how) + '</span>' : '') + (pr.flag ? ' <span style="color:#C0392B">· 막힘 표시(' + esc(pr.flag) + ')</span>' : '') + '</summary>' +
+    pr.steps.map(x => '<div class="st' + (x.done ? '' : ' off') + '"><span class="k">' + x.label + '</span><span class="v">' + (x.text ? esc(x.text) : '—') + '</span></div>').join('') +
+    '</details>';
+}
+/* 📥 탐구 과정 전체 CSV — 질문 하나 = 한 줄, AI 에게 질문 유형·무물보 후보 분석을 맡길 때 쓴다 */
+function exportProcessCSV(){
+  if (!filteredQuestions.length) { alert('내보낼 질문이 없어요. 필터를 확인하세요.'); return; }
+  const withNames = !!($('procCsvNames') && $('procCsvNames').checked);
+  const pm = {}; allProfiles.forEach(p => pm[p.id] = p);
+  const brByQ = {}; allBranches.forEach(b => { brByQ[b.question_id] = (brByQ[b.question_id] || 0) + 1; });
+  const head = ['id','학년','반','번호'];
+  if (withNames) head.push('이름');
+  head.push('작성일','마지막저장','단원','수업전후','익명','부모질문id','질문','다듬은질문','탐구방식',
+    '예상','알아볼방법','찾기','AI사용','출처수','AI미리본횟수','정리','넓히기','막힘표시칸','채운칸(5칸중)','해결정도',
+    '해결','열매종류','확인요청','선생님도장','선생님되묻기','다듬기피드백','해결피드백','물','꼬리질문','아직모르는것','자가체크근거');
+  const rows = [head];
+  filteredQuestions.forEach(q => {
+    const p = pm[q.user_id] || {}, pr = qProcess(q), st = k => pr.steps.find(x => x.key === k).text;
+    const r = [q.id, p.grade, p.class_no, p.number];
+    if (withNames) r.push(p.name || '');
+    r.push((q.created_at || '').slice(0, 10), pr.saved, q.unit || '', q.phase === 'after' ? '수업후' : '수업전', q.is_anonymous ? 'Y' : '', q.parent_id || '',
+      q.text || '', q.refined_text || '', pr.how,
+      st('predict'), st('method'), st('find'), pr.ai ? 'Y' : '', pr.srcN, pr.peeked || '', st('wrap'), st('extend'), pr.flag, pr.n, qLevel(q, pr),
+      q.resolved ? 'Y' : '', q.fruit_kind || '', q.resolve_requested_at ? 'Y' : '', q.teacher_stamp || '', q.teacher_nudge || '', q.teacher_refine_note || '', q.teacher_solve_note || '',
+      q.water_count || 0, brByQ[q.id] || 0, q.still_wondering || '', scText(q));
+    rows.push(r);
+  });
+  downloadCSV(`${SCHOOL_SHORT}_탐구과정_${withNames ? '이름포함' : '번호만'}_${today()}.csv`, rows);
+}
+
 function renderDrilldownBody(){
   if(!currentDrilldown) return;
   const {student:s, questions, branchesOnMyQs, branchesByMe, teacherNotes = []} = currentDrilldown;
@@ -6704,10 +6818,10 @@ function renderDrilldownBody(){
       </div>
     </div>
 
-    <!-- TIMELINE CHART -->
+    <!-- 탐구 과정 한눈에 -->
     <div class="dd-chart-sec">
-      <div class="dd-chart-hdr"><h3>📈 최근 30일 질문 활동</h3></div>
-      <canvas id="ddChart" class="dd-chart-canvas"></canvas>
+      <div class="dd-chart-hdr"><h3>🔬 탐구 과정 한눈에 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;margin-left:6px">질문 ${total}개 · 해결 정도와 칸별 채움</span></h3></div>
+      ${procSummaryHTML(sortedQs)}
     </div>
 
     <!-- QUESTION LIST -->
@@ -6737,8 +6851,6 @@ function renderDrilldownBody(){
   // 질문 렌더링 (전체)
   filterDDQs('all');
 
-  // 차트
-  renderDDChart(sortedQs);
 }
 
 function filterDDQs(mode){
@@ -6787,7 +6899,7 @@ function filterDDQs(mode){
       <div class="dd-q">
         <div class="dd-q-hdr">
           <div class="dd-q-fruit">${q.resolved ? fruit : '○'}</div>
-          <div class="dd-q-txt">${esc(q.text)}</div>
+          <div class="dd-q-txt">${esc(q.text)}${q.refined_text ? `<div class="dd-q-refined">✨ 다듬은 질문: ${esc(q.refined_text)}</div>` : ''}</div>
         </div>
         <div class="dd-q-meta">
           <span>${subLabel}</span>
@@ -6805,6 +6917,7 @@ function filterDDQs(mode){
             ${q.finding ? `<div>🍎 <strong>알아낸 것:</strong> ${esc(q.finding)}</div>` : ''}
             ${q.still_wondering ? `<div>🌱 <strong>아직 모르는 것:</strong> ${esc(q.still_wondering)}</div>` : ''}
           </div>` : ''}
+        ${procDetailHTML(q)}
         ${q.teacher_nudge ? `<div class="dd-q-nudge-show">🌿 <strong>내 되묻기:</strong> ${esc(q.teacher_nudge)}</div>` : ''}
         ${q.teacher_refine_note ? `<div class="dd-q-nudge-show">✨ <strong>다듬기 피드백:</strong> ${esc(q.teacher_refine_note)}</div>` : ''}
         ${q.teacher_solve_note ? `<div class="dd-q-nudge-show">🔬 <strong>해결 피드백:</strong> ${esc(q.teacher_solve_note)}</div>` : ''}
