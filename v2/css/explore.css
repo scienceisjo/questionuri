@@ -10,7 +10,7 @@
 .x-plant .err{margin-top:6px}
 
 /* 카드 표시 */
-.tag.new{background:var(--leaf-l);color:var(--leaf-d)}
+.tag.new{color:var(--leaf-d)}
 .tag.fog svg{flex:0 0 auto}
 
 /* 일지 머리 */
