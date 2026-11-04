@@ -393,6 +393,8 @@ body.or-board-only .or-c{font-size:15px;padding:8px 16px}
 .or-q-was{font-size:11.5px;color:var(--ink3);margin-top:3px}
 .or-q-row{font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.5}
 .or-q-row.nd{color:#2E6B3A}
+.or-q-row.an{color:#1A56A8}
+.dd-q-an{border-left-color:#2E7D32}
 .or-q-act{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .or-a{border:1.5px solid var(--rule);background:var(--surface);font:inherit;font-size:12px;font-weight:700;color:var(--ink2);padding:5px 11px;border-radius:999px;cursor:pointer}
 .or-a:hover{border-color:var(--pa);color:var(--pa)}
@@ -1876,7 +1878,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '11-04 a · 구글 디자인(흰 바탕·파란 강조·Roboto/Noto Sans KR)·영어 라벨·제목 이모지 뺌';
+const BUILD = '11-04 b · 선생님의 답변(되묻기와 따로)·되묻기 칸 정리';
 let allSubjects = [];
 let allBranches = [];
 
@@ -3323,6 +3325,7 @@ function renderStampView(){
     h += '<div class="st-was">✨ 다듬기 전 · ' + esc(q.text || '') + '</div>';
   if(st) h += '<div class="st-cur" style="--sc:' + st.c + '">🏷️ 지금 찍힌 도장: <b>' +
               st.e + ' ' + esc(st.t) + '</b> — 아래에서 바꾸거나 «✕ 도장 취소»</div>';
+  if(q.teacher_answer) h += '<div class="st-nudge">💬 내 답변: ' + esc(q.teacher_answer) + '</div>';
   if(q.teacher_nudge) h += '<div class="st-nudge">🌿 내 되묻기: ' + esc(q.teacher_nudge) + '</div>';
   h += '</div>';
 
@@ -4085,6 +4088,7 @@ function printStudentPortfolio(){
       const sc=scCount(q);
       const rec=[q.finding?`<div class="rec">🍎 알아낸 것: ${esc(q.finding)}</div>`:'',
                  q.still_wondering?`<div class="rec wonder">🌱 아직 모르는 것: ${esc(q.still_wondering)}</div>`:'',
+                 q.teacher_answer?`<div class="rec nudge">💬 선생님 답변: ${esc(q.teacher_answer)}</div>`:'',
                  q.teacher_nudge?`<div class="rec nudge">🌿 선생님 되묻기: ${esc(q.teacher_nudge)}</div>`:''].join('');
       return `<div class="pq">
         <div class="pq-t">${q.resolved?'🍎':'○'} ${esc(q.text)}</div>
@@ -4376,7 +4380,7 @@ function renderNudgeView(){
     '<div class="fb-box">' +
       '<div class="fb-h">📤 CSV 왕복 — 질문을 통째로 내려받아 피드백을 채운 뒤 다시 올리기</div>' +
       '<div class="fb-d">① <b>내려받기</b> → ② Claude Code 에서 <code>/question-feedback</code> (다른 AI 도 됨) 로 ' +
-        '<b>되묻기 · 도장 · 라벨 · 별표 · 다듬기피드백 · 해결피드백</b> 칸 채우기 → ③ <b>올리기</b> → 표에서 한 줄씩 확인 → 반영.<br>' +
+        '<b>되묻기 · 도장 · 라벨 · 별표 · 다듬기피드백 · 해결피드백 · 선생님답변</b> 칸 채우기 → ③ <b>올리기</b> → 표에서 한 줄씩 확인 → 반영.<br>' +
         '비워 둔 칸은 건드리지 않아요. <code>-</code> 를 적으면 지웁니다. 이름·번호는 파일에 안 들어가고 <code>id</code> 로 맞춥니다.</div>' +
       '<div class="nd-bar">' +
         '<button class="st-nav primary" onclick="fbExportCSV()"' + (pool.length ? '' : ' disabled') + '>피드백 CSV 내려받기 (' + pool.length + '개)</button>' +
@@ -4384,6 +4388,16 @@ function renderNudgeView(){
         '<span class="nd-msg" id="fbMsg"></span>' +
       '</div>' +
       '<div id="fbTable"></div>' +
+    '</div>' +
+    '<div class="fb-box">' +
+      '<div class="fb-h">💬 되묻기 칸에 적은 «답변» 옮기기</div>' +
+      '<div class="fb-d">되묻기 중에서 <b>물음이 아닌 글</b>(예: 「네!」 「~예요」 「~합니다」)을 찾아 <b>선생님의 답변</b> 칸으로 옮겨요. 학생 화면에 NEW 는 뜨지 않아요. 한 줄씩 확인하고 체크한 것만 옮겨집니다. ' +
+        '<b>먼저 Supabase 에서 18_선생님답변.sql 을 실행</b>해야 해요.</div>' +
+      '<div class="nd-bar">' +
+        '<button class="st-nav primary" onclick="mvFind()">물음이 아닌 되묻기 찾기</button>' +
+        '<span class="nd-msg" id="mvMsg"></span>' +
+      '</div>' +
+      '<div id="mvTable"></div>' +
     '</div>' +
     '<div class="nd-steps">' +
       '<div class="nd-step">' +
@@ -4412,6 +4426,62 @@ function renderNudgeView(){
       '<span class="nd-msg" id="ndMsg"></span>' +
     '</div>' +
     '<div id="ndTable"></div>';
+}
+
+/* ── 💬 되묻기 칸에 적힌 «답» 찾아 옮기기 ───────────────────────────────────
+   물음이면 그대로 둔다: 「?」 가 있거나 「~까요」「~어때」「~볼래」「~해 봐」 꼴로 끝나면 되묻기.
+   그 밖(「네!」 「~예요」 「~합니다」 …)은 답변 후보로 올린다 — 확신이 없으니 한 줄씩 체크해서 옮긴다. */
+let _mvRows = [];
+function _mvIsQuestion(t){
+  t = (t||'').trim(); if(!t) return true;
+  if(/[?？]/.test(t)) return true;
+  const e = t.replace(/[~\s.!ㅋㅎ…]+$/g, '');
+  return /(까요|까|어때요|어때|볼래|할래|뭐야|뭘까|해 ?봐|해 ?보세요|해 ?볼래|보까요)$/.test(e);
+}
+function mvFind(){
+  const pool = _ndPool().filter(function(q){ return (q.teacher_nudge||'').trim() && !(q.teacher_answer||'').trim() && !_mvIsQuestion(q.teacher_nudge); });
+  _mvRows = pool.map(function(q){ return {id:q.id, q:q, on:true}; });
+  const m = $('mvMsg'); if(m) m.textContent = _mvRows.length ? ('물음이 아닌 되묻기 ' + _mvRows.length + '개') : '옮길 만한 되묻기가 없어요.';
+  mvPaint();
+}
+function mvPaint(){
+  const tb = $('mvTable'); if(!tb) return;
+  if(!_mvRows.length){ tb.innerHTML = ''; return; }
+  const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
+  const on = _mvRows.filter(function(r){ return r.on; }).length;
+  let h = '<div class="nd-bar"><label class="nd-chk"><input type="checkbox" ' + (on === _mvRows.length ? 'checked' : '') + ' onchange="mvAll(this.checked)"> 전체</label>' +
+    '<button class="st-nav primary" id="mvGo" onclick="mvApply()"' + (on ? '' : ' disabled') + '>' + on + '개 답변으로 옮기기</button><span class="nd-msg" id="mvGoMsg"></span></div><div class="fb-rows">';
+  _mvRows.forEach(function(r, i){
+    const p = pm[r.q.user_id] || {};
+    const who = (p.grade||'') + '-' + (p.class_no||'') + ' ' + (p.number||'') + '번';
+    h += '<div class="fb-row' + (r.on ? '' : ' off') + '"><label class="fb-row-l"><input type="checkbox" ' + (r.on ? 'checked' : '') + ' onchange="mvTog(' + i + ', this.checked)"></label>' +
+      '<div class="fb-row-b"><div class="fb-row-q"><span class="fb-who">' + who + '</span> ' + esc((r.q.refined_text || r.q.text || '').replace(/\s+/g,' ').trim().slice(0, 70)) + '</div>' +
+      '<div class="fb-chg"><b>🌿 되묻기 칸</b> ' + esc(r.q.teacher_nudge) + '</div></div></div>';
+  });
+  tb.innerHTML = h + '</div>';
+}
+function mvTog(i, on){ if(_mvRows[i]){ _mvRows[i].on = !!on; mvPaint(); } }
+function mvAll(on){ _mvRows.forEach(function(r){ r.on = !!on; }); mvPaint(); }
+async function mvApply(){
+  const picked = _mvRows.filter(function(r){ return r.on; });
+  if(!picked.length) return;
+  if(!confirm(picked.length + '개를 «선생님의 답변» 칸으로 옮깁니다. 되묻기 칸은 비워져요. 학생 화면에는 NEW 가 뜨지 않아요. 옮길까요?')) return;
+  const btn = $('mvGo'), msg = $('mvGoMsg'); if(btn) btn.disabled = true;
+  let ok = 0; const fail = [];
+  for(let i = 0; i < picked.length; i++){
+    const r = picked[i], nd = (r.q.teacher_nudge||'').trim();
+    if(msg) msg.textContent = '옮기는 중… ' + (i+1) + '/' + picked.length;
+    const res = await sb.from('questions').update({teacher_answer: nd, teacher_nudge: null}).eq('id', r.id).select('id');
+    if(res.error || !res.data || !res.data.length){
+      if(res.error && /teacher_answer/.test(res.error.message)){ alert('Supabase 에서 18_선생님답변.sql 을 먼저 실행하세요.'); if(btn) btn.disabled = false; if(msg) msg.textContent = ''; return; }
+      fail.push(r.id); continue;
+    }
+    ok++; _applyQField(r.id, {teacher_answer: nd, teacher_nudge: null});
+  }
+  alert('옮겼어요: ' + ok + '개' + (fail.length ? ('\n안 된 것 ' + fail.length + '개: ' + fail.slice(0, 8).join(', ')) : ''));
+  _mvRows = [];
+  try{ renderQuestions(); }catch(e){}
+  renderNudgeView();
 }
 
 function ndPickUnit(v){ _ndUnit = (v === '') ? null : v; _ndRows = []; renderNudgeView(); }
@@ -4596,7 +4666,7 @@ function ndAll(on){
    빈 칸 = 그대로, «-» = 지움. 학생이 읽는 글이라 검토 표를 건너뛸 수 없다. */
 const FB_COLS = ['id','학년','반','차시','단계','질문','다듬은질문','유형','바구니','상태','해결답변','알아낸것','아직모르는것',
                  '자가체크','물','탐구투표','기존_되묻기','기존_도장','기존_라벨','기존_별표','기존_다듬기피드백','기존_해결피드백',
-                 '되묻기','도장','라벨','별표','다듬기피드백','해결피드백'];
+                 '되묻기','도장','라벨','별표','다듬기피드백','해결피드백','기존_선생님답변','선생님답변'];
 let _fbRows = [];
 
 function _fbQType(text){
@@ -4623,7 +4693,7 @@ function fbExportCSV(){
       q.answer_source||'', qStatus(q), (q.solve&&q.solve.answer)||'', q.finding||'', q.still_wondering||'',
       scCount(q), q.water_count||0, q.explore_votes||0,
       q.teacher_nudge||'', st, (q.teacher_labels||[]).join('; '), (q.starred?'1':''), q.teacher_refine_note||'', q.teacher_solve_note||'',
-      '', '', '', '', '', '']);
+      '', '', '', '', '', '', q.teacher_answer||'', '']);
   });
   const unitTag = (_ndUnit === null) ? '전체' : (_ndUnit === '__none__' ? '차시없음' : _ndUnit.replace(/[\\/:*?"<>|]/g,'_').slice(0,20));
   downloadCSV(SCHOOL_SHORT + '_피드백_' + unitTag + '_' + today() + '.csv', rows);
@@ -4716,7 +4786,7 @@ function fbParseText(text){
     if(sr === '__bad__'){ bad.push(id + ' 별표「' + cell(r,'별표') + '」'); }
     else if(sr !== undefined && sr !== !!q.starred){ patch.starred = sr; chg.push({f:'⭐ 별표', a:q.starred ? '⭐' : '', b:sr ? '⭐ (도장판에 도장 1개)' : null}); }
     /* ✨ 다듬기 · 🔬 해결 피드백 — 되묻기와 같은 규칙(빈 칸=그대로, '-'=지움) */
-    [['다듬기피드백','teacher_refine_note','✨ 다듬기 피드백'],['해결피드백','teacher_solve_note','🔬 해결 피드백']].forEach(function(spec){
+    [['다듬기피드백','teacher_refine_note','✨ 다듬기 피드백'],['해결피드백','teacher_solve_note','🔬 해결 피드백'],['선생님답변','teacher_answer','💬 답변']].forEach(function(spec){
       const v = cell(r, spec[0]);
       if(v === undefined || v.trim() === '') return;
       const nv = (v.trim() === '-') ? null : v.trim();
@@ -4774,10 +4844,12 @@ async function fbApply(){
   const nNd = picked.filter(function(r){ return r.patch.teacher_nudge !== undefined; }).length;
   const nRf = picked.filter(function(r){ return r.patch.teacher_refine_note !== undefined; }).length;
   const nSv = picked.filter(function(r){ return r.patch.teacher_solve_note !== undefined; }).length;
+  const nAn = picked.filter(function(r){ return r.patch.teacher_answer !== undefined; }).length;
   if(!confirm(picked.length + '줄을 반영합니다. 학생 화면에 바로 보여요.' + NLc +
               (nNd ? ('· 되묻기 ' + nNd + '개' + NLc) : '') +
               (nRf ? ('· 다듬기 피드백 ' + nRf + '개' + NLc) : '') +
               (nSv ? ('· 해결 피드백 ' + nSv + '개' + NLc) : '') +
+              (nAn ? ('· 선생님 답변 ' + nAn + '개' + NLc) : '') +
               (nStar ? ('· 별표 ' + nStar + '개 — 칭찬도장판 도장이 같이 찍히거나 회수돼요' + NLc) : '') +
               NLc + '반영할까요?')) return;
   const btn = $('fbGo'), msg = $('fbGoMsg'); if(btn) btn.disabled = true;
@@ -4788,7 +4860,7 @@ async function fbApply(){
     const res = await sb.from('questions').update(r.patch).eq('id', r.id).select('id');
     if(res.error || !res.data || !res.data.length){
       const em = res.error ? res.error.message : '저장 안 됨(권한)';
-      if(/teacher_labels/.test(em)) colHint = '11_교사라벨.sql'; else if(/teacher_stamp/.test(em)) colHint = '6_질문도장.sql'; else if(/teacher_(solve|refine)_note/.test(em)) colHint = '17_피드백우편함.sql';
+      if(/teacher_labels/.test(em)) colHint = '11_교사라벨.sql'; else if(/teacher_stamp/.test(em)) colHint = '6_질문도장.sql'; else if(/teacher_(solve|refine)_note/.test(em)) colHint = '17_피드백우편함.sql'; else if(/teacher_answer/.test(em)) colHint = '18_선생님답변.sql';
       fail.push(r.id + ' (' + em + ')'); continue;
     }
     ok++;
@@ -5770,6 +5842,7 @@ let _orClass = null;        /* '2-4' */
 let _orOpen = null;         /* 서랍에 열린 학생 id */
 let _orKnown = null;        /* 지난번 그릴 때 이 반에 있던 질문 id — 새로 온 것 알림용 */
 let _orNdOpen = {};         /* 서랍에서 되묻기 칸을 연 질문 */
+let _orAnOpen = {};         /* 서랍에서 답변 칸을 연 질문 */
 let _orCard = null;         /* 큰 카드: {scope, word, ids, i, snap, emptyUid, pos} */
 let _orMode = 'trees';      /* 'trees' | 'cloud' */
 let _orWcScope = 'today';   /* 구름: 'today' | 'all' */
@@ -6055,7 +6128,7 @@ function _orCardStart(scope, word, uid){
   }
   if(!ids.length && !emptyUid) return false;
   _orCard = { scope:scope, word:word || null, ids:ids, i:Math.max(0, i), snap:snap, emptyUid:emptyUid, pos:pos };
-  _orNdOpen = {};
+  _orNdOpen = {}; _orAnOpen = {};
   const w = $('orCardWrap'); if(w){ w.classList.add('show'); w.setAttribute('aria-hidden', 'false'); }
   orCardRender(false);
   return true;
@@ -6071,7 +6144,7 @@ function orCardStep(d){
     if(ni < 0 || ni >= c.ids.length) return;
     c.i = ni;
   }
-  _orNdOpen = {};
+  _orNdOpen = {}; _orAnOpen = {};
   orCardRender(false);
 }
 function orCardScope(scope, keepWord){
@@ -6152,8 +6225,12 @@ function orCardRender(soft){
       h += (q.refined_text && q.text ? '<div class="or-was">처음 쓴 질문: ' + esc(q.text) + '</div>' : '') +
         '<div class="or-rows">' +
           (q.resolved ? '<div class="or-q-row">🍎 <b>알아낸 것</b> ' + esc(q.finding || ans || '') + '</div>' : (ans ? '<div class="or-q-row">🔬 <b>답</b> ' + esc(ans) + '</div>' : '')) +
+          ((q.teacher_answer || '').trim() ? '<div class="or-q-row an">💬 <b>답변</b> ' + esc(q.teacher_answer) + '</div>' : '') +
           ((q.teacher_nudge || '').trim() ? '<div class="or-q-row nd">🌿 <b>되묻기</b> ' + esc(q.teacher_nudge) + '</div>' : '') +
         '</div>' +
+        (_orAnOpen[q.id] ?
+          ('<div class="or-nd"><input id="orAnIn-' + q.id + '" value="' + esc(q.teacher_answer || '').replace(/"/g, '&quot;') + '" placeholder="학생 질문에 직접 답해 주세요" onkeydown="if(event.key===\'Enter\')orAnSave(' + q.id + ')">' +
+           '<button class="or-a pr" onclick="orAnSave(' + q.id + ')">저장</button></div>') : '') +
         (_orNdOpen[q.id] ?
           ('<div class="or-nd"><input id="orNdIn-' + q.id + '" value="' + esc(q.teacher_nudge || '').replace(/"/g, '&quot;') + '" placeholder="답 말고, 한 걸음 더 가게 하는 물음 하나" onkeydown="if(event.key===\'Enter\')orNdSave(' + q.id + ')">' +
            '<button class="or-a pr" onclick="orNdSave(' + q.id + ')">저장</button></div>') : '');
@@ -6163,7 +6240,8 @@ function orCardRender(soft){
   h += '<div class="or-cf">' +
     ((!board && q) ?
       ('<button class="or-a' + (q.starred ? ' on' : '') + '" onclick="orStar(' + q.id + ')">' + (q.starred ? '⭐ 별표 해제' : '☆ 별표') + '</button>' +
-       '<button class="or-a" onclick="orNdToggle(' + q.id + ')">🌿 ' + ((q.teacher_nudge || '').trim() ? '되묻기 고치기' : '되묻기') + '</button>') : '') +
+       '<button class="or-a" onclick="orNdToggle(' + q.id + ')">🌿 ' + ((q.teacher_nudge || '').trim() ? '되묻기 고치기' : '되묻기') + '</button>' +
+       '<button class="or-a" onclick="orAnToggle(' + q.id + ')">💬 ' + ((q.teacher_answer || '').trim() ? '답변 고치기' : '답변') + '</button>') : '') +
     ((!board && uid) ? '<button class="or-a" onclick="orToDrilldown(\'' + uid + '\')">📋 학생 상세</button>' : '') +
     '<span class="or-cnt">' + (pos ? (pos + ' / ' + c.ids.length) : ('— / ' + c.ids.length)) + '<small>  ← → 키로 넘겨요</small></span>' +
   '</div>';
@@ -6190,6 +6268,22 @@ async function orNdSave(qid){
   _applyQField(qid, { teacher_nudge: v || null });
   _orNdOpen[qid] = false;
   toast(v ? '🌿 되묻기를 남겼어요 — 학생 화면에 보여요' : '되묻기를 지웠어요');
+  orCardRender(false);
+}
+function orAnToggle(qid){
+  _orAnOpen[qid] = !_orAnOpen[qid];
+  orCardRender(false);
+  if(_orAnOpen[qid]) setTimeout(function(){ const i = $('orAnIn-' + qid); if(i){ i.focus(); i.select(); } }, 30);
+}
+async function orAnSave(qid){
+  const i = $('orAnIn-' + qid); if(!i) return;
+  const v = i.value.trim();
+  const r = await sb.from('questions').update({ teacher_answer: v || null }).eq('id', qid).select('id');
+  if(r.error){ _ansErr(r.error); return; }
+  if(!r.data || !r.data.length){ alert('저장하지 못했어요: 권한이 없어요'); return; }
+  _applyQField(qid, { teacher_answer: v || null });
+  _orAnOpen[qid] = false;
+  toast(v ? '💬 답변을 남겼어요 — 학생 화면에 보여요' : '답변을 지웠어요');
   orCardRender(false);
 }
 function orToDrilldown(uid){ orClose(); openDrilldown(uid); }
@@ -6761,7 +6855,7 @@ function exportProcessCSV(){
   if (withNames) head.push('이름');
   head.push('작성일','마지막저장','단원','수업전후','익명','부모질문id','질문','다듬은질문','탐구방식',
     '예상','알아볼방법','찾기','AI사용','출처수','AI미리본횟수','정리','넓히기','막힘표시칸','채운칸(5칸중)','해결정도',
-    '해결','열매종류','확인요청','선생님도장','선생님되묻기','다듬기피드백','해결피드백','물','꼬리질문','아직모르는것','자가체크근거');
+    '해결','열매종류','확인요청','선생님도장','선생님되묻기','다듬기피드백','해결피드백','물','꼬리질문','아직모르는것','자가체크근거','선생님답변');
   const rows = [head];
   filteredQuestions.forEach(q => {
     const p = pm[q.user_id] || {}, pr = qProcess(q), st = k => pr.steps.find(x => x.key === k).text;
@@ -6771,7 +6865,7 @@ function exportProcessCSV(){
       q.text || '', q.refined_text || '', pr.how,
       st('predict'), st('method'), st('find'), pr.ai ? 'Y' : '', pr.srcN, pr.peeked || '', st('wrap'), st('extend'), pr.flag, pr.n, qLevel(q, pr),
       q.resolved ? 'Y' : '', q.fruit_kind || '', q.resolve_requested_at ? 'Y' : '', q.teacher_stamp || '', q.teacher_nudge || '', q.teacher_refine_note || '', q.teacher_solve_note || '',
-      q.water_count || 0, brByQ[q.id] || 0, q.still_wondering || '', scText(q));
+      q.water_count || 0, brByQ[q.id] || 0, q.still_wondering || '', scText(q), q.teacher_answer || '');
     rows.push(r);
   });
   downloadCSV(`${SCHOOL_SHORT}_탐구과정_${withNames ? '이름포함' : '번호만'}_${today()}.csv`, rows);
@@ -6968,11 +7062,13 @@ function filterDDQs(mode){
             ${q.still_wondering ? `<div>🌱 <strong>아직 모르는 것:</strong> ${esc(q.still_wondering)}</div>` : ''}
           </div>` : ''}
         ${procDetailHTML(q)}
+        ${q.teacher_answer ? `<div class="dd-q-nudge-show dd-q-an">💬 <strong>내 답변:</strong> ${esc(q.teacher_answer)}</div>` : ''}
         ${q.teacher_nudge ? `<div class="dd-q-nudge-show">🌿 <strong>내 되묻기:</strong> ${esc(q.teacher_nudge)}</div>` : ''}
         ${q.teacher_refine_note ? `<div class="dd-q-nudge-show">✨ <strong>다듬기 피드백:</strong> ${esc(q.teacher_refine_note)}</div>` : ''}
         ${q.teacher_solve_note ? `<div class="dd-q-nudge-show">🔬 <strong>해결 피드백:</strong> ${esc(q.teacher_solve_note)}</div>` : ''}
         <div class="dd-q-ctrl">
           <button class="dd-q-ctrl-btn" onclick="toggleQEd('nudge',${q.id})">🌿 되묻기${q.teacher_nudge?' ✓':''}</button>
+          <button class="dd-q-ctrl-btn" onclick="toggleQEd('answer',${q.id})">💬 답변${q.teacher_answer?' ✓':''}</button>
           ${q.refined_text ? `<button class="dd-q-ctrl-btn" onclick="toggleQEd('refine',${q.id})">✨ 다듬기 피드백${q.teacher_refine_note?' ✓':''}</button>` : ''}
           ${(q.solve&&(q.solve.answer||'').trim()) || q.finding ? `<button class="dd-q-ctrl-btn" onclick="toggleQEd('solve',${q.id})">🔬 해결 피드백${q.teacher_solve_note?' ✓':''}</button>` : ''}
           <button class="dd-q-ctrl-btn" onclick="toggleQEd('unit',${q.id})">📑 단원${q.unit?' ✓':''}</button>
@@ -6983,6 +7079,14 @@ function filterDDQs(mode){
           <div class="dd-q-editor-btns">
             <button class="dd-btn primary" onclick="saveNudge(${q.id})">되묻기 남기기</button>
             ${q.teacher_nudge?`<button class="dd-btn" onclick="clearNudge(${q.id})">지우기</button>`:''}
+            ${q.teacher_nudge?`<button class="dd-btn" onclick="moveNudgeToAnswer(${q.id})" title="되묻기 칸에 적은 글이 사실 답이었다면">답변으로 옮기기</button>`:''}
+          </div>
+        </div>
+        <div class="dd-q-editor" id="answerEd-${q.id}" style="display:none">
+          <textarea id="answerTx-${q.id}" placeholder="학생 질문에 직접 답해 주세요. 학생 화면에 「선생님의 답변」으로 따로 보여요. (되묻기와 다른 칸이에요)">${esc(q.teacher_answer||'')}</textarea>
+          <div class="dd-q-editor-btns">
+            <button class="dd-btn primary" onclick="saveAnswer(${q.id})">답변 남기기</button>
+            ${q.teacher_answer?`<button class="dd-btn" onclick="clearAnswer(${q.id})">지우기</button>`:''}
           </div>
         </div>
         <div class="dd-q-editor" id="refineEd-${q.id}" style="display:none">
@@ -7034,6 +7138,38 @@ async function saveNudge(id){
   filterDDQs(curDDFilter());
   toast(val?'🌿 되묻기를 남겼어요 — 학생 화면에 보여요':'되묻기를 지웠어요');
 }
+/* 💬 선생님의 답변 — 되묻기(teacher_nudge)와 따로 둔 칸(18_선생님답변.sql) */
+function _ansErr(error){
+  alert((/teacher_answer/.test(error.message) ? 'Supabase 에서 18_선생님답변.sql 을 먼저 실행하세요.\n\n' : '') + '저장 실패: ' + error.message);
+}
+async function saveAnswer(id){
+  const tx=$('answerTx-'+id); if(!tx) return;
+  const val=tx.value.trim();
+  const {error}=await sb.from('questions').update({teacher_answer: val||null}).eq('id',id);
+  if(error){ _ansErr(error); return; }
+  _applyQField(id, {teacher_answer: val||null});
+  filterDDQs(curDDFilter());
+  toast(val?'💬 답변을 남겼어요 — 학생 화면에 보여요':'답변을 지웠어요');
+}
+async function clearAnswer(id){
+  const {error}=await sb.from('questions').update({teacher_answer:null}).eq('id',id);
+  if(error){ _ansErr(error); return; }
+  _applyQField(id, {teacher_answer:null});
+  filterDDQs(curDDFilter());
+  toast('답변을 지웠어요');
+}
+/* 되묻기 칸에 적은 글을 답변 칸으로 — NEW 표시는 켜지지 않는다(18번 SQL 방아쇠가 «옮기기» 를 알아본다) */
+async function moveNudgeToAnswer(id){
+  const q = (allQuestions||[]).find(function(x){ return x.id === id; }); if(!q) return;
+  const nd = (q.teacher_nudge||'').trim(); if(!nd) return;
+  if((q.teacher_answer||'').trim()){ alert('이 질문에는 이미 답변이 있어요. 답변을 먼저 지우거나 되묻기를 지운 뒤 다시 해 주세요.'); return; }
+  const {error}=await sb.from('questions').update({teacher_answer: nd, teacher_nudge: null}).eq('id',id);
+  if(error){ _ansErr(error); return; }
+  _applyQField(id, {teacher_answer: nd, teacher_nudge: null});
+  filterDDQs(curDDFilter());
+  toast('💬 답변으로 옮겼어요');
+}
+
 async function clearNudge(id){
   const {error}=await sb.from('questions').update({teacher_nudge:null}).eq('id',id);
   if(error){ alert('삭제 실패: '+error.message); return; }

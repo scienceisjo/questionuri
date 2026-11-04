@@ -1310,6 +1310,8 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .qc-nudge.qc-fb-rf .qc-nudge-hdr{color:#c77800}
 .qc-nudge.qc-fb-sv{background:linear-gradient(135deg,rgba(25,118,210,.09),rgba(93,184,110,.06));border-color:rgba(25,118,210,.35)}
 .qc-nudge.qc-fb-sv .qc-nudge-hdr{color:#1565C0}
+.qc-nudge.qc-fb-an{background:rgba(46,125,50,.08);border-color:rgba(46,125,50,.35)}
+.qc-nudge.qc-fb-an .qc-nudge-hdr{color:#2E7D32}
 .qc-nudge.fb-new{box-shadow:0 0 0 3px rgba(229,57,53,.18)}
 .fb-newb{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.04em;background:#E53935;color:#fff;border-radius:99px;padding:1px 7px;margin-left:6px;vertical-align:1px}
 .qc.fb-jump{animation:fbJump 1.6s ease-out}
@@ -4502,6 +4504,7 @@ async function bootstrapUser(){
       /* 📮 17번 SQL 의 칸 — 없으면 null. 선생님의 다듬기·해결 피드백, 안 본 피드백 표시 */
       teacher_refine_note: q.teacher_refine_note||null,
       teacher_solve_note: q.teacher_solve_note||null,
+      teacher_answer: q.teacher_answer||null,        /* 💬 18번 SQL — 선생님의 답변(되묻기와 따로) */
       fb_unread: !!q.fb_unread,
       unit: q.unit||null,
       explore_votes: q.explore_votes||0,
@@ -5212,7 +5215,7 @@ function _qMiniHTML(q){
   const unit = q.unit ? '<span class="qm-b">📑 ' + esc(unitShort(q.unit)) + '</span>' : '';
   const done = q.resolved ? '<span class="qm-b ok">🍎 해결</span>' : '<span class="qm-b">○ 안 푼</span>';
   const rf = isRefined(q) ? '<span class="qm-b">✨ 다듬음</span>' : '';
-  const fb = (q.teacher_nudge || q.teacher_refine_note || q.teacher_solve_note) ? '<span class="qm-b fb">📮 선생님 글</span>' : '';
+  const fb = (q.teacher_nudge || q.teacher_refine_note || q.teacher_solve_note || q.teacher_answer) ? '<span class="qm-b fb">📮 선생님 글</span>' : '';
   const stm = (q.teacher_stamp && STAMP_MSG[q.teacher_stamp]) ? '<span class="qm-b fb">' + STAMP_MSG[q.teacher_stamp].e + ' 도장</span>' : '';
   const pk = q.is_picked ? '<span class="qm-b ok">⭐ 대표</span>' : '';
   const an = q.is_anonymous ? '<span class="qm-b">🕊️ 익명</span>' : '';
@@ -8194,6 +8197,11 @@ function renderQs(){
           ${peerPanel(q)}
           ${stampHTML(q)}
           ${nextStepHTML(q)}
+          ${q.teacher_answer ? `
+            <div class="qc-nudge qc-fb-an${q.fb_unread?' fb-new':''}">
+              <div class="qc-nudge-hdr">💬 선생님의 답변${q.fb_unread?' <span class="fb-newb">NEW</span>':''}</div>
+              <div class="qc-nudge-txt" data-math="1">${escWithMath(q.teacher_answer)}</div>
+            </div>` : ''}
           ${q.teacher_nudge ? `
             <div class="qc-nudge${q.fb_unread?' fb-new':''}">
               <div class="qc-nudge-hdr">🌿 선생님의 되묻기${q.fb_unread?' <span class="fb-newb">NEW</span>':''}</div>
@@ -10729,6 +10737,7 @@ function _waitForFriend(q, peerN){
 function _waitingAnswer(q, peerN){
   if(q.resolved) return false;
   if((q.teacher_nudge||'').trim()) return false;
+  if((q.teacher_answer||'').trim()) return false;
   if(q.solve && (q.solve.answer||'').trim()) return false;
   const n = (q.peer_answers && q.peer_answers.length) || (peerN && peerN[q.id]) || 0;
   return n === 0;
