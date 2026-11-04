@@ -150,7 +150,7 @@ function view(row, marks, clues, all){
     fogOK:d.find.length >= 2 || vis.length > 0,
     tch, tch2, pastNudge, answered, refineAsk, rk, returnedFixed, cur, prints, clues:vis, openClues, thankable,
     unread:!!row.fb_unread, sprout:!!row.fruit_kind && !!d.extend,
-    solveNote:str(row.teacher_solve_note).trim(), stamp:STAMP[row.teacher_stamp] || '',
+    solveNote:str(row.teacher_solve_note).trim(), answer:str(row.teacher_answer).trim(), stamp:STAMP[row.teacher_stamp] || '',
     newToday:!!row.created_at && ui.kstDay(row.created_at) === ui.kstToday()
   };
 }
@@ -307,6 +307,7 @@ const plain = html => String(html).split('<br>')[0].replace(/<[^>]+>/g, '').repl
 
 function teacherBox(v, k){
   let h = '';
+  if(k === 'plant' && v.answer) h += '<div class="tchbox ans"><b>선생님의 답변</b>' + esc(v.answer) + '</div>';
   if(k === 'plant' && v.stamp) h += '<div class="tchbox done"><b>선생님 도장</b>' + esc(v.stamp) + '</div>';
   if(k === 'refine' && v.tch){
     if(v.refineAsk) h += '<div class="tchbox"><b>선생님 글</b>' + esc(v.tch) + '</div>';
@@ -920,6 +921,12 @@ if(QO.selftest && QO.cfg.page === 'student'){
     const clue = {id:9, step:'find', created_at:new Date(Date.now() - 60000).toISOString()};
     t.expect(!view(row, {}, [clue]).thankable(clue) && view(row, {find:{first_at:now, last_at:now, text_md5:'z'}}, [clue]).thankable(clue), '고마움은 단서 뒤 칸이 바뀐 뒤');
     t.expect(view(row, {}, [clue]).fogOK && !view(row, {}, []).fogOK, '안개 조건(단서)');
+    /* 💬 선생님의 답변 — 되묻기와 따로 보이고, 다듬기를 막지 않는다 */
+    const iso0 = d => new Date(Date.now() + d).toISOString();
+    const ansV = view({id:-4, text:'정전기는 왜 생길까요?', teacher_answer:'전자가 옮겨 가서 생겨요.', teacher_nudge:'그럼 겨울엔 왜 더 잘 생길까?', teacher_fb_at:iso0(-1000), status:'open', journal:{}}, {}, []);
+    t.eq([ansV.answer, ansV.tch.length > 0], ['전자가 옮겨 가서 생겨요.', true], '답변은 되묻기와 따로 읽힘');
+    t.expect(teacherBox(ansV, 'plant').indexOf('선생님의 답변') >= 0 && teacherBox(ansV, 'plant').indexOf('전자가 옮겨') >= 0, '심기 칸에 「선생님의 답변」 상자');
+    t.expect(!view({id:-5, text:'질문이에요 정말', status:'open', journal:{}}, {}, []).answer, '답변 없으면 빈 칸');
     /* 선생님 글 기준 — 시각 없는 옛 되묻기는 막지 않음 · 다듬기에 답한 뒤 되돌리면 되돌린 칸부터 · 다시 보낸 뒤 되돌림 글은 정리 칸으로 */
     const P8 = '자석이 철을 당기는 것 같다. 왜냐하면 가까이 가면 붙으니까.';
     const oldN = view({id:-3, text:'자석은 왜 철에만 붙을까?', teacher_nudge:'어떤 철에 붙는지 더 적어 볼까요?', teacher_fb_at:null, status:'open', journal:{predict:[{text:P8}]}}, {}, []);

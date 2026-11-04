@@ -112,6 +112,8 @@ input,textarea,select{font-family:inherit;font-size:15px;color:var(--ink)}
 .tchbox{margin-top:8px;background:var(--fruit-l);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.55}
 .tchbox b{display:block;font-size:12.5px;color:#9C3029;margin-bottom:2px}
 .tchbox.done{background:var(--bg)}
+.tchbox.ans{background:var(--leaf-l)}
+.tchbox.ans b{color:var(--leaf-d)}
 .flagbox{margin-top:8px;background:var(--clue-l);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.5;color:var(--clue-d)}
 .statusbar{margin-top:6px;border-radius:14px;padding:12px 14px;font-size:14.5px;line-height:1.55;font-weight:700}
 .statusbar.wait{background:var(--wait-l);color:var(--wait)}

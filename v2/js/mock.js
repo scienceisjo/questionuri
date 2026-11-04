@@ -7,10 +7,10 @@
 const QO = window.QO, cfg = QO.cfg;
 const KEY = 'qo2-mock-v1', VER = 1;
 const WHO_KEY = 'qo2-mock-who-' + cfg.page;
-const COLS = QO.COLS.split(',');
+const COLS = QO.COLS.split(',').concat(QO.COLS.indexOf('teacher_answer') < 0 ? ['teacher_answer'] : []);
 const CLUE_COLS = QO.CLUE_COLS.split(',');
 const COUNTED = ['predict', 'method', 'find', 'wrap', 'extend'];
-const TEACHER_FB = ['teacher_nudge', 'teacher_stamp', 'teacher_solve_note', 'teacher_refine_note'];
+const TEACHER_FB = ['teacher_nudge', 'teacher_stamp', 'teacher_solve_note', 'teacher_refine_note', 'teacher_answer'];
 let db = null, whoMem = null;
 
 const M = QO.mock = {api:{}, delay:(cfg.selftest && !cfg.slow) ? [15, 45] : [80, 200]};
@@ -109,7 +109,7 @@ function baseQ(){
   return {id:null, user_id:null, subject_id:null, text:'', resolved:false, question_date:kstToday(), tags:[], fruit_emoji:null, is_anonymous:false,
     water_count:0, watered_by:[], tree_id:null, starred:false, answer_text:null, phase:'before', parent_id:null, created_at:nowISO(),
     finding:null, still_wondering:null, teacher_nudge:null, unit:null, teacher_stamp:null, refined_text:null, refined_at:null, solve:null,
-    teacher_solve_note:null, teacher_refine_note:null, teacher_fb_at:null, fb_seen_at:null, fb_unread:false,
+    teacher_solve_note:null, teacher_refine_note:null, teacher_answer:null, teacher_fb_at:null, fb_seen_at:null, fb_unread:false,
     journal:null, fruit_kind:null, fruit_source:null, resolved_by:null, resolved_at:null, resolve_requested_at:null};
 }
 /* 질문 넣기 — guard_owner_cols(INSERT) · inherit_parent_unit · journal_marks */
@@ -118,7 +118,7 @@ function insertQ(row){
   const q = Object.assign(baseQ(), row);
   if(!isTeacher(me())){
     q.created_at = at; q.starred = false;
-    q.teacher_nudge = null; q.teacher_stamp = null; q.teacher_refine_note = null; q.teacher_solve_note = null; q.teacher_fb_at = null;
+    q.teacher_nudge = null; q.teacher_stamp = null; q.teacher_refine_note = null; q.teacher_solve_note = null; q.teacher_answer = null; q.teacher_fb_at = null;
     q.fruit_kind = null; q.fruit_source = null; q.resolved_by = null; q.resolved_at = null; q.resolve_requested_at = null;
   }
   if(q.parent_id != null && !q.unit){ const par = qById(q.parent_id); q.unit = par ? par.unit : null; }
@@ -762,7 +762,7 @@ function seed(){
     still_wondering:'관측할 수 있는 우주 바깥에는 무엇이 있을까?', fruit_kind:'fog', fruit_source:'teacher', resolved_by:'u-T', resolved_at:ago(5 * D)});
   Q(108, 'A', ago(1 * D), '별은 왜 반짝거릴까?', '별의 밝기와 등급', {
     teacher_refine_note:'좋은 질문이에요. 어떤 별을, 어디서 볼 때 반짝이는지 상황을 더 자세히 써 보면 찾기가 쉬워져요.', teacher_fb_at:ago(5 * H), fb_unread:true});
-  Q(109, 'A', ago(60 * D), '정전기는 왜 생길까?', '마찰 전기', {resolved:true, fruit_kind:'fruit', fruit_source:'legacy', resolved_at:ago(58 * D)});
+  Q(109, 'A', ago(60 * D), '정전기는 왜 생길까?', '마찰 전기', {teacher_answer:'서로 다른 물체를 문지르면 전자가 한쪽으로 옮겨 가서 생겨요. 겨울에는 공기가 건조해서 그 전하가 잘 빠져나가지 못해요.', resolved:true, fruit_kind:'fruit', fruit_source:'legacy', resolved_at:ago(58 * D)});
   /* 나래(B) */
   const p121 = '전구 하나일 때보다 어두워질 것 같다. 왜냐하면 전기를 둘이 나눠 쓰니까.';
   Q(121, 'B', ago(2 * D), '전구 두 개를 병렬로 연결하면 밝기는 어떻게 될까?', '직렬과 병렬', {

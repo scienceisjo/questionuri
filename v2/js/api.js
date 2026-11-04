@@ -6,8 +6,9 @@
 'use strict';
 const QO = window.QO, cfg = QO.cfg;
 /* 학생 화면이 쓰는 질문 칸(학생이 읽을 수 있는 것만) */
-const COLS = 'id,text,refined_text,refined_at,unit,is_anonymous,created_at,resolved,resolved_at,solve,journal,finding,still_wondering,answer_text,tags,' +
+const BASE_COLS = 'id,text,refined_text,refined_at,unit,is_anonymous,created_at,resolved,resolved_at,solve,journal,finding,still_wondering,answer_text,tags,' +
   'teacher_nudge,teacher_stamp,teacher_refine_note,teacher_solve_note,teacher_fb_at,fb_unread,fruit_kind,fruit_source,resolve_requested_at,parent_id,tree_id,subject_id';
+let COLS = BASE_COLS;
 const CLUE_COLS = 'id,question_id,kind,step,body,created_at,thanked_at,thanks_text,declined_at,hidden_at';
 QO.COLS = COLS; QO.CLUE_COLS = CLUE_COLS;
 
@@ -21,6 +22,19 @@ function loadLib(){
     s.onerror = () => rej(new Error('supabase 라이브러리를 불러오지 못했어요'));
     document.head.appendChild(s);
   });
+}
+/* 💬 선생님의 답변 칸(18_선생님답변.sql) — DB 에 칸이 생겼을 때만 같이 읽는다. 없으면 예전 칸만(그래야 SQL 전에 올려도 안 깨진다) */
+let ansProbe = null;
+async function cols(cl){
+  if(COLS !== BASE_COLS) return COLS;
+  if(ansProbe === null){
+    ansProbe = cl.from('questions').select('teacher_answer').limit(1).then(r => {
+      if(!r.error){ COLS = BASE_COLS + ',teacher_answer'; QO.COLS = COLS; }
+      else if(!/teacher_answer|42703|column/i.test((r.error.message || '') + (r.error.code || ''))) ansProbe = null;   /* 로그인 전 권한 오류 등은 나중에 다시 */
+    }, () => { ansProbe = null; });
+  }
+  await ansProbe;
+  return COLS;
 }
 async function client(){
   if(sb) return sb;
@@ -132,8 +146,8 @@ const A = QO.apiReal = {
 
   /* ── 내 질문 ── */
   async loadMyQuestions(){
-    const id = await needUid(), cl = await client();
-    return pages(() => cl.from('questions').select(COLS).eq('user_id', id).order('id', {ascending:false}));
+    const id = await needUid(), cl = await client(), C = await cols(cl);
+    return pages(() => cl.from('questions').select(C).eq('user_id', id).order('id', {ascending:false}));
   },
   async plantQuestion(input){
     input = input || {};
@@ -156,11 +170,12 @@ const A = QO.apiReal = {
     if(unit) payload.unit = unit;
     if(input.parent_id) payload.parent_id = input.parent_id;
     if(tree) payload.tree_id = tree.id;
-    let r = await cl.from('questions').insert(payload).select(COLS).single();
+    const C = await cols(cl);
+    let r = await cl.from('questions').insert(payload).select(C).single();
     /* 나무가 사라졌으면 나무 없이 한 번 더(질문을 잃지 않게) */
     if(r.error && payload.tree_id && /tree/i.test((r.error.message || '') + ' ' + (r.error.details || ''))){
       delete payload.tree_id;
-      r = await cl.from('questions').insert(payload).select(COLS).single();
+      r = await cl.from('questions').insert(payload).select(C).single();
     }
     if(r.error) fail(r.error);
     return r.data;
@@ -301,19 +316,19 @@ const A = QO.apiReal = {
     return pages(() => cl.from('profiles').select('id,name,number,seeds').eq('grade', g).eq('class_no', c).order('number'));
   },
   async pendingFruits(g, c){
-    const cl = await client();
+    const cl = await client(), C = await cols(cl);
     const st = await A.classStudents(g, c);
     const by = new Map(st.map(s => [s.id, s]));
     const out = [];
     for(const ch of chunks(st.map(s => s.id), 100)){
-      out.push.apply(out, await pages(() => cl.from('questions').select(COLS + ',user_id').in('user_id', ch).not('resolve_requested_at', 'is', null).is('fruit_kind', null).order('id')));
+      out.push.apply(out, await pages(() => cl.from('questions').select(C + ',user_id').in('user_id', ch).not('resolve_requested_at', 'is', null).is('fruit_kind', null).order('id')));
     }
     return out.map(q => Object.assign({}, q, {student:{name:(by.get(q.user_id) || {}).name || '', number:(by.get(q.user_id) || {}).number || null}}))
       .sort((a, b) => String(a.resolve_requested_at).localeCompare(String(b.resolve_requested_at)));
   },
   async questionDetail(qid){
-    const cl = await client();
-    const q = await one(cl.from('questions').select(COLS + ',user_id').eq('id', qid).maybeSingle());
+    const cl = await client(), C = await cols(cl);
+    const q = await one(cl.from('questions').select(C + ',user_id').eq('id', qid).maybeSingle());
     if(!q) throw userErr('질문을 찾을 수 없어요');
     const res = await Promise.all([
       one(cl.from('step_marks').select('question_id,step,first_at,last_at,text_md5').eq('question_id', qid)),
