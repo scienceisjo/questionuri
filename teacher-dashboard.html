@@ -10,58 +10,58 @@
 <meta name="robots" content="noindex">
 <meta property="og:title" content="🌳 질문 과수원 — 교사 대시보드">
 <meta property="og:image" content="https://scienceisjo.github.io/questionuri/assets/og-image.jpg">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800;9..144,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Gaegu:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
-  /* ── 바탕은 흰색이 아니라 «따뜻한 크림» ────────────────────────────────
-     흰 바탕에 초록을 올리면 차갑고 사무적이 된다. 크림 위에 올려야
-     같은 초록이 따뜻해진다. 이 온도가 이 시스템의 절반이다. */
-  --bg:#f2f0eb;           /* 페이지 바탕 */
-  --bg2:#edebe9;          /* 구역 나눔 — 조금 더 짙은 크림 */
+  /* ── 구글 디자인(DESIGN.md모음/google.md, 2026-11-04) ─────────────────────
+     흰 바탕·회색 선·파란 강조 하나. 예전 크림+초록+세리프는 「AI가 만든 화면」처럼 보여서 바꿨다.
+     토큰 이름은 그대로 두고 값만 바꿨다(--pr 등은 이제 파랑). */
+  --bg:#F8F9FA;           /* 페이지 바탕 */
+  --bg2:#F1F3F4;          /* 구역 나눔 — 조금 더 짙은 크림 */
   --surface:#ffffff;      /* 카드는 흰색 — 크림 위에서 카드가 떠 보인다 */
-  --surface2:#f9f9f9;     /* 조용한 회색 면 (드롭다운·폼) */
+  --surface2:#F8F9FA;     /* 조용한 회색 면 (드롭다운·폼) */
   /* 글자는 순검정을 쓰지 않는다. 87% 검정이 크림과 온도가 맞는다.
      --ink 은 예전에 «글자색이자 상단바 배경» 이었다. 한 이름이 두 일을 하면
      한쪽을 고칠 때 다른 쪽이 망가진다 — 상단바는 아래에서 --ph 로 뗀다. */
-  --ink:rgba(0,0,0,.87);
-  --ink2:rgba(0,0,0,.72);
-  --ink3:rgba(0,0,0,.58);
-  --ink4:rgba(0,0,0,.38);
+  --ink:#202124;
+  --ink2:#3C4043;
+  --ink3:#5F6368;
+  --ink4:#80868B;
   /* ── 네 단계 초록 ─────────────────────────────────────────────────────
      하나의 «브랜드 초록» 을 아무 데나 쓰면 위계가 사라진다. 자리마다 다르다.
        --pr  제목·표제      --pa  누르는 단추
        --ph  짙은 띠·바닥    --pu  장식 */
-  --pr:#006241;           /* 제목 초록 */
-  --pa:#00754A;           /* 단추 초록 — 누르는 것에만 */
-  --ph:#1E3932;           /* 짙은 띠 */
-  --pu:#2b5148;           /* 장식 */
-  --pl:#5CB86E;
-  --pd:#184B28;
+  --pr:#1967D2;           /* 제목 초록 */
+  --pa:#1A73E8;           /* 단추 초록 — 누르는 것에만 */
+  --ph:#1A73E8;           /* 짙은 띠 */
+  --pu:#5F6368;           /* 장식 */
+  --pl:#34A853;
+  --pd:#202124;
   /* 금색은 «대표 질문·별표» 같은 예식 자리에만. 일반 강조로 쓰지 않는다 */
-  --gold:#cba258;
-  --gold-l:#faf6ee;
+  --gold:#F9AB00;
+  --gold-l:#FEF7E0;
   /* 금색으로 옮겨 봤더니 열여섯 자리에 번졌다. 그중 «예식» 이라 부를 만한 건
      TOP 5 순위 배지 하나뿐이고 나머지는 경고·막대그래프·히트맵·정렬 화살표·
      주요 단추였다. 참고 문서가 하지 말라는 바로 그 상태라 되돌린다.
      앰버는 여기 남긴다 — 경고와 데이터에는 따뜻한 주의색이 필요하고,
      참고 시스템도 경고용 노랑을 따로 두고 있다. 금색과 역할이 다르다. */
-  --ac:#D97706;           /* 경고·데이터 전용 (강조 일반에 쓰지 않는다) */
-  --ac2:#F59E0B;
-  --ar:#c82014;           /* 오류 빨강 */
-  --blue:#2563EB;
-  --purple:#7C3AED;
-  --teal:#0E9488;
-  --pink:#DB2777;
-  --rule:#e0ddd6;         /* 크림 위에서 티 안 나게 */
-  --rule2:#edebe9;
-  --mono:'JetBrains Mono','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif; /* 한글은 고정폭으로 떨어지지 않게 */
-  --serif:'Fraunces',Georgia,serif;
+  --ac:#E37400;           /* 경고·데이터 전용 (강조 일반에 쓰지 않는다) */
+  --ac2:#F9AB00;
+  --ar:#D93025;           /* 오류 빨강 */
+  --blue:#1A73E8;
+  --purple:#9334E6;
+  --teal:#12B5CB;
+  --pink:#D01884;
+  --rule:#DADCE0;         /* 크림 위에서 티 안 나게 */
+  --rule2:#E8EAED;
+  --mono:'Roboto Mono','Noto Sans KR','Malgun Gothic',sans-serif; /* 한글은 고정폭으로 떨어지지 않게 */ /* 한글은 고정폭으로 떨어지지 않게 */
+  --serif:'Roboto','Noto Sans KR',system-ui,sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{height:100%}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100%;line-height:1.55;font-feature-settings:'cv11','ss01';font-size:15px}
+body{font-family:'Roboto','Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100%;line-height:1.55;font-feature-settings:'cv11','ss01';font-size:15px}
 
 /* 노트북·태블릿에서 글자 더 크게 */
 @media (min-width:1024px){
@@ -1197,20 +1197,70 @@ body{letter-spacing:-0.01em}
 /* 폰에선 띠가 두세 줄이 되니 따라 내려오지 않게 */
 @media(max-width:720px){ .topbar{position:static} .topbar-logo .tag{display:none} .topbar-r #lastUpdate{max-width:150px} }
 </style>
+<style id="google-design">
+/* 구글 디자인(DESIGN.md모음/google.md) — 앞의 스타일 위에 덧씌운다. 2026-11-04 */
+body{font-feature-settings:normal}
+.empty-row,.dd-note-empty{font-style:normal}
+.topbar{background:#fff!important;color:#202124!important;border-bottom:1px solid #DADCE0!important;box-shadow:none!important;backdrop-filter:none}
+.topbar .info,.topbar .sub{color:#5F6368!important}
+.topbar .btn{background:#fff!important;border:1px solid #DADCE0!important;color:#1967D2!important;border-radius:18px}
+.topbar .btn:hover{background:#F1F3F4!important}
+.topbar-logo .title{font-family:'Roboto','Noto Sans KR',sans-serif!important;font-weight:400!important;font-size:20px!important;color:#202124!important;letter-spacing:0!important}
+.topbar-logo .tag{border:none!important;color:#5F6368!important;padding:0!important}
+.vm-tab{font-family:'Roboto','Noto Sans KR',sans-serif!important;font-weight:500!important;font-size:14px!important;color:#5F6368!important;background:transparent!important;background-image:none!important;border:none!important;border-bottom:3px solid transparent!important;border-radius:0!important;letter-spacing:0!important}
+.vm-tab:hover{color:#202124!important;background:#F1F3F4!important}
+.vm-tab.on{color:#1967D2!important;background:transparent!important;border-bottom-color:#1A73E8!important}
+.section{border-radius:8px!important;box-shadow:none!important;border-color:#DADCE0!important}
+.section-hdr{background:#fff!important}
+.section-hdr h2,.dd-chart-hdr h3,.dd-qs-hdr h3{font-family:'Roboto','Noto Sans KR',sans-serif!important;font-weight:500!important;color:#202124!important;letter-spacing:0!important}
+.section-hdr h2{font-size:16px!important}
+.scard-lbl,.section-hdr .sub,.section-hdr .num,.section-hdr .badge,.topbar-logo .tag,.dd-tag,.dd-stat-lbl,.pr-stat-lbl,.subj-stat-l,.stu-card-stat-l,.cat-panel-h,.loader-txt,.filter-bar .lbl,.auth-box .fl,.auth-box .bm,th,.btn-export,.exp-btn{text-transform:none!important;letter-spacing:0!important;font-family:'Roboto','Noto Sans KR',sans-serif!important}
+.scard-lbl{font-size:12px!important;font-weight:500!important}
+.section-hdr .sub{font-size:12.5px!important;font-weight:400!important}
+.section-hdr .num{background:transparent!important;padding:0!important}
+.btn-export,.exp-btn{border-radius:18px!important;border:1px solid #DADCE0!important;background:#fff!important;color:#1967D2!important;font-weight:500!important}
+.btn-export:hover,.exp-btn:hover{background:#F1F3F4!important;color:#1967D2!important}
+.dd-btn{border-radius:18px}
+.dd-btn.primary{background:#1A73E8;border-color:#1A73E8;color:#fff}
+.auth-wrap{background:#F8F9FA!important}
+.auth-box{border-radius:8px!important;box-shadow:none!important;border:1px solid #DADCE0!important}
+.auth-box::before{display:none!important}
+.auth-box h1{font-family:'Roboto','Noto Sans KR',sans-serif!important;font-weight:400!important;font-size:24px!important;color:#202124!important;letter-spacing:0!important}
+.auth-box .sub{text-transform:none!important;letter-spacing:0!important;font-size:14px!important;font-weight:400!important;font-family:inherit!important}
+.auth-box .fl{font-size:12px!important;font-weight:500!important;color:#3C4043!important}
+.auth-box input{border:1px solid #DADCE0!important;border-radius:4px!important;background:#fff!important}
+.auth-box input:focus{border-color:#1A73E8!important;box-shadow:0 0 0 1px #1A73E8!important}
+.auth-box .bm{background:#1A73E8!important;color:#fff!important;border-radius:18px!important;font-weight:500!important;font-family:inherit!important}
+.auth-box .bm:hover{background:#1967D2!important}
+.auth-tabs{border:none!important;border-bottom:1px solid #DADCE0!important;border-radius:0!important}
+.auth-tab{background:transparent!important;color:#5F6368!important;font-family:inherit!important;font-weight:500!important;letter-spacing:0!important;border-bottom:3px solid transparent!important}
+.auth-tab.on{color:#1967D2!important;border-bottom-color:#1A73E8!important}
+.sk-link{font-family:inherit!important}
+.dd-topbar{background:#fff!important;color:#202124!important;border-bottom:1px solid #DADCE0!important}
+.dd-back{background:#fff!important;color:#1967D2!important;border:1px solid #DADCE0!important;border-radius:18px!important;font-family:inherit!important;font-weight:500!important}
+.dd-back:hover{background:#F1F3F4!important}
+.dd-title{font-family:'Roboto','Noto Sans KR',sans-serif!important;font-weight:400!important;font-size:20px!important;color:#202124!important}
+.dd-btn{background:#fff!important;color:#1967D2!important;border:1px solid #DADCE0!important;font-family:inherit!important;font-weight:500!important}
+.dd-btn:hover{background:#F1F3F4!important}
+.dd-btn.primary{background:#1A73E8!important;border-color:#1A73E8!important;color:#fff!important}
+.dd-btn.primary:hover{background:#1967D2!important}
+.dd-qs-tab{font-family:inherit!important;border:1px solid #DADCE0!important;border-radius:8px!important;font-weight:500!important}
+.dd-qs-tab.on{background:#E8F0FE!important;color:#1967D2!important;border-color:#D2E3FC!important}
+.dd-qs-hdr h3 span,.dd-chart-hdr h3 span{font-family:inherit!important;letter-spacing:0!important}
+</style>
 </head>
 <body>
 
 <!-- ═══ AUTH ═══ -->
 <div class="auth-wrap" id="authWrap">
   <div class="auth-box">
-    <div class="auth-emoji">🌳</div>
-    <h1>Haenuri Teacher</h1>
-    <div class="sub">질문 과수원 · 교과 대시보드</div>
+    <h1>질문과수원 교사</h1>
+    <div class="sub">교과 대시보드</div>
 
     <!-- 로그인/회원가입 탭 -->
     <div class="auth-tabs">
-      <button class="auth-tab on" data-at="login" onclick="switchAuthTab('login')">🔑 로그인</button>
-      <button class="auth-tab" data-at="signup" onclick="switchAuthTab('signup')">📝 회원가입</button>
+      <button class="auth-tab on" data-at="login" onclick="switchAuthTab('login')">로그인</button>
+      <button class="auth-tab" data-at="signup" onclick="switchAuthTab('signup')">회원가입</button>
     </div>
 
     <!-- 로그인 폼 -->
@@ -1311,7 +1361,7 @@ body{letter-spacing:-0.01em}
     </div>
     <!-- FILTERS -->
     <div class="filter-bar">
-      <span class="lbl">Filter</span>
+      <span class="lbl">거르기</span>
       <select id="fGrade" onchange="applyFilters()"><option value="">전체 학년</option></select>
       <select id="fClass" onchange="applyFilters()"><option value="">전체 반</option></select>
       <select id="fSubject" onchange="applyFilters()"><option value="">전체 과목</option></select>
@@ -1342,27 +1392,27 @@ body{letter-spacing:-0.01em}
       <label class="my-students-toggle" id="myStudentsLabel" style="display:none">
         <input type="checkbox" id="fMyStudents" onchange="applyFilters()"> 👩‍🏫 내 학생만
       </label>
-      <button class="btn-export" onclick="clearFilters()" style="color:var(--ink3);background:rgba(0,0,0,.04)">↺ 초기화</button>
+      <button class="btn-export" onclick="clearFilters()" style="color:var(--ink3);background:rgba(0,0,0,.04)">초기화</button>
       <span style="flex:1"></span>
       <span class="lbl" id="filterStats" style="color:var(--pr)"></span>
     </div>
 
     <!-- VIEW MODE TABS -->
     <div class="view-tabs">
-      <button class="vm-tab on" data-view="default" onclick="switchView('default')">📊 종합 현황</button>
-<button class="vm-tab" data-view="orchard" onclick="switchView('orchard')">🌳 우리 반 과수원</button>
-      <button class="vm-tab" data-view="top5" onclick="switchView('top5')">🏆 TOP 5</button>
-      <button class="vm-tab" data-view="deep" onclick="switchView('deep')">🔬 심화 분석</button>
-      <button class="vm-tab" data-view="subjects" onclick="switchView('subjects')">📚 과목별 보기</button>
-      <button class="vm-tab" data-view="students" onclick="switchView('students')">👩‍🎓 학생별 보기</button>
-      <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">🎯 자가체크</button>
-      <button class="vm-tab" data-view="board" onclick="switchView('board')">🗂️ 질문 보드</button>
-      <button class="vm-tab" data-view="picked" onclick="switchView('picked')">⭐ 대표 질문</button>
-      <button class="vm-tab" data-view="stamp" onclick="switchView('stamp')">⚡ 빠른 피드백</button>
-      <button class="vm-tab" data-view="nudge" onclick="switchView('nudge')">🌿 되묻기 일괄</button>
-      <button class="vm-tab" data-view="label" onclick="switchView('label')">🏷️ 라벨</button>
-      <button class="vm-tab" data-view="repair" onclick="switchView('repair')">🔧 깨진 질문</button>
-      <button class="vm-tab" data-view="growth" onclick="switchView('growth')">📈 성장·리포트</button>
+      <button class="vm-tab on" data-view="default" onclick="switchView('default')">종합 현황</button>
+<button class="vm-tab" data-view="orchard" onclick="switchView('orchard')">우리 반 과수원</button>
+      <button class="vm-tab" data-view="top5" onclick="switchView('top5')">TOP 5</button>
+      <button class="vm-tab" data-view="deep" onclick="switchView('deep')">심화 분석</button>
+      <button class="vm-tab" data-view="subjects" onclick="switchView('subjects')">과목별 보기</button>
+      <button class="vm-tab" data-view="students" onclick="switchView('students')">학생별 보기</button>
+      <button class="vm-tab" data-view="selfcheck" onclick="switchView('selfcheck')">자가체크</button>
+      <button class="vm-tab" data-view="board" onclick="switchView('board')">질문 보드</button>
+      <button class="vm-tab" data-view="picked" onclick="switchView('picked')">대표 질문</button>
+      <button class="vm-tab" data-view="stamp" onclick="switchView('stamp')">빠른 피드백</button>
+      <button class="vm-tab" data-view="nudge" onclick="switchView('nudge')">되묻기 일괄</button>
+      <button class="vm-tab" data-view="label" onclick="switchView('label')">라벨</button>
+      <button class="vm-tab" data-view="repair" onclick="switchView('repair')">깨진 질문</button>
+      <button class="vm-tab" data-view="growth" onclick="switchView('growth')">성장·리포트</button>
     </div>
 
     <!-- ═════════ VIEW: 종합 현황 (기본) ═════════ -->
@@ -1376,7 +1426,7 @@ body{letter-spacing:-0.01em}
     <div class="grid grid-4" data-row="top5">
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">03</span> 💧 공감 TOP 5</h2>
+          <h2><span class="num">03</span> 공감 TOP 5</h2>
         </div>
         <div class="section-body">
           <div class="top-list" id="topWater"></div>
@@ -1384,7 +1434,7 @@ body{letter-spacing:-0.01em}
       </div>
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">04</span> 🌿 가지치기 TOP 5</h2>
+          <h2><span class="num">04</span> 가지치기 TOP 5</h2>
         </div>
         <div class="section-body">
           <div class="top-list" id="topBranch"></div>
@@ -1392,7 +1442,7 @@ body{letter-spacing:-0.01em}
       </div>
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">05</span> 🕊️ 익명 질문 TOP 5</h2>
+          <h2><span class="num">05</span> 익명 질문 TOP 5</h2>
         </div>
         <div class="section-body">
           <div class="top-list" id="topAnon"></div>
@@ -1400,7 +1450,7 @@ body{letter-spacing:-0.01em}
       </div>
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">06</span> 💧 공감 많이 준 학생</h2>
+          <h2><span class="num">06</span> 공감 많이 준 학생</h2>
         </div>
         <div class="section-body">
           <div class="top-list" id="topGiver"></div>
@@ -1412,8 +1462,8 @@ body{letter-spacing:-0.01em}
     <div class="grid grid-2" data-row="deep">
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">07</span> ☁️ 질문 워드클라우드</h2>
-          <span class="sub">Top tokens in questions</span>
+          <h2><span class="num">07</span> 질문 워드클라우드</h2>
+          <span class="sub">질문에 많이 나온 낱말</span>
         </div>
         <div class="section-body">
           <div class="wc-container" id="wordcloud"></div>
@@ -1421,8 +1471,8 @@ body{letter-spacing:-0.01em}
       </div>
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">08</span> 🔍 질문 사고 수준 분석</h2>
-          <span class="sub">Auto-classification · Bloom taxonomy-lite</span>
+          <h2><span class="num">08</span> 질문 사고 수준 분석</h2>
+          <span class="sub">질문 유형 자동 분류</span>
         </div>
         <div class="section-body">
           <div class="cat-wrap">
@@ -1445,8 +1495,8 @@ body{letter-spacing:-0.01em}
     <!-- ROW 4: 반의 숲 한눈보기 -->
     <div class="section" data-row="deep">
       <div class="section-hdr">
-        <h2><span class="num">09</span> 🌳 우리 반의 숲</h2>
-        <span class="sub" id="forestSub">Every student's tree at a glance</span>
+        <h2><span class="num">09</span> 우리 반의 숲</h2>
+        <span class="sub" id="forestSub">학생 나무를 한눈에</span>
       </div>
       <div class="section-body">
         <div class="forest-wrap" id="forestWrap"></div>
@@ -1458,10 +1508,10 @@ body{letter-spacing:-0.01em}
     <div class="grid grid-3" data-row="deep">
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">10</span> 👩‍🎓 학생별 현황</h2>
+          <h2><span class="num">10</span> 학생별 현황</h2>
           <div style="display:flex;gap:10px;align-items:center">
             <span class="badge" id="studentCount">0명</span>
-            <button class="btn-export" onclick="exportCSV('students')">↓ CSV</button>
+            <button class="btn-export" onclick="exportCSV('students')">CSV</button>
           </div>
         </div>
         <div class="section-body"><div class="tbl-wrap">
@@ -1484,7 +1534,7 @@ body{letter-spacing:-0.01em}
         </div></div>
       </div>
       <div class="section">
-        <div class="section-hdr"><h2><span class="num">11</span> 🏷️ 태그 분포</h2></div>
+        <div class="section-hdr"><h2><span class="num">11</span> 태그 분포</h2></div>
         <div class="section-body"><div class="tags-grid" id="tagsGrid"></div></div>
       </div>
     </div>
@@ -1493,10 +1543,10 @@ body{letter-spacing:-0.01em}
     <div class="grid grid-3" data-row="main">
       <div class="section">
         <div class="section-hdr">
-          <h2><span class="num">12</span> ❓ 최근 질문</h2>
+          <h2><span class="num">12</span> 최근 질문</h2>
           <div style="display:flex;gap:10px;align-items:center">
             <span class="badge" id="questionCount">0개</span>
-            <button class="btn-export" onclick="exportCSV('questions')">↓ CSV</button>
+            <button class="btn-export" onclick="exportCSV('questions')">CSV</button>
           </div>
         </div>
         <div class="section-body"><div class="tbl-wrap">
@@ -1519,7 +1569,7 @@ body{letter-spacing:-0.01em}
         </div></div>
       </div>
       <div class="section">
-        <div class="section-hdr"><h2><span class="num">13</span> 📚 과목별</h2></div>
+        <div class="section-hdr"><h2><span class="num">13</span> 과목별</h2></div>
         <div class="section-body"><div class="tbl-wrap">
           <table>
             <thead><tr><th>과목</th><th>질문</th><th>해결</th><th>해결률</th></tr></thead>
@@ -1534,8 +1584,8 @@ body{letter-spacing:-0.01em}
       <div class="grid grid-2" style="margin-top:14px">
         <div class="section">
           <div class="section-hdr">
-            <h2>📈 30일 활동 추이</h2>
-            <span class="sub">Daily · Questions / Resolved / Waters</span>
+            <h2>30일 활동 추이</h2>
+            <span class="sub">날마다 질문·해결·물 주기</span>
           </div>
           <div class="section-body pad">
             <canvas id="timeChart" class="chart-canvas"></canvas>
@@ -1543,8 +1593,8 @@ body{letter-spacing:-0.01em}
         </div>
         <div class="section">
           <div class="section-hdr">
-            <h2>🔥 요일 × 주차 참여도</h2>
-            <span class="sub">Heatmap · Last 8 weeks</span>
+            <h2>요일 × 주차 참여도</h2>
+            <span class="sub">최근 8주</span>
           </div>
           <div class="section-body">
             <div class="heatmap-wrap">
@@ -1574,7 +1624,7 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewOrchard" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>🌳 우리 반 과수원</h2>
+          <h2>우리 반 과수원</h2>
           <span class="sub">새 질문이 올라오면 그 학생의 나무가 <b>반짝여요</b> · 나무를 누르면 질문이 열려요</span>
         </div>
         <div class="section-body">
@@ -1603,8 +1653,8 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewSubjects" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>📚 과목별 상세 분석</h2>
-          <span class="sub">Per-Subject Deep Dive · 각 과목의 질문·참여·학생을 상세히</span>
+          <h2>과목별 상세 분석</h2>
+          <span class="sub">각 과목의 질문·참여·학생을 상세히</span>
         </div>
         <div class="section-body pad" id="subjectsViewBody"></div>
       </div>
@@ -1614,8 +1664,8 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewStudents" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>👩‍🎓 학생별 카드 뷰</h2>
-          <span class="sub">Per-Student Card View · 학생 카드를 클릭하면 상세 드릴다운</span>
+          <h2>학생별 카드 뷰</h2>
+          <span class="sub">학생 카드를 클릭하면 상세 드릴다운</span>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
             <select id="sortStudents" onchange="renderStudentsView()" style="padding:5px 10px;border:1.5px solid var(--rule);border-radius:3px;font-size:11px;background:var(--surface2);font-family:var(--mono)">
               <option value="grade">학년·반·번호</option>
@@ -1634,13 +1684,13 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewSelfcheck" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>🎯 좋은 질문 자가체크</h2>
+          <h2>좋은 질문 자가체크</h2>
           <span class="sub">학생들이 7가지 특성에 단 근거 모아보기 · 📥 생기부·과세특용 내보내기</span>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button class="exp-btn" onclick="exportQuestionsCSV()">📥 질문 상세 CSV</button>
-            <button class="exp-btn" onclick="exportStudentsCSV()">📥 학생 요약 CSV</button>
-            <button class="exp-btn" onclick="exportSelfcheckCSV()">📥 자가체크 근거 CSV</button>
-            <button class="exp-btn" onclick="exportProcessCSV()" title="질문 하나 = 한 줄. 예상·방법·찾기·정리·넓히기와 해결 정도까지 — AI 분석용">📥 탐구 과정 전체 CSV</button>
+            <button class="exp-btn" onclick="exportQuestionsCSV()">질문 상세 CSV</button>
+            <button class="exp-btn" onclick="exportStudentsCSV()">학생 요약 CSV</button>
+            <button class="exp-btn" onclick="exportSelfcheckCSV()">자가체크 근거 CSV</button>
+            <button class="exp-btn" onclick="exportProcessCSV()" title="질문 하나 = 한 줄. 예상·방법·찾기·정리·넓히기와 해결 정도까지 — AI 분석용">탐구 과정 전체 CSV</button>
             <label style="font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="procCsvNames">이름 넣기</label>
           </div>
         </div>
@@ -1655,14 +1705,14 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewBoard" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>🗂️ 질문 보드 — 단원별 모아보기</h2>
+          <h2>질문 보드 — 단원별 모아보기</h2>
           <span class="sub">학급 질문을 단원(성취기준) 기준으로 모아봐요 · 위 필터(학년·반·과목)가 함께 적용됩니다</span>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select id="boardUnitSel" class="board-unit-sel" onchange="onBoardUnitChange(this.value)"><option value="">📑 전체 단원</option></select>
-            <button class="bmode-btn" id="noUnitCsvBtn" onclick="exportNoUnitCSV()" title="단원이 안 붙은 질문만 CSV 로 — 분류해서 되돌려 넣을 수 있어요">📥 미지정 CSV</button>
-            <button class="bmode-btn" onclick="openUnitApply()" title="분류를 마친 CSV 를 붙여 넣으면 UPDATE SQL 을 만들어 줘요">📤 분류 결과 넣기</button>
+            <button class="bmode-btn" id="noUnitCsvBtn" onclick="exportNoUnitCSV()" title="단원이 안 붙은 질문만 CSV 로 — 분류해서 되돌려 넣을 수 있어요">미지정 CSV</button>
+            <button class="bmode-btn" onclick="openUnitApply()" title="분류를 마친 CSV 를 붙여 넣으면 UPDATE SQL 을 만들어 줘요">분류 결과 넣기</button>
             <button class="bmode-btn on" data-bmode="board" onclick="setBoardMode('board')">🗂️ 보드</button>
-            <button class="bmode-btn" data-bmode="map" onclick="setBoardMode('map')">🧠 마인드맵</button>
+            <button class="bmode-btn" data-bmode="map" onclick="setBoardMode('map')">마인드맵</button>
           </div>
         </div>
         <div class="section-body" id="boardBody"></div>
@@ -1673,7 +1723,7 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewStamp" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>⚡ 빠른 피드백 — 질문에 도장 찍기</h2>
+          <h2>빠른 피드백 — 질문에 도장 찍기</h2>
           <span class="sub">질문 한 장씩 넘기며 <b>숫자키 1~6</b> 으로 도장 · 학생 화면에 바로 보입니다 · 위 필터(학년·반·기간)가 함께 적용됩니다</span>
         </div>
         <div class="section-body" id="stampBody"></div>
@@ -1683,10 +1733,10 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewLabel" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>🏷️ 라벨 — 내 기준으로 분류하기</h2>
+          <h2>라벨 — 내 기준으로 분류하기</h2>
           <span class="sub">질문 유형 자동 분류는 <b>남의 기준</b>이에요 · 여기 쌓이는 이름표가 <b>내 수업의 언어</b>가 됩니다 · 학생에게는 보이지 않아요</span>
           <div style="margin-left:auto;display:flex;gap:6px">
-            <button class="st-nav" onclick="lbExportCSV()">📥 CSV</button>
+            <button class="st-nav" onclick="lbExportCSV()">CSV</button>
           </div>
         </div>
         <div class="section-body" id="labelBody"></div>
@@ -1696,7 +1746,7 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewNudge" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>🌿 되묻기 일괄 — 차시별로 한 번에</h2>
+          <h2>되묻기 일괄 — 차시별로 한 번에</h2>
           <span class="sub">질문을 뽑아 AI 에게 초안을 받고 <b>한 줄씩 확인한 뒤</b> 올립니다 · 올린 되묻기는 학생 화면에 바로 보여요</span>
         </div>
         <div class="section-body" id="nudgeBody"></div>
@@ -1707,11 +1757,11 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewPicked" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>⭐ 차시별 대표 질문</h2>
+          <h2>차시별 대표 질문</h2>
           <span class="sub">학생이 다듬어서 <b>차시당 2개</b>로 남긴 질문 · 이걸로 수업합니다 · 카드를 누르면 해결 과정이 열려요</span>
           <div style="margin-left:auto;display:flex;gap:6px">
-            <button class="st-nav" onclick="pkExportCSV()">📥 CSV</button>
-            <button class="st-nav primary" onclick="pkBoard()">📺 수업용 크게</button>
+            <button class="st-nav" onclick="pkExportCSV()">CSV</button>
+            <button class="st-nav primary" onclick="pkBoard()">수업용 크게</button>
           </div>
         </div>
         <div class="section-body" id="pickedBody"></div>
@@ -1720,10 +1770,10 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewRepair" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>🔧 깨진 질문 되살리기</h2>
+          <h2>깨진 질문 되살리기</h2>
           <span class="sub">태블릿 한글 입력기가 고장 났을 때 저장된 질문을 원래대로 되돌립니다 · <b>전체 질문</b>을 검사합니다(위 필터와 무관)</span>
           <div style="margin-left:auto">
-            <button class="st-nav primary" onclick="rpScan()">🔍 검사하기</button>
+            <button class="st-nav primary" onclick="rpScan()">검사하기</button>
           </div>
         </div>
         <div class="section-body" id="repairBody">
@@ -1735,10 +1785,10 @@ body{letter-spacing:-0.01em}
     <div class="view-body" id="viewGrowth" style="display:none">
       <div class="section">
         <div class="section-hdr">
-          <h2>📈 질문 성장 · 단계 분석</h2>
+          <h2>질문 성장 · 단계 분석</h2>
           <span class="sub">수업 전→후 질문이 늘어난 "건강한 수업" 지표 · 확장 현황</span>
           <div style="margin-left:auto">
-            <button class="exp-btn" onclick="printClassReport()">🖨️ 학급 리포트 인쇄 / PDF</button>
+            <button class="exp-btn" onclick="printClassReport()">학급 리포트 인쇄 / PDF</button>
           </div>
         </div>
         <div class="section-body pad" id="growthBody"></div>
@@ -1755,12 +1805,12 @@ body{letter-spacing:-0.01em}
       <div class="dd-topbar-l">
         <button class="dd-back" onclick="closeDrilldown()">← 목록</button>
         <div class="dd-title" id="ddTitle">학생 상세</div>
-        <span class="dd-tag">Student Drilldown</span>
+        
       </div>
       <div class="dd-actions">
-        <button class="dd-btn" onclick="exportStudentCSV()">↓ CSV</button>
-        <button class="dd-btn" onclick="printStudentPortfolio()">📄 포트폴리오</button>
-        <button class="dd-btn primary" onclick="printDrilldown()">🖨 PDF 리포트</button>
+        <button class="dd-btn" onclick="exportStudentCSV()">CSV</button>
+        <button class="dd-btn" onclick="printStudentPortfolio()">포트폴리오</button>
+        <button class="dd-btn primary" onclick="printDrilldown()">PDF 리포트</button>
       </div>
     </div>
     <div class="dd-body" id="ddBody">
@@ -1826,7 +1876,7 @@ let allQuestions = [];
 
 /* 🏷️ 어느 판이 떠 있는지. GitHub Pages 는 10분 캐시라 새로고침해도 옛 파일이
    다시 뜨는 일이 있다. 화면에 적어 두면 «고쳤는데 그대로예요» 를 한 번에 가른다. */
-const BUILD = '11-03 a · 학생별 상세 = 탐구 과정(그래프 뺌) · 탐구 과정 전체 CSV';
+const BUILD = '11-04 a · 구글 디자인(흰 바탕·파란 강조·Roboto/Noto Sans KR)·영어 라벨·제목 이모지 뺌';
 let allSubjects = [];
 let allBranches = [];
 
@@ -2795,7 +2845,7 @@ function renderGrowthView(){
         return `<tr><td><b>${c.grade}-${c.class_no}</b></td><td>${c.students}</td><td>${c.total}</td><td>${c.before}</td><td>${c.after}</td><td>${c.expanded}</td><td>${healthy?`<span class="gv-ok">🌳 ${ratio}%</span>`:'<span class="gv-low">🌱 시작 단계</span>'}</td></tr>`;
       }).join('')}</tbody>
     </table>
-    ${g.chains.length?`<h3 class="gv-h">🌿 질문이 자란 사례</h3>
+    ${g.chains.length?`<h3 class="gv-h">질문이 자란 사례</h3>
       <div class="gv-chains">${g.chains.map(ch=>`<div class="gv-chain"><span class="gv-from">${esc(ch.from)}</span><i>→</i><span class="gv-to">${esc(ch.to)}</span></div>`).join('')}</div>`:''}`;
 }
 
@@ -2831,7 +2881,7 @@ function printClassReport(){
     @media print{body{margin:12mm}.no-print{display:none}}
     .foot{margin-top:24px;color:#888;font-size:10px;text-align:center}
   </style></head><body>
-    <h1>🌳 ${SCHOOL_SHORT} ${APP_NAME} — 학급 리포트</h1>
+    <h1>${SCHOOL_SHORT} ${APP_NAME} — 학급 리포트</h1>
     <div class="meta">범위: ${esc(scope)} ${teacher?(' · 교사: '+esc(teacher)):''} · 작성일: ${today()}</div>
     <div class="cards">
       <div class="card"><b>${filteredStudents.length}</b><span>학생</span></div>
@@ -3235,10 +3285,10 @@ function renderStampView(){
       '<div class="st-done-t">이번 묶음 끝! 도장 ' + _stDone + '개를 찍었어요</div>' +
       '<div class="st-done-s">학생 화면에 바로 보입니다.</div>' +
       '<div class="st-foot">' +
-      '<button class="st-nav" onclick="stGo(-1)">← 마지막 질문으로</button>' +
-      (_stLast ? '<button class="st-nav danger" onclick="stUndo()">↩ 방금 찍은 것 취소' +
+      '<button class="st-nav" onclick="stGo(-1)">마지막 질문으로</button>' +
+      (_stLast ? '<button class="st-nav danger" onclick="stUndo()">방금 찍은 것 취소' +
                  (STAMP_BY[_stLast.key] ? ' (' + STAMP_BY[_stLast.key].e + ')' : '') + '</button>' : '') +
-      '<button class="st-nav primary" onclick="stBuild(true)">🔄 남은 질문 다시 모으기</button>' +
+      '<button class="st-nav primary" onclick="stBuild(true)">남은 질문 다시 모으기</button>' +
       '</div></div>';
     return;
   }
@@ -3288,11 +3338,11 @@ function renderStampView(){
   h += '</div>';
 
   h += '<div class="st-foot">' +
-       '<button class="st-nav" onclick="stGo(-1)" ' + (_stIdx === 0 ? 'disabled' : '') + '>← 이전</button>' +
+       '<button class="st-nav" onclick="stGo(-1)" ' + (_stIdx === 0 ? 'disabled' : '') + '>이전</button>' +
        '<button class="st-nav" onclick="stNext()">건너뛰기 (Space)</button>' +
-       '<button class="st-nav danger" onclick="stDelete()">🧹 지우기</button>' +
-       (st ? '<button class="st-nav danger" onclick="stClear()">✕ 이 도장 취소</button>' : '') +
-       (_stLast ? '<button class="st-nav danger" onclick="stUndo()">↩ 방금 찍은 것 취소' +
+       '<button class="st-nav danger" onclick="stDelete()">지우기</button>' +
+       (st ? '<button class="st-nav danger" onclick="stClear()">이 도장 취소</button>' : '') +
+       (_stLast ? '<button class="st-nav danger" onclick="stUndo()">방금 찍은 것 취소' +
                   (STAMP_BY[_stLast.key] ? ' (' + STAMP_BY[_stLast.key].e + ')' : '') + '</button>' : '') +
        '<button class="st-nav" onclick="stToggleNew()">' +
        (_stOnlyNew ? '📋 전체 보기' : '🆕 안 찍은 것만') + '</button>' +
@@ -3668,7 +3718,7 @@ function renderRepair(){
       '<button class="st-nav" onclick="rpAll(true)">전부 선택</button>' +
       '<button class="st-nav" onclick="rpAll(false)">전부 해제</button>' +
       '<button class="st-nav" onclick="rpAll(true,&quot;한영전환 실패&quot;)">한영전환만 선택</button>' +
-      '<button class="st-nav primary" onclick="rpApply()">✅ 선택한 ' + n + '건 고치기</button>' +
+      '<button class="st-nav primary" onclick="rpApply()">선택한 ' + n + '건 고치기</button>' +
     '</div></div>';
 
   h += _rpList.map(r => {
@@ -3773,7 +3823,7 @@ function openUnitApply(){
       'placeholder="1234,2-1&#10;1235,2-1&#10;1236,2-3"></textarea>' +
     '<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">' +
       '<button class="bmode-btn on" onclick="buildUnitSQL()">🧾 SQL 만들기</button>' +
-      '<button class="bmode-btn" onclick="copyUnitSQL()">📋 복사</button>' +
+      '<button class="bmode-btn" onclick="copyUnitSQL()">복사</button>' +
       '<span id="unitApplyMsg" style="font-size:11.5px;color:var(--ink3);align-self:center"></span>' +
     '</div>' +
     '<textarea id="unitApplyOut" readonly style="width:100%;min-height:120px;margin-top:9px;display:none;' +
@@ -4063,7 +4113,7 @@ function printStudentPortfolio(){
     @media print{body{margin:12mm}}
     .foot{margin-top:24px;color:#888;font-size:10px;text-align:center}
   </style></head><body>
-    <h1>📄 ${esc(s.name||'학생')} 탐구 포트폴리오</h1>
+    <h1>${esc(s.name||'학생')} 탐구 포트폴리오</h1>
     <div class="meta">${esc(s.grade)}학년 ${esc(s.class_no)}반 ${esc(s.number)}번${teacher?(' · 교사: '+esc(teacher)):''} · 작성일: ${today()}</div>
     <div class="cards">
       <div class="card"><b>${total}</b><span>심은 질문</span></div>
@@ -4240,7 +4290,7 @@ function pkBoard(){
     '.q{font-size:30px;line-height:1.5;margin:0 0 18px;padding:20px 26px;background:#1D1A16;' +
     '  border-left:5px solid #F0B357;border-radius:0 12px 12px 0}' +
     '.c{font-size:14px;color:#8E877A;margin-top:8px}' +
-    '</style></head><body><h1>⭐ 오늘 우리가 풀 질문</h1>';
+    '</style></head><body><h1>오늘 우리가 풀 질문</h1>';
   Object.keys(byUnit).sort(function(a,b){ return a.localeCompare(b,'en',{numeric:true}); })
     .forEach(function(u){
       h += '<div class="u">📑 ' + esc(u) + '</div>';
@@ -4329,7 +4379,7 @@ function renderNudgeView(){
         '<b>되묻기 · 도장 · 라벨 · 별표 · 다듬기피드백 · 해결피드백</b> 칸 채우기 → ③ <b>올리기</b> → 표에서 한 줄씩 확인 → 반영.<br>' +
         '비워 둔 칸은 건드리지 않아요. <code>-</code> 를 적으면 지웁니다. 이름·번호는 파일에 안 들어가고 <code>id</code> 로 맞춥니다.</div>' +
       '<div class="nd-bar">' +
-        '<button class="st-nav primary" onclick="fbExportCSV()"' + (pool.length ? '' : ' disabled') + '>📥 피드백 CSV 내려받기 (' + pool.length + '개)</button>' +
+        '<button class="st-nav primary" onclick="fbExportCSV()"' + (pool.length ? '' : ' disabled') + '>피드백 CSV 내려받기 (' + pool.length + '개)</button>' +
         '<label class="st-nav fb-up">📤 채운 CSV 올리기<input type="file" accept=".csv,text/csv" onchange="fbLoadFile(event)"></label>' +
         '<span class="nd-msg" id="fbMsg"></span>' +
       '</div>' +
@@ -4343,7 +4393,7 @@ function renderNudgeView(){
             ? ('선생님이 이미 쓴 되묻기 <b>' + voice.length + '개</b>를 문체 예시로 함께 넣어요.')
             : '아직 쓰신 되묻기가 없어서 <b>원칙만</b> 넣습니다. 몇 개 직접 쓰시면 다음부터 그 문체를 따라가요.') +
         '</div>' +
-        '<button class="st-nav primary" onclick="ndCopyPrompt()"' + (todo.length ? '' : ' disabled') + '>📋 프롬프트 복사</button>' +
+        '<button class="st-nav primary" onclick="ndCopyPrompt()"' + (todo.length ? '' : ' disabled') + '>프롬프트 복사</button>' +
       '</div>' +
       '<div class="nd-step">' +
         '<div class="nd-step-h">② AI 에 붙여넣기</div>' +
@@ -4357,7 +4407,7 @@ function renderNudgeView(){
     '</div>' +
     '<textarea class="nd-ta" id="ndIn" placeholder="AI 가 준 표를 여기에 붙여넣으세요&#10;&#10;1234 | 캔이 «어느 쪽으로» 움직였는지 먼저 적어볼까요?&#10;1235 | 무엇 하나만 바꿔서 다시 해본다면 무엇을 바꿔볼래요?"></textarea>' +
     '<div class="nd-bar">' +
-      '<button class="st-nav primary" onclick="ndParse()">📖 표로 펼치기</button>' +
+      '<button class="st-nav primary" onclick="ndParse()">표로 펼치기</button>' +
       '<button class="st-nav" onclick="ndClear()">지우기</button>' +
       '<span class="nd-msg" id="ndMsg"></span>' +
     '</div>' +
@@ -4519,7 +4569,7 @@ function ndPaintTable(){
     '<div class="nd-bar">' +
       '<button class="st-nav" onclick="ndAll(true)">전부 체크</button>' +
       '<button class="st-nav" onclick="ndAll(false)">전부 해제</button>' +
-      '<button class="st-nav primary" id="ndGo" onclick="ndApply()"' + (on ? '' : ' disabled') + '>✅ ' + on + '개 올리기</button>' +
+      '<button class="st-nav primary" id="ndGo" onclick="ndApply()"' + (on ? '' : ' disabled') + '>' + on + '개 올리기</button>' +
       '<span class="nd-msg" id="ndGoMsg"></span>' +
     '</div>';
 }
@@ -4688,7 +4738,7 @@ function fbPaintTable(){
   const pm = {}; (allProfiles||[]).forEach(function(p){ pm[p.id] = p; });
   const on = _fbRows.filter(function(r){ return r.on; }).length;
   let h = '<div class="nd-bar"><label class="nd-chk"><input type="checkbox" ' + (on === _fbRows.length ? 'checked' : '') + ' onchange="fbAll(this.checked)"> 전체</label>' +
-    '<button class="st-nav primary" id="fbGo" onclick="fbApply()"' + (on ? '' : ' disabled') + '>✅ ' + on + '개 반영하기</button>' +
+    '<button class="st-nav primary" id="fbGo" onclick="fbApply()"' + (on ? '' : ' disabled') + '>' + on + '개 반영하기</button>' +
     '<span class="nd-msg" id="fbGoMsg"></span></div>';
   h += '<div class="fb-rows">';
   _fbRows.forEach(function(r, i){
@@ -5229,22 +5279,22 @@ function renderSummary(){
 
   $('summary').innerHTML = `
     <div class="scard" data-accent="green">
-      <div class="scard-lbl"><span class="dot"></span>Students</div>
+      <div class="scard-lbl"><span class="dot"></span>학생</div>
       <div class="scard-val">${totalStudents}<span class="sub">명</span></div>
       <div class="scard-meta">오늘 활동 <span class="delta up">${activeToday}</span>명</div>
     </div>
     <div class="scard" data-accent="amber">
-      <div class="scard-lbl"><span class="dot"></span>Total Questions</div>
+      <div class="scard-lbl"><span class="dot"></span>전체 질문</div>
       <div class="scard-val">${totalQs}<span class="sub">개</span></div>
       <div class="scard-meta">1인당 평균 <span class="delta">${avgQ}</span>개</div>
     </div>
     <div class="scard" data-accent="green">
-      <div class="scard-lbl"><span class="dot"></span>Resolved</div>
+      <div class="scard-lbl"><span class="dot"></span>해결</div>
       <div class="scard-val">${totalR}<span class="sub">/${pct}%</span></div>
       <div class="scard-meta">해결 완료한 질문</div>
     </div>
     <div class="scard" data-accent="blue">
-      <div class="scard-lbl"><span class="dot"></span>Empathy · Waters</div>
+      <div class="scard-lbl"><span class="dot"></span>공감(물 주기)</div>
       <div class="scard-val">${totalW}<span class="sub">💧</span></div>
       <div class="scard-meta">반 친구들과 공감한 수</div>
     </div>
@@ -5259,7 +5309,7 @@ function renderSummary(){
       <div class="scard-meta">🌫 막힘 <span class="delta">${nStk}</span>개 · 여기가 다음 수업감</div>
     </div>
     <div class="scard" data-accent="purple">
-      <div class="scard-lbl"><span class="dot"></span>Anonymous</div>
+      <div class="scard-lbl"><span class="dot"></span>익명</div>
       <div class="scard-val">${totalA}<span class="sub">/${anonPct}%</span></div>
       <div class="scard-meta">익명 질문(바람의 잎)</div>
     </div>
@@ -5708,7 +5758,7 @@ function renderForest(){
     .sort((a,b)=>b[1]-a[1])
     .map(([k,v])=>`<span>${TREE_STYLES[k]?.emoji||'🌳'} ${TREE_STYLES[k]?.name||k} <strong style="color:var(--ink);margin-left:3px">${v}</strong></span>`)
     .join('');
-  $('forestLegend').innerHTML = `<strong style="color:var(--ink);font-family:var(--mono);letter-spacing:.08em">SPECIES</strong> ${speciesLegend}`;
+  $('forestLegend').innerHTML = `<strong style="color:var(--ink);font-family:var(--mono);letter-spacing:0">나무 종류</strong> ${speciesLegend}`;
 }
 
 /* ══ 🌳 우리 반 과수원 ═════════════════════════════════════════════════════
@@ -6768,7 +6818,7 @@ function renderDrilldownBody(){
   $('ddBody').innerHTML = `
     <!-- 프린트 전용 헤더 -->
     <div class="dd-print-header">
-      <h1>🌳 ${SCHOOL_SHORT} ${APP_NAME} · 학생 리포트</h1>
+      <h1>${SCHOOL_SHORT} ${APP_NAME} · 학생 리포트</h1>
       <div class="sub">${esc(s.grade)}학년 ${esc(s.class_no)}반 ${esc(s.number)}번 · ${esc(s.name)} · ${today()}</div>
     </div>
 
@@ -6796,11 +6846,11 @@ function renderDrilldownBody(){
     <!-- 👥 교사 협업 메모 (다중 교사 공유) -->
     <div class="dd-chart-sec dd-notes-sec">
       <div class="dd-chart-hdr">
-        <h3>👥 교사 협업 메모 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-left:6px">${teacherNotes.length} notes · 다른 선생님과 공유</span></h3>
+        <h3>교사 협업 메모 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-left:6px">${teacherNotes.length}개 · 다른 선생님과 공유</span></h3>
       </div>
       <div class="dd-notes-input">
         <textarea id="ddNoteInput" placeholder="이 학생에 대한 관찰·피드백·소통 내용을 메모하세요. 다른 선생님과 공유돼요. (Ctrl+Enter로 저장)" rows="2"></textarea>
-        <button class="dd-btn primary" onclick="addStudentNote('${s.id}')">💾 메모 추가</button>
+        <button class="dd-btn primary" onclick="addStudentNote('${s.id}')">메모 추가</button>
       </div>
       <div class="dd-notes-list" id="ddNotesList">
         ${teacherNotes.length === 0 ? `
@@ -6820,14 +6870,14 @@ function renderDrilldownBody(){
 
     <!-- 탐구 과정 한눈에 -->
     <div class="dd-chart-sec">
-      <div class="dd-chart-hdr"><h3>🔬 탐구 과정 한눈에 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;margin-left:6px">질문 ${total}개 · 해결 정도와 칸별 채움</span></h3></div>
+      <div class="dd-chart-hdr"><h3>탐구 과정 한눈에 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;margin-left:6px">질문 ${total}개 · 해결 정도와 칸별 채움</span></h3></div>
       ${procSummaryHTML(sortedQs)}
     </div>
 
     <!-- QUESTION LIST -->
     <div class="dd-qs-sec">
       <div class="dd-qs-hdr">
-        <h3>❓ 질문 기록 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-left:6px">Total ${total} · Resolved ${resolved} · Anonymous ${anon}</span></h3>
+        <h3>질문 기록 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;letter-spacing:.05em;margin-left:6px">전체 ${total} · 해결 ${resolved} · 익명 ${anon}</span></h3>
         <div class="dd-qs-tabs">
           <button class="dd-qs-tab on" data-filter="all" onclick="filterDDQs('all')">전체 ${total}</button>
           <button class="dd-qs-tab" data-filter="resolved" onclick="filterDDQs('resolved')">해결 ${resolved}</button>
@@ -6841,7 +6891,7 @@ function renderDrilldownBody(){
     <!-- 학생이 단 꼬리질문 -->
     ${branchesByMe.length ? `
     <div class="dd-qs-sec">
-      <div class="dd-qs-hdr"><h3>🌿 다른 친구에게 단 꼬리질문 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;margin-left:6px">${branchesByMe.length}개</span></h3></div>
+      <div class="dd-qs-hdr"><h3>다른 친구에게 단 꼬리질문 <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600;margin-left:6px">${branchesByMe.length}개</span></h3></div>
       <div class="dd-qs-list">
         ${renderBranchesByMe(branchesByMe)}
       </div>
@@ -6931,7 +6981,7 @@ function filterDDQs(mode){
         <div class="dd-q-editor" id="nudgeEd-${q.id}" style="display:none">
           <textarea id="nudgeTx-${q.id}" placeholder="답이 아니라 '더 깊은 질문'으로 되물어 보세요. 예: 좋은 질문! 그럼 ~라면 어떻게 될까?">${esc(q.teacher_nudge||'')}</textarea>
           <div class="dd-q-editor-btns">
-            <button class="dd-btn primary" onclick="saveNudge(${q.id})">💾 되묻기 남기기</button>
+            <button class="dd-btn primary" onclick="saveNudge(${q.id})">되묻기 남기기</button>
             ${q.teacher_nudge?`<button class="dd-btn" onclick="clearNudge(${q.id})">지우기</button>`:''}
           </div>
         </div>
@@ -6939,7 +6989,7 @@ function filterDDQs(mode){
           ${q.refined_text ? `<div class="dd-q-record" style="margin-bottom:6px">✨ <strong>다듬은 질문:</strong> ${esc(q.refined_text)}</div>` : ''}
           <textarea id="refineTx-${q.id}" placeholder="다듬은 질문에 한마디 — 무엇이 좋아졌고, 어디를 더 좁히면 좋을지">${esc(q.teacher_refine_note||'')}</textarea>
           <div class="dd-q-editor-btns">
-            <button class="dd-btn primary" onclick="saveNote('refine',${q.id})">💾 다듬기 피드백 남기기</button>
+            <button class="dd-btn primary" onclick="saveNote('refine',${q.id})">다듬기 피드백 남기기</button>
             ${q.teacher_refine_note?`<button class="dd-btn" onclick="saveNote('refine',${q.id},true)">지우기</button>`:''}
           </div>
         </div>
@@ -6947,14 +6997,14 @@ function filterDDQs(mode){
           ${(q.solve&&(q.solve.answer||'').trim()) ? `<div class="dd-q-record" style="margin-bottom:6px">🔬 <strong>학생의 답${q.solve.mode==='quick'?' <span style="font-weight:600;color:var(--ink3)">(⚡ 답만 적기)</span>':''}:</strong> ${esc(q.solve.answer)}${(q.solve.mode==='quick' && (q.solve.source||'').trim()) ? ` <span style="color:var(--ink3)">· 📚 ${esc(q.solve.source)}</span>` : ''}</div>` : ''}
           <textarea id="solveTx-${q.id}" placeholder="해결 답변에 한마디 — 맞고 틀림보다, 근거·과정에서 무엇을 더 볼지">${esc(q.teacher_solve_note||'')}</textarea>
           <div class="dd-q-editor-btns">
-            <button class="dd-btn primary" onclick="saveNote('solve',${q.id})">💾 해결 피드백 남기기</button>
+            <button class="dd-btn primary" onclick="saveNote('solve',${q.id})">해결 피드백 남기기</button>
             ${q.teacher_solve_note?`<button class="dd-btn" onclick="saveNote('solve',${q.id},true)">지우기</button>`:''}
           </div>
         </div>
         <div class="dd-q-editor" id="unitEd-${q.id}" style="display:none">
           <input id="unitTx-${q.id}" placeholder="예: 광합성  /  [9과12-01]" value="${esc(q.unit||'')}">
           <div class="dd-q-editor-btns">
-            <button class="dd-btn primary" onclick="saveUnit(${q.id})">💾 단원 저장</button>
+            <button class="dd-btn primary" onclick="saveUnit(${q.id})">단원 저장</button>
           </div>
         </div>
         ${brHtml}
@@ -7175,7 +7225,7 @@ function openWeeklyReport(){
     <div class="pr-sub">${esc(ctx||'전체')} · ${rangeStr} · ${today()} 생성</div>
 
     <div class="pr-sec">
-      <h2>📊 이번 주 한눈에</h2>
+      <h2>이번 주 한눈에</h2>
       <div class="pr-summary">
         <div class="pr-stat"><div class="pr-stat-lbl">활동 학생</div><div class="pr-stat-val">${uniqueAuthors}<span style="font-size:13px;color:#666">명</span></div></div>
         <div class="pr-stat"><div class="pr-stat-lbl">새 질문</div><div class="pr-stat-val">${totalQ}<span style="font-size:13px;color:#666">개</span></div></div>
@@ -7186,14 +7236,14 @@ function openWeeklyReport(){
     </div>
 
     <div class="pr-sec">
-      <h2>⭐ 이번 주 가장 활발한 학생</h2>
+      <h2>이번 주 가장 활발한 학생</h2>
       ${topAuthors.length ? `<ol class="pr-top-list">${topAuthors.map((a,i)=>`
         <li><span class="pr-rank">${i+1}</span><span><strong>${esc(a.name)}</strong> <span style="color:#666">${a.grade}-${a.cls} ${a.num}번</span></span><span style="margin-left:auto;font-family:var(--mono);font-weight:700">${a.count}개</span></li>
       `).join('')}</ol>` : '<p style="font-size:11px;color:#666">이번 주 질문이 없습니다</p>'}
     </div>
 
     <div class="pr-sec">
-      <h2>💧 이번 주 공감 TOP 질문</h2>
+      <h2>이번 주 공감 TOP 질문</h2>
       ${topWater.length ? `<ol class="pr-top-list">${topWater.map((q,i)=>{
         const p=pm[q.user_id];
         const nm = q.is_anonymous ? '익명' : (p?p.name:'?');
@@ -7202,7 +7252,7 @@ function openWeeklyReport(){
     </div>
 
     <div class="pr-sec">
-      <h2>🏷 주제 카테고리 (이번 주)</h2>
+      <h2>주제 카테고리 (이번 주)</h2>
       ${sortedTopics.length ? sortedTopics.map(([k,v])=>{
         const max=sortedTopics[0][1];
         const pct=Math.round(100*v/max);
@@ -7446,7 +7496,7 @@ async function submitBulkCreate(){
 </style>
 <div class="bulk-modal" id="mBulk" onclick="if(event.target.id==='mBulk')closeBulkCreate()">
   <div class="bulk-box">
-    <h2>📋 학생 계정 일괄 생성</h2>
+    <h2>학생 계정 일괄 생성</h2>
     <p class="sub">CSV 또는 Excel 명렬표를 업로드하면 학생 계정이 한 번에 만들어집니다.<br>학생들은 학년·반·번호·비밀번호로 바로 로그인할 수 있어요.</p>
 
     <div id="bulkSelf" style="display:none">
@@ -7530,7 +7580,7 @@ async function submitBulkCreate(){
 </style>
 <div class="live-modal" id="mLive" onclick="if(event.target.id==='mLive')closeLiveModal()">
   <div class="live-box">
-    <h2>🔴 라이브 질문 세션</h2>
+    <h2>라이브 질문 세션</h2>
     <p class="sub">수업 중 "지금, 이걸 보고 질문!"을 열면, 학생 화면에 빨간 배너가 떠요. 학생이 보낸 질문이 아래에 실시간으로 모입니다.</p>
     <div id="liveModalBody"></div>
   </div>
@@ -7579,7 +7629,7 @@ async function submitBulkCreate(){
 <!-- 🎯 좋은 질문 예시 모음 (교사 전용) -->
 <div class="mat-modal" id="mGoodQ" onclick="if(event.target.id===&quot;mGoodQ&quot;)closeGoodQ()">
   <div class="mat-box">
-    <h2>🎯 좋은 질문 예시 모음</h2>
+    <h2>좋은 질문 예시 모음</h2>
     <div id="gqBody"></div>
     <button class="mat-btn" style="width:100%;margin-top:16px" onclick="closeGoodQ()">닫기</button>
   </div>
@@ -7587,7 +7637,7 @@ async function submitBulkCreate(){
 
 <div class="mat-modal" id="mMat" onclick="if(event.target.id==='mMat')closeMaterials()">
   <div class="mat-box">
-    <h2>📚 수업 자료</h2>
+    <h2>수업 자료</h2>
     <p class="sub">사진·동영상을 올리면 <b>내 수업에 참여한 학생</b>의 <b>오늘의 자료 탭</b>에만 표시돼요. 학생들은 자료를 보고 <b>"💡 질문 떠올리기"</b>로 질문을 작성합니다.</p>
 
     <div id="joinCodeBox" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#eaf3e7,#fbefd8);border:1.5px solid #cfe0c6;border-radius:12px;padding:12px 16px;margin:0 0 8px">
@@ -8360,11 +8410,11 @@ applyBranding();
 <!-- ⚙️ 관리 (class-kit) — 초대코드·하루 상한·계정 도움말 -->
 <div class="bulk-modal" id="mAdmin" onclick="if(event.target.id==='mAdmin')closeAdmin()">
   <div class="bulk-box">
-    <h2>⚙️ 관리</h2>
+    <h2>관리</h2>
     <p class="sub">이 학교 설치본을 관리하는 곳입니다. 등록된 교사라면 누구나 바꿀 수 있어요.</p>
 
     <div class="bulk-step">
-      <h3>🔑 교사 초대코드</h3>
+      <h3>교사 초대코드</h3>
       <p>동료 선생님이 «교사 등록»할 때 입력하는 암호예요. 유출됐다 싶으면 바꾸세요.</p>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="admInvite" type="text" placeholder="불러오는 중…" style="flex:1;min-width:180px;padding:8px 10px;border:1.5px solid var(--rule);border-radius:4px;font-family:inherit;font-size:13px">
@@ -8374,7 +8424,7 @@ applyBranding();
     </div>
 
     <div class="bulk-step">
-      <h3>📏 하루 질문 상한</h3>
+      <h3>하루 질문 상한</h3>
       <p>학생 한 명이 <b>하루에</b> 심을 수 있는 질문 수, 도토리 상한, <b>한 차시에</b> 심을 수 있는 수. 서버(app_limits)에 저장돼요.</p>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px">
         하루 <input id="admLimNew" type="number" min="1" max="50" style="width:64px;padding:6px;border:1.5px solid var(--rule);border-radius:4px">개 ·
@@ -8386,7 +8436,7 @@ applyBranding();
     </div>
 
     <div class="bulk-step">
-      <h3>👥 학생 계정</h3>
+      <h3>학생 계정</h3>
       <p>학생은 학생 앱에서 <b>학년·반·번호·이름·비밀번호</b>로 스스로 가입합니다.<br>
          비밀번호를 잊은 학생은 학생 목록의 <b>🔑</b> 단추로 초기화하세요.<br>
          학년 초 진급·졸업 정리, 전체 초기화, 백업은 <code>setup/02_관리_레시피.sql</code>을 SQL Editor에서 실행합니다.</p>

@@ -938,8 +938,8 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
 .draw-color.on{border-color:var(--pd);transform:scale(1.15);box-shadow:0 0 0 2px rgba(45,106,62,.3)}
 
 /* ═══ 수식·화학식 입력 도우미 ═══ */
-.math-helper-btn{padding:6px 12px;border-radius:8px;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:1.5px solid var(--bd);background:linear-gradient(135deg,rgba(33,150,243,.06),rgba(156,39,176,.06));color:var(--pd);transition:all .15s;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
-.math-helper-btn:hover{border-color:var(--pr);background:linear-gradient(135deg,rgba(33,150,243,.12),rgba(156,39,176,.12))}
+.math-helper-btn{padding:6px 12px;border-radius:8px;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:1.5px solid var(--bd);background:rgba(33,150,243,.06);color:var(--pd);transition:all .15s;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
+.math-helper-btn:hover{border-color:var(--pr);background:rgba(33,150,243,.12)}
 .msym-btn{padding:8px 6px;border-radius:8px;background:#fff;border:1.5px solid var(--bd);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all .12s;min-height:48px}
 .msym-btn:hover{border-color:var(--pr);background:rgba(93,184,110,.05);transform:translateY(-1px)}
 .msym-btn:active{transform:translateY(0)}
@@ -978,7 +978,7 @@ input,select,textarea{font-family:inherit;outline:none;font-size:var(--fs-sm)}
                    font-size:26px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 .mg-badge{position:absolute;top:6px;left:6px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;
           color:#fff;background:linear-gradient(135deg,#FF5722,#F4511E);letter-spacing:.05em}
-.mg-badge.hw{background:linear-gradient(135deg,#6A4FBF,#4A3A9E)}
+.mg-badge.hw{background:#5A45AE}
 .mg-b{padding:8px 9px 9px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .mg-u{font-size:var(--fs-xxs);font-weight:800;color:var(--pd);background:rgba(93,184,110,.12);
       padding:1px 7px;border-radius:8px;align-self:flex-start;max-width:100%;overflow:hidden;
@@ -1020,7 +1020,7 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .mat-area-new{display:inline-block;background:linear-gradient(135deg,#FF5722,#F4511E);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;margin-right:6px;vertical-align:middle;letter-spacing:.05em;animation:pulse 2s ease-in-out infinite}
 /* 📼 주말 과제(거꾸로수업) 카드 */
 .mat-area-card.hw{border-color:rgba(103,58,183,.4);box-shadow:0 2px 14px rgba(103,58,183,.15);background:linear-gradient(135deg,#fff,rgba(237,231,246,.5))}
-.mat-hw-tag{display:inline-block;background:linear-gradient(135deg,#7E57C2,#5E35B1);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;margin-right:6px;vertical-align:middle;letter-spacing:.03em}
+.mat-hw-tag{display:inline-block;background:#5E35B1;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;margin-right:6px;vertical-align:middle;letter-spacing:.03em}
 .mat-hw-dday{background:linear-gradient(135deg,#FF9800,#F57C00);color:#fff;padding:3px 10px;border-radius:10px;font-size:var(--fs-xxs);font-weight:800;white-space:nowrap;flex-shrink:0}
 .mat-hw-dday.soon{background:linear-gradient(135deg,#F44336,#D32F2F);animation:pulse 2s ease-in-out infinite}
 .mat-hw-dday.over{background:rgba(120,120,120,.85)}
@@ -1301,12 +1301,12 @@ img.mat-area-media{cursor:pointer;background:#f5f5f5;object-fit:cover}
 .cb-clear{padding:5px 12px;border-radius:14px;border:1.5px solid var(--bd);background:var(--card);color:var(--tl);font-size:var(--fs-xxs);font-weight:700;cursor:pointer;font-family:inherit}
 .cb-clear:hover{border-color:var(--pr);color:var(--pr)}
 /* 🌿 교사의 되묻기 (학생 카드) */
-.qc-nudge{margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgba(124,111,217,.08),rgba(93,184,110,.08));border:1.5px solid rgba(124,111,217,.28);border-radius:12px}
+.qc-nudge{margin-top:8px;padding:10px 12px;background:rgba(124,111,217,.08);border:1.5px solid rgba(124,111,217,.28);border-radius:12px}
 .qc-nudge-hdr{font-size:var(--fs-xxs);font-weight:800;color:#6A5ACD;margin-bottom:4px}
 .qc-nudge-txt{font-size:var(--fs-sm);font-weight:600;color:var(--tx);line-height:1.5}
-.qc-nudge-grow{margin-top:8px;padding:6px 12px;border-radius:9px;background:linear-gradient(135deg,#7C6FD9,#5CB86E);color:#fff;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:none}
+.qc-nudge-grow{margin-top:8px;padding:6px 12px;border-radius:9px;background:#6A5ED0;color:#fff;font-size:var(--fs-xxs);font-weight:700;cursor:pointer;border:none}
 .qc-nudge-grow:hover{filter:brightness(1.06)}
-.qc-nudge.qc-fb-rf{background:linear-gradient(135deg,rgba(255,167,38,.10),rgba(124,111,217,.06));border-color:rgba(255,167,38,.4)}
+.qc-nudge.qc-fb-rf{background:rgba(255,167,38,.10);border-color:rgba(255,167,38,.4)}
 .qc-nudge.qc-fb-rf .qc-nudge-hdr{color:#c77800}
 .qc-nudge.qc-fb-sv{background:linear-gradient(135deg,rgba(25,118,210,.09),rgba(93,184,110,.06));border-color:rgba(25,118,210,.35)}
 .qc-nudge.qc-fb-sv .qc-nudge-hdr{color:#1565C0}
