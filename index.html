@@ -1975,6 +1975,8 @@ body.ask-open .fab-ask{display:none!important}
 .qq-lbl{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--tl);white-space:nowrap}
 .qq-hint{font-size:12px;color:var(--tl);line-height:1.4}
 .qq-iw{display:flex;gap:8px}
+.qq-tree{display:flex;align-items:center;gap:6px;margin:0 0 8px}
+.qq-tree[hidden]{display:none}
 .qq-iw .q-i{min-width:0}
 .qq-bar .q-msg{margin-top:4px}
 /* 📋 간단히 보기 — 카드를 한 줄 요약으로 */
@@ -2565,6 +2567,7 @@ body.ask-open .fab-ask{display:none!important}
         <div class="qq-note" id="qqNote">수업을 다 마친 뒤에 올리는 질문이면 <b>🌙 수업 닫기</b>를 눌러요</div>
         <div class="qq-units" id="qqUnits"></div>
         <div class="qq-flags" id="qqFlags" hidden></div>
+        <div class="qq-tree" id="qqTree" hidden></div>
         <div class="qq-iw">
           <input class="q-i" id="qqInp" placeholder="궁금한 것을 적어요" onkeydown="if(event.key==='Enter'&&!event.repeat)qqPlant()">
           <button class="ba" id="qqBtn" onclick="qqPlant()">심기</button>
@@ -5075,6 +5078,7 @@ function qqPaint(){
     if(fl.length) fbox.innerHTML = '<span>시트에서 고른 게 같이 올라가요 · ' + fl.join(' · ') + '</span><button onclick="qqClearOpts()">지우기</button>';
   }
 
+  qqPaintTree();
   const opts = unitOptions();
   const box = $('qqUnits'); if(!box) return;
   let html;
@@ -5110,6 +5114,35 @@ function qqPaint(){
     if(on && (on.offsetLeft < box.scrollLeft || on.offsetLeft + on.offsetWidth > box.scrollLeft + box.clientWidth - 8))
       box.scrollLeft = Math.max(0, on.offsetLeft - 70);
   }
+}
+/* 🌳 어느 나무에 심을지 — 나무가 둘 이상일 때만. 고른 값은 plantTarget 이 그대로 쓴다 */
+function qqPaintTree(){
+  const box = $('qqTree'); if(!box) return;
+  let list = [];
+  try{ list = allTrees(); }catch(e){ list = []; }
+  if(list.length <= 1){ box.hidden = true; box.innerHTML = ''; box._qqHTML = ''; return; }
+  const tgt = plantTarget();
+  const many = new Set(list.map(function(x){ return x.subId; })).size > 1;
+  const html = '<span class="qq-lbl">🌳 어느 나무?</span><select class="qq-sel" onchange="qqPickTree(this.value)" aria-label="질문을 심을 나무 고르기">' +
+    list.map(function(x){
+      const v = String(x.subId) + '|' + String(x.tree.id);
+      const on = (String(x.subId) === String(tgt.subId) && String(x.tree.id) === String(tgt.treeId));
+      const n = treeQCount(x.subId, x.tree.id);
+      return '<option value="' + esc(v).split('"').join('&quot;') + '"' + (on ? ' selected' : '') + '>' +
+        esc((x.tree.icon || '🌳') + ' ' + (x.tree.name || '나무')) + (many ? ' · ' + esc(subLabelOf(x.subId)) : '') + ' (질문 ' + n + ')</option>';
+    }).join('') + '</select>';
+  box.hidden = false;
+  if(box._qqHTML !== html){ box.innerHTML = html; box._qqHTML = html; }
+}
+function qqPickTree(v){
+  const i = String(v || '').indexOf('|'); if(i < 0) return;
+  const subId = v.slice(0, i), tid = v.slice(i + 1);
+  const hit = allTrees().find(function(x){ return String(x.subId) === subId && String(x.tree.id) === tid; });
+  if(!hit) return;
+  S.pendingSubId = String(hit.subId); S.pendingTreeId = hit.tree.id;
+  lastTreePut(hit.subId, hit.tree.id);
+  try{ renderTreePicker(); }catch(e){}
+  qqPaintTree();
 }
 /* 차시를 아직 안 골랐을 때의 기본값: 지금 차시 → 최근 자료 → 선생님 차시 목록 맨 위 */
 function unitDefaultPlant(){
@@ -6621,7 +6654,14 @@ function pickTree(subId, treeId){
     S.editId = null; S.filterTag = null;
     try{ if(!S.guest && S.user) sb.from('profiles').update({active_sub:subId}).eq('id', S.user.id); }catch(e){}
   }
-  if(treeId != null) S.activeTreeId[subId] = treeId;
+  if(treeId != null){
+    S.activeTreeId[subId] = treeId;
+    /* 나무 탭에서 키우던 나무로 넘겨 오면 거기에 심는다. 예전에는 «마지막에 심은 나무» 가
+       먼저라서, 새 나무에 한 번 심고 나면 옛 나무로 돌아가도 질문이 계속 새 나무로 갔다. */
+    S.pendingSubId = String(subId); S.pendingTreeId = treeId;
+    lastTreePut(subId, treeId);
+    try{ renderTreePicker(); qqPaint(); }catch(e){}
+  }
 }
 
 function renderTree(){
@@ -7006,7 +7046,7 @@ async function confirmPlantTree(){
 
   if(!S.questions[subId] || Array.isArray(S.questions[subId])) S.questions[subId] = {};
   S.questions[subId][newT.id] = [];
-  S.activeTreeId[subId] = newT.id;
+  pickTree(subId, newT.id);      /* 보고 있는 나무 = 심을 나무. 옛 나무로 넘겨 가면 다시 거기로 */
 
   closePlantTree();
   toast(`🌱 "${icon} ${name}" 나무가 심어졌어요!`);
