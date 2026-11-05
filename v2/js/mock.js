@@ -211,7 +211,7 @@ def('loadMe', function(){
   if(!p) throw userErr('학생 정보를 찾지 못했어요. 선생님께 알려 주세요.');
   const subjects = db.subjects.filter(s => s.user_id === id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(s => pick(s, ['id', 'label', 'icon', 'sort_order']));
   const trees = db.trees.filter(t => t.user_id === id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id).map(t => pick(t, ['id', 'subject_id', 'sort_order']));
-  const profile = pick(p, ['id', 'name', 'grade', 'class_no', 'number', 'seeds', 'active_sub', 'teacher_id', 'teacher_ids']);
+  const profile = pick(p, ['id', 'name', 'grade', 'class_no', 'number', 'seeds', 'active_sub', 'teacher_id', 'teacher_ids', 'active_tree', 'active_companion', 'unlocked_items']);
   if(!subjects.find(s => s.id === profile.active_sub)) profile.active_sub = subjects.length ? subjects[0].id : '';
   profile.seeds = profile.seeds || 0;
   return {profile, subjects, trees};
@@ -222,7 +222,8 @@ def('myTree', function(){                                 // my_tree
   const sprout = mine.filter(q => q.fruit_kind != null && q.journal && 'extend' in q.journal).length;
   const g = db.group_fruits.filter(f => f.user_id === id).length, fl = db.flowers.filter(f => f.receiver === id).length;
   const lv = db.legacy_level.find(l => l.user_id === id);
-  return {fruit, fog, sprout, group_fruit:g, flowers:fl, legacy_level:lv ? lv.level : null, level:Math.max(lv ? lv.level : 1, Math.min(fruit + fog + g + 1, 10))};
+  const water = mine.reduce((a, q) => a + (q.water_count || 0), 0);
+  return {fruit, fog, sprout, group_fruit:g, flowers:fl, water, legacy_level:lv ? lv.level : null, level:Math.max(lv ? lv.level : 1, Math.min(fruit + fog + g + 1, 10))};
 });
 def('myForest', function(){                               // my_forest
   const p = prof(me()); if(!p) return [];
@@ -443,7 +444,51 @@ def('markCurious', function(qid){                         // mark_curious
   const id = me(), q = qById(qid);
   if(!q || q.user_id === id || !sameClass(id, q.user_id)) return false;
   if(!db.curious_marks.some(m => m.question_id === q.id && m.user_id === id)) db.curious_marks.push({question_id:q.id, user_id:id, created_at:nowISO()});
+  const by = q.watered_by || [];                             // v2_03: 옛 물주기 칸도 — 한 사람 한 번
+  if(by.indexOf(id) < 0){ q.watered_by = by.concat([id]); q.water_count = q.watered_by.length; }
   return true;
+});
+
+/* ── 상점 · 우리 반 나무(v2_03) ── */
+const SHOP_PRICE = {default:['tree', 0], pine:['tree', 20], cherry:['tree', 30], maple:['tree', 40], palm:['tree', 50], baobab:['tree', 100], storytree:['tree', 150],
+  butterfly:['companion', 10], bird:['companion', 15], squirrel:['companion', 20], swing:['companion', 25], beehive:['companion', 30], owl:['companion', 35], fox:['companion', 40]};
+def('buyItem', function(item){                             // buy_item
+  const id = needMe(), it = SHOP_PRICE[item]; if(!it) throw userErr('없는 물건이에요');
+  const p = prof(id); if(!p) throw userErr('학생 정보를 찾지 못했어요');
+  const own = (p.unlocked_items || ['default']).slice();
+  if(it[1] === 0 || own.indexOf(item) >= 0) return {owned:true, bought:false, seeds:p.seeds || 0, items:own};
+  if((p.seeds || 0) < it[1]) throw userErr('도토리가 부족해요');
+  grantAcorns(id, -it[1], 'buy', item);
+  p.unlocked_items = own.concat([item]);
+  return {owned:true, bought:true, seeds:p.seeds || 0, items:p.unlocked_items};
+});
+def('equipItem', function(item){                           // equip_item
+  const id = needMe(), it = SHOP_PRICE[item]; if(!it) throw userErr('없는 물건이에요');
+  const p = prof(id); if(!p) throw userErr('학생 정보를 찾지 못했어요');
+  if(it[1] > 0 && (p.unlocked_items || ['default']).indexOf(item) < 0) throw userErr('먼저 사야 해요');
+  if(it[0] === 'tree') p.active_tree = item; else p.active_companion = p.active_companion === item ? null : item;
+  return {active_tree:p.active_tree || 'default', active_companion:p.active_companion || null};
+});
+def('classmateTrees', function(){                          // classmate_trees
+  const id = me(), p = prof(id); if(!p) return [];
+  const since = new Date(Date.UTC(schoolYear(), 2, 1)).toISOString();
+  return db.profiles.filter(x => x.id !== id && x.grade === p.grade && x.class_no === p.class_no && x.number != null && !isTeacher(x.id)).sort(sortNum).map(x => {
+    const qs = db.questions.filter(q => q.user_id === x.id);
+    const f = qs.filter(q => q.fruit_kind != null).length + db.group_fruits.filter(g => g.user_id === x.id).length;
+    const lv = db.legacy_level.find(l => l.user_id === x.id);
+    const open = qs.filter(q => !q.is_anonymous && q.created_at >= since);
+    return {owner_number:x.number, owner_name:x.name, active_tree:x.active_tree || 'default', active_companion:x.active_companion || null,
+      level:Math.max(lv ? lv.level : 1, Math.min(f + 1, 10)), fruits:f, questions:open.length, water:open.reduce((a, q) => a + (q.water_count || 0), 0)};
+  });
+});
+def('friendQuestions', function(num){                      // friend_questions
+  const id = me(), p = prof(id); if(!p) return [];
+  const since = new Date(Date.UTC(schoolYear(), 2, 1)).toISOString();
+  const o = db.profiles.find(x => x.grade === p.grade && x.class_no === p.class_no && x.number === Number(num) && x.id !== id); if(!o) return [];
+  return db.questions.filter(q => q.user_id === o.id && !q.is_anonymous && q.created_at >= since).sort((a, b) => b.id - a.id).slice(0, 100).map(q => ({
+    id:q.id, body:(q.refined_text && q.refined_text !== '') ? q.refined_text : q.text, unit:q.unit, fruit_kind:q.fruit_kind || null,
+    water_count:(q.watered_by || []).length || q.water_count || 0,
+    watered:(q.watered_by || []).indexOf(id) >= 0 || db.curious_marks.some(m => m.question_id === q.id && m.user_id === id), created_at:q.created_at}));
 });
 def('mySentClues', function(){
   const id = needMe(), p = prof(id);
@@ -701,7 +746,7 @@ function seed(){
   PEOPLE.forEach(r => {
     const uid = 'u-' + r[0];
     db.users[r[0]] = {key:r[0], uid:uid, email:QO.check.fakeEmail(r[2], r[3], r[4]), pw:'1234'};
-    db.profiles.push({id:uid, name:r[1], grade:r[2], class_no:r[3], number:r[4], seeds:r[5], active_sub:'science_' + uid, teacher_id:1, teacher_ids:[1], unlocked_items:['default']});
+    db.profiles.push({id:uid, name:r[1], grade:r[2], class_no:r[3], number:r[4], seeds:r[5], active_sub:'science_' + uid, teacher_id:1, teacher_ids:[1], unlocked_items:['default'], active_tree:'default', active_companion:null});
     db.subjects.push({id:'science_' + uid, user_id:uid, label:'과학', icon:'🔬', sort_order:1});
     db.trees.push({id:seq('trees'), user_id:uid, subject_id:'science_' + uid, name:'나의 첫 나무', sort_order:1});
     if(r[6]) db.legacy_level.push({user_id:uid, level:r[6], taken_at:ago(7 * D)});

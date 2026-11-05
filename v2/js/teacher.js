@@ -421,7 +421,7 @@ function renderLive(root){
     if(T.ended) h += '<div class="card t-ended"><b>' + (T.ended.mode === 'clue' ? '단서 시간이 끝났어요 · 보낸 단서 ' + T.ended.sent + '개' : '모둠 진행을 끝냈어요') + '</b></div>';
     if(T.staleLive) h += '<div class="card t-stale"><div><b>지난 ' + esc(modeName(T.staleLive.mode)) + '이 켜져 있어요</b><div class="hint">' + esc(ui.fmtTime(T.staleLive.created_at)) +
       '에 시작한 진행이에요. 학생 화면에는 보이지 않아요.</div></div><button type="button" class="btn line sm" data-act="l-stop-stale">끝내기</button></div>';
-    root.innerHTML = h + '<div class="cols t-modes">' + modeCard('clue') + modeCard('group') + '</div>' + demoBox();
+    root.innerHTML = h + '<div class="cols t-modes">' + modeCard('clue') + modeCard('group') + '</div>' + worldCard() + demoBox();
     return;
   }
   const ST = stagesOf(L), st = Math.max(0, Math.min(L.stage || 0, ST.length - 1)), last = st >= ST.length - 1, left = QO.live.left(L);
@@ -433,8 +433,43 @@ function renderLive(root){
     '<button type="button" class="btn line" data-act="l-board">칠판 화면</button>' + (last ? '' : '<button type="button" class="btn line" data-act="l-stop">끝내기</button>') + '</div>';
   if(L.teacher_id != null && S.teacher && L.teacher_id !== S.teacher.id) h += '<div class="hint t-pad">다른 선생님이 시작한 진행이에요.</div>';
   h += L.mode === 'clue' ? cluePanel(L, st) : '<div class="sec">모둠별 진행</div>' + progressHTML();
-  root.innerHTML = h + demoBox();
+  root.innerHTML = h + worldCard() + demoBox();
 }
+
+/* ═══════════ 함께 걷기 — 우리 반 숲에서 같은 반 친구가 서로 보이게(v2_04) ═══════════ */
+const WORLD = {key:null, st:null, err:'', at:0};
+const worldKey = () => S.cls ? G() + '-' + C() : null;
+async function loadWorld(force){
+  const k = worldKey(); if(!k) return;
+  if(!force && WORLD.key === k && Date.now() - WORLD.at < 15000) return;
+  WORLD.key = k; WORLD.at = Date.now();
+  try{ WORLD.st = await QO.api.worldStatus(G(), C()); WORLD.err = ''; }
+  catch(e){
+    WORLD.st = null;
+    WORLD.err = /teacher_world|function|schema cache|PGRST202/i.test(String((e && e.message) || e)) ? 'soon' : (ui.userMsg(e) || '함께 걷기 상태를 불러오지 못했어요.');
+  }
+  if(worldKey() === k) soft('live');
+}
+function worldCard(){
+  const k = worldKey(); if(!k || !QO.api.worldStatus) return '';
+  if(WORLD.key !== k){ loadWorld(true); return '<div class="card t-world"><div><b>함께 걷기</b><div class="hint">불러오는 중이에요…</div></div></div>'; }
+  if(WORLD.err === 'soon') return '<div class="card t-world"><div><b>함께 걷기</b><div class="hint">v2_04 SQL 을 실행하면 쓸 수 있어요. 그 전에는 학생들이 우리 반 숲을 혼자 걸어요.</div></div></div>';
+  if(WORLD.err) return '<div class="card t-world"><div><b>함께 걷기</b><div class="err">' + esc(WORLD.err) + '</div></div><button type="button" class="btn line sm" data-act="w-reload">다시 읽기</button></div>';
+  const st = WORLD.st || {};
+  if(st.open) return '<div class="card t-world on"><div><b>함께 걷기 · 열려 있어요</b><div class="hint">' + esc(ui.kstHM(st.until)) + '까지 · 지금 숲에 ' + (+st.people || 0) + '명</div></div>' +
+    '<div class="t-wbtn"><button type="button" class="btn line sm" data-act="w-more">10분 더</button><button type="button" class="btn line sm" data-act="w-close">닫기</button></div></div>';
+  return '<div class="card t-world"><div><b>함께 걷기 · 닫혀 있어요</b><div class="hint">열면 이 반 학생들이 「우리 반 숲」에서 서로 보이고, 그림 반응과 정해진 말풍선을 주고받아요.</div></div>' +
+    '<div class="t-wbtn"><button type="button" class="btn teal sm" data-act="w-open" data-min="20">20분 열기</button><button type="button" class="btn line sm" data-act="w-open" data-min="45">45분 열기</button></div></div>';
+}
+const worldSet = r => { WORLD.st = r; WORLD.err = ''; WORLD.at = Date.now(); QO.tabs.rerender('live'); };
+ACT['w-open'] = async b => { const r = await act(b, () => QO.api.worldOpen(G(), C(), Number(b.dataset.min) || 45)); if(r !== undefined){ worldSet(r); ui.toast('함께 걷기를 열었어요'); } };
+ACT['w-more'] = async b => {
+  const left = WORLD.st && WORLD.st.until ? Math.max(0, Math.ceil((Date.parse(WORLD.st.until) - Date.now()) / 60000)) : 0;
+  const r = await act(b, () => QO.api.worldOpen(G(), C(), Math.min(120, left + 10))); if(r !== undefined) worldSet(r);
+};
+ACT['w-close'] = async b => { const r = await act(b, () => QO.api.worldClose(G(), C())); if(r !== undefined){ worldSet(r); ui.toast('함께 걷기를 닫았어요'); } };
+ACT['w-reload'] = () => loadWorld(true);
+setInterval(() => { if(S.ready && S.teacher && S.cls && QO.tabs.current() === 'live' && document.visibilityState === 'visible') loadWorld(false); }, 5000);
 async function goStage(b, stage){
   const L = T.live; if(!L) return;
   const max = stagesOf(L).length;

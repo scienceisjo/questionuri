@@ -120,7 +120,7 @@ const A = QO.apiReal = {
   /* ── 나 ── */
   async loadMe(){
     const id = await needUid(), cl = await client();
-    const prof = await one(cl.from('profiles').select('id,name,grade,class_no,number,seeds,active_sub,teacher_id,teacher_ids').eq('id', id).maybeSingle());
+    const prof = await one(cl.from('profiles').select('id,name,grade,class_no,number,seeds,active_sub,teacher_id,teacher_ids,active_tree,active_companion,unlocked_items').eq('id', id).maybeSingle());
     if(!prof) throw userErr('학생 정보를 찾지 못했어요. 선생님께 알려 주세요.');
     const subjects = await one(cl.from('subjects').select('id,label,icon,sort_order').eq('user_id', id).order('sort_order'));
     const trees = await one(cl.from('trees').select('id,subject_id,sort_order').eq('user_id', id).order('sort_order', {ascending:true}).order('id', {ascending:true}));
@@ -132,6 +132,11 @@ const A = QO.apiReal = {
     return {profile:prof, subjects:subs, trees:trees || []};
   },
   myTree(){ return rpc('my_tree'); },
+  /* 상점·우리 반 나무(v2_03) — 값은 서버가 정한다 */
+  buyItem(id){ return rpc('buy_item', {p_item:id}); },
+  equipItem(id){ return rpc('equip_item', {p_item:id}); },
+  async classmateTrees(){ return (await rpc('classmate_trees')) || []; },
+  async friendQuestions(num){ return (await rpc('friend_questions', {p_number:num})) || []; },
   async myForest(){ return (await rpc('my_forest')) || []; },
   /* 우리 반이 질문과수원 2로 옮겨졌나 — 옮긴 반이면 {cutover_at}, 아니면 null(v2_cutover_read 는 모두 읽기) */
   async myCutover(){

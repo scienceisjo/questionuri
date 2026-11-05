@@ -1,0 +1,80 @@
+/* 우리 반 숲 — 걸어 다니는 도트 세계(world.js). 틀·단추는 도트 게임처럼 각지고 테두리 진하게. */
+.wd{position:relative;width:100%;height:clamp(330px,60vh,520px);border-radius:10px;overflow:hidden;background:#2E6B3A;outline:none;
+  box-shadow:0 0 0 3px #2B3A2C;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;margin-top:4px}
+html.wide .wd{height:min(calc(100vh - 170px),640px);min-height:420px}
+html.wide .tr-cols{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.wd:focus-visible{box-shadow:0 0 0 3px #2B3A2C,0 0 0 6px #F2C230}
+.wd-cv{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:pan-y}
+.wd button{font-family:"Galmuri11","Noto Sans KR",sans-serif;-webkit-tap-highlight-color:transparent}
+
+/* 위 띠: 내 모습 · 상태 · 말풍선 */
+.wd-top{position:absolute;left:8px;right:8px;top:8px;display:flex;align-items:center;gap:8px;pointer-events:none}
+.wd-top > *{pointer-events:auto}
+.wd-ib{flex:none;width:44px;height:44px;padding:0;border:3px solid #2B3A2C;border-radius:6px;background:#FFFDF5;box-shadow:inset 0 -3px 0 #DCD3BC;display:grid;place-items:center;cursor:pointer}
+.wd-ib:active{box-shadow:inset 0 2px 0 #DCD3BC}
+.wd-ib[aria-expanded="true"]{background:#FFE9A8}
+.wd-lookb canvas{width:24px;height:30px;image-rendering:pixelated;margin-top:-2px}
+.wd-st{flex:0 1 auto;margin:0 auto;min-height:32px;padding:6px 12px;border:0;border-radius:4px;background:rgba(32,40,34,.8);color:#fff;font-size:12px;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.wd.net-open .wd-st{background:rgba(21,90,95,.88)}
+
+/* 방향 단추 · 살펴보기 */
+.wd-pad{position:absolute;left:10px;bottom:10px;width:132px;height:132px;touch-action:none}
+.wd-pad button{position:absolute;width:44px;height:44px;padding:0;border:3px solid #2B3A2C;border-radius:6px;background:rgba(255,253,245,.9);box-shadow:inset 0 -3px 0 #DCD3BC;cursor:pointer;touch-action:none}
+.wd-pad button::after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;border:7px solid transparent;margin:-7px 0 0 -7px}
+.wd-pad [data-dir="up"]{left:44px;top:0}.wd-pad [data-dir="up"]::after{border-bottom-color:#2B3A2C;margin-top:-11px}
+.wd-pad [data-dir="down"]{left:44px;top:88px}.wd-pad [data-dir="down"]::after{border-top-color:#2B3A2C;margin-top:-3px}
+.wd-pad [data-dir="left"]{left:0;top:44px}.wd-pad [data-dir="left"]::after{border-right-color:#2B3A2C;margin-left:-11px}
+.wd-pad [data-dir="right"]{left:88px;top:44px}.wd-pad [data-dir="right"]::after{border-left-color:#2B3A2C;margin-left:-3px}
+.wd-pad button.on{background:#FFE9A8;box-shadow:inset 0 2px 0 #DCD3BC}
+.wd-a{position:absolute;right:12px;bottom:16px;width:68px;height:68px;padding:0;border:3px solid #2B3A2C;border-radius:50%;background:#F2C230;box-shadow:inset 0 -4px 0 #C99A1E;color:#2B3A2C;font-size:13px;line-height:1.25;cursor:pointer}
+.wd-a:active{box-shadow:inset 0 3px 0 #C99A1E}
+@media (hover:hover) and (pointer:fine){ .wd-pad{opacity:.75} .wd-pad:hover{opacity:1} }
+.wd.dlg-on .wd-pad,.wd.dlg-on .wd-a{display:none}
+
+/* 말풍선 · 내 모습 고르기 */
+.wd-pop{position:absolute;top:60px;right:8px;width:min(300px,calc(100% - 16px));max-height:calc(100% - 72px);overflow:auto;padding:12px;background:#FFFDF5;border:3px solid #2B3A2C;border-radius:6px;box-shadow:inset 0 0 0 2px #fff,0 4px 0 rgba(0,0,0,.22);z-index:3}
+.wd-look{left:8px;right:auto}
+.wd-pt{font-family:"Galmuri11","Noto Sans KR",sans-serif;font-size:12px;color:#4F5A52;margin:2px 0 8px}
+.wd-pt + * + .wd-pt{margin-top:14px}
+.wd-emos{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.wd-emos button{height:44px;padding:0;border:2px solid #2B3A2C;border-radius:6px;background:#fff;display:grid;place-items:center;cursor:pointer}
+.wd-emos canvas{width:24px;height:24px;image-rendering:pixelated}
+.wd-says{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wd-says button{min-height:44px;padding:4px 6px;border:2px solid #2B3A2C;border-radius:6px;background:#fff;font-size:13px;color:#2B3A2C;cursor:pointer;word-break:keep-all}
+.wd-emos button:active,.wd-says button:active{background:#FFE9A8}
+.wd-lk{display:flex;gap:12px;align-items:flex-start}
+.wd-lk-pv{flex:none;width:64px;height:80px;image-rendering:pixelated;background:#DDF0D2;border:2px solid #2B3A2C;border-radius:6px}
+.wd-lr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
+.wd-lr span{width:100%;font-family:"Galmuri11","Noto Sans KR",sans-serif;font-size:12px;color:#4F5A52}
+.wd-sw{width:44px;height:44px;padding:0;border:2px solid #2B3A2C;border-radius:6px;cursor:pointer}
+.wd-sw.on{box-shadow:0 0 0 3px #F2C230}
+.wd-acc{min-height:44px;padding:0 10px;border:2px solid #2B3A2C;border-radius:6px;background:#fff;font-size:13px;color:#2B3A2C;cursor:pointer}
+.wd-acc.on{background:#FFE9A8}
+.wd-done{width:100%;min-height:44px;margin-top:4px;border:3px solid #2B3A2C;border-radius:6px;background:#3F8B4F;color:#fff;font-size:14px;cursor:pointer}
+
+/* 살펴보기 대화 상자(도트 게임 글 상자) */
+.wd-dlg{position:absolute;left:8px;right:8px;bottom:8px;max-height:64%;overflow:auto;padding:14px 14px 12px;background:#FFFDF5;border:3px solid #2B3A2C;border-radius:6px;
+  box-shadow:inset 0 0 0 2px #fff,0 4px 0 rgba(0,0,0,.25);z-index:2;overscroll-behavior:contain}
+.wd-dlg[hidden]{display:none}
+.wd-x{position:sticky;float:right;top:0;width:44px;height:44px;margin:-10px -10px 0 6px;padding:0;border:0;background:none;cursor:pointer;z-index:1}
+.wd-x::before,.wd-x::after{content:"";position:absolute;left:13px;top:20px;width:18px;height:4px;background:#2B3A2C}
+.wd-x::before{transform:rotate(45deg)}.wd-x::after{transform:rotate(-45deg)}
+.wd-tt{font-family:"Galmuri11","Noto Sans KR",sans-serif;font-size:15px;color:#155A5F;margin-bottom:6px}
+.wd-tx{margin:0;font-size:15px;line-height:1.6;color:#2B3A2C;word-break:keep-all}
+.wd-more{width:0;height:0;margin:6px 0 0 auto;border:6px solid transparent;border-top-color:#2B3A2C;animation:wdBlink 1s steps(2) infinite}
+@keyframes wdBlink{50%{opacity:0}}
+.wd-in > .card{margin:0;padding:0;border:0;box-shadow:none;background:none}
+.wd-in .tree-wrap,.wd-in [data-tr="friend-close"]{display:none}   /* 숲 안에서는 나무가 바로 앞에 있고 닫기는 × */
+.wd-in .tr-fr-top{padding-right:40px}
+.wd-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0;padding:0}
+
+/* 깃발 찾아가기 단추(숲 아래) */
+.tr-pins{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tr-pins .tr-pin{position:static;width:auto;height:auto;margin:0;min-height:44px;padding:0 14px 0 12px;border:2px solid #155A5F;border-radius:6px;background:#E6F4F4;color:#155A5F;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.tr-pins .tr-pin i{position:relative;width:12px;height:16px;flex:none}
+.tr-pins .tr-pin i::before{content:"";position:absolute;left:0;top:0;width:2px;height:16px;background:#2B3A2C}
+.tr-pins .tr-pin i::after{content:"";position:absolute;left:2px;top:1px;width:9px;height:6px;background:#1F9AA0}
+.tr-pins .tr-pin[data-sent]{background:#F3F5F2;border-color:#9AA79E;color:#4F5A52}
+.tr-pins .tr-pin[data-sent] i::after{background:#9AA79E}
+.tr-pins .tr-pin[aria-pressed="true"]{background:#1F7A80;border-color:#1F7A80;color:#fff}
+.tr-pins .tr-pin[aria-pressed="true"] i::before{background:#fff}

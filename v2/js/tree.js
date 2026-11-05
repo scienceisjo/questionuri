@@ -9,7 +9,8 @@ const U = QO.ui, esc = U.esc;
 /* ═══════════ 상태(사람이 바뀌면 비움) ═══════════ */
 const T = {treeSeq:0, forestSeq:0};
 function clear(uid){
-  Object.assign(T, {uid:uid || null, tree:null, flowers:null, treeErr:'', forest:null, forestErr:'', seen:{}, pick:null, kind:{}, curious:{}, flAll:false});
+  Object.assign(T, {uid:uid || null, tree:null, flowers:null, treeErr:'', forest:null, forestErr:'', seen:{}, pick:null, kind:{}, curious:{}, flAll:false,
+    shopCat:'tree', mates:null, matesErr:'', friend:null, fqs:null, fqErr:'', wtree:null, shopErr:'', ce:null});
 }
 clear(null);
 const uidNow = () => (QO.state.me ? QO.state.me.id : null);
@@ -55,7 +56,10 @@ async function loadForest(){
   const uid = sync(); if(!uid) return;
   const my = ++T.forestSeq;
   try{
-    const r = await Promise.all([QO.api.myForest(), QO.api.classmateQuestions(200, null), QO.api.mySentClues(), QO.api.myCurious().catch(() => null)]);
+    const r = await Promise.all([QO.api.myForest(), QO.api.classmateQuestions(200, null), QO.api.mySentClues(), QO.api.myCurious().catch(() => null),
+      (T.tree || T.wtree) ? null : QO.api.myTree().catch(() => null)]);   // 숲에 내 나무를 심으려고(내 나무 탭 자료와 따로 둔다)
+    loadMates();
+    if(my === T.forestSeq && uid === uidNow() && r[4]) T.wtree = r[4];
     if(my !== T.forestSeq || uid !== uidNow()) return;
     const seenBefore = Object.keys(T.seen).sort().join();
     (r[0] || []).forEach(u => { if(u && u.place && !T.seen[u.place]) T.seen[u.place] = true; });   // 한 번 열리면 계속
@@ -75,6 +79,99 @@ async function loadForest(){
   }
 }
 
+/* 우리 반 나무 — v2_03 이 아직 없으면 조용히 안내만 */
+const soonMsg = e => /classmate_trees|friend_questions|buy_item|equip_item|function|schema cache/i.test(String((e && e.message) || e || ''));
+async function loadMates(){
+  const uid = sync(); if(!uid) return;
+  try{
+    const r = await QO.api.classmateTrees();
+    if(uid !== uidNow()) return;
+    const same = JSON.stringify(T.mates) === JSON.stringify(r);
+    T.mates = r; T.matesErr = '';
+    if(!same) repaint('forest');
+  }catch(e){
+    if(uid !== uidNow()) return;
+    T.mates = []; T.matesErr = soonMsg(e) ? '우리 반 나무는 선생님이 준비를 마치면 보여요.' : (U.userMsg(e) || '우리 반 나무를 불러오지 못했어요.');
+    repaint('forest');
+  }
+}
+async function openFriend(num){
+  T.friend = num; T.fqs = null; T.fqErr = '';
+  repaint('forest');
+  const uid = uidNow();
+  try{
+    const r = await QO.api.friendQuestions(num);
+    if(uid !== uidNow() || T.friend !== num) return;
+    T.fqs = r;
+  }catch(e){
+    if(uid !== uidNow() || T.friend !== num) return;
+    T.fqs = []; T.fqErr = U.userMsg(e) || '친구 질문을 불러오지 못했어요.';
+  }
+  repaint('forest');
+  const c = U.$('#tr-friend'), w = c && c.closest('.wd'); if(c) try{ (w || c).scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(_){}
+}
+
+/* ═══════════ 상점(옛 앱과 같은 물건·값 — 값은 서버가 다시 확인) ═══════════ */
+const SHOP = {
+  tree:[
+    {id:'default', nm:'기본 나무', ic:'🌳', price:0, desc:'누구나 쓰는 기본 나무'},
+    {id:'pine', nm:'소나무', ic:'🌲', price:20, desc:'사시사철 푸른 소나무'},
+    {id:'cherry', nm:'벚나무', ic:'🌸', price:30, desc:'봄의 화려한 벚나무'},
+    {id:'maple', nm:'단풍나무', ic:'🍁', price:40, desc:'가을빛 단풍나무'},
+    {id:'palm', nm:'야자수', ic:'🌴', price:50, desc:'이국적인 야자수'},
+    {id:'baobab', nm:'바오밥', ic:'🌳', price:100, desc:'거대한 바오밥나무'},
+    {id:'storytree', nm:'이야기나무', ic:'📖', price:150, desc:'밤이면 별빛으로 은은하게 빛나는 나무'}
+  ],
+  companion:[
+    {id:'butterfly', nm:'나비', ic:'🦋', price:10, desc:'나비가 춤춰요'},
+    {id:'bird', nm:'파랑새', ic:'🐦', price:15, desc:'나무에 새가 날아와요'},
+    {id:'squirrel', nm:'다람쥐', ic:'🐿️', price:20, desc:'다람쥐가 뛰어놀아요'},
+    {id:'swing', nm:'그네', ic:'🪢', price:25, desc:'나뭇가지 그네'},
+    {id:'beehive', nm:'벌집', ic:'🍯', price:30, desc:'꿀벌들의 집'},
+    {id:'owl', nm:'부엉이', ic:'🦉', price:35, desc:'지혜로운 부엉이'},
+    {id:'fox', nm:'여우', ic:'🦊', price:40, desc:'나무 밑을 총총 지나가는 여우'}
+  ]
+};
+const ITEM = {}; Object.keys(SHOP).forEach(c => SHOP[c].forEach(it => { ITEM[it.id] = Object.assign({cat:c}, it); }));
+const myLook = () => { const m = QO.state.me || {}; return {tree:ITEM[m.active_tree] && ITEM[m.active_tree].cat === 'tree' ? m.active_tree : 'default', comp:ITEM[m.active_companion] ? m.active_companion : null}; };
+const owned = id => { const m = QO.state.me || {}; return ITEM[id] && (ITEM[id].price === 0 || (m.unlocked_items || ['default']).indexOf(id) >= 0); };
+function shopHTML(){
+  const m = QO.state.me || {}, seeds = m.seeds || 0, look = myLook(), cat = T.shopCat;
+  const tabs = '<div class="tr-shop-tabs" role="tablist">' + [['tree', '나무 종류'], ['companion', '동반자']].map(c =>
+    '<button type="button" role="tab" aria-selected="' + (cat === c[0]) + '" class="' + (cat === c[0] ? 'on' : '') + '" data-tr="shop-cat" data-c="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>';
+  const grid = '<div class="tr-shop-grid">' + SHOP[cat].map(it => {
+    const own = owned(it.id), on = cat === 'tree' ? look.tree === it.id : look.comp === it.id, poor = !own && seeds < it.price;
+    const tail = on ? (cat === 'tree' ? '쓰는 중' : '쓰는 중 · 누르면 숨김') : own ? '누르면 쓰기' : '🌰 ' + it.price;
+    return '<button type="button" class="tr-item' + (on ? ' on' : '') + (own ? ' own' : '') + (poor ? ' poor' : '') + '" data-tr="item" data-id="' + it.id + '" aria-label="' + esc(it.nm + ', ' + tail) + '">' +
+      '<span class="ic" aria-hidden="true">' + it.ic + '</span><b>' + esc(it.nm) + '</b><small>' + esc(it.desc) + '</small><em>' + esc(tail) + '</em></button>';
+  }).join('') + '</div>';
+  return '<div class="sec">꾸미기</div><div class="card tr-shop">' + tabs + grid + '<div class="err" id="tr-se" role="alert">' + esc(T.shopErr || '') + '</div></div>';
+}
+/* 안내 글은 상태에도 둔다 — 늦게 온 자료로 내 나무 탭이 다시 그려져도 남게 */
+function seErr(msg){ T.shopErr = msg || ''; const e = U.$('#tr-se'); if(e) e.textContent = T.shopErr; }
+async function itemTap(btn, id){
+  const it = ITEM[id]; if(!it) return;
+  const err = true, m = QO.state.me || {};
+  seErr('');
+  if(!owned(id)){
+    if((m.seeds || 0) < it.price){ if(err) seErr('도토리가 ' + (it.price - (m.seeds || 0)) + '개 모자라요. 열매를 맺으면 도토리가 생겨요.'); return; }
+    if(!(await U.confirm(it.nm + '을(를) 도토리 ' + it.price + '개로 살까요?', {ok:'살게요', cancel:'그만'}))) return;
+    let r;
+    try{ r = await QO.api.buyItem(id); }
+    catch(e){ if(err) seErr(soonMsg(e) ? '상점은 선생님이 준비를 마치면 열려요.' : (U.userMsg(e) || '사지 못했어요.')); return; }
+    if(!r) return;
+    m.unlocked_items = r.items || (m.unlocked_items || ['default']).concat([id]);
+    QO.store.setSeeds(r.seeds);
+  }
+  let r2;
+  try{ r2 = await QO.api.equipItem(id); }
+  catch(e){ if(err) seErr(soonMsg(e) ? '상점은 선생님이 준비를 마치면 열려요.' : (U.userMsg(e) || '바꾸지 못했어요.')); return; }
+  if(!r2) return;
+  m.active_tree = r2.active_tree; m.active_companion = r2.active_companion;
+  repaint('tree');
+  U.toast(it.cat === 'tree' ? it.nm + '로 바꿨어요.' : (r2.active_companion ? it.nm + '이(가) 나무에 왔어요.' : it.nm + '을(를) 숨겼어요.'));
+}
+
 /* ═══════════ 내 나무 ═══════════ */
 const BLOBS = [[0,-70,46,'#5FA86D'],[-40,-52,30,'#6CB57A'],[40,-56,32,'#57A065'],[-14,-98,28,'#74BC80'],[22,-92,26,'#68B275'],
   [-60,-78,22,'#62AC70'],[60,-84,22,'#6FB97C'],[4,-110,20,'#5BA469']];
@@ -92,7 +189,39 @@ function fruitSVG(kind, x, y, sprout){
 function flowerSVG(x, y){
   return '<g class="tr-flower" transform="translate(' + x + ' ' + y + ')"><circle r="3.4" cy="-3.4" fill="#F3A8C2"/><circle r="3.4" cx="3.4" fill="#F3A8C2"/><circle r="3.4" cy="3.4" fill="#F3A8C2"/><circle r="3.4" cx="-3.4" fill="#F3A8C2"/><circle r="2.2" fill="#F7D774"/></g>';
 }
-function treeSVG(t){
+/* 나무 종류마다 잎 색·모양 */
+const LEAF = {
+  default:['#5FA86D','#6CB57A','#57A065','#74BC80','#68B275','#62AC70','#6FB97C','#5BA469'],
+  cherry:['#F2A7BE','#F6B9CB','#EE98B2','#F8C6D5','#F3ADC3','#EFA0B9','#F7BED0','#F09DB5'],
+  maple:['#E07A3A','#E8904B','#D9692F','#EFA25A','#E5833F','#D86A35','#ECA060','#DB7436'],
+  baobab:['#7FAF5E','#8BBA69','#76A655','#94C172','#86B464','#7BAA5A','#90BE6E','#79A858'],
+  storytree:['#2F5D7C','#3A6B8C','#29546F','#45789A','#356685','#2C5876','#4A7FA0','#30607E']
+};
+function canopySVG(kind, nBlob){
+  if(kind === 'pine') return [[0,-30,62,'#2E6B45'],[0,-62,50,'#357A4F'],[0,-92,38,'#3F8A5A']].slice(0, Math.max(2, Math.min(3, Math.ceil(nBlob / 3))))
+    .map(p => '<path d="M' + (p[0] - p[2]) + ' ' + p[1] + ' L' + p[0] + ' ' + (p[1] - p[2] * 1.1) + ' L' + (p[0] + p[2]) + ' ' + p[1] + ' Z" fill="' + p[3] + '"/>').join('');
+  if(kind === 'palm') return [[-70,-50],[-50,-86],[-14,-104],[22,-102],[56,-84],[72,-46]].slice(0, Math.max(4, Math.min(6, nBlob)))
+    .map(p => '<path d="M0 -70 Q' + (p[0] * 0.5) + ' ' + (p[1] - 26) + ' ' + p[0] + ' ' + p[1] + ' Q' + (p[0] * 0.45) + ' ' + (p[1] - 6) + ' 0 -64 Z" fill="#4E9A5B"/>').join('') + '<circle cx="0" cy="-68" r="8" fill="#6B8F3A"/>';
+  const col = LEAF[kind] || LEAF.default;
+  const blobs = kind === 'baobab' ? BLOBS.map(b => [b[0] * 1.25, -78 + (b[1] + 70) * 0.45, b[2] * 0.9]) : BLOBS;
+  let s = blobs.slice(0, nBlob).map((b, i) => '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="' + b[2] + '" fill="' + col[i % col.length] + '"/>').join('');
+  if(kind === 'storytree') s += [[-34,-80],[18,-112],[46,-66],[-8,-56],[-56,-60],[30,-92]].map(p => '<circle class="tr-star" cx="' + p[0] + '" cy="' + p[1] + '" r="2.4" fill="#FFE58A"/>').join('');
+  return s;
+}
+function trunkSVG(kind){
+  if(kind === 'palm') return '<path d="M-6 20 Q-2 -20 4 -66 L10 -66 Q4 -20 6 20 Z" fill="#9C7A52"/>';
+  if(kind === 'baobab') return '<path d="M-20 20 Q-14 -30 -12 -52 L12 -52 Q14 -30 20 20 Z" fill="#9A7650"/>';
+  if(kind === 'pine') return '<rect x="-6" y="-14" width="12" height="34" fill="#7A5A3C"/>';
+  return '<path d="M-9 20 Q-6 -20 -3 -40 L3 -40 Q6 -20 9 20 Z" fill="#8B6A4A"/><path d="M-2 -30 Q-20 -46 -34 -50" stroke="#8B6A4A" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M2 -36 Q18 -50 30 -58" stroke="#8B6A4A" stroke-width="5" fill="none" stroke-linecap="round"/>';
+}
+/* 동반자 자리 */
+const COMP_AT = {butterfly:[62,-96,18], bird:[-58,-74,20], squirrel:[46,10,22], swing:[-40,-14,22], beehive:[40,-50,18], owl:[-12,-98,20], fox:[-70,12,24]};
+function compSVG(id){
+  const it = ITEM[id], p = COMP_AT[id]; if(!it || !p) return '';
+  return '<text class="tr-comp" data-comp="' + id + '" x="' + p[0] + '" y="' + p[1] + '" font-size="' + p[2] + '" text-anchor="middle">' + it.ic + '</text>';
+}
+function treeSVG(t, look, label){
+  look = look || myLook();
   const lv = shownLevel(t), sc = (0.6 + lv * 0.04).toFixed(3);
   const fr = [];
   const nFruit = +t.fruit || 0, nFog = +t.fog || 0, nGroup = +t.group_fruit || 0;
@@ -105,12 +234,11 @@ function treeSVG(t){
   const nFl = Math.min(+t.flowers || 0, FL_SPOTS.length);
   let flowers = ''; for(let i = 0; i < nFl; i++) flowers += flowerSVG(FL_SPOTS[i][0], FL_SPOTS[i][1]);
   const all = nFruit + nFog + nGroup;
-  return '<svg viewBox="-120 -130 240 170" width="300" height="212" role="img" aria-label="내 나무, 레벨 ' + lv + ', 열매 ' + all + '개, 꽃 ' + (+t.flowers || 0) + '개">' +
+  return '<svg viewBox="-120 -130 240 170" width="300" height="212" role="img" data-kind="' + look.tree + '" aria-label="' + esc((label || '내 나무') + ', ' + ITEM[look.tree].nm + ', 레벨 ' + lv + ', 열매 ' + all + '개, 꽃 ' + (+t.flowers || 0) + '개') + '">' +
     '<ellipse cx="0" cy="22" rx="105" ry="16" fill="#E2E8D6"/>' +
     '<g transform="translate(0 20) scale(' + sc + ') translate(0 -20)">' +
-    '<path d="M-9 20 Q-6 -20 -3 -40 L3 -40 Q6 -20 9 20 Z" fill="#8B6A4A"/><path d="M-2 -30 Q-20 -46 -34 -50" stroke="#8B6A4A" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M2 -36 Q18 -50 30 -58" stroke="#8B6A4A" stroke-width="5" fill="none" stroke-linecap="round"/>' +
-    BLOBS.slice(0, nBlob).map(b => '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="' + b[2] + '" fill="' + b[3] + '"/>').join('') +
-    fruits + '</g>' + flowers + '</svg>';
+    trunkSVG(look.tree) + canopySVG(look.tree, nBlob) +
+    fruits + '</g>' + flowers + (look.comp ? compSVG(look.comp) : '') + '</svg>';
 }
 function legacyNoteKey(){ return 'qo2-tree-legacy-note-' + T.uid; }
 function noteSeen(){ try{ return localStorage.getItem(legacyNoteKey()) === '1'; }catch(_){ return false; } }
@@ -132,7 +260,8 @@ function renderTree(root){
   const treeCard = '<div class="card tr-tree" data-ready="1" data-level="' + lv + '"><div class="tr-cap"><span>내 나무</span></div>' +
     '<div class="tree-wrap">' + treeSVG(t) + '</div>' +
     '<div class="stats"><div class="tr-st-fruit"><b>' + all + '</b><span>' + ICON_FRUIT + ' 열매</span>' + (sub ? '<small class="tr-sub">' + FOG_SMALL.replace('width="14" height="14"', 'width="12" height="12"') + ' ' + esc(sub) + '</small>' : '') + '</div>' +
-    '<div class="tr-st-sprout"><b>' + (+t.sprout || 0) + '</b><span>🌱 새싹 달린 열매</span></div><div class="tr-st-flower"><b>' + (+t.flowers || 0) + '</b><span>🌸 꽃</span></div></div>' +
+    '<div class="tr-st-sprout"><b>' + (+t.sprout || 0) + '</b><span>🌱 새싹 달린 열매</span></div><div class="tr-st-flower"><b>' + (+t.flowers || 0) + '</b><span>🌸 꽃</span></div>' +
+    (t.water != null ? '<div class="tr-st-water"><b>' + (+t.water || 0) + '</b><span>💧 받은 물</span></div>' : '') + '</div>' +
     '<div class="hint tr-hint">나무는 끝까지 탐구한 질문(열매)으로 자라요. 꽃은 내 단서로 친구가 한 걸음 간 흔적이에요.</div></div>';
   /* 받은 꽃 */
   const fl = (T.flowers || []).slice().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')) || b.id - a.id);
@@ -151,73 +280,25 @@ function renderTree(root){
     (fp.length ? '<div class="tr-fp-chips">' + COUNTED.map(s => '<span data-step="' + s.k + '"' + (has[s.k] ? ' class="on"' : '') + '>' + (has[s.k] ? '✓ ' : '') + esc(s.n) + '</span>').join('') + '</div>'
       : '') + '<div class="hint">일지 칸을 내 말로 처음 채우면 ' + (fp.length ? '그 칸에' : '여기에') + ' 발자국이 남아요.</div></div>';
   const seeds = QO.state.me ? (QO.state.me.seeds || 0) : 0;
-  const acHTML = '<div class="card tr-acorn"><span class="e" aria-hidden="true">🌰</span><div><b>도토리 <span class="tr-seeds">' + seeds + '</span></b><div class="hint">도토리는 선생님이 열매를 확인할 때 받아요.</div></div></div>';
-  const right = flHTML + fpHTML + acHTML;
+  const acHTML = '<div class="card tr-acorn"><span class="e" aria-hidden="true">🌰</span><div><b>도토리 <span class="tr-seeds">' + seeds + '</span></b><div class="hint">도토리는 선생님이 열매를 확인할 때 받아요. 꾸미기에서 써요.</div></div></div>';
+  const right = acHTML + shopHTML() + flHTML + fpHTML;
   root.innerHTML = U.wide() ? '<div class="cols tr-cols"><div>' + note + treeCard + '</div><div>' + right + '</div></div>' : note + treeCard + right;
 }
 
 /* ═══════════ 우리 반 숲 ═══════════ */
 /* 막힘 깃발 자리(지도 좌표) — 단서가 적은 질문부터 골라, 질문 id 로 자리를 정해 다시 읽어도 그대로 */
-const SLOTS = [[246,112],[292,246],[46,248],[198,304],[178,110],[40,128],[236,368],[338,168]];
-const SCENERY = [[30,40],[150,36],[214,48],[288,40],[350,272],[262,150],[160,350],[280,352],[28,166],[352,350],[96,384],[204,140],[256,292],[352,116],[226,262]];
+const SLOTS = 8;   // 깃발 숲 나무 수(world.js FLAG_AT 과 같다)
 function pickFlags(qs){
   const flagged = qs.filter(q => q && q.flag_step && !q.is_anonymous)
-    .sort((a, b) => (a.clue_count || 0) - (b.clue_count || 0) || b.id - a.id).slice(0, SLOTS.length)
+    .sort((a, b) => (a.clue_count || 0) - (b.clue_count || 0) || b.id - a.id).slice(0, SLOTS)
     .sort((a, b) => a.id - b.id);
   const used = {};
   return flagged.map(q => {
-    let s = (Number(q.id) * 7) % SLOTS.length;
-    while(used[s]) s = (s + 1) % SLOTS.length;
+    let s = (Number(q.id) * 7) % SLOTS;
+    while(used[s]) s = (s + 1) % SLOTS;
     used[s] = true;
     return {id:q.id, body:q.body, unit:q.unit || '', step:q.flag_step, tried:q.flag_tried || '', slot:s};
   });
-}
-function placeSVG(k){
-  if(k === 'spring') return '<g data-place="spring" transform="translate(300 318)"><ellipse rx="38" ry="19" fill="#9FD3E2"/><ellipse cx="-4" cy="-2" rx="22" ry="8" fill="#C4E6EF"/><circle cx="-40" cy="6" r="5" fill="#C9CFBF"/><circle cx="36" cy="12" r="4" fill="#C9CFBF"/><circle cx="30" cy="-14" r="3.5" fill="#C9CFBF"/>' +
-    '<text y="38" text-anchor="middle" class="tr-lbl" fill="#2F5B6A">샘물</text></g>';
-  if(k === 'bridge') return '<g data-place="bridge" transform="translate(113 189) rotate(-2)"><rect x="-27" y="-11" width="54" height="22" rx="3" fill="#B58A5C"/>' +
-    [-18, -9, 0, 9, 18].map(x => '<path d="M' + x + ' -10v20" stroke="#8C6640" stroke-width="1.6"/>').join('') +
-    '<path d="M-29 -12h58M-29 12h58" stroke="#6B4A2A" stroke-width="3" stroke-linecap="round"/><text y="-20" text-anchor="middle" class="tr-lbl" fill="#6B4A2A">다리</text></g>';
-  if(k === 'obs') return '<g data-place="obs" transform="translate(316 70)"><ellipse cy="26" rx="54" ry="16" fill="#C8DDB6"/><rect x="-17" y="-4" width="34" height="28" rx="2" fill="#F1F3F5" stroke="#9AA5B1" stroke-width="1.5"/>' +
-    '<path d="M-19 -4 A19 19 0 0 1 19 -4 Z" fill="#C9D3DE" stroke="#8D99A6" stroke-width="1.5"/><path d="M-2 -21 L2 -21 L3 -4 L-3 -4 Z" fill="#5A6774"/><path d="M4 -12 L20 -26" stroke="#5A6774" stroke-width="4" stroke-linecap="round"/>' +
-    '<rect x="-5" y="10" width="10" height="14" rx="1" fill="#9AA5B1"/><text y="52" text-anchor="middle" class="tr-lbl" fill="#3F4E5C">관측소</text></g>';
-  if(k === 'winter') return '<g data-place="winter" transform="translate(56 318)"><ellipse cy="22" rx="50" ry="14" fill="#F4F8FA"/>' +
-    [[-22, 8, 0.9], [2, 0, 1.15], [24, 10, 0.85]].map(p => '<g transform="translate(' + p[0] + ' ' + p[1] + ') scale(' + p[2] + ')"><rect x="-2.5" y="8" width="5" height="8" fill="#7A5A3C"/><path d="M0 -24 L14 8 L-14 8 Z" fill="#3F7A55"/><path d="M0 -24 L6.5 -9 Q0 -6 -6.5 -9 Z" fill="#fff"/><path d="M-10 0 Q0 4 10 0 L12 4 Q0 8 -12 4 Z" fill="#fff" opacity=".9"/></g>').join('') +
-    '<text y="48" text-anchor="middle" class="tr-lbl" fill="#3F5574">겨울 숲</text></g>';
-  return '';
-}
-function mapSVG(f){
-  let s = '<svg viewBox="0 0 380 400" role="img" aria-label="우리 반 숲 지도"><rect width="380" height="400" fill="#DCEBCF"/>' +
-    '<ellipse cx="96" cy="86" rx="70" ry="38" fill="#E2EFD6"/><ellipse cx="270" cy="230" rx="80" ry="40" fill="#E2EFD6"/>' +
-    '<path d="M20 210 Q120 170 190 205 T360 190" stroke="#E9DFC4" stroke-width="22" fill="none" stroke-linecap="round"/>' +
-    '<path d="M92 -4 C80 70 126 120 112 189 S150 300 162 404" stroke="#A8D5E2" stroke-width="16" fill="none" stroke-linecap="round"/>' +
-    '<path d="M92 -4 C80 70 126 120 112 189 S150 300 162 404" stroke="#C4E4EE" stroke-width="5" fill="none" stroke-linecap="round" transform="translate(-2 0)"/>';
-  const taken = f.flags.map(x => SLOTS[x.slot]);
-  const blocked = [];
-  PLACES.forEach(p => { if(T.seen[p.k]) blocked.push(p.k); });
-  const near = (a, b, d) => Math.abs(a[0] - b[0]) < d && Math.abs(a[1] - b[1]) < d;
-  const AREA = {spring:[300, 318, 50], obs:[316, 72, 58], winter:[56, 322, 56], bridge:[113, 189, 34]};
-  SCENERY.forEach(p => {
-    if(taken.some(q => near(p, q, 36))) return;
-    if(blocked.some(k => near(p, AREA[k], AREA[k][2]))) return;
-    s += '<g transform="translate(' + p[0] + ' ' + p[1] + ')" opacity=".6"><circle r="14" fill="#86BF8F"/><circle cx="-5" cy="-5" r="8" fill="#9BCDA2"/></g>';
-  });
-  PLACES.forEach(p => { if(T.seen[p.k]) s += placeSVG(p.k); });
-  f.flags.forEach(x => {
-    const p = SLOTS[x.slot], on = T.pick === x.id, sent = f.sent[x.id] != null;
-    s += '<g class="tr-flag" data-qid="' + x.id + '" transform="translate(' + p[0] + ' ' + p[1] + ')"><circle r="18" fill="' + (on ? '#2C6A3A' : '#5FA86D') + '"/><circle cx="-6" cy="-6" r="10" fill="' + (on ? '#3F8B4F' : '#7DBE87') + '"/>' +
-      (on ? '<circle r="22" fill="none" stroke="#155A5F" stroke-width="2.5"/>' : '') +
-      (sent ? '<circle cx="14" cy="-14" r="8" fill="#1F7A80"/><path d="M10 -14 l2.8 2.8 5 -5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-        : '<g transform="translate(10 -34)"><line x1="0" y1="0" x2="0" y2="24" stroke="#155A5F" stroke-width="2.4"/><path d="M0 0 L15 5.5 L0 11 Z" fill="#1F7A80"/></g>') + '</g>';
-  });
-  s += '<g transform="translate(190 205)"><circle r="20" fill="#3F8B4F" stroke="#fff" stroke-width="3"/><text y="5" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">나</text></g></svg>';
-  /* 누를 곳은 진짜 단추로(44px 이상) */
-  const pins = f.flags.map(x => {
-    const p = SLOTS[x.slot], sent = f.sent[x.id] != null;
-    return '<button type="button" class="tr-pin" data-tr="pick" data-q="' + x.id + '" style="left:' + (p[0] / 3.8).toFixed(2) + '%;top:' + ((p[1] - 6) / 4).toFixed(2) + '%"' +
-      ' aria-pressed="' + (T.pick === x.id) + '" aria-label="' + esc(sent ? '단서를 보낸 친구 질문' : '막힌 친구 질문 — ' + QO.journal.stepName(x.step) + '에서 막힘') + '"></button>';
-  }).join('');
-  return '<div class="tr-map">' + s + pins + '</div>';
 }
 function kindOf(x){ return T.kind[x.id] || QO.K.STUCK_KIND[x.step] || 'where'; }
 function friendCardHTML(x, f){
@@ -230,9 +311,9 @@ function friendCardHTML(x, f){
   h += '<div class="lbl" style="margin:12px 0 6px">정답 말고, 찾아갈 길을 알려 줘요 · ' + esc(K.n) + '</div><div class="tpl" data-q="' + x.id + '" data-kind="' + kind + '">' +
     K.parts.map((p, i) => typeof p === 'string' ? '<span>' + esc(p) + '</span>'
       : '<input data-i="' + i + '" placeholder="' + esc(p.ph) + '" aria-label="' + esc(p.ph) + '" style="max-width:' + p.w + 'px" maxlength="24"' + (p.ph === '쪽' ? ' inputmode="numeric"' : '') + '>').join('') + '</div>' +
-    '<div class="row" style="margin-top:10px"><button type="button" class="btn teal" style="flex:1" data-tr="send" data-q="' + x.id + '">보내기</button></div><div class="err" id="tr-ce" role="alert"></div>' +
+    '<div class="row" style="margin-top:10px"><button type="button" class="btn teal" style="flex:1" data-tr="send" data-q="' + x.id + '">보내기</button></div><div class="err" id="tr-ce" role="alert">' + esc(T.ce && T.ce.q === x.id ? T.ce.m : '') + '</div>' +
     '<div class="row" style="justify-content:space-between;flex-wrap:wrap"><button type="button" class="link teal" data-tr="kind" data-q="' + x.id + '">다른 종류로</button>' +
-    (T.curious[x.id] ? '<span class="hint">「나도 궁금해요」를 보냈어요</span>' : '<button type="button" class="link" data-tr="curious" data-q="' + x.id + '">나도 궁금해요</button>') + '</div></div>';
+    (T.curious[x.id] ? '<span class="hint">💧 물을 줬어요</span>' : '<button type="button" class="link" data-tr="curious" data-q="' + x.id + '">💧 물 주기</button>') + '</div></div>';
   return h;
 }
 function renderForest(root){
@@ -248,13 +329,63 @@ function renderForest(root){
   const places = '<div class="card tr-places" data-ready="1"><div class="tr-next">' + (next ? '다음에 열릴 곳: ' + esc(next.n) : '숲이 모두 열렸어요') + '</div>' +
     (next ? '<div class="hint" style="margin-top:2px">' + esc(next.cond) + ' 열려요.</div>' : '') +
     '<div class="places">' + PLACES.map(p => '<div class="' + (T.seen[p.k] ? 'on' : '') + '" data-place="' + p.k + '"><b>' + (T.seen[p.k] ? '✓ ' : '') + esc(p.n) + '</b><span>' + esc(p.cond) + '</span></div>').join('') + '</div></div>';
-  const map = '<div class="card map-card">' + mapSVG(f) + '</div>' +
-    '<div class="hint tr-maphint">' + (f.flags.length ? '청록 깃발은 친구가 막혀 있는 질문이에요. 눌러서 찾아갈 길을 알려 줄 수 있어요. 이름은 보이지 않아요.'
-      : '친구가 질문에 막힘 표시를 하면 그 나무에 청록 깃발이 서요.') + '</div>';
+  /* 걸어 다니는 숲(world.js). 깃발 카드·친구 나무 카드는 숲 안 대화 상자에 뜬다 */
+  const pins = f.flags.length ? '<div class="tr-pins">' + f.flags.map(x => {
+    const sent = f.sent[x.id] != null, nm = QO.journal.stepName(x.step) || '한 칸';
+    return '<button type="button" class="tr-pin" data-tr="pick" data-q="' + x.id + '"' + (sent ? ' data-sent="1"' : '') + ' aria-pressed="' + (T.pick === x.id) + '"' +
+      ' aria-label="' + esc(sent ? '단서를 보낸 친구 질문' : '막힌 친구 질문 — ' + nm + '에서 막힘') + '"><i aria-hidden="true"></i>' + esc(sent ? '단서 보냄' : nm + '에서 막힘') + '</button>';
+  }).join('') + '</div>' : '';
+  const map = '<div class="wd-slot"></div>' + pins +
+    '<div class="hint tr-maphint">' + (f.flags.length ? '청록 깃발은 친구가 막혀 있는 질문이에요. 깃발 숲의 나무 앞에서 살펴보기를 누르면 찾아갈 길을 알려 줄 수 있어요. 깃발에는 이름이 없어요.'
+      : '친구가 질문에 막힘 표시를 하면 깃발 숲에 청록 깃발이 서요.') + '</div>';
   const x = T.pick != null ? f.flags.find(y => y.id === T.pick) : null;
-  const side = x ? friendCardHTML(x, f) : (U.wide() && f.flags.length ? '<div class="hint" style="margin-top:12px">지도에서 깃발이 선 나무를 눌러 보세요.</div>' : '');
-  /* 폰: 장소 → 지도 → 친구 카드 / 넓은 화면: 지도 왼쪽, 장소·친구 카드 오른쪽 */
-  root.innerHTML = U.wide() ? '<div class="cols tr-cols"><div>' + map + '</div><div>' + places + side + '</div></div>' : places + map + side;
+  const card = x ? friendCardHTML(x, f) : (T.friend != null ? friendHTML() : '');
+  const mates = matesHTML();
+  /* 폰: 숲 → 깃발 단추 → 장소 → 우리 반 나무 / 넓은 화면: 숲 왼쪽, 장소·우리 반 나무 오른쪽 */
+  root.innerHTML = U.wide() ? '<div class="cols tr-cols"><div>' + map + '</div><div>' + places + mates + '</div></div>' : map + places + mates;
+  const slot = root.querySelector('.wd-slot');
+  if(slot && QO.world) QO.world.mount(slot, {
+    flags:f.flags.map(y => ({id:y.id, slot:y.slot, step:y.step, sent:f.sent[y.id] != null})),
+    seen:Object.assign({}, T.seen), trees:worldTrees(),
+    card:card || null, cardKey:x ? 'q' + x.id : (card ? 'n' + T.friend : null),
+    onFlag(qid){ T.friend = null; T.pick = qid; repaint('forest'); },
+    onTree(n){ T.pick = null; if(T.friend === n) repaint('forest'); else openFriend(n); },
+    onClose(){ T.pick = null; T.friend = null; repaint('forest'); }
+  });
+}
+/* 숲에 심을 나무 — 반 친구(classmate_trees) + 내 나무(my_tree 를 읽은 뒤) */
+function worldTrees(){
+  const out = (T.mates || []).map(m => ({n:+m.owner_number, name:m.owner_name, type:m.active_tree || 'default', level:+m.level || 1, fruits:+m.fruits || 0}));
+  const me = QO.state.me || {};
+  const t = T.tree || T.wtree;
+  if(t && me.number != null){
+    out.push({n:+me.number, name:me.name || '나', type:myLook().tree, level:shownLevel(t), fruits:(+t.fruit || 0) + (+t.fog || 0) + (+t.group_fruit || 0), me:true});
+  }
+  return out;
+}
+function miniTree(m){
+  return treeSVG({level:m.level, fruit:Math.min(+m.fruits || 0, SPOTS.length)}, {tree:ITEM[m.active_tree] && ITEM[m.active_tree].cat === 'tree' ? m.active_tree : 'default', comp:ITEM[m.active_companion] ? m.active_companion : null}, m.owner_name + '의 나무');
+}
+function matesHTML(){
+  if(T.mates == null) return '<div class="sec">우리 반 나무</div><div class="empty tr-loading" style="padding-top:12px">불러오는 중이에요…</div>';
+  if(T.matesErr) return '<div class="sec">우리 반 나무</div><div class="card"><div class="hint">' + esc(T.matesErr) + '</div></div>';
+  if(!T.mates.length) return '';
+  return '<div class="sec">우리 반 나무 <span class="n">' + T.mates.length + '</span></div><div class="tr-mates">' + T.mates.map(m =>
+    '<button type="button" class="tr-mate' + (T.friend === m.owner_number ? ' on' : '') + '" data-tr="friend" data-n="' + m.owner_number + '" aria-pressed="' + (T.friend === m.owner_number) + '">' +
+    '<span class="t">' + miniTree(m) + '</span><b>' + esc(m.owner_number + '번 ' + m.owner_name) + '</b><small>질문 ' + (+m.questions || 0) + ' · 열매 ' + (+m.fruits || 0) + ' · 💧 ' + (+m.water || 0) + '</small></button>').join('') + '</div>';
+}
+function friendHTML(){
+  if(T.friend == null || !T.mates) return '';
+  const m = T.mates.find(x => x.owner_number === T.friend); if(!m) return '';
+  let h = '<div class="card tr-friend" id="tr-friend"><div class="tr-fr-top"><b>' + esc(m.owner_number + '번 ' + m.owner_name) + '의 나무</b><button type="button" class="link" data-tr="friend-close">닫기</button></div>' +
+    '<div class="tree-wrap">' + miniTree(m) + '</div>';
+  if(T.fqs == null) return h + '<div class="hint">질문을 불러오는 중이에요…</div></div>';
+  if(T.fqErr) return h + '<div class="err">' + esc(T.fqErr) + '</div></div>';
+  if(!T.fqs.length) return h + '<div class="hint">아직 보이는 질문이 없어요.</div></div>';
+  return h + '<div class="hint" style="margin-bottom:6px">궁금한 질문에 물을 주면 친구 나무에 💧가 쌓여요.</div>' + T.fqs.map(q =>
+    '<div class="tr-fqrow" data-q="' + q.id + '"><div class="qt">' + esc(q.body) + (q.fruit_kind === 'fruit' ? ' <span class="tag">열매</span>' : q.fruit_kind === 'fog' ? ' <span class="tag">안개 열매</span>' : '') + '</div>' +
+    '<div class="row">' + (q.watered ? '<span class="hint">💧 물을 줬어요 · ' + (+q.water_count || 0) + '</span>'
+      : '<button type="button" class="btn soft sm" data-tr="water" data-q="' + q.id + '">💧 물 주기</button><span class="hint">💧 ' + (+q.water_count || 0) + '</span>') + '</div></div>').join('') + '</div>';
 }
 
 /* ═══════════ 단서 보내기 ═══════════ */
@@ -268,20 +399,23 @@ function clueText(kind, ins){
   }
   return K.parts.map((p, i) => typeof p === 'string' ? p : v(i)).join('').trim();
 }
+/* 단서 안내 글도 상태에 둔다 — 늦게 온 자료로 숲이 다시 그려져도 남게 */
+function ceErr(qid, msg){ T.ce = {q:qid, m:msg || ''}; const e = U.$('#tr-ce'); if(e) e.textContent = T.ce.m; }
 async function sendClue(btn, qid){
   const f = T.forest; if(!f) return;
+  ceErr(qid, '');
   const x = f.flags.find(y => y.id === qid); if(!x) return;
   const kind = kindOf(x), K = QO.K.CLUE_KINDS[kind], err = U.$('#tr-ce');
   const ins = U.$$('#body .tr-fq .tpl[data-q="' + qid + '"] input');
   const filled = ins.filter(i => i.value.trim());
   if(K.any ? !filled.length : filled.length < ins.length){
     const emp = ins.find(i => !i.value.trim());
-    err.textContent = K.any ? '쪽수나 검색어 중 하나는 적어 주세요.' : '빈칸을 채워 주세요.';
+    ceErr(qid, K.any ? '쪽수나 검색어 중 하나는 적어 주세요.' : '빈칸을 채워 주세요.');
     (emp || ins[0]).focus(); return;
   }
-  for(const i of filled){ if(/([^\d\s])\1\1/.test(i.value) || /[ㅋㅎ]{2,}/.test(i.value) || /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(i.value) || i.value.indexOf('__') >= 0){ err.textContent = '장난 글자는 보낼 수 없어요.'; i.focus(); return; } }
+  for(const i of filled){ if(/([^\d\s])\1\1/.test(i.value) || /[ㅋㅎ]{2,}/.test(i.value) || /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(i.value) || i.value.indexOf('__') >= 0){ ceErr(qid, '장난 글자는 보낼 수 없어요.'); i.focus(); return; } }
   const text = clueText(kind, ins);
-  if(Array.from(text).length < 5){ err.textContent = '빈칸을 조금 더 채워 주세요.'; return; }
+  if(Array.from(text).length < 5){ ceErr(qid, '빈칸을 조금 더 채워 주세요.'); return; }
   const r = await U.busy(btn, () => QO.api.addClue(qid, kind, text), {errEl:err});
   if(r === undefined) return;
   if(T.forest === f) f.sent[qid] = text;
@@ -300,9 +434,11 @@ document.addEventListener('click', async e => {
   else if(act === 'fl-all'){ T.flAll = !T.flAll; repaint('tree'); }
   else if(act === 'pick'){
     T.pick = T.pick === qid ? null : qid;
+    if(T.pick != null) T.friend = null;
     repaint('forest');
-    const c = U.$('#tr-fq');
-    if(c && T.pick != null){ try{ c.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(_){} }
+    if(T.pick != null && QO.world) QO.world.walkToFlag(qid);   // 숲 속 내 캐릭터가 그 깃발 나무로 걸어간다
+    const w = U.$('#body .wd');
+    if(w && T.pick != null){ try{ w.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(_){} }
     const pin = U.$('#body .tr-pin[data-q="' + qid + '"]'); if(pin) try{ pin.focus({preventScroll:true}); }catch(_){}
   }
   else if(act === 'kind'){
@@ -312,12 +448,25 @@ document.addEventListener('click', async e => {
     repaint('forest');
   }
   else if(act === 'send') await sendClue(b, qid);
-  else if(act === 'curious'){
+  else if(act === 'curious' || act === 'water'){
     const r = await U.busy(b, () => QO.api.markCurious(qid));
     if(r === undefined) return;
-    if(r){ T.curious[qid] = true; repaint('forest'); U.toast('친구에게 「나도 궁금해요」를 보냈어요.'); }
-    else U.toast('이 질문에는 보낼 수 없어요.');
+    if(r){
+      T.curious[qid] = true;
+      const q = T.fqs && T.fqs.find(x => x.id === qid);
+      if(q && !q.watered){ q.watered = true; q.water_count = (+q.water_count || 0) + 1; const m = T.mates && T.mates.find(x => x.owner_number === T.friend); if(m) m.water = (+m.water || 0) + 1; }
+      repaint('forest'); U.toast('친구 질문에 물을 줬어요.');
+    }
+    else U.toast('이 질문에는 물을 줄 수 없어요.');
   }
+  else if(act === 'friend'){
+    const n = Number(b.dataset.n);
+    if(T.friend === n){ T.friend = null; repaint('forest'); }
+    else{ T.pick = null; openFriend(n); if(QO.world) QO.world.walkToTree(n); const w = U.$('#body .wd'); if(w) try{ w.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(_){} }
+  }
+  else if(act === 'friend-close'){ T.friend = null; repaint('forest'); }
+  else if(act === 'shop-cat'){ T.shopCat = b.dataset.c === 'companion' ? 'companion' : 'tree'; T.shopErr = ''; repaint('tree'); }
+  else if(act === 'item') await itemTap(b, b.dataset.id);
 });
 /* 단서 칸에서 Enter = 보내기(한글 조합 중에는 무시) */
 document.addEventListener('keydown', e => {
@@ -413,7 +562,7 @@ add('나무 · 발자국은 숫자 없이 칸 종류만, 도토리는 머리글�
   t.expect(!/[0-9]/.test(U.$('#body .tr-fp').textContent), '발자국에 숫자가 없음');
   t.eq(U.$('#body .tr-seeds').textContent, document.getElementById('acorn').textContent, '도토리 = 머리글');
   t.eq(U.$('#body .tr-seeds').textContent, String(t.state.me.seeds), '도토리 = profile.seeds');
-  t.expect(!U.$('#body .shop'), '꾸미기는 없음');
+  t.expect(U.$('#body .tr-shop'), '꾸미기 있음');
   /* 도토리가 바뀌면 함께 바뀜 */
   QO.store.setSeeds(31);
   t.eq(U.$('#body .tr-seeds').textContent, '31', '도토리 다시 그림');
@@ -426,10 +575,10 @@ add('나무 · 숲 장소 열림·잠김과 다음에 열릴 곳(숫자 없음)'
   t.expect(!U.$('#body .places [data-place="bridge"]').classList.contains('on'), '다리 잠김');
   t.eq(U.$('#body .tr-next').textContent, '다음에 열릴 곳: 다리', '다음에 열릴 곳');
   t.expect(pc.textContent.indexOf('친구 단서로 막힌 칸이 처음 풀린 날 열려요.') >= 0, '열리는 조건 문구');
-  t.expect(U.$('#body svg [data-place="spring"]') && !U.$('#body svg [data-place="bridge"]'), '지도에는 열린 곳만');
+  t.expect(U.$('#body .wd-sr [data-place="spring"]') && !U.$('#body .wd-sr [data-place="bridge"]'), '숲에는 열린 곳만');
   const noDigit = () => {
     t.expect(!/[0-9]/.test(U.$('#body .tr-places').textContent), '장소 카드에 숫자');
-    t.expect(!U.$$('#body .tr-map text').some(x => /[0-9]/.test(x.textContent)), '지도 글자에 숫자');
+    t.expect(!/[0-9]/.test(U.$('#body .wd-sr').textContent), '숲 장소 글자에 숫자');
     t.expect(!U.$$('#body .tr-pin').some(x => /[0-9]/.test(x.getAttribute('aria-label'))), '깃발 이름에 숫자');
   };
   noDigit();
@@ -439,7 +588,7 @@ add('나무 · 숲 장소 열림·잠김과 다음에 열릴 곳(숫자 없음)'
   await t.api.thankClue(502, '덕분에 실험 방법을 정했어요');
   await t.loginAs('A');
   await t.click('#nav [data-t="forest"]');
-  await t.waitFor(() => U.$('#body svg [data-place="bridge"]'));
+  await t.waitFor(() => U.$('#body .wd-sr [data-place="bridge"]'));
   t.eq(U.$('#body .tr-next').textContent, '다음에 열릴 곳: 관측소', '다음은 관측소');
   t.expect(U.$('#body .tr-places').textContent.indexOf('모든 모둠 일지가 정리까지 간 날 열려요.') >= 0, '관측소 조건');
   noDigit();
@@ -447,24 +596,24 @@ add('나무 · 숲 장소 열림·잠김과 다음에 열릴 곳(숫자 없음)'
   const y = U.schoolYear();
   t.db.class_forest_unlocks.push({school_year:y, grade:2, class_no:11, place:'winter', unlocked_at:new Date().toISOString()});
   await t.click('#nav [data-t="tree"]'); await t.click('#nav [data-t="forest"]');
-  await t.waitFor(() => U.$('#body svg [data-place="winter"]'));
+  await t.waitFor(() => U.$('#body .wd-sr [data-place="winter"]'));
   t.eq(U.$('#body .tr-next').textContent, '다음에 열릴 곳: 관측소', '겨울 숲이 먼저 열려도 다음은 관측소');
   t.db.class_forest_unlocks.push({school_year:y, grade:2, class_no:11, place:'obs', unlocked_at:new Date().toISOString()});
   await t.click('#nav [data-t="tree"]'); await t.click('#nav [data-t="forest"]');
   await t.waitFor(() => /숲이 모두 열렸어요/.test(U.$('#body .tr-next').textContent));
-  t.eq(U.$$('#body svg [data-place]').length, 4, '네 곳 모두 지도에');
+  t.eq(U.$$('#body .wd-sr [data-place]').length, 4, '네 곳 모두 숲에');
   noDigit();
   /* 한 번 열린 곳은 서버가 빠뜨려도 그대로 */
   t.db.class_forest_unlocks = t.db.class_forest_unlocks.filter(u => u.place !== 'obs');
   await t.click('#nav [data-t="tree"]'); await t.click('#nav [data-t="forest"]');
   await t.wait(200);
-  t.expect(U.$('#body svg [data-place="obs"]'), '열린 곳은 다시 잠기지 않음');
+  t.expect(U.$('#body .wd-sr [data-place="obs"]'), '열린 곳은 다시 잠기지 않음');
 });
 
 add('나무 · 숲 깃발(익명 빼고) → 단서 보내기·다른 종류·나도 궁금해요', async t => {
   await t.click('#nav [data-t="forest"]');
   await forestReady(t);
-  const ids = U.$$('#body .tr-flag').map(g => Number(g.dataset.qid)).sort((a, b) => a - b);
+  const ids = U.$$('#body .tr-pin').map(g => Number(g.dataset.q)).sort((a, b) => a - b);
   t.eq(ids, [121, 131, 141], '막힘 깃발(익명 123 빼고)');
   t.eq(U.$$('#body .tr-pin').length, 3, '누를 곳');
   t.expect(U.$$('#body .tr-pin').every(b => b.offsetWidth >= 44 && b.offsetHeight >= 44), '누를 곳 44px');
@@ -492,7 +641,7 @@ add('나무 · 숲 깃발(익명 빼고) → 단서 보내기·다른 종류·�
   await t.waitFor(() => /단서를 보냈어요/.test((U.$('#tr-fq') || {}).textContent || ''));
   const c = t.db.clues.find(x => x.question_id === 131 && x.author_id === 'u-A');
   t.expect(c && c.kind === 'where' && c.body === '교과서 111쪽 · 검색어 코일 자기장', '보낸 단서 — ' + (c && c.body));
-  t.expect(U.$('#body .tr-flag[data-qid="131"] path[stroke="#fff"]'), '깃발 대신 보냄 표시');
+  t.expect(U.$('#body .tr-pin[data-q="131"][data-sent]'), '깃발 대신 보냄 표시');
   /* 나도 궁금해요 */
   await t.click('#body .tr-pin[data-q="141"]');
   await t.waitFor('#tr-fq[data-q="141"]');
@@ -504,6 +653,58 @@ add('나무 · 숲 깃발(익명 빼고) → 단서 보내기·다른 종류·�
   await t.type(in2[0], '120');
   repaint('forest');
   t.eq(U.$$('#body .tpl[data-q="141"] input')[0].value, '120', '다시 그려도 쓰던 글 그대로');
+});
+
+add('나무 · 상점: 못 사면 그대로, 사면 원장에서 빠지고 바로 씀, 동반자는 한 번 더 누르면 숨김', async t => {
+  await t.click('#nav [data-t="tree"]');
+  await treeReady(t);
+  const pA = () => t.db.profiles.find(p => p.id === 'u-A');
+  pA().seeds = 25; QO.store.setSeeds(25);
+  await t.click('#body [data-tr="item"][data-id="maple"]');
+  t.expect(/모자라요/.test(U.$('#tr-se').textContent), '도토리 모자람 안내');
+  t.eq(pA().seeds, 25, '못 사면 그대로');
+  t.click('#body [data-tr="item"][data-id="pine"]');
+  await t.waitFor('.qo-dialog [data-dlg="ok"]');
+  await t.click('.qo-dialog [data-dlg="ok"]');
+  await t.waitFor(() => (U.$('#body .tree-wrap svg') || {}).dataset && U.$('#body .tree-wrap svg').dataset.kind === 'pine');
+  t.eq(pA().seeds, 5, '20 빠짐');
+  t.eq(U.$('#body .tr-seeds').textContent, '5', '화면 도토리');
+  t.expect(t.db.acorn_ledger.some(l => l.user_id === 'u-A' && l.reason === 'buy' && l.ref_id === 'pine' && l.delta === -20), '원장 한 줄');
+  t.expect(U.$('#body [data-tr="item"][data-id="pine"]').classList.contains('on'), '쓰는 중 표시');
+  await t.click('#body [data-tr="item"][data-id="default"]');
+  await t.waitFor(() => U.$('#body .tree-wrap svg').dataset.kind === 'default');
+  t.eq(pA().seeds, 5, '산 것으로 돌아가도 도토리 그대로');
+  pA().seeds = 15; QO.store.setSeeds(15);
+  await t.click('#body [data-tr="shop-cat"][data-c="companion"]');
+  t.click('#body [data-tr="item"][data-id="butterfly"]');
+  await t.waitFor('.qo-dialog [data-dlg="ok"]');
+  await t.click('.qo-dialog [data-dlg="ok"]');
+  await t.waitFor('#body .tree-wrap .tr-comp[data-comp="butterfly"]');
+  await t.click('#body [data-tr="item"][data-id="butterfly"]');
+  await t.waitFor(() => !U.$('#body .tree-wrap .tr-comp'));
+});
+
+add('나무 · 우리 반 나무 → 친구 질문 → 물 주기(한 번만, 수가 늘어남)', async t => {
+  await t.click('#nav [data-t="forest"]');
+  await forestReady(t);
+  await t.waitFor('#body .tr-mate');
+  const names = U.$$('#body .tr-mate b').map(b => b.textContent);
+  t.expect(names.length > 0 && names.every(n => !/가람/.test(n)), '나는 빠짐 — ' + names.join(','));
+  await t.click('#body .tr-mate[data-n="2"]');
+  await t.waitFor('#tr-friend .tr-fqrow');
+  t.expect(!U.$$('#tr-friend .tr-fqrow').some(r => Number(r.dataset.q) === 123), '익명 질문은 안 보임');
+  const btn = U.$('#tr-friend [data-tr="water"]');
+  t.expect(btn, '물 주기 단추');
+  const qid = Number(btn.dataset.q), before = (t.db.questions.find(q => q.id === qid).watered_by || []).length;
+  await t.click(btn);
+  await t.waitFor(() => !U.$('#tr-friend [data-tr="water"][data-q="' + qid + '"]'));
+  const q = t.db.questions.find(x => x.id === qid);
+  t.eq((q.watered_by || []).length, before + 1, '물 한 번');
+  t.eq(q.water_count, before + 1, '물 수');
+  await t.api.markCurious(qid);
+  t.eq(t.db.questions.find(x => x.id === qid).water_count, before + 1, '두 번 줘도 한 번');
+  await t.click('#body [data-tr="friend-close"]');
+  await t.waitFor(() => !U.$('#tr-friend'));
 });
 
 add('나무 · 단서 시간에는 숲에서 단서를 보내지 않고 함께 탭으로', async t => {

@@ -133,8 +133,8 @@ function kindList(f){
 }
 function curKind(f){ const ks = kindList(f), k = T.kind[f.id]; return ks.indexOf(k) >= 0 ? k : (ks[0] || null); }
 function curiousBtn(qid){
-  return T.curious.indexOf(Number(qid)) >= 0 ? '<button type="button" class="link" disabled>궁금해요를 보냈어요</button>'
-    : '<button type="button" class="link" data-tg="curious" data-q="' + qid + '">나도 궁금해요</button>';
+  return T.curious.indexOf(Number(qid)) >= 0 ? '<button type="button" class="link" disabled>💧 물을 줬어요</button>'
+    : '<button type="button" class="link" data-tg="curious" data-q="' + qid + '">💧 물 주기</button>';
 }
 const clueKey = (ctx, qid, kind) => 'c:' + ctx + ':' + qid + ':' + kind;
 function clueFormHTML(f, ctx){
@@ -220,7 +220,7 @@ async function markCurious(btn, qid){
   if(ok === undefined || my !== T) return;
   if(ok === false){ ui.toast('이 질문에는 표시할 수 없어요.'); return; }
   if(T.curious.indexOf(qid) < 0) T.curious.push(qid);
-  rr(); ui.toast('친구에게 「나도 궁금해요」를 보냈어요.');
+  rr(); ui.toast('친구 질문에 물을 줬어요.');
 }
 
 /* ═══════════ 단서 시간(mode 'clue') ═══════════ */

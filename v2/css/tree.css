@@ -45,3 +45,35 @@ html.wide .tr-tree .tree-wrap svg{width:100%;max-width:420px;height:auto}
 html.wide .tr-cols .map-card{margin-top:0}
 html.wide .tr-cols .tr-fq{margin-top:12px}
 html.wide .tr-cols .sec:first-child{margin-top:0}
+
+/* ── 꾸미기(상점) ── */
+.tr-shop-tabs{display:flex;gap:6px;margin-bottom:10px}
+.tr-shop-tabs button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;color:var(--sub)}
+.tr-shop-tabs button.on{background:var(--leaf-l);border-color:var(--leaf);color:var(--leaf-d)}
+.tr-shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.tr-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;min-height:118px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:center;word-break:keep-all}
+.tr-item .ic{font-size:26px;line-height:1.1}
+.tr-item b{font-size:14px;font-weight:800;color:var(--ink)}
+.tr-item small{font-size:11.5px;color:var(--mute);line-height:1.35}
+.tr-item em{font-style:normal;font-size:12.5px;font-weight:800;color:var(--sub);margin-top:auto}
+.tr-item.own em{color:var(--leaf-d)}
+.tr-item.on{border:2px solid var(--leaf);background:var(--leaf-l)}
+.tr-item.on em{color:var(--leaf-d)}
+.tr-item.poor{opacity:.6}
+.tr-comp{pointer-events:none}
+.stats .tr-st-water span{white-space:nowrap}
+
+/* ── 우리 반 나무 ── */
+.tr-mates{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+.tr-mate{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line);border-radius:12px;background:#fff;min-height:44px}
+.tr-mate .t svg{width:100%;max-width:120px;height:auto}
+.tr-mate b{font-size:13.5px;font-weight:800;color:var(--ink)}
+.tr-mate small{font-size:11.5px;color:var(--mute)}
+.tr-mate.on{border:2px solid var(--leaf);background:var(--leaf-l)}
+.tr-friend{margin-top:10px}
+.tr-fr-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tr-fr-top b{font-size:15px;font-weight:800}
+.tr-friend .tree-wrap svg{max-width:220px}
+.tr-fqrow{padding:10px 0;border-top:1px solid var(--line)}
+.tr-fqrow .qt{font-size:14.5px;line-height:1.5;word-break:keep-all}
+.tr-fqrow .row{display:flex;align-items:center;gap:10px;margin-top:6px}

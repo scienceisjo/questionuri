@@ -78,6 +78,12 @@ html:not(.wide) .t-row{grid-template-columns:1fr;gap:4px}
 .t-plan li span:last-child{color:var(--mute);font-weight:700;white-space:nowrap}
 .t-ended{margin-bottom:12px;background:var(--clue-l);border-color:#C3E0E0;color:var(--clue-d)}
 .t-ended b{font-size:15.5px}
+.t-world{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+.t-world > div:first-child{flex:1 1 240px}
+.t-world b{font-size:15px}
+.t-world.on{border-color:#9FCFD2;background:#EEF8F8}
+.t-world.on b{color:#155A5F}
+.t-wbtn{display:flex;gap:8px;flex-wrap:wrap}
 .t-stale{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;border-color:#EBD9B8;background:var(--wait-l)}
 .t-stale > div{flex:1 1 220px}
 .t-stale b{font-size:15px;color:#6A3F06}
