@@ -29,8 +29,14 @@
 .tg-gstage .tg-mine,.tg-gstage .tg-idle{background:rgba(0,0,0,.18);border-radius:10px;padding:7px 10px}
 .tg-onteal{color:#fff;font-weight:800;font-size:13.5px;text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:0 2px;display:flex;align-items:center;margin-bottom:-6px}
 .tg-root .st{flex:0 0 auto}
-/* app.css 의 머리글 얼굴 단추 .me(44px 동그라미)가 .st.me 에도 걸린다 → 알약으로 되돌림 */
+/* app.css 의 머리글 얼굴 단추 .me(44px 동그라미)가 .st.me 에도 걸린다 → 되돌림 */
 .tg-root .st.me{width:auto;height:auto;display:inline-block;border-radius:99px;font-size:12.5px;font-weight:800}
+/* 상태는 눌리지 않으니 알약 대신 글자로(설계서 §4 금지 목록 · AI 티 W3) — 내 차례만 진하게 */
+.tg-root .st,.tg-root .st.ok,.tg-root .st.no,.tg-root .st.me{background:none;padding:0 2px;border-radius:0}
+.tg-root .st.ok{color:var(--leaf-d)}
+.tg-root .st.ok::before{content:"✓ "}
+.tg-root .st.no{color:var(--mute);font-weight:700}
+.tg-root .st.me{color:var(--clue-d);text-decoration:underline;text-underline-offset:3px}
 .tg-formwrap{padding-left:0}
 .tg-line{padding:2px 0}
 .tg-line b{color:var(--ink);margin-right:4px}

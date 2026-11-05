@@ -143,7 +143,8 @@ function shopHTML(){
     const own = owned(it.id), on = cat === 'tree' ? look.tree === it.id : look.comp === it.id, poor = !own && seeds < it.price;
     const tail = on ? (cat === 'tree' ? '쓰는 중' : '쓰는 중 · 누르면 숨김') : own ? '누르면 쓰기' : '🌰 ' + it.price;
     return '<button type="button" class="tr-item' + (on ? ' on' : '') + (own ? ' own' : '') + (poor ? ' poor' : '') + '" data-tr="item" data-id="' + it.id + '" aria-label="' + esc(it.nm + ', ' + tail) + '">' +
-      '<span class="ic" aria-hidden="true">' + it.ic + '</span><b>' + esc(it.nm) + '</b><small>' + esc(it.desc) + '</small><em>' + esc(tail) + '</em></button>';
+      '<span class="ic' + (cat === 'tree' ? ' tv' : '') + '" aria-hidden="true">' + (cat === 'tree' ? treeSVG({level:6, fruit:0}, {tree:it.id, comp:null}, it.nm) : it.ic) + '</span>' +
+      '<b>' + esc(it.nm) + '</b><em>' + esc(tail) + '</em></button>';   // 나무는 이모지 대신 그 나무 그림, 꾸밈말 설명은 뺌(AI 티 W2·W4)
   }).join('') + '</div>';
   return '<div class="sec">꾸미기</div><div class="card tr-shop">' + tabs + grid + '<div class="err" id="tr-se" role="alert">' + esc(T.shopErr || '') + '</div></div>';
 }

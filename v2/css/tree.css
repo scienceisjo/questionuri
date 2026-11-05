@@ -53,6 +53,12 @@ html.wide .tr-cols .sec:first-child{margin-top:0}
 .tr-shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
 .tr-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;min-height:118px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:center;word-break:keep-all}
 .tr-item .ic{font-size:26px;line-height:1.1}
+.tr-item .ic.tv svg{display:block;width:84px;height:auto}
+.tr-item .ic.tv{margin:-4px 0 2px}
+/* 숫자는 네모에 하나씩 담지 않고 한 줄로(AI 티 W3·W7) */
+.tr-tree .stats{gap:0;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+.tr-tree .stats div{background:none;border-radius:0;padding:4px 4px}
+.tr-tree .stats div + div{border-left:1px solid var(--line)}
 .tr-item b{font-size:14px;font-weight:800;color:var(--ink)}
 .tr-item small{font-size:11.5px;color:var(--mute);line-height:1.35}
 .tr-item em{font-style:normal;font-size:12.5px;font-weight:800;color:var(--sub);margin-top:auto}
