@@ -1383,6 +1383,7 @@ body{font-feature-settings:normal}
         <option value="picked">⭐ 대표 질문만</option>
         <option value="solved">🔬 해결한 것만</option>
         <option value="stuck">🌫 막힌 것만</option>
+        <option value="req">🙋 확인 요청만(질문과수원 2)</option>
       </select>
       <select id="fLabel" onchange="applyFilters()"><option value="">🏷️ 라벨 전체</option></select>
       <select id="fAnon" onchange="applyFilters()">
@@ -2415,7 +2416,7 @@ async function loadAll(){
     if(sRes.error) console.warn('subjects:', sRes.error.message);
 
     allProfiles  = pRes.data || [];
-    allQuestions = qRes.data || [];
+    allQuestions = (qRes.data || []).map(normV2);
     // 중복 id 제거 (여러 학생이 같은 id의 공용 과목을 가질 수 있음)
     const subjMap = {};
     (sRes.data || []).forEach(s => { if(!subjMap[s.id]) subjMap[s.id] = s; });
@@ -2570,7 +2571,8 @@ function applyFilters(){
   else if(stF === 'unrefined') qs = qs.filter(q => !(q.refined_text||'').trim());
   else if(stF === 'picked')    qs = qs.filter(q => q.is_picked);
   else if(stF === 'solved')    qs = qs.filter(q => q.solve && (q.solve.answer||'').trim());
-  else if(stF === 'stuck')     qs = qs.filter(q => q.solve && q.solve.stuck);
+  else if(stF === 'stuck')     qs = qs.filter(q => qFog(q));
+  else if(stF === 'req')       qs = qs.filter(q => qReq(q));
 
   // 익명 여부 필터
   if(anF === 'anon') qs = qs.filter(q => q.is_anonymous);
@@ -2705,7 +2707,7 @@ const GOOD_Q = [
 function scValid(e){ return !!(e && e.checked && (e.reason||'').trim()); }
 function scCount(q){ const sc=q.self_check; if(!sc) return 0; let n=0; GOOD_Q.forEach(g=>{ if(scValid(sc[g.n])) n++; }); return n; }
 function pLabel(p){ return `${p.grade??'?'}-${p.class_no??'?'}-${p.number??'?'} ${p.name||'(이름없음)'}`; }
-function qStatus(q){ return q.resolved ? '해결' : (allQuestions.some(x=>x.parent_id===q.id) ? '확장됨' : '탐구중'); }
+function qStatus(q){ return q.resolved ? (q.fruit_kind === 'fog' ? '안개 열매' : '해결') : (qReq(q) ? '확인 요청' : (allQuestions.some(x=>x.parent_id===q.id) ? '확장됨' : '탐구중')); }
 function scText(q){ const sc=q.self_check; if(!sc) return ''; return GOOD_Q.filter(g=>scValid(sc[g.n])).map(g=>`[${g.t}] ${sc[g.n].reason}`).join(' / '); }
 
 function renderSelfcheckView(){
@@ -3630,7 +3632,7 @@ async function pollNewQuestions(){
     if(error || !data || !data.length) return;
     let added = 0;
     data.forEach(q => {
-      if(!(allQuestions || []).some(x => x.id === q.id)){ allQuestions.unshift(q); added++; }
+      if(!(allQuestions || []).some(x => x.id === q.id)){ allQuestions.unshift(normV2(q)); added++; }
     });
     if(!added) return;
     _autoNew += added;
@@ -4163,7 +4165,7 @@ function pkRefineCount(q){
 function pkSolved(q){ return !!(q.solve && (q.solve.answer||'').trim()); }
 /* 🌫 막힌 채로 마친 것도 «끝낸 것» 이다. 오히려 이쪽이 더 볼 값어치가 있다 —
    여러 명이 같은 데서 막혔으면 그게 다음 수업 주제다. */
-function pkStuck(q){ return !!(q.solve && q.solve.stuck); }
+function pkStuck(q){ return qFog(q); }
 function pkDone(q){ return pkSolved(q) || pkStuck(q); }
 
 /* 지금 필터에 걸린 것 중 대표 질문만, 차시 → 학급 순으로 */
@@ -4229,6 +4231,8 @@ function renderPicked(){
 
 /* 해결 과정 펼치기 — 예상과 최종 답을 나란히 두는 게 핵심 */
 function pkDetail(q){
+  const j = q.journal || {};
+  if(j.predict || j.method || j.find || j.wrap) return '<div class="pk-body">' + procDetailHTML(q).replace('<details class="dd-q-proc">', '<details class="dd-q-proc" open>') + '</div>';   // 질문과수원 2 일지
   const s = q.solve || {};
   if(!s.guess && !s.answer && !s.ai){
     return '<div class="pk-body"><div class="pk-none">아직 해결을 시작하지 않았어요.</div></div>';
@@ -5346,7 +5350,7 @@ function renderSummary(){
   const nRef = filteredQuestions.filter(q => (q.refined_text||"").trim()).length;
   const nPick = filteredQuestions.filter(q => q.is_picked).length;
   const nSol = filteredQuestions.filter(q => q.solve && (q.solve.answer||"").trim()).length;
-  const nStk = filteredQuestions.filter(q => q.solve && q.solve.stuck).length;
+  const nStk = filteredQuestions.filter(q => qFog(q)).length;
   const refPct = totalQs ? Math.round(100*nRef/totalQs) : 0;
 
   $('summary').innerHTML = `
@@ -6458,8 +6462,10 @@ function qBadges(q){
   });
   if(q.is_picked) h += '<span class="tb pick">⭐</span>';
   if((q.refined_text||"").trim()) h += '<span class="tb ref">✨</span>';
-  if(q.solve && q.solve.stuck) h += '<span class="tb stk">🌫</span>';
+  if(qFog(q)) h += '<span class="tb stk">🌫</span>';
   else if(q.solve && (q.solve.answer||"").trim()) h += '<span class="tb sol">🔬</span>';
+  if(qReq(q)) h += '<span class="tb req" title="질문과수원 2 — 선생님 확인을 기다려요">🙋</span>';
+  if(q.journal && q.journal.flag && q.journal.flag.step) h += '<span class="tb flg" title="질문과수원 2 — 막힘 표시">🚩</span>';
   return h;
 }
 
@@ -6776,6 +6782,26 @@ document.addEventListener('keydown', e=>{
     }
   }
 });
+
+/* 🔄 질문과수원 2 기록을 옛 칸으로도 읽게(2026-11-05) — 메모리에서만 바꾼다. 이 대시보드는 resolved·solve 를 저장하지 않는다.
+   · 선생님이 확인한 열매·안개 열매(fruit_kind) = 해결
+   · 일지의 정리 글 = 옛 「해결 답변」(solve.answer) — 피드백 CSV·해결 피드백 단추·과수원 카드가 그대로 읽는다.
+     탐구 과정(qProcess)은 일지를 먼저 읽으므로 겹쳐 세지 않는다 */
+function normV2(q){
+  if(!q || typeof q !== 'object') return q;
+  if(q.fruit_kind && !q.resolved){ q.resolved = true; q._v2fruit = true; }
+  const j = q.journal;
+  if(j && typeof j === 'object' && j.wrap && !_pt(q.solve && q.solve.answer)){
+    const w = j.wrap;
+    const a = w.mode === 'unknown' ? ('🌫️ 아직 모름 · 여기까지: ' + _pt(w.reached) + (_pt(w.stuckQ) ? ' · 막힌 곳: ' + _pt(w.stuckQ) : '')) : _pt(w.text);
+    if(a) q.solve = Object.assign({}, q.solve || {}, {answer:a});
+  }
+  return q;
+}
+/* 🌫 못 찾고 마침(옛 앱) = 안개 열매·「아직 모름」 정리(질문과수원 2) */
+function qFog(q){ return !!((q.solve && q.solve.stuck) || q.fruit_kind === 'fog' || (q.journal && q.journal.wrap && q.journal.wrap.mode === 'unknown')); }
+/* 🙋 질문과수원 2 — 정리를 보내고 선생님 확인을 기다림(확인은 질문과수원 2 선생님 화면 「열매 확인」에서) */
+function qReq(q){ return !!(q.resolve_requested_at && !q.fruit_kind); }
 
 /* 🔬 탐구 과정 — 옛 앱의 solve 와 질문과수원 2 의 journal 을 같은 칸으로 읽는다.
    칸: 다듬기 · 예상 · 알아볼 방법 · 찾기 · 정리 · 넓히기 (발자국으로 세는 칸은 예상~넓히기 5개) */
@@ -8622,6 +8648,6 @@ async function saveLimits(){
 }
 </script>
 
-<footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-06-27</span></footer>
+<footer id="app-credit" style="width:100%;box-sizing:border-box;margin:2.5rem 0 0;padding:14px 12px;text-align:center;font-size:12.5px;line-height:1.6;color:#8a8f98;font-family:system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;border-top:1px solid rgba(128,128,128,.25);">© 2026 조승재(과학이조선생) · 해누리중학교 · All rights reserved<br><span style="font-size:11px;opacity:.85;">최종 업데이트: 2026-11-06</span></footer>
 </body>
 </html>
