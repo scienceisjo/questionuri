@@ -281,8 +281,8 @@ function renderTree(root){
     (fp.length ? '<div class="tr-fp-chips">' + COUNTED.map(s => '<span data-step="' + s.k + '"' + (has[s.k] ? ' class="on"' : '') + '>' + (has[s.k] ? '✓ ' : '') + esc(s.n) + '</span>').join('') + '</div>'
       : '') + '<div class="hint">일지 칸을 내 말로 처음 채우면 ' + (fp.length ? '그 칸에' : '여기에') + ' 발자국이 남아요.</div></div>';
   const seeds = QO.state.me ? (QO.state.me.seeds || 0) : 0;
-  const acHTML = '<div class="card tr-acorn"><span class="e" aria-hidden="true">🌰</span><div><b>도토리 <span class="tr-seeds">' + seeds + '</span></b><div class="hint">도토리는 선생님이 열매를 확인할 때 받아요. 꾸미기에서 써요.</div></div></div>';
-  const right = acHTML + shopHTML() + flHTML + fpHTML;
+  const acHTML = '<div class="card tr-acorn"><span class="e" aria-hidden="true">🌰</span><div><b>도토리 <span class="tr-seeds">' + seeds + '</span></b><div class="hint">도토리는 질문을 심거나 친구 질문에 물을 줄 때, 선생님이 열매를 확인할 때 받아요. 꾸미기에서 써요.</div></div></div>';
+  const right = acHTML + shopHTML() + flHTML + fpHTML + (QO.growth ? QO.growth.html() : '');   // 나의 성장(growth.js)
   root.innerHTML = U.wide() ? '<div class="cols tr-cols"><div>' + note + treeCard + '</div><div>' + right + '</div></div>' : note + treeCard + right;
 }
 
@@ -456,7 +456,8 @@ document.addEventListener('click', async e => {
       T.curious[qid] = true;
       const q = T.fqs && T.fqs.find(x => x.id === qid);
       if(q && !q.watered){ q.watered = true; q.water_count = (+q.water_count || 0) + 1; const m = T.mates && T.mates.find(x => x.owner_number === T.friend); if(m) m.water = (+m.water || 0) + 1; }
-      repaint('forest'); U.toast('친구 질문에 물을 줬어요.');
+      const got = await QO.acorn('water', qid);
+      repaint('forest'); U.toast('친구 질문에 물을 줬어요' + (got ? ' · 🌰 +' + got : '') + '.');
     }
     else U.toast('이 질문에는 물을 줄 수 없어요.');
   }

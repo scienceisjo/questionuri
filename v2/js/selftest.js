@@ -391,6 +391,22 @@ add('흉내 규칙 · 꽃은 받는 사람 하루 3개', async t => {
   t.eq(t.db.flowers.filter(f => f.receiver === 'u-B').length, 3, '꽃은 셋까지');
   t.expect(t.db.clues.find(c => c.id === ids[3]).thanked_at, '넷째도 고마움 글은 남음');
 });
+add('흉내 규칙 · 심기·물주기 도토리(한 번씩·남의 질문·하루 상한)', async t => {
+  t.as('A');
+  const seeds = () => t.db.profiles.find(p => p.id === 'u-A').seeds;
+  const s0 = seeds();
+  const q = await t.api.plantQuestion({text:'도토리 시험으로 심는 질문이에요'});
+  let r = await t.api.acornFor('plant', q.id);
+  t.eq([r.granted, r.seeds, seeds()], [1, s0 + 1, s0 + 1], '심기 +1');
+  t.eq((await t.api.acornFor('plant', q.id)).granted, 0, '같은 질문 두 번은 안 줌');
+  t.eq((await t.api.acornFor('plant', 121)).granted, 0, '남의 질문은 심기 도토리 없음');
+  t.eq((await t.api.acornFor('water', 121)).granted, 0, '물을 안 줬으면 없음');
+  await t.api.markCurious(121);
+  t.eq((await t.api.acornFor('water', 121)).granted, 1, '친구 질문 물주기 +1');
+  t.eq((await t.api.acornFor('water', 121)).granted, 0, '같은 질문 물주기 두 번은 안 줌');
+  for(let i = 0; i < 8; i++){ const x = await t.api.plantQuestion({text:'하루 상한을 보려고 심는 질문 ' + '가나다라마바사아'[i]}); await t.api.acornFor('plant', x.id); }
+  t.eq(t.db.acorn_ledger.filter(l => l.user_id === 'u-A' && (l.reason === 'plant' || l.reason === 'water')).length, 8, '하루 8개까지');
+});
 add('흉내 규칙 · confirm_fruit(도토리 = 발자국 칸 수 + 5, 안개면 샘물)', async t => {
   const n = new Set(t.db.footprints.filter(f => f.question_id === 104).map(f => f.step)).size;
   await t.rejects(t.api.confirmFruit(104, 'fruit'), '선생님만 할 수 있어요');

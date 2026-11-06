@@ -257,6 +257,7 @@ def('plantQuestion', function(input){
   const row = {user_id:id, subject_id:subId, text:text, tags:Array.isArray(input.tags) ? input.tags : [], question_date:kstToday(),
     is_anonymous:!!input.is_anonymous, phase:input.phase || 'before', water_count:0, watered_by:[]};
   if(unit) row.unit = unit;
+  if(input.material_id) row.material_id = input.material_id;
   if(input.parent_id){
     if(!qById(input.parent_id)) throw sysErr('insert or update on table "questions" violates foreign key constraint "questions_parent_id_fkey"');
     row.parent_id = Number(input.parent_id);
@@ -447,6 +448,18 @@ def('markCurious', function(qid){                         // mark_curious
   const by = q.watered_by || [];                             // v2_03: 옛 물주기 칸도 — 한 사람 한 번
   if(by.indexOf(id) < 0){ q.watered_by = by.concat([id]); q.water_count = q.watered_by.length; }
   return true;
+});
+def('acornFor', function(kind, qid){                       // acorn_for(v2_05) — 하루 상한 8(옛 앱 seeds_per_day 기본값)
+  const id = needMe(), q = qById(qid), p = prof(id);
+  let ok = false, g = 0;
+  if(q && kind === 'plant') ok = q.user_id === id && Date.now() - Date.parse(q.created_at) < 10 * 6e4;
+  else if(q && kind === 'water') ok = q.user_id !== id && sameClass(id, q.user_id) && db.curious_marks.some(m => m.question_id === q.id && m.user_id === id);
+  else if(q && kind === 'material') ok = q.user_id === id && q.material_id != null && Date.now() - Date.parse(q.created_at) < 10 * 6e4;
+  if(ok){
+    const today = db.acorn_ledger.filter(l => l.user_id === id && l.kst_day === kstToday() && (l.reason === 'plant' || l.reason === 'water' || l.reason === 'material')).length;
+    if(today < 8) g = grantAcorns(id, 1, kind, q.id);
+  }
+  return {granted:Math.max(g, 0), seeds:p ? (p.seeds || 0) : 0};
 });
 
 /* ── 상점 · 우리 반 나무(v2_03) ── */

@@ -161,7 +161,7 @@ const nextName = v => v.cur === 'wrap' && v.done.wrap ? '선생님께 보내기'
 
 /* ═══════════ 모듈 상태 ═══════════ */
 const X = {edit:null, peek:null, flagFor:null, thx:{}, f:{}, msg:{}, showDone:false, nowUnit:null, nowAt:0, unitTouched:false,
-  saving:0, next:null, seenBusy:new Set(), guide:false, guideFor:null};
+  saving:0, next:null, seenBusy:new Set(), guide:false, guideFor:null, phase:'before'};
 function resetForm(){ X.edit = null; X.peek = null; X.flagFor = null; X.thx = {}; X.f = {}; X.msg = {}; }
 function resetAll(){ resetForm(); X.showDone = false; X.nowUnit = null; X.nowAt = 0; X.unitTouched = false; X.next = null; X.seenBusy.clear(); X.guideFor = null; }
 function guideSeen(){ try{ return localStorage.getItem('qo2-x-guide') === '1' || X.guide; }catch(_){ return X.guide; } }
@@ -211,6 +211,13 @@ function drop(el, ch){
   dd.style.left = (r.left - a.left + r.width / 2 - 10) + 'px'; dd.style.top = (r.top - a.top - 4) + 'px';
   app.appendChild(dd); setTimeout(() => dd.remove(), 1000);
 }
+/* 수업 열기·닫기(옛 앱 setPhase) — 다시 그리지 않고 단추·안내만 바꾼다(쓰던 글이 남게) */
+const PH_HINT = {before:'궁금한 걸 한 줄로 적어요', after:'수업 뒤 새로 궁금해진 걸 한 줄로 적어요'};
+function setPhase(p){
+  X.phase = p === 'after' ? 'after' : 'before';
+  $$('#body .x-phase [data-ph]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ph === X.phase)));
+  const inp = $('#x_plant'); if(inp){ inp.placeholder = PH_HINT[X.phase]; try{ inp.focus(); }catch(_){} }
+}
 function setErr(key, text){ X.msg[key] = text || ''; const el = document.getElementById('x_e_' + key); if(el) el.textContent = text || ''; return null; }
 const errDiv = key => '<div class="err" id="x_e_' + key + '" role="alert">' + esc(X.msg[key] || '') + '</div>';
 function need(id, n, key, others){
@@ -257,14 +264,19 @@ function cardHTML(v, wide){
   });
   const next = v.legacyHarvest ? '옛 기록' : v.status === 'open' ? v.prints + '/5칸 · 다음: ' + nextName(v) : v.prints + '/5칸';
   return '<button type="button" class="qcard' + (wide && S.openQ === v.id ? ' sel' : '') + '" data-xa="open" data-id="' + v.id + '">' +
-    '<div class="qt">' + esc(v.text) + '</div><div class="meta"><div class="dots" aria-hidden="true">' + dots + '</div><span class="next">' + esc(next) + '</span>' + tagHTML(v) + '</div></button>';
+    '<div class="qt">' + esc(v.text) + '</div><div class="meta"><div class="dots" aria-hidden="true">' + dots + '</div><span class="next">' + esc(next) + '</span>' +
+    ((QO.store.question(v.id) || {}).phase === 'after' ? '<span class="x-ph">닫기 질문</span>' : '') + (QO.pick ? QO.pick.tag(v.id) : '') + tagHTML(v) + '</div></button>';
 }
 function listHTML(L){
   const wide = ui.wide();
-  let h = '<div class="card x-plant"><div class="row"><input class="inp" id="x_plant" placeholder="궁금한 걸 한 줄로 적어요" maxlength="200" autocomplete="off" aria-label="궁금한 것">' +
+  const aft = X.phase === 'after';
+  let h = '<div class="card x-plant"><div class="x-phase" role="group" aria-label="언제 생긴 질문인가요?">' +
+    '<button type="button" data-xa="phase" data-ph="before" aria-pressed="' + !aft + '">수업 열기</button><button type="button" data-xa="phase" data-ph="after" aria-pressed="' + aft + '">수업 닫기</button></div>' +
+    '<div class="row"><input class="inp" id="x_plant" placeholder="' + PH_HINT[X.phase] + '" maxlength="200" autocomplete="off" aria-label="궁금한 것">' +
     '<button type="button" class="btn" data-xa="plant">심기</button></div>' +
     '<div class="x-opts"><label class="unitpick">어느 단원? <select id="x_unit">' + unitOptions() + '</select></label>' +
     '<label class="chk"><input type="checkbox" id="x_anon">익명으로 심기</label></div>' + errDiv('plant') + '</div>';
+  h += QO.materials ? QO.materials.html() : '';      // 선생님 자료 보며 질문 심기(materials.js)
   h += '<div class="sec">이어서 해 볼 질문 <span class="n">' + L.open.length + '</span></div>';
   if(!L.open.length) h += '<div class="empty">지금 이어서 할 질문이 없어요. 위에서 하나 심어 봐요.</div>';
   L.open.forEach(v => { h += cardHTML(v, wide); });
@@ -460,6 +472,7 @@ function sheetHTML(row){
   const sub = (v.unit ? esc(v.unit) + ' · ' : '') + (v.anon ? '익명 · ' : '') + (v.legacyHarvest ? '옛 기록' : v.prints + '/5칸') + stWord;
   let h = '<div class="sh-top" data-qid="' + v.id + '"><button type="button" class="back" data-xa="close" aria-label="닫기">' + ui.icons.back + '</button>' +
     '<div class="x-head"><div class="qt">' + esc(v.text) + '</div><div class="sub">' + sub + '</div></div></div><div class="sh-body" id="x_body">';
+  if(QO.pick) h += QO.pick.html(v);                  // 대표 질문(pick.js)
   if(!guideSeen() && (X.guideFor == null || X.guideFor === v.id)){ X.guideFor = v.id; h += '<div class="guide">칸을 하나 채울 때마다 카드의 점이 하나씩 채워져요.</div>'; }
   /* 「나중에 고를래요」로 심은 질문 — 여기서 단원을 붙인다 */
   if(!v.unit && !v.legacyHarvest) h += '<div class="x-unitset"><label class="unitpick">단원 <select id="x_setunit" aria-label="단원 고르기"><option value="">아직 안 골랐어요</option>' +
@@ -478,6 +491,7 @@ function sheetHTML(row){
       (v.status === 'open' ? ' <button type="button" class="link teal x-mini" data-xa="unflag">표시 내리기</button>' : '') + '</div>';
     h += '</div></div>';
   });
+  if(QO.photos) h += QO.photos.html(v);              // 사진(photos.js)
   if(v.legacyHarvest) h += '<div class="statusbar fruit">🍎 옛 과수원에서 거둔 열매예요. 그때는 일지 칸 없이 거뒀어요.' + (v.sprout ? ' 넓히기까지 해서 열매에 새싹 🌱이 달렸어요.' : '') + '</div>';
   else if(v.status === 'wait') h += '<div class="statusbar wait">선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.</div>';
   else if(v.status === 'fruit') h += '<div class="statusbar fruit">🍎 선생님이 확인했어요. 열매가 열렸어요.' + (v.sprout ? ' 넓히기까지 해서 열매에 새싹 🌱이 달렸어요.' : '') + '</div>';
@@ -568,6 +582,7 @@ async function saveTo(id, patch){
 async function plantChild(v, text, patch){
   const row = await QO.api.plantQuestion({text:text, parent_id:v.id, is_anonymous:v.anon});
   QO.store.upsertQuestion(row);
+  QO.acorn('plant', row.id);                            // 꼬리 질문도 심기 도토리(기다리지 않음)
   if(patch) QO.store.upsertQuestion(await QO.api.saveJournal(row.id, patch));
   await QO.store.refreshQuestion(row.id);
   return row;
@@ -603,13 +618,15 @@ function finish(k, wasDone, msg, keepEdit){
 
 async function plant(btn){
   setErr('plant', '');
-  const inp = $('#x_plant'), v = (inp && inp.value || '').trim();
+  const inp = $('#x_plant');
+  if(inp && QO.ime && QO.ime.ask(inp)){ setErr('plant', '글자가 영어로 쳐진 것 같아요. 아래에서 골라 주세요.'); return; }   // 깨진 한글 입력은 심기 전에
+  const v = (inp && inp.value || '').trim();
   if(clen(v) < 5){ setErr('plant', '한 마디만 더 붙여 볼까요? 다섯 글자 넘게 적어요.'); if(inp) inp.focus(); return; }
   const jw = QO.check.junkWhy(v); if(jw){ setErr('plant', jw); if(inp) inp.focus(); return; }
   /* 같은 질문 또 심기(옛 앱 findDupQ 와 같은 일) — 최근 60개 */
   const dup = S.questions.slice(0, 60).find(q => q && (QO.check.similar(v, q.text) >= 0.85 || (q.refined_text && QO.check.similar(v, q.refined_text) >= 0.85)));
   if(dup){ setErr('plant', '비슷한 질문 「' + cut(dup.refined_text || dup.text, 24) + '」을 이미 심었어요. 다른 질문이면 조금 더 구체적으로 적어 주세요.'); if(inp) inp.focus(); return; }
-  const input = {text:v, is_anonymous:!!($('#x_anon') || {}).checked};
+  const input = {text:v, is_anonymous:!!($('#x_anon') || {}).checked, phase:X.phase};
   const sel = $('#x_unit');
   if(X.unitTouched && sel) input.unit = sel.value;      // '' = 나중에 고를래요, 안 건드리면 지금 차시
   const row = await run(btn, 'plant', async () => {
@@ -624,7 +641,8 @@ async function plant(btn){
   X.unitTouched = false; X.msg.plant = '';
   if(ui.wide()) setOpen(row.id);                       // 태블릿: 심은 질문의 일지를 오른쪽에 바로
   paint({scroll:true});
-  ui.toast('🌱 씨앗을 심었어요. 예상부터 적으면 첫 칸이 채워져요.');
+  const got = await QO.acorn('plant', row.id);          // 심기 도토리(하루 상한 안에서)
+  ui.toast('🌱 씨앗을 심었어요' + (got ? ' · 🌰 +' + got : '') + '. 예상부터 적으면 첫 칸이 채워져요.');
   setTimeout(() => { const c = document.querySelector('#body .qcard[data-id="' + row.id + '"]'); if(c) c.classList.add('flash'); }, 30);
 }
 async function saveRefine(btn, skip){
@@ -823,7 +841,7 @@ function seg(b){
   if(g === 'wmode'){ tog('x_wKnown', v === 'unknown'); tog('x_wUnknown', v !== 'unknown'); }
 }
 const ACT = {
-  plant, open:b => open(b.dataset.id), close:() => ui.sheet.close(),
+  plant, phase:b => setPhase(b.dataset.ph), open:b => open(b.dataset.id), close:() => ui.sheet.close(),
   fold:() => { X.showDone = !X.showDone; paint(); },
   peek:b => { X.peek = b.dataset.k || null; paint(); },
   edit:b => { X.edit = b.dataset.k; X.peek = null; X.flagFor = null; X.f = {}; delete X.msg[b.dataset.k]; paint({scroll:true}); },
@@ -975,6 +993,44 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.waitFor(() => !q$('#x_setunit') && q$('#sheet .sh-top .sub').textContent.indexOf('코일 주위의 자기장') === 0);
   });
 
+  add('탐구 · 깨진 한글 입력(전각은 조용히 고침 · 영타는 묻고 심기 멈춤) · 심기 도토리', async t => {
+    await t.click('#nav [data-t="explore"]');
+    const inp = await t.waitFor('#x_plant');
+    const n0 = t.db.questions.length, s0 = t.state.me.seeds;
+    await t.type(inp, 'wjsfbrkdl gmfmaus wkrlwkddl todrlsmsrk');      // 「전류가이 흐르면 자기장이 생기는가」를 영어 자판으로
+    await t.click('#body [data-xa="plant"]');
+    await t.waitFor('#qo-ime');
+    t.eq(t.db.questions.length, n0, '묻는 동안은 안 심김');
+    t.expect(/영어로 쳐진/.test(t.$('#body .x-plant .err').textContent), '안내 글');
+    t.expect(/^전류가/.test(t.$('#qo-ime .g').textContent), '한글로 바꾼 글을 보여 줌');
+    await t.click('#qo-ime [data-ime="yes"]');
+    t.expect(/^전류가/.test(t.$('#x_plant').value) && !t.$('#qo-ime'), '바꾸기 누르면 칸이 한글로');   // 칸이 다시 그려졌을 수 있어 새로 찾음
+    await t.click('#body [data-xa="plant"]');
+    await t.waitFor(() => t.db.questions.length === n0 + 1);
+    await t.waitFor(() => t.state.me.seeds === s0 + 1);
+    const last = t.db.questions.slice().sort((a, b) => b.id - a.id)[0];
+    t.expect(/^전류가/.test(last.text), '한글로 심김 — ' + last.text);
+    t.eq(QO.ime.fixWidth('ｐｕｓｈ　ｅａｃｈ'), 'push each', '전각 고치기');
+    t.eq(QO.ime.maybeKorean('electricity and magnetism'), null, '진짜 영어는 안 물음');
+  });
+  add('탐구 · 수업 닫기 질문(고르면 phase=after, 쓰던 글은 남음, 카드에 표시)', async t => {
+    await t.click('#nav [data-t="explore"]');
+    const inp = await t.waitFor('#x_plant');
+    await t.type(inp, '수업이 끝나고 새로 궁금해진 것');
+    await t.click('#body .x-phase [data-ph="after"]');
+    t.eq(t.$('#body .x-phase [data-ph="after"]').getAttribute('aria-pressed'), 'true', '닫기 눌림');
+    t.eq(inp.value, '수업이 끝나고 새로 궁금해진 것', '쓰던 글 그대로');
+    t.expect(/수업 뒤/.test(inp.placeholder), '안내 글이 바뀜');
+    await t.click('#body [data-xa="plant"]');
+    await t.waitFor(() => t.db.questions.some(q => q.text === '수업이 끝나고 새로 궁금해진 것'));
+    t.eq(t.db.questions.find(q => q.text === '수업이 끝나고 새로 궁금해진 것').phase, 'after', 'phase=after 로 심김');
+    await t.waitFor(() => t.$$('#body .qcard .x-ph').length >= 1);
+    await t.click('#body .x-phase [data-ph="before"]');
+    await t.type(t.$('#x_plant'), '수업 열 때 궁금한 것을 적어요');
+    await t.click('#body [data-xa="plant"]');
+    await t.waitFor(() => t.db.questions.some(q => q.text === '수업 열 때 궁금한 것을 적어요'));
+    t.eq(t.db.questions.find(q => q.text === '수업 열 때 궁금한 것을 적어요').phase, 'before', '열기로 돌아옴');
+  });
   add('탐구 · 예상은 덮어쓰지 않고 덧붙음', async t => {
     await openQ(t, 101);
     t.expect(q$('#x_st_predict.cur'), '예상 칸이 지금 칸');

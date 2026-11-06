@@ -220,7 +220,8 @@ async function markCurious(btn, qid){
   if(ok === undefined || my !== T) return;
   if(ok === false){ ui.toast('이 질문에는 표시할 수 없어요.'); return; }
   if(T.curious.indexOf(qid) < 0) T.curious.push(qid);
-  rr(); ui.toast('친구 질문에 물을 줬어요.');
+  const got = await QO.acorn('water', qid);
+  rr(); ui.toast('친구 질문에 물을 줬어요' + (got ? ' · 🌰 +' + got : '') + '.');
 }
 
 /* ═══════════ 단서 시간(mode 'clue') ═══════════ */

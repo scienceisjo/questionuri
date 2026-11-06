@@ -3,6 +3,30 @@
 
 /* 심기 카드 — 단원 고르기와 익명을 한 줄에(좁으면 두 줄) */
 .x-plant .x-opts{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px;margin-top:10px}
+/* 수업 열기·닫기 — 둘 중 하나(옛 앱과 같은 말) */
+.x-plant .x-phase{display:inline-flex;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.x-plant .x-phase button{min-height:40px;padding:0 14px;border:0;background:#fff;font-weight:700;font-size:13.5px;color:var(--sub)}
+.x-plant .x-phase button + button{border-left:1px solid var(--line)}
+.x-plant .x-phase button[aria-pressed="true"]{background:var(--leaf-l);color:var(--leaf-d)}
+.qcard .x-ph{font-size:12px;font-weight:700;color:var(--sub)}
+/* 일지 끝 사진 칸(photos.js) */
+.ph-box{margin:14px 0 6px;padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:#fff}
+.ph-box .nm{font-weight:800;margin-bottom:8px}
+.ph-box .nm span{margin-left:6px;font-weight:600;font-size:12.5px;color:var(--sub)}
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:8px}
+.ph-grid figure{position:relative;margin:0}
+.ph-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.ph-del{position:absolute;top:4px;right:4px;width:32px;height:32px;border:0;border-radius:50%;background:rgba(32,40,34,.72);cursor:pointer}
+.ph-del::before,.ph-del::after{content:"";position:absolute;left:9px;top:15px;width:14px;height:2px;background:#fff}
+.ph-del::before{transform:rotate(45deg)}.ph-del::after{transform:rotate(-45deg)}
+.ph-files a{display:block;margin:4px 0}
+.ph-add{display:inline-flex;align-items:center;min-height:44px;cursor:pointer}
+/* 대표 질문(pick.js) */
+.pk-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.pk-btn{min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;font-size:13.5px;color:var(--sub);cursor:pointer}
+.pk-btn.on{border-color:#E8B93C;background:#FFF6DA;color:#7A5A12}
+.pk-n{font-size:12.5px;color:var(--sub)}
+.qcard .pk-tag{font-size:12px;font-weight:800;color:#9A7417}
 .x-plant .unitpick{margin-top:0;flex:1 1 220px;min-width:0;white-space:nowrap}
 .x-plant .unitpick select{flex:1 1 auto;min-width:0;width:100%;text-overflow:ellipsis}
 .x-plant .chk{padding:0;align-items:center;font-weight:700;font-size:13.5px;white-space:nowrap}

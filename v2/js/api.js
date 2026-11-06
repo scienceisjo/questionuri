@@ -7,7 +7,7 @@
 const QO = window.QO, cfg = QO.cfg;
 /* 학생 화면이 쓰는 질문 칸(학생이 읽을 수 있는 것만) */
 const BASE_COLS = 'id,text,refined_text,refined_at,unit,is_anonymous,created_at,resolved,resolved_at,solve,journal,finding,still_wondering,answer_text,tags,' +
-  'teacher_nudge,teacher_stamp,teacher_refine_note,teacher_solve_note,teacher_fb_at,fb_unread,fruit_kind,fruit_source,resolve_requested_at,parent_id,tree_id,subject_id';
+  'teacher_nudge,teacher_stamp,teacher_refine_note,teacher_solve_note,teacher_fb_at,fb_unread,fruit_kind,fruit_source,resolve_requested_at,parent_id,tree_id,subject_id,phase,material_id,answer_files,is_picked';
 let COLS = BASE_COLS;
 const CLUE_COLS = 'id,question_id,kind,step,body,created_at,thanked_at,thanks_text,declined_at,hidden_at';
 QO.COLS = COLS; QO.CLUE_COLS = CLUE_COLS;
@@ -70,12 +70,14 @@ async function meProfile(){
 }
 const nowISO = () => new Date().toISOString();
 /* 하루·차시 상한 — 옛 앱 fetchQuota·unitBlocked 와 같은 RPC(7_하루제한.sql). 못 세면 통과(수업을 막지 않는다) */
-async function quotaCheck(unit){
+async function quotaCheck(unit, phase){
   let q = null;
   try{ const c = await client(); const r = await c.rpc('my_daily_quota'); if(!r.error) q = Array.isArray(r.data) ? r.data[0] : r.data; }catch(_){ q = null; }
   if(!q) return;
   const cap = q.new_per_day == null ? -1 : (q.new_per_day | 0), planted = q.planted | 0;
-  if(cap === 0 || (cap > 0 && planted >= cap)) throw userErr('오늘 심을 수 있는 새 질문을 다 심었어요. 이어서 해 볼 질문을 탐구해 봐요.');
+  /* 「수업 닫기」 질문은 상한을 다 썼어도 하루 한 개 더(옛 앱 quotaBlocked 와 같음). 상한 0 = 새 질문 없는 날 */
+  const afterFree = phase === 'after' && (q.planted_after | 0) === 0;
+  if(cap === 0 || (cap > 0 && planted >= cap && !afterFree)) throw userErr('오늘 심을 수 있는 새 질문을 다 심었어요. 이어서 해 볼 질문을 탐구해 봐요.');
   const unitCap = q.per_unit != null ? (q.per_unit | 0) : 0;
   if(!unit || unitCap <= 0) return;
   try{
@@ -165,7 +167,7 @@ const A = QO.apiReal = {
     const tree = subId ? (trees || []).filter(t => t.subject_id === subId)[0] : null;
     let unit = input.unit;
     if(unit === undefined && !input.parent_id) unit = await A.nowUnit();   // 선생님이 켠 지금 차시
-    if(!input.parent_id) await quotaCheck(unit || null);                   // 선생님이 정한 하루·차시 상한(옛 앱과 같음)
+    if(!input.parent_id) await quotaCheck(unit || null, input.phase);                   // 선생님이 정한 하루·차시 상한(옛 앱과 같음)
     /* question_date 는 서버 기본값(current_date) — 옛 앱과 같은 뜻으로 둔다 */
     const payload = {
       user_id:id, subject_id:subId, text:text, tags:Array.isArray(input.tags) ? input.tags : [],
@@ -174,6 +176,7 @@ const A = QO.apiReal = {
     };
     if(unit) payload.unit = unit;
     if(input.parent_id) payload.parent_id = input.parent_id;
+    if(input.material_id) payload.material_id = input.material_id;   // 선생님 자료를 보며 심은 질문
     if(tree) payload.tree_id = tree.id;
     const C = await cols(cl);
     let r = await cl.from('questions').insert(payload).select(C).single();
@@ -237,6 +240,7 @@ const A = QO.apiReal = {
   thankClue(clueId, thanks){ return rpc('thank_clue', {p_clue:clueId, p_thanks:thanks}); },
   declineClue(clueId){ return rpc('decline_clue', {p_clue:clueId}); },
   markCurious(qid){ return rpc('mark_curious', {p_qid:qid}); },
+  acornFor(kind, qid){ return rpc('acorn_for', {p_kind:kind, p_qid:qid}); },   // v2_05 심기·물주기 도토리 {granted, seeds}
   /* 내가 「나도 궁금해요」를 누른 질문 id(v2_curious_read: user_id = 나) */
   async myCurious(){
     const id = await needUid(), cl = await client();
@@ -423,4 +427,13 @@ QO.api = new Proxy({}, {
   ownKeys(){ return Reflect.ownKeys(target()); },
   getOwnPropertyDescriptor(_, k){ const t = target(); return k in t ? {value:t[k], writable:true, enumerable:true, configurable:true} : undefined; }
 });
+
+/* 심기·물주기 도토리(선생님 결정 2026-11-05: 옛 앱처럼 둔다) — 받은 수를 돌려준다. v2_05 SQL 이 없거나 실패해도 조용히 0 */
+QO.acorn = async function(kind, qid){
+  try{
+    const r = await QO.api.acornFor(kind, qid);
+    if(r && r.granted > 0){ QO.store.setSeeds(r.seeds); return r.granted; }
+  }catch(_){}
+  return 0;
+};
 })();
