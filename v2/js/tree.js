@@ -284,6 +284,8 @@ function renderTree(root){
   const acHTML = '<div class="card tr-acorn"><span class="e" aria-hidden="true">🌰</span><div><b>도토리 <span class="tr-seeds">' + seeds + '</span></b><div class="hint">도토리는 질문을 심거나 친구 질문에 물을 줄 때, 선생님이 열매를 확인할 때 받아요. 꾸미기에서 써요.</div></div></div>';
   const right = acHTML + shopHTML() + flHTML + fpHTML + (QO.growth ? QO.growth.html() : '');   // 나의 성장(growth.js)
   root.innerHTML = U.wide() ? '<div class="cols tr-cols"><div>' + note + treeCard + '</div><div>' + right + '</div></div>' : note + treeCard + right;
+  /* 3D 나무(되면) — 안 되면 위 SVG 그대로 */
+  if(QO.tree3d){ const w = root.querySelector('.tr-tree .tree-wrap'); QO.tree3d.mount(w, Object.assign({}, t, {level:lv}), myLook(), T.uid); }
 }
 
 /* ═══════════ 우리 반 숲 ═══════════ */

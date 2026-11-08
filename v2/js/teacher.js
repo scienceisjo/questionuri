@@ -68,7 +68,7 @@ QO.mock.extend({
 const T = {
   tRef:null, key:'', seq:0, inflight:0, reqs:{}, dirty:false,
   cutover:null, students:null,
-  pending:null, detail:{}, open:null, ret:null,
+  pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null,
   live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, ex:{no:'', yes:''}, pick:[], showOwner:{},
   groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{},
   day:null, clues:null, cluesWant:null
@@ -81,7 +81,7 @@ function ensure(){
   if(T.tRef === S.teacher && T.key === key) return;
   const fresh = T.tRef !== S.teacher;
   T.tRef = S.teacher; T.key = key; T.seq++; T.reqs = {};
-  Object.assign(T, {students:null, pending:null, detail:{}, open:null, ret:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
+  Object.assign(T, {students:null, pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
     groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null});
   if(fresh){ T.cutover = null; T.ex = {no:'', yes:''}; T.day = null; }
   if(!S.teacher || !S.cls) return;
@@ -160,9 +160,13 @@ function renderFruits(root){
   if(!S.cls){ root.innerHTML = '<div class="empty">학생이 있는 반이 없어요.</div>'; return; }
   const list = T.pending;
   let h = '<div class="t-bar"><span class="t-count">' + (list ? '확인 요청 ' + list.length + '개' : '확인 요청을 불러오는 중이에요') + '</span>' + cutoverNote() +
-    (list && list.length ? '<button type="button" class="link" data-act="f-csv">CSV 내려받기</button>' : '') +
+    (list && list.length ? '<button type="button" class="link" data-act="f-csv">CSV 내려받기</button>' +
+      '<label class="link t-up" for="t_fcsv">CSV 올리기</label><input type="file" id="t_fcsv" accept=".csv,text/csv" hidden>' +
+      '<button type="button" class="link" data-act="f-quick">빠르게 확인</button>' : '') +
     '<button type="button" class="link" data-act="f-reload">새로 읽기</button></div>';
   if(!list){ root.innerHTML = h; return; }
+  if(T.bulk){ root.innerHTML = h + bulkHTML(); return; }
+  if(T.quick && list.length){ root.innerHTML = h + quickHTML(); return; }
   if(!list.length){ root.innerHTML = h + '<div class="card empty">확인을 기다리는 질문이 없어요.</div>' + demoBox(); return; }
   const wide = ui.wide(), open = list.find(q => q.id === T.open) || null;
   if(open && !T.detail[open.id] && !T.reqs['d' + open.id]) loadDetail(open.id);
@@ -327,6 +331,191 @@ ACT['f-ret-send'] = async b => {
   ui.toast(r ? J.stepName(R.step) + ' 칸을 다시 열어 돌려보냈어요' : '이미 확인한 질문이에요');
   dropPending(R.qid); loadPending();
 };
+
+/* ═══════════ ① CSV 올리기 → 한 줄씩 보는 표 → 반영 ═══════════
+   CSV 는 「CSV 내려받기」 파일 그대로(뒤 세 칸만 채운 것). 「AI 메모」 칸이 있으면 같이 보여 주고,
+   메모에 「확인」이 들어 있거나 결과가 비었거나 틀린 줄은 체크를 풀어 둔다 — 선생님이 보고 눌러야 들어간다. */
+function parseCSV(text){
+  const rows = []; let row = [], cur = '', q = false;
+  text = String(text || '').replace(/^\ufeff/, '');
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(q){ if(c === '"'){ if(text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += c; continue; }
+    if(c === '"') q = true;
+    else if(c === ','){ row.push(cur); cur = ''; }
+    else if(c === '\n' || c === '\r'){ if(c === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if(cur !== '' || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim() !== ''));
+}
+const KIND_OF = v => { v = String(v || '').replace(/\s/g, ''); if(!v) return '';
+  if(/안개|fog/i.test(v)) return 'fog'; if(/되돌|돌려|return|다시/i.test(v)) return 'ret'; if(/열매|fruit|🍎/i.test(v)) return 'fruit'; if(/건너|skip|보류/i.test(v)) return 'skip'; return '?'; };
+const STEP_OF = v => { v = String(v || '').trim(); if(!v) return '';
+  if(RET_STEPS.indexOf(v) >= 0) return v;
+  const hit = RET_STEPS.find(k => { const n = J.stepName(k); return n && (v === n || v.indexOf(n) >= 0 || n.indexOf(v) >= 0); });
+  return hit || '?'; };
+function bulkCheck(r){
+  if(!r.q) return '목록에 없는 질문이에요(이미 확인했거나 다른 반)';
+  if(r.kind === '?' ) return '결과 칸을 알아볼 수 없어요';
+  if(!r.kind || r.kind === 'skip') return '';
+  if(r.kind === 'ret'){
+    if(!r.step || r.step === '?') return '되돌릴 칸을 골라 주세요';
+    if(String(r.note || '').trim().length < 5) return '학생에게 한 줄을 적어 주세요';
+  }
+  return '';
+}
+function bulkLoad(text, name){
+  const rows = parseCSV(text);
+  if(!rows.length) throw QO.userError('빈 파일이에요');
+  const head = rows[0].map(x => String(x).trim());
+  const col = re => head.findIndex(h => re.test(h));
+  const ci = col(/^질문\s*번호$/), cr = col(/^결과/), cs = col(/^되돌릴/), cn = col(/학생에게/), cm = col(/AI\s*메모|메모|선생님\s*확인/);
+  if(ci < 0 || cr < 0) throw QO.userError('「CSV 내려받기」로 받은 파일이 아니에요(질문 번호·결과 칸이 없어요)');
+  const byId = new Map((T.pending || []).map(q => [q.id, q]));
+  const out = rows.slice(1).map(r => {
+    const id = Number(String(r[ci] || '').trim()), memo = cm >= 0 ? String(r[cm] || '').trim() : '';
+    const x = {id:id, q:byId.get(id) || null, kind:KIND_OF(r[cr]), step:STEP_OF(cs >= 0 ? r[cs] : ''), note:cn >= 0 ? String(r[cn] || '').trim() : '', memo:memo, done:'', err:''};
+    if(x.kind === 'ret' && !x.step && x.q){ const D = T.detail[id]; x.step = D ? retDefault(D) : 'find'; }
+    x.err = bulkCheck(x);
+    x.on = !x.err && !!x.kind && x.kind !== 'skip' && !/확인/.test(memo);
+    return x;
+  }).filter(x => x.id);
+  T.bulk = {name:name || '', rows:out, busy:false};
+  QO.tabs.rerender('fruits');
+}
+function bulkHTML(){
+  const B = T.bulk, n = B.rows.filter(r => r.on && !r.done).length;
+  const opt = (v, cur, label) => '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + label + '</option>';
+  let h = '<div class="card t-bulk"><div class="t-bh"><b>올린 CSV 확인</b>' + (B.name ? ' <span class="hint">' + esc(B.name) + '</span>' : '') +
+    '<div class="hint">체크한 줄만 반영돼요. 「확인」 표시가 있거나 칸이 비거나 틀린 줄은 체크를 풀어 뒀어요. 반영하면 열매·도토리가 바로 들어가요.</div></div>' +
+    '<div class="t-btable">';
+  B.rows.forEach((r, i) => {
+    const v = r.q ? J.view(r.q) : null, st = r.q ? (r.q.student || {}) : {};
+    h += '<div class="t-brow' + (r.done ? ' done' : '') + (r.err ? ' bad' : '') + '" data-i="' + i + '">' +
+      '<label class="t-bchk"><input type="checkbox" data-bind="bk-on-' + i + '"' + (r.on ? ' checked' : '') + (r.done || (r.err && r.q === null) ? ' disabled' : '') + '></label>' +
+      '<div class="t-bq"><div class="qt">' + (v ? esc(v.text) : '질문 ' + r.id) + '</div><div class="hint">' + (st.number != null ? st.number + '번' : '') + (st.name ? ' ' + esc(st.name) : '') + ' · 질문 ' + r.id + '</div>' +
+      (r.memo ? '<div class="t-bmemo">AI 메모 · ' + esc(r.memo) + '</div>' : '') +
+      (r.done ? '<div class="t-bok">' + esc(r.done) + '</div>' : '') + (r.err ? '<div class="err">' + esc(r.err) + '</div>' : '') + '</div>' +
+      '<div class="t-bset"><select class="inp" data-bind="bk-kind-' + i + '" aria-label="결과"' + (r.done ? ' disabled' : '') + '>' +
+        opt('fruit', r.kind, '열매') + opt('fog', r.kind, '안개 열매') + opt('ret', r.kind, '되돌리기') + opt('skip', r.kind === '' || r.kind === '?' ? 'skip' : r.kind, '건너뛰기') + '</select>' +
+      (r.kind === 'ret' ? '<select class="inp" data-bind="bk-step-' + i + '" aria-label="되돌릴 칸"' + (r.done ? ' disabled' : '') + '>' + RET_STEPS.map(k => opt(k, r.step, J.stepName(k))).join('') + '</select>' +
+        '<input class="inp" data-bind="bk-note-' + i + '" maxlength="120" autocomplete="off" placeholder="학생에게 한 줄" value="' + esc(r.note) + '"' + (r.done ? ' disabled' : '') + '>' : '') +
+      '</div></div>';
+  });
+  h += '</div><div class="err" id="t_bErr" role="alert"></div><div class="row t-bacts"><button type="button" class="btn line" data-act="f-bulk-cancel">' + (B.rows.some(r => r.done) ? '닫기' : '그만두기') + '</button>' +
+    '<button type="button" class="btn" data-act="f-bulk-apply"' + (n ? '' : ' disabled') + '>체크한 ' + n + '개 반영하기</button></div></div>';
+  return h;
+}
+function bulkBind(k, el){
+  const B = T.bulk; if(!B) return;
+  const m = /^bk-(on|kind|step|note)-(\d+)$/.exec(k); if(!m) return;
+  const r = B.rows[Number(m[2])]; if(!r || r.done) return;
+  if(m[1] === 'on') r.on = el.checked;
+  if(m[1] === 'kind'){ r.kind = el.value; if(r.kind === 'ret' && !r.step) r.step = 'find'; r.err = bulkCheck(r); r.on = !r.err && r.kind !== 'skip'; QO.tabs.rerender('fruits'); return; }
+  if(m[1] === 'step'){ r.step = el.value; r.err = bulkCheck(r); }
+  if(m[1] === 'note'){ r.note = el.value; const was = r.err; r.err = bulkCheck(r); if(!!was !== !!r.err || (!r.err && !r.on)){ if(!r.err) r.on = true; } }
+  const btn = $('[data-act="f-bulk-apply"]');
+  if(btn){ const n = B.rows.filter(x => x.on && !x.done).length; btn.textContent = '체크한 ' + n + '개 반영하기'; btn.disabled = !n; }
+}
+document.addEventListener('change', e => {
+  const t = e.target; if(!t || t.id !== 't_fcsv' || !t.files || !t.files[0]) return;
+  const f = t.files[0]; t.value = '';
+  f.text().then(x => bulkLoad(x, f.name)).catch(er => ui.fail(er));
+});
+ACT['f-bulk-cancel'] = () => { const had = T.bulk && T.bulk.rows.some(r => r.done); T.bulk = null; QO.tabs.rerender('fruits'); if(had) loadPending(); };
+ACT['f-bulk-apply'] = async b => {
+  const B = T.bulk; if(!B || B.busy) return;
+  const err = $('#t_bErr'); if(err) err.textContent = '';
+  const todo = B.rows.filter(r => r.on && !r.done);
+  const bad = todo.find(r => bulkCheck(r)); if(bad){ bad.err = bulkCheck(bad); QO.tabs.rerender('fruits'); return; }
+  B.busy = true; b.disabled = true;
+  let ok = 0, acorn = 0, fail = 0;
+  for(const r of todo){
+    b.textContent = (ok + fail + 1) + ' / ' + todo.length + ' 반영하는 중…';
+    try{
+      if(r.kind === 'ret'){ const x = await QO.api.returnFruit(r.id, r.step, String(r.note).trim()); r.done = x ? J.stepName(r.step) + ' 칸을 다시 열어 돌려보냈어요' : '이미 확인한 질문이에요'; }
+      else { const n = await QO.api.confirmFruit(r.id, r.kind); acorn += n || 0; r.done = (r.kind === 'fog' ? '안개 열매' : '열매') + (n > 0 ? ' · 도토리 ' + n + '개' : ' · 이미 확인한 질문'); }
+      r.on = false; ok++;
+    }catch(e){ r.err = ui.userMsg(e) || '반영하지 못했어요'; fail++; }
+  }
+  B.busy = false;
+  ui.toast(ok + '개 반영했어요' + (acorn ? ' · 도토리 ' + acorn + '개' : '') + (fail ? ' · ' + fail + '개는 못 했어요' : ''));
+  T.pending = (T.pending || []).filter(q => !B.rows.some(r => r.done && r.id === q.id));
+  QO.tabs.rerender('fruits');
+};
+
+/* ═══════════ ② 빠르게 확인 — 한 장씩, 키보드로 ═══════════ */
+function quickHTML(){
+  const list = T.pending || [], Qk = T.quick;
+  if(Qk.i >= list.length) Qk.i = Math.max(0, list.length - 1);
+  const q = list[Qk.i]; if(!q) return '';
+  const v = J.view(q), st = q.student || {}, fogFirst = !!(v.d.wrap && v.d.wrap.mode === 'unknown');
+  let h = '<div class="card t-quick" data-q="' + q.id + '"><div class="t-qh"><b>' + (Qk.i + 1) + ' / ' + list.length + '</b>' +
+    '<span class="hint">' + (st.number != null ? st.number + '번 ' : '') + esc(st.name || '') + (v.unit ? ' · ' + esc(v.unit) : '') + '</span>' +
+    '<button type="button" class="link" data-act="f-quick-off">그만</button></div>' +
+    '<div class="t-dq">' + esc(v.text) + '</div>' + (v.original && v.original !== v.text ? '<div class="hint">처음 질문 · ' + esc(v.original) + '</div>' : '') +
+    (J.hasAI(v) ? '<span class="tag t-ai">AI 사용</span>' : '') + '<div class="t-rows">' + journalRows(v) + '</div>' +
+    '<div class="t-acts t-qacts">' +
+      '<button type="button" class="btn t-fruit' + (fogFirst ? ' line' : '') + '" data-act="f-q" data-kind="fruit"><kbd>1</kbd> 🍎 열매</button>' +
+      '<button type="button" class="btn t-fogb' + (fogFirst ? '' : ' line') + '" data-act="f-q" data-kind="fog"><kbd>2</kbd> ' + ui.FOG_SVG + ' 안개 열매</button>' +
+      '<button type="button" class="btn line" data-act="f-q" data-kind="ret"><kbd>3</kbd> 되돌리기</button>' +
+      '<button type="button" class="btn line" data-act="f-q-move" data-d="-1" aria-label="앞 질문"><kbd>←</kbd></button>' +
+      '<button type="button" class="btn line" data-act="f-q-move" data-d="1" aria-label="다음 질문(건너뛰기)"><kbd>→</kbd> 건너뛰기</button></div>';
+  if(Qk.ret){
+    h += '<div class="t-ret"><div class="lbl">다시 열 칸</div><div class="chips">' + RET_STEPS.map(k => '<button type="button" class="chip' + (Qk.step === k ? ' on' : '') +
+      '" data-act="f-q-step" data-step="' + k + '" aria-pressed="' + (Qk.step === k) + '">' + esc(J.stepName(k)) + '</button>').join('') + '</div>' +
+      '<label class="lbl" for="t_qNote">학생에게 한 줄 (Enter 로 보내기)</label><input class="inp" id="t_qNote" data-bind="qNote" maxlength="120" autocomplete="off" value="' + esc(Qk.note || '') + '" placeholder="무엇을 더 해 보면 좋을지 한 줄로">' +
+      '<div class="err" id="t_qErr" role="alert"></div><div class="row"><button type="button" class="btn line sm" data-act="f-q-retoff">그만두기</button>' +
+      '<button type="button" class="btn sm t-grow1" data-act="f-q-send">되돌려 보내기</button></div></div>';
+  }
+  return h + '<div class="hint t-qhint">키보드: 1 열매 · 2 안개 열매 · 3 되돌리기 · → 건너뛰기 · ← 앞 · Esc 그만</div></div>';
+}
+ACT['f-quick'] = () => { T.quick = {i:0, ret:false, step:'find', note:''}; T.open = null; T.ret = null; QO.tabs.rerender('fruits'); };
+ACT['f-quick-off'] = () => { T.quick = null; QO.tabs.rerender('fruits'); };
+ACT['f-q-move'] = b => { const Qk = T.quick; if(!Qk) return; const n = (T.pending || []).length; Qk.i = Math.min(Math.max(0, Qk.i + Number(b.dataset.d)), Math.max(0, n - 1)); Qk.ret = false; Qk.note = ''; QO.tabs.rerender('fruits'); };
+ACT['f-q-step'] = b => { if(!T.quick) return; T.quick.step = b.dataset.step; QO.tabs.rerender('fruits'); const i = $('#t_qNote'); if(i) i.focus(); };
+ACT['f-q-retoff'] = () => { if(!T.quick) return; T.quick.ret = false; QO.tabs.rerender('fruits'); };
+function quickDone(id){
+  T.pending = (T.pending || []).filter(q => q.id !== id); delete T.detail[id];
+  const Qk = T.quick; if(Qk){ Qk.ret = false; Qk.note = ''; if(!T.pending.length) T.quick = null; }
+  QO.tabs.rerender('fruits');
+}
+ACT['f-q'] = async b => {
+  const Qk = T.quick, q = Qk && (T.pending || [])[Qk.i]; if(!q) return;
+  const kind = b.dataset.kind;
+  if(kind === 'ret'){ Qk.ret = true; const v = J.view(q); Qk.step = (v.d.wrap && v.d.wrap.mode === 'unknown') || !J.findOK(v) || (v.d.find || []).length < 2 ? 'find' : 'wrap'; QO.tabs.rerender('fruits'); const i = $('#t_qNote'); if(i) i.focus(); return; }
+  const n = await act(b, () => QO.api.confirmFruit(q.id, kind));
+  if(n === undefined) return;
+  ui.toast((kind === 'fog' ? '안개 열매' : '열매') + (n > 0 ? ' · 도토리 ' + n + '개' : ' · 이미 확인한 질문'));
+  quickDone(q.id);
+};
+ACT['f-q-send'] = async b => {
+  const Qk = T.quick, q = Qk && (T.pending || [])[Qk.i]; if(!q) return;
+  const inp = $('#t_qNote'), err = $('#t_qErr'), note = String(inp ? inp.value : Qk.note || '').trim();
+  if(err) err.textContent = '';
+  if(note.length < 5){ if(err) err.textContent = '학생에게 보낼 한 줄을 적어 주세요.'; if(inp) inp.focus(); return; }
+  const r = await act(b, () => QO.api.returnFruit(q.id, Qk.step, note), {errEl:err});
+  if(r === undefined) return;
+  ui.toast(r ? J.stepName(Qk.step) + ' 칸을 다시 열어 돌려보냈어요' : '이미 확인한 질문이에요');
+  quickDone(q.id);
+};
+document.addEventListener('keydown', e => {
+  if(!T.quick || QO.tabs.current() !== 'fruits' || e.isComposing || e.keyCode === 229 || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const a = document.activeElement, inInput = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  const click = sel => { const b = $(sel); if(b && !b.disabled){ e.preventDefault(); b.click(); } };
+  if(inInput){
+    if(a.id === 't_qNote' && e.key === 'Enter'){ e.preventDefault(); click('[data-act="f-q-send"]'); }
+    else if(a.id === 't_qNote' && e.key === 'Escape'){ e.preventDefault(); click('[data-act="f-q-retoff"]'); }
+    return;
+  }
+  if(e.key === '1') click('[data-act="f-q"][data-kind="fruit"]');
+  else if(e.key === '2') click('[data-act="f-q"][data-kind="fog"]');
+  else if(e.key === '3') click('[data-act="f-q"][data-kind="ret"]');
+  else if(e.key === 'ArrowRight') click('[data-act="f-q-move"][data-d="1"]');
+  else if(e.key === 'ArrowLeft') click('[data-act="f-q-move"][data-d="-1"]');
+  else if(e.key === 'Escape') click(T.quick.ret ? '[data-act="f-q-retoff"]' : '[data-act="f-quick-off"]');
+});
 
 /* ═══════════ 수업 진행(단서 시간 · 모둠 진행) ═══════════ */
 function setLive(row, local){
@@ -903,6 +1092,8 @@ QO.tabs.register({id:'clues', label:'단서 살피기', render:renderClues});
 function bind(el, ev){
   const k = el.dataset.bind;
   if(k === 'retNote'){ if(T.ret) T.ret.note = el.value; return; }
+  if(k === 'qNote'){ if(T.quick) T.quick.note = el.value; return; }
+  if(/^bk-/.test(k)){ bulkBind(k, el); return; }
   if(k === 'gRetNote'){ if(T.gRet) T.gRet.note = el.value; return; }
   if(k === 'exNo' || k === 'exYes'){ T.ex[k === 'exNo' ? 'no' : 'yes'] = el.value.trim(); boardRefresh(); return; }
   if(k === 'gN'){ if(ev === 'change'){ draft().n = Number(el.value) || 7; QO.tabs.rerender('groups'); } return; }
@@ -976,7 +1167,7 @@ async function captureSetup(){
 }
 
 /* 시험에서 쓴다 */
-QO.teacherView = {T, idle, csvOf, demo:{clue:demoClue, group:demoGroup, fruit:demoFruit}, async refresh(){ await Promise.all([loadLive(), loadToday(), loadGroups(), loadPending()]); }};
+QO.teacherView = {T, idle, csvOf, bulkLoad, parseCSV, demo:{clue:demoClue, group:demoGroup, fruit:demoFruit}, async refresh(){ await Promise.all([loadLive(), loadToday(), loadGroups(), loadPending()]); }};
 
 /* ═══════════ 스스로 시험(teacher.html?mock=1&selftest=1) ═══════════ */
 if(!QO.selftest || cfg.page !== 'teacher') return;
@@ -1225,6 +1416,64 @@ add('선생님 · 익명 질문은 시범 목록 뒤 · 단서 살피기에서 �
   t.expect(card().indexOf('나래') < 0 && card().indexOf('익명 질문 주인') >= 0, '주인 이름 가림');
   await t.click(btn);
   await t.waitFor(() => t.$('[data-act="c-owner"][data-id="' + id + '"]').closest('.t-clue').textContent.indexOf('나래(2번)') >= 0);
+  await TV.idle();
+});
+add('선생님 · CSV 올리기: AI 가 채운 결과 → 표 → 체크한 것만 반영', async t => {
+  /* 확인 요청 하나 더 만들기(2-11 학생 질문 중 아직 열매 아닌 것) */
+  const extra = t.db.questions.find(q => q.id !== 104 && q.fruit_kind == null && t.db.profiles.some(p => p.id === q.user_id && p.grade === 2 && p.class_no === 11));
+  extra.resolve_requested_at = new Date().toISOString();
+  await to211(t, 'fruits');
+  await t.waitFor('[data-act="f-csv"]');
+  const p = await t.api.pendingFruits(2, 11);
+  t.expect(p.length >= 2, '확인 요청 둘 이상');
+  const lines = TV.csvOf(p).replace(/^\ufeff/, '').split('\r\n');
+  const cells = TV.parseCSV(lines.join('\n'));
+  const head = cells[0].concat(['AI 메모']);
+  const body = cells.slice(1).map(r => { const id = Number(r[0]);
+    const x = r.slice(); x[18] = id === 104 ? '열매' : '되돌리기'; x[19] = id === 104 ? '' : '찾기'; x[20] = id === 104 ? '' : '다른 곳에서 하나 더 찾아볼까요?';
+    return x.concat([id === 104 ? '정리가 질문에 답함' : '']); });
+  body.push(['99999'].concat(new Array(17).fill('')).concat(['열매', '', '', '']));   // 목록에 없는 질문
+  const csv = [head].concat(body).map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  TV.bulkLoad(csv, '시험.csv');
+  await t.waitFor('.t-bulk');
+  const rows = t.$$('.t-brow');
+  t.eq(rows.length, body.length, '표 줄 수');
+  t.expect(t.$('.t-brow.bad .err') && /목록에 없는/.test(t.$('.t-brow.bad .err').textContent), '없는 질문은 빨간 줄');
+  const before = t.db.profiles.find(x => x.id === 'u-A').seeds, n104 = fpCount(t, 104);
+  await t.click('[data-act="f-bulk-apply"]');
+  await t.waitFor(() => t.$$('.t-brow.done').length === 2);
+  t.eq(t.db.questions.find(q => q.id === 104).fruit_kind, 'fruit', '104 열매');
+  t.eq(t.db.profiles.find(x => x.id === 'u-A').seeds, before + n104 + 5, '도토리');
+  const ex = t.db.questions.find(q => q.id === extra.id);
+  t.expect(ex.fruit_kind == null && ex.resolve_requested_at == null, '되돌린 질문은 열매 아님·요청 풀림');
+  await t.click('[data-act="f-bulk-cancel"]');
+  await t.waitFor(() => !t.$('.t-bulk'));
+  await TV.idle();
+});
+add('선생님 · 빠르게 확인: 키보드 1·3·→ 로 한 장씩', async t => {
+  const extra = t.db.questions.filter(q => q.id !== 104 && q.fruit_kind == null && t.db.profiles.some(p => p.id === q.user_id && p.grade === 2 && p.class_no === 11)).slice(0, 2);
+  extra.forEach(q => { q.resolve_requested_at = new Date().toISOString(); });
+  await to211(t, 'fruits');
+  await t.click(await t.waitFor('[data-act="f-quick"]'));
+  await t.waitFor('.t-quick');
+  const total = (await t.api.pendingFruits(2, 11)).length;
+  t.expect(/1 \/ /.test(t.$('.t-qh b').textContent), '첫 장');
+  const key = k => document.dispatchEvent(new KeyboardEvent('keydown', {key:k, bubbles:true}));
+  key('ArrowRight'); await t.waitFor(() => /2 \/ /.test(t.$('.t-qh b').textContent));
+  key('ArrowLeft'); await t.waitFor(() => /1 \/ /.test(t.$('.t-qh b').textContent));
+  const first = Number(t.$('.t-quick').dataset.q);
+  key('1');
+  await t.waitFor(() => t.db.questions.find(q => q.id === first).fruit_kind === 'fruit');
+  await t.waitFor(() => t.$('.t-quick') && Number(t.$('.t-quick').dataset.q) !== first);
+  const second = Number(t.$('.t-quick').dataset.q);
+  key('3'); await t.waitFor('#t_qNote');
+  t.$('#t_qNote').value = '한 곳 더 찾아볼까요?'; t.$('#t_qNote').dispatchEvent(new Event('input', {bubbles:true}));
+  t.$('#t_qNote').focus();
+  t.$('#t_qNote').dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
+  await t.waitFor(() => t.db.questions.find(q => q.id === second).resolve_requested_at == null);
+  t.eq(t.db.questions.find(q => q.id === second).fruit_kind, null, '되돌린 건 열매 아님');
+  t.expect(total >= 3, '확인 요청 셋 이상이었음');
+  key('Escape'); await t.waitFor(() => !t.$('.t-quick'));
   await TV.idle();
 });
 add('선생님 · 확인할 답 CSV(일지 칸·AI 사용, 실명 없음)', async t => {
