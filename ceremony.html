@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>해누리 질문 어워즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0710; --wine:#3A0A16; --red:#B3122E; --ink:#FFF7E4; --sub:#E7D7B8; --gold:#F0CF6E; --gold-d:#B8892E; --line:rgba(240,207,110,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(110% 80% at 50% 18%,#4A0E1D 0%,#22060E 45%,var(--bg) 100%);color:var(--ink);
+  font-family:'Noto Sans KR','Malgun Gothic',sans-serif;overflow:hidden;user-select:none}
+@media (min-width:1600px){html{zoom:1.35}}
+button{font:inherit;cursor:pointer}
+.myeong{font-family:'Nanum Myeongjo','Batang',serif}
+.gold{background:linear-gradient(180deg,#FFF6CF 0%,#F0CF6E 35%,#B8892E 55%,#FBE7A1 78%,#A77A20 100%);background-size:100% 200%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 rgba(60,30,0,.55)) drop-shadow(0 0 18px rgba(255,210,110,.35))}
+.shine{animation:shine 3s linear infinite}
+@keyframes shine{0%{background-position:0 0}100%{background-position:0 200%}}
+
+/* ── 무대 장치: 전구 테두리 · 조명 · 레드카펫 ── */
+.bulbs{position:fixed;inset:0;pointer-events:none;z-index:1}
+.bulbs i{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#FFE7A0;box-shadow:0 0 10px 3px rgba(255,214,120,.8);animation:blink 1.2s infinite}
+.bulbs i:nth-child(2n){animation-delay:.6s}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25;box-shadow:none}}
+.beam{position:fixed;top:-10%;width:34vw;height:130vh;pointer-events:none;mix-blend-mode:screen;opacity:.55;z-index:0;
+  background:linear-gradient(180deg,rgba(255,236,180,.55),rgba(255,236,180,0) 80%);clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);transform-origin:50% 0}
+.beam.l{left:2vw;animation:swingL 6s ease-in-out infinite}
+.beam.r{right:2vw;animation:swingR 6.5s ease-in-out infinite}
+@keyframes swingL{0%,100%{transform:rotate(-24deg)}50%{transform:rotate(14deg)}}
+@keyframes swingR{0%,100%{transform:rotate(24deg)}50%{transform:rotate(-14deg)}}
+.carpet{position:fixed;left:50%;bottom:-2vh;width:46vw;height:38vh;transform:translateX(-50%) perspective(400px) rotateX(58deg);transform-origin:50% 100%;
+  background:repeating-linear-gradient(90deg,#9E0F27 0 18px,#B3122E 18px 36px);box-shadow:0 0 60px rgba(179,18,46,.6);pointer-events:none;z-index:0;opacity:.85}
+.carpet::before,.carpet::after{content:'';position:absolute;top:0;bottom:0;width:10px;background:linear-gradient(#F0CF6E,#8A6420)}
+.carpet::before{left:0}.carpet::after{right:0}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:5}
+
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;text-align:center;z-index:2}
+.screen.on{display:flex}
+
+/* ── 처음 ── */
+#home{justify-content:flex-start;overflow:auto;padding-top:7vh;z-index:3}
+#home h1{font-size:clamp(38px,6vw,76px);margin:0;letter-spacing:.04em;line-height:1.15}
+#home .lead{color:var(--sub);font-size:clamp(15px,1.6vw,19px);margin:12px 0 26px}
+.classes{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:14px;width:min(880px,100%)}
+@media (max-width:640px){.classes{grid-template-columns:repeat(2,1fr)}}
+.cls{border:2px solid var(--line);background:rgba(0,0,0,.35);color:var(--ink);border-radius:16px;padding:18px 10px;font-size:22px;font-weight:900}
+.cls small{display:block;font-size:13px;font-weight:600;color:var(--sub);margin-top:4px}
+.cls:hover,.cls:focus-visible{border-color:var(--gold);background:rgba(240,207,110,.14);outline:none}
+.load{margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:10px;width:min(640px,100%)}
+.drop{border:2px dashed var(--line);border-radius:16px;padding:20px;width:100%;color:var(--sub);line-height:1.6;background:rgba(0,0,0,.25)}
+.drop.over{border-color:var(--gold);color:var(--ink)}
+.btn{border:none;border-radius:12px;padding:12px 20px;font-weight:900;background:linear-gradient(180deg,#FBE7A1,#D9AE4B);color:#2A1A05}
+.btn.line{background:transparent;color:var(--gold);border:2px solid var(--gold)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.note{color:var(--sub);font-size:13px;margin-top:6px}
+.edit{width:min(1000px,100%);margin-top:18px;text-align:left;background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:14px;padding:14px;display:none}
+.edit.on{display:block}
+.edit table{width:100%;border-collapse:collapse;font-size:14px}
+.edit th{color:var(--gold);text-align:left;font-weight:700;padding:6px 4px;border-bottom:1px solid var(--line)}
+.edit td{padding:4px;border-bottom:1px solid rgba(255,255,255,.06)}
+.edit input{width:100%;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:var(--ink)}
+.edit td.n input{width:56px}
+footer#app-credit{margin-top:30px;color:rgba(231,215,184,.6);font-size:12px}
+
+/* ── 무대 글자 ── */
+#stage{cursor:pointer}
+.kicker{color:var(--gold);font-size:clamp(14px,1.6vw,20px);letter-spacing:.35em;font-weight:700}
+.mega{font-size:clamp(56px,10vw,140px);font-weight:800;line-height:1.08;margin:10px 0 0;letter-spacing:.02em}
+.subt{font-size:clamp(18px,2.3vw,30px);color:var(--ink);margin-top:16px;font-weight:700;word-break:keep-all}
+.small{font-size:clamp(14px,1.5vw,18px);color:var(--sub);margin-top:14px;letter-spacing:.08em}
+.ribbon{display:inline-block;padding:9px 30px;border:2px solid var(--gold);border-radius:999px;color:var(--gold);font-weight:900;font-size:clamp(16px,1.9vw,24px);letter-spacing:.1em;background:rgba(0,0,0,.35)}
+.awardname{margin-top:18px;font-size:clamp(26px,3.6vw,48px);font-weight:900;color:var(--ink);text-shadow:0 2px 0 #000}
+.epi{margin-top:12px;font-size:clamp(17px,2vw,26px);color:#FFD9A0;font-style:italic;word-break:keep-all}
+.trophy{width:clamp(120px,15vw,200px);height:auto;margin-bottom:10px;filter:drop-shadow(0 0 24px rgba(255,210,110,.55))}
+.spin{animation:spinIn 1.1s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes spinIn{0%{transform:rotateY(540deg) scale(.2);opacity:0}100%{transform:none;opacity:1}}
+.pop{animation:pop .75s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes pop{0%{transform:scale(.25);opacity:0}100%{transform:scale(1);opacity:1}}
+.rise{animation:rise .8s ease both}
+@keyframes rise{0%{transform:translateY(28px);opacity:0}100%{transform:none;opacity:1}}
+.d1{animation-delay:.3s}.d2{animation-delay:.6s}.d3{animation-delay:.9s}.d4{animation-delay:1.2s}
+
+/* 후보 */
+.noms{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:26px;width:min(1200px,100%)}
+.nom{flex:1 1 300px;max-width:380px;border:2px solid var(--gold-d);border-radius:18px;padding:18px 18px 16px;background:linear-gradient(180deg,rgba(60,10,22,.85),rgba(20,5,10,.85));
+  box-shadow:0 0 0 4px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5);animation:flip .8s both}
+@keyframes flip{0%{transform:perspective(600px) rotateY(90deg);opacity:0}100%{transform:none;opacity:1}}
+.nom .no{color:var(--sub);font-size:15px;font-weight:700}
+.nom .nm{font-size:clamp(28px,3.4vw,42px);font-weight:800;margin-top:2px}
+.nom .q{margin-top:10px;font-size:15px;line-height:1.55;color:#F2E6CC;word-break:break-word}
+.nom .tag{display:inline-block;margin-top:10px;font-size:12px;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:2px 10px;letter-spacing:.1em}
+
+/* 봉투 */
+.env{width:clamp(220px,26vw,340px);margin-top:20px}
+.env .flap{transform-origin:50% 0;transition:transform .9s cubic-bezier(.5,0,.3,1)}
+.env.open .flap{transform:rotateX(180deg)}
+.drum{font-size:clamp(46px,7vw,96px);font-weight:800;margin-top:14px;animation:shake .1s infinite}
+@keyframes shake{0%{transform:translate(0,0)}25%{transform:translate(-4px,2px) rotate(-1deg)}50%{transform:translate(4px,-2px) rotate(1deg)}75%{transform:translate(-2px,-1px)}100%{transform:translate(0,0)}}
+
+/* 수상 */
+.winno{font-size:clamp(20px,2.4vw,32px);color:var(--sub);margin-top:16px;font-weight:700;letter-spacing:.1em}
+.winner{font-size:clamp(80px,15vw,200px);font-weight:800;line-height:1.05;margin-top:2px;letter-spacing:.06em}
+.qbox{position:relative;margin-top:26px;max-width:960px;padding:22px 52px 18px;border:2px solid var(--gold-d);border-radius:12px;
+  box-shadow:inset 0 0 0 5px #1A050B,inset 0 0 0 6px rgba(240,207,110,.55),0 0 40px rgba(240,207,110,.18);background:rgba(255,247,228,.06);font-size:clamp(18px,2.1vw,28px);font-weight:700;line-height:1.55;word-break:break-word;text-wrap:balance}
+.qbox small{position:absolute;left:50%;top:0;transform:translate(-50%,-55%);background:#3A0A16;border:1.5px solid var(--gold-d);color:var(--gold);padding:3px 16px;border-radius:999px;font-size:14px;letter-spacing:.14em;white-space:nowrap}
+.qbox .qm{position:absolute;font-family:'Nanum Myeongjo',serif;font-size:60px;line-height:1;color:var(--gold-d)}
+.qbox .l{left:10px;top:4px}.qbox .r{right:10px;bottom:-16px}
+.prize{margin-top:18px;color:var(--sub);font-size:clamp(15px,1.7vw,21px)}
+.speech{margin-top:16px;display:inline-flex;gap:12px;align-items:center;color:#FFD9A0;font-size:clamp(16px,1.8vw,22px);font-weight:800}
+.speech b{display:inline-block;min-width:56px;padding:4px 10px;border-radius:10px;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--gold)}
+
+/* 엔딩 */
+.credits{position:absolute;left:0;right:0;top:100%;animation:roll 26s linear forwards}
+@keyframes roll{to{transform:translateY(calc(-100% - 100vh))}}
+.credits h3{color:var(--gold);letter-spacing:.3em;font-size:18px;margin:46px 0 8px}
+.credits p{font-size:clamp(26px,3vw,40px);font-weight:800;margin:4px 0}
+.credits small{display:block;color:var(--sub);font-size:16px;margin-bottom:6px}
+.hint{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:rgba(231,215,184,.55);font-size:13px;z-index:6}
+.top-btns{position:fixed;top:14px;right:18px;display:flex;gap:8px;z-index:7}
+.top-btns button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--sub);border-radius:10px;padding:6px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="beam l"></div><div class="beam r"></div><div class="carpet"></div>
+<div class="bulbs" id="bulbs"></div>
+<canvas id="fx"></canvas>
+<div class="top-btns"><button type="button" id="sndBtn" title="소리 (S)">소리 켜짐</button><button type="button" id="fsBtn" title="전체 화면 (F)">전체 화면</button><button type="button" id="homeBtn" title="처음으로 (Esc)">처음으로</button></div>
+
+<section class="screen on" id="home">
+  <div class="kicker">HAENURI QUESTION AWARDS</div>
+  <h1 class="myeong gold shine" id="hTitle">해누리 질문 어워즈</h1>
+  <p class="lead" id="hLead">반을 고르면 레드카펫이 깔려요.</p>
+  <div class="classes" id="classes"></div>
+  <div class="load">
+    <div class="drop" id="drop">상장 폴더의 <b>시상식_명단</b> 파일(.json)을 여기에 끌어다 놓거나 아래 단추로 골라 주세요.<br>명단은 이 컴퓨터에만 저장돼요. 인터넷에 올라가지 않아요.</div>
+    <div class="row">
+      <label class="btn" for="file">명단 파일 고르기</label><input type="file" id="file" accept=".json,application/json" hidden>
+      <button type="button" class="btn line" id="editBtn">수상자 보기·고치기</button>
+    </div>
+    <div class="note">진행: 화면을 누르거나 스페이스·→ 다음, ← 이전, Esc 처음, F 전체 화면, S 소리</div>
+  </div>
+  <div class="edit" id="edit"></div>
+  <footer id="app-credit">© 2026 조승재(과학이조선생) · 해누리중학교 · 최종 업데이트 2026-11-08</footer>
+</section>
+
+<section class="screen" id="stage"><div id="slide" style="width:100%;display:flex;flex-direction:column;align-items:center"></div><div class="hint" id="hint"></div></section>
+
+<script>
+(function(){
+'use strict';
+const KEY = 'qo-ceremony-v1';
+/* 상마다 시상식 이름 · 부문 · 수식어 — 마지막이 질문도르 */
+const SHOW = {
+  fun:  {show:'백상질문대상', cat:'예능 부문 대상', epi:'웃음 폭격기 · 교실 분위기 메이커 · 쉬는 시간보다 재밌는 수업의 주범',
+         desc:'엉뚱하고 재치 있는 질문으로 우리 교실에 웃음을 가져온 친구'},
+  kong: {show:'청룡질문상', cat:'글로벌 신인상', epi:'자판도 막지 못한 질문의 국가대표 · 언어의 장벽을 부순 개척자',
+         desc:'자판이 영어로만 쳐져도 끝까지 질문을 올린 친구'},
+  life: {show:'칸 질문영화제', cat:'황금종려 생활밀착상', epi:'교실 밖까지 과학을 끌고 나간 다큐멘터리 장인',
+         desc:'과학 시간에 배운 것을 생활 속 장면과 이은 친구'},
+  miss: {show:'골든 반전 어워즈', cat:'최우수 플롯 트위스트상', epi:'틀려서 더 멋진 반전 드라마의 주인공',
+         desc:'예상과 결과가 달랐던 걸 솔직하게 적고 새로 배운 친구'},
+  deep: {show:'질문대상', cat:'탐구 장인 부문 대상', epi:'포기를 모르는 집념의 굴착기 · 일지를 끝까지 채운 철인',
+         desc:'질문 하나를 붙잡고 탐구 일지를 끝까지 채운 친구'},
+  month:{show:'질문도르', cat:"Ballon d'Question · 이달의 황금 질문", epi:'반 친구들이 직접 뽑은, 이달 가장 빛난 질문의 주인',
+         desc:'우리 반 친구들이 가장 궁금해한 질문의 주인', ball:true}
+};
+const ORDER = ['fun', 'kong', 'life', 'miss', 'deep', 'month'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let data = null, sound = true;
+try{ data = JSON.parse(localStorage.getItem(KEY) || 'null'); }catch(_){ data = null; }
+try{ sound = localStorage.getItem(KEY + '-snd') !== '0'; }catch(_){}
+const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){} };
+
+/* 전구 테두리 */
+(function(){
+  const b = $('bulbs'); let h = '';
+  const n = 22, m = 13;
+  for(let i = 0; i <= n; i++){ const x = 2 + i * 96 / n; h += '<i style="left:' + x + '%;top:1.6%"></i><i style="left:' + x + '%;top:98.4%"></i>'; }
+  for(let i = 1; i < m; i++){ const y = 1.6 + i * 96.8 / m; h += '<i style="left:1.2%;top:' + y + '%"></i><i style="left:98.8%;top:' + y + '%"></i>'; }
+  b.innerHTML = h;
+})();
+
+/* ── 처음 화면 ── */
+function paintHome(){
+  $('hTitle').textContent = '해누리 질문 어워즈';
+  $('hLead').textContent = data ? (data.title || '') + ' · 반을 고르면 레드카펫이 깔려요.' : '먼저 명단 파일을 불러와 주세요.';
+  $('classes').innerHTML = data ? data.classes.map((c, i) => {
+    const n = c.awards.filter(a => String(a.name || '').trim()).length;
+    return '<button type="button" class="cls" data-c="' + i + '">' + c.grade + '학년 ' + c.class + '반<small>트로피 ' + n + '개</small></button>';
+  }).join('') : '';
+  $('editBtn').style.display = data ? '' : 'none';
+  if($('edit').classList.contains('on')) paintEdit();
+}
+function load(obj){
+  if(!obj || !Array.isArray(obj.classes)) throw new Error('시상식 명단 파일이 아니에요');
+  data = obj; save(); paintHome();
+}
+$('file').addEventListener('change', e => {
+  const f = e.target.files[0]; if(!f) return;
+  f.text().then(t => load(JSON.parse(t))).catch(er => alert(er.message || '파일을 읽지 못했어요'));
+  e.target.value = '';
+});
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if(f) f.text().then(t => load(JSON.parse(t))).catch(er => alert(er.message || '파일을 읽지 못했어요')); });
+$('classes').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if(b) start(+b.dataset.c); });
+
+$('editBtn').addEventListener('click', () => { $('edit').classList.toggle('on'); paintEdit(); });
+function paintEdit(){
+  if(!data) return;
+  $('edit').innerHTML = '<table><thead><tr><th>반</th><th>상</th><th>번호</th><th>이름</th><th>질문</th></tr></thead><tbody>' +
+    data.classes.map((c, ci) => c.awards.map((a, ai) =>
+      '<tr><td>' + c.class + '반</td><td>' + esc((SHOW[a.key] || {}).show || '') + ' · ' + esc(a.award) + '</td>' +
+      '<td class="n"><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="n" value="' + esc(a.n) + '"></td>' +
+      '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="name" value="' + esc(a.name) + '"></td>' +
+      '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="q" value="' + esc(a.q) + '"></td></tr>').join('')).join('') +
+    '</tbody></table><div class="note">이름이 빈 상은 시상식에서 건너뛰어요. 여기서 바꾼 수상자는 후보 소개에도 들어가요.</div>';
+}
+$('edit').addEventListener('input', e => {
+  const t = e.target; if(!t.dataset.k) return;
+  data.classes[+t.dataset.ci].awards[+t.dataset.ai][t.dataset.k] = t.value; save(); paintHome();
+});
+
+/* ── 그림 ── */
+const TROPHY = '<svg class="trophy spin" viewBox="0 0 120 150" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".4" stop-color="#F0CF6E"/><stop offset=".7" stop-color="#B8892E"/><stop offset="1" stop-color="#FBE7A1"/></linearGradient></defs>' +
+  '<path d="M28 14 H92 V40 C92 66 78 80 60 82 C42 80 28 66 28 40 Z" fill="url(#tg)"/><path d="M28 22 C10 22 8 46 30 54" fill="none" stroke="url(#tg)" stroke-width="6"/><path d="M92 22 C110 22 112 46 90 54" fill="none" stroke="url(#tg)" stroke-width="6"/>' +
+  '<rect x="54" y="82" width="12" height="22" fill="url(#tg)"/><path d="M38 104 H82 L88 122 H32 Z" fill="url(#tg)"/><rect x="26" y="122" width="68" height="16" rx="2" fill="#3A2A10"/><rect x="34" y="126" width="52" height="8" rx="1" fill="url(#tg)"/>' +
+  '<path d="M60 28 l4 9 10 1 -8 6 3 10 -9 -6 -9 6 3 -10 -8 -6 10 -1z" fill="#FFF8DC" opacity=".9"/></svg>';
+const BALL = '<svg class="trophy spin" viewBox="0 0 140 160" aria-hidden="true"><defs><radialGradient id="bg2" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#FFF8D6"/><stop offset=".45" stop-color="#F0CF6E"/><stop offset="1" stop-color="#8A6420"/></radialGradient></defs>' +
+  '<circle cx="70" cy="62" r="54" fill="url(#bg2)"/><path d="M70 30 l17 12 -6 20 h-22 l-6 -20 z" fill="#B8892E" opacity=".75"/><path d="M53 42 L30 36 M87 42 L110 36 M59 62 L46 86 M81 62 L94 86 M70 30 V10" stroke="#9C7425" stroke-width="2.5" fill="none" opacity=".8"/>' +
+  '<ellipse cx="52" cy="40" rx="14" ry="8" fill="#FFFBEA" opacity=".55"/><path d="M40 118 H100 L108 140 H32 Z" fill="#B8892E"/><rect x="26" y="140" width="88" height="14" rx="2" fill="#3A2A10"/></svg>';
+const ENV = '<svg class="env" id="env" viewBox="0 0 200 130" aria-hidden="true"><rect x="4" y="20" width="192" height="106" rx="6" fill="#F6E7C1" stroke="#B8892E" stroke-width="3"/>' +
+  '<path d="M4 126 L100 66 L196 126" fill="none" stroke="#D9C08A" stroke-width="2.5"/><path class="flap" d="M4 22 L100 86 L196 22 Z" fill="#EBD49B" stroke="#B8892E" stroke-width="3"/>' +
+  '<circle cx="100" cy="72" r="13" fill="#B3122E"/><text x="100" y="77" text-anchor="middle" font-size="13" font-weight="800" fill="#FBE7A1" font-family="Nanum Myeongjo,serif">Q</text></svg>';
+
+/* ── 무대 ── */
+let slides = [], idx = 0, cls = null, timer = null;
+function nomsOf(a){
+  let L = (a.nominees || []).filter(x => x && x.name).slice(0, 3);
+  if(!L.some(x => x.name === a.name)) L = [{n:a.n, name:a.name, q:a.q}].concat(L).slice(0, 3);
+  /* 순서 섞기(수상자가 늘 첫째로 보이지 않게) — 같은 반은 같은 순서 */
+  return L.map((x, i) => ({x, k:(x.name.charCodeAt(0) * 7 + i * 13) % 17})).sort((p, q) => p.k - q.k).map(p => p.x);
+}
+function start(ci){
+  cls = data.classes[ci];
+  const by = {}; cls.awards.forEach(a => { by[a.key] = a; });
+  const list = ORDER.map(k => by[k]).filter(a => a && String(a.name || '').trim());
+  slides = [{t:'open'}, {t:'mc'}];
+  list.forEach((a, i) => {
+    slides.push({t:'cat', a, last:i === list.length - 1});
+    slides.push({t:'nom', a});
+    slides.push({t:'env', a});
+    slides.push({t:'win', a});
+  });
+  slides.push({t:'end', list});
+  idx = 0;
+  $('home').classList.remove('on'); $('stage').classList.add('on');
+  show();
+}
+function show(){
+  const s = slides[idx], el = $('slide');
+  stopFx(); stopDrum(); if(timer){ clearInterval(timer); timer = null; }
+  const title = data.title || '질문 상장';
+  if(s.t === 'open'){
+    el.innerHTML = '<div class="kicker rise">THE 1ST HAENURI QUESTION AWARDS</div>' +
+      '<div class="mega myeong gold shine pop">해누리<br>질문 어워즈</div>' +
+      '<div class="subt rise d1">' + esc(title) + ' · ' + cls.grade + '학년 ' + cls.class + '반 특별 시상식</div>' +
+      '<div class="small rise d2">레드카펫 입장 · 조명 준비 완료 · 트로피 반짝반짝</div>';
+    fanfare(); sparkle();
+  } else if(s.t === 'mc'){
+    el.innerHTML = '<div class="kicker">진행</div><div class="mega myeong gold pop" style="font-size:clamp(44px,7vw,96px)">MC 조승재</div>' +
+      '<div class="subt rise d1">끝까지 묻고, 찾고, 틀리고, 웃게 만든<br>우리 반 질문가들을 위한 밤</div>' +
+      '<div class="small rise d2">오늘 밤 트로피의 주인공은 누구일까요?</div>';
+    chime();
+  } else if(s.t === 'cat'){
+    const S = SHOW[s.a.key] || {show:'', cat:'', epi:'', desc:''};
+    el.innerHTML = (S.ball ? BALL : TROPHY) +
+      (s.last && S.ball ? '<div class="kicker rise">대망의 마지막 시상</div>' : '<div class="kicker rise">다음 시상</div>') +
+      '<div class="mega myeong gold shine pop" style="font-size:clamp(48px,8vw,116px)">' + esc(S.show) + '</div>' +
+      '<div class="ribbon rise d1" style="margin-top:14px">' + esc(S.cat) + '</div>' +
+      '<div class="awardname rise d2">「' + esc(s.a.award) + '」</div>' +
+      '<div class="epi rise d3">' + esc(S.epi) + '</div>';
+    S.ball ? (fanfare(), sparkle()) : chime();
+  } else if(s.t === 'nom'){
+    const S = SHOW[s.a.key] || {}, L = nomsOf(s.a);
+    el.innerHTML = '<div class="kicker">' + esc(S.show) + ' · ' + esc(S.cat) + '</div>' +
+      '<div class="awardname" style="margin-top:6px">후보를 소개합니다</div>' +
+      (L.length === 1 ? '<div class="epi">단독 후보! 그래도 두구두구는 합니다</div>' : '') +
+      '<div class="noms">' + L.map((x, i) => '<div class="nom" style="animation-delay:' + (i * .45) + 's"><div class="no">' + cls.class + '반 ' + esc(x.n) + '번</div>' +
+        '<div class="nm myeong gold">' + esc(x.name) + '</div>' + (x.q ? '<div class="q">“' + esc(x.q) + '”</div>' : '') + '<span class="tag">NOMINEE</span></div>').join('') + '</div>';
+    L.forEach((x, i) => later(() => tick(), i * 450));
+  } else if(s.t === 'env'){
+    const S = SHOW[s.a.key] || {};
+    el.innerHTML = '<div class="kicker">' + esc(S.show) + '</div><div class="awardname" style="margin-top:6px">봉투를 열겠습니다</div>' + ENV +
+      '<div class="drum myeong gold">두구두구두구</div>';
+    drumroll();
+    later(() => { const e = $('env'); if(e) e.classList.add('open'); }, 900);
+  } else if(s.t === 'win'){
+    const S = SHOW[s.a.key] || {}, q = String(s.a.q || '').trim();
+    el.innerHTML = '<div class="ribbon">' + esc(S.show) + ' · ' + esc(s.a.award) + '</div>' +
+      (s.a.n ? '<div class="winno pop">' + cls.grade + '학년 ' + cls.class + '반 ' + esc(s.a.n) + '번</div>' : '') +
+      '<div class="winner myeong gold shine pop">' + esc(s.a.name) + '</div>' +
+      (q ? '<div class="qbox rise d2"><small>수상작 · 이 친구가 올린 질문</small><span class="qm l">“</span>' + esc(q) + '<span class="qm r">”</span></div>' : '') +
+      (data.prize ? '<div class="prize rise d3">부상 · ' + esc(data.prize) + ' · 상장 · 그리고 우리 반의 박수</div>' : '') +
+      '<div class="speech rise d4">수상 소감 한마디! <b id="sp">15</b></div>';
+    fanfare(); cheer(); fireworks(S.ball ? 9 : 5); confetti(S.ball);
+    let left = 15;
+    timer = setInterval(() => { left--; const b = $('sp'); if(b) b.textContent = left > 0 ? left : '박수!'; if(left <= 0){ clearInterval(timer); timer = null; cheer(); } }, 1000);
+  } else if(s.t === 'end'){
+    el.innerHTML = '<div class="kicker pop">THANK YOU</div><div class="mega myeong gold shine pop" style="font-size:clamp(44px,7vw,96px)">모두 축하해요!</div>' +
+      '<div style="position:relative;width:100%;height:58vh;overflow:hidden;margin-top:10px"><div class="credits">' +
+      s.list.map(a => '<h3>' + esc((SHOW[a.key] || {}).show || '') + '</h3><small>' + esc(a.award) + '</small><p class="myeong gold">' + esc(a.name) + '</p>').join('') +
+      '<h3>그리고</h3><p>질문을 올려 준 ' + cls.grade + '학년 ' + cls.class + '반 모두</p><h3>다음 달 시상식에서 만나요</h3><p class="myeong gold">질문은 계속된다</p></div></div>';
+    fanfare(); fireworks(8); confetti(true);
+  }
+  $('hint').textContent = (idx + 1) + ' / ' + slides.length + ' · 화면을 누르거나 스페이스로 다음';
+}
+function next(){ if(idx < slides.length - 1){ idx++; show(); } }
+function prev(){ if(idx > 0){ idx--; if(slides[idx].t === 'env') idx--; show(); } }
+function home(){ stopFx(); stopDrum(); if(timer){ clearInterval(timer); timer = null; } $('stage').classList.remove('on'); $('home').classList.add('on'); paintHome(); }
+$('stage').addEventListener('click', next);
+$('homeBtn').addEventListener('click', e => { e.stopPropagation(); home(); });
+$('fsBtn').addEventListener('click', e => { e.stopPropagation(); fs(); });
+$('sndBtn').addEventListener('click', e => { e.stopPropagation(); toggleSnd(); });
+function fs(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); }
+function toggleSnd(){ sound = !sound; try{ localStorage.setItem(KEY + '-snd', sound ? '1' : '0'); }catch(_){} $('sndBtn').textContent = sound ? '소리 켜짐' : '소리 꺼짐'; if(!sound) stopDrum(); }
+$('sndBtn').textContent = sound ? '소리 켜짐' : '소리 꺼짐';
+document.addEventListener('keydown', e => {
+  if(e.target && e.target.matches && e.target.matches('input')) return;
+  if(e.key === 'f' || e.key === 'F'){ fs(); return; }
+  if(e.key === 's' || e.key === 'S'){ toggleSnd(); return; }
+  if(!$('stage').classList.contains('on')) return;
+  if(e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === 'PageDown'){ e.preventDefault(); next(); }
+  else if(e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); prev(); }
+  else if(e.key === 'Escape') home();
+});
+
+/* ── 소리(전부 직접 합성) ── */
+let ac = null, drumTimer = null;
+const actx = () => { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if(ac.state === 'suspended') ac.resume(); return ac; };
+function noise(t, dur, vol, hp, lp){
+  const a = actx(), len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+  const src = a.createBufferSource(); src.buffer = buf;
+  const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 300;
+  const f2 = a.createBiquadFilter(); f2.type = 'lowpass'; f2.frequency.value = lp || 16000;
+  const g = a.createGain(); g.gain.value = vol;
+  src.connect(f); f.connect(f2); f2.connect(g); g.connect(a.destination); src.start(t);
+}
+function tone(t, freq, dur, vol, type){
+  const a = actx(), o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'triangle'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + .05);
+}
+function stopDrum(){ if(drumTimer){ clearInterval(drumTimer); drumTimer = null; } }
+function drumroll(){ stopDrum(); if(!sound) return; let k = 0; drumTimer = setInterval(() => { noise(actx().currentTime, .08, .3 + Math.min(k, 50) * .009, 160, 3000); k++; if(k > 500) stopDrum(); }, 50); }
+function tick(){ if(!sound) return; const t = actx().currentTime; tone(t, 1318, .25, .1, 'sine'); tone(t + .06, 1760, .3, .07, 'sine'); }
+function chime(){ if(!sound) return; const t = actx().currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(t + i * .1, f, .7, .1, 'sine')); }
+function fanfare(){
+  if(!sound) return;
+  const t = actx().currentTime; noise(t, 1.6, .45, 3000);
+  [[392, 0], [523, .14], [659, .28], [784, .42], [1046, .62]].forEach(p => tone(t + p[1], p[0], .8, .14, 'sawtooth'));
+  [523, 659, 784, 1046].forEach(f => tone(t + .85, f, 1.8, .09, 'triangle'));
+  [262, 392].forEach(f => tone(t + .85, f, 1.8, .12, 'square'));
+}
+function cheer(){
+  if(!sound) return;
+  const a = actx(), t = a.currentTime;
+  for(let i = 0; i < 40; i++) noise(t + Math.random() * 1.8, .05 + Math.random() * .05, .18, 900, 5000);   // 박수
+  noise(t, 2.2, .12, 400, 1800);                                                                          // 웅성웅성 함성
+}
+
+/* ── 불꽃놀이 · 꽃가루 · 반짝이 ── */
+const cv = $('fx'), cx = cv.getContext('2d'); let parts = [], raf = null;
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+function fit(){ cv.width = innerWidth * DPR; cv.height = innerHeight * DPR; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; }
+addEventListener('resize', fit); fit();
+const COLS = ['#F0CF6E', '#FBE7A1', '#B3122E', '#FF6F7F', '#FFFFFF', '#7FD1A8', '#8FB8FF'];
+function confetti(big){
+  const W = cv.width, H = cv.height, n = big ? 360 : 220;
+  for(let i = 0; i < n; i++) parts.push({k:'c', x:W / 2 + (Math.random() - .5) * W * .35, y:H * .45, vx:(Math.random() - .5) * 28 * DPR, vy:(-Math.random() * 24 - 8) * DPR,
+    w:(6 + Math.random() * 9) * DPR, h:(4 + Math.random() * 6) * DPR, r:Math.random() * 6, vr:(Math.random() - .5) * .4, c:COLS[i % COLS.length], life:0, max:420});
+  run();
+}
+function fireworks(n){
+  for(let b = 0; b < n; b++) later(() => {
+    const x = cv.width * (.15 + Math.random() * .7), y = cv.height * (.12 + Math.random() * .35), c = COLS[b % COLS.length];
+    for(let i = 0; i < 70; i++){ const a = i / 70 * Math.PI * 2, sp = (3 + Math.random() * 5) * DPR;
+      parts.push({k:'f', x, y, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, c, life:0, max:70 + Math.random() * 30, s:(1.6 + Math.random() * 1.6) * DPR}); }
+    if(sound){ const t = actx().currentTime; noise(t, .5, .25, 80, 900); }
+    run();
+  }, b * 380);
+}
+function sparkle(){
+  for(let i = 0; i < 90; i++) parts.push({k:'s', x:Math.random() * cv.width, y:Math.random() * cv.height, vx:0, vy:-.3 * DPR, c:'#FFF1B8', life:0, max:120 + Math.random() * 120, s:(1 + Math.random() * 2.2) * DPR, ph:Math.random() * 6});
+  run();
+}
+function run(){ if(!raf) loop(); }
+function loop(){
+  cx.clearRect(0, 0, cv.width, cv.height);
+  parts.forEach(p => {
+    p.life++;
+    if(p.k === 'c'){ p.vy += .55 * DPR; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.life / 6))); cx.restore(); }
+    else if(p.k === 'f'){ p.vy += .06 * DPR; p.vx *= .985; p.vy *= .985; p.x += p.vx; p.y += p.vy;
+      cx.globalAlpha = Math.max(0, 1 - p.life / p.max); cx.fillStyle = p.c; cx.beginPath(); cx.arc(p.x, p.y, p.s, 0, 7); cx.fill(); cx.globalAlpha = 1; }
+    else { p.y += p.vy; cx.globalAlpha = Math.max(0, Math.sin(p.life / 10 + p.ph)) * (1 - p.life / p.max); cx.fillStyle = p.c;
+      cx.beginPath(); cx.arc(p.x, p.y, p.s, 0, 7); cx.fill(); cx.globalAlpha = 1; }
+  });
+  parts = parts.filter(p => p.life < p.max && p.y < cv.height + 40);
+  raf = parts.length ? requestAnimationFrame(loop) : null;
+  if(!raf) cx.clearRect(0, 0, cv.width, cv.height);
+}
+const timers = [];
+function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+function stopFx(){ while(timers.length) clearTimeout(timers.pop()); parts = []; if(raf){ cancelAnimationFrame(raf); raf = null; } cx.clearRect(0, 0, cv.width, cv.height); }
+
+paintHome();
+})();
+</script>
+</body>
+</html>
