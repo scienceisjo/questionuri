@@ -2386,7 +2386,7 @@ body.ask-open .fab-ask{display:none!important}
       <input class="fi" id="lgNum" type="number" min="1" max="50" placeholder="번호">
     </div>
     <label class="fl">비밀번호</label>
-    <input class="fi" id="lgPw" type="password" placeholder="비밀번호" style="margin-bottom:4px" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="fi" id="lgPw" type="password" placeholder="비밀번호" style="margin-bottom:4px" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229)doLogin()">
     <p class="pwe" id="lgE"></p>
     <button class="bm" id="lgBtn" onclick="doLogin()" style="margin-top:var(--sp-1)">로그인</button>
     <div class="link-txt" onclick="goTo('signup')">처음이에요? 회원가입 →</div>
@@ -2410,7 +2410,7 @@ body.ask-open .fab-ask{display:none!important}
     <label class="fl">비밀번호</label>
     <input class="fi" id="sgPw" type="password" placeholder="4자 이상" style="margin-bottom:var(--sp-1)">
     <label class="fl">비밀번호 확인</label>
-    <input class="fi" id="sgPw2" type="password" placeholder="다시 입력" style="margin-bottom:4px" onkeydown="if(event.key==='Enter')doSignup()">
+    <input class="fi" id="sgPw2" type="password" placeholder="다시 입력" style="margin-bottom:4px" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229)doSignup()">
     <p class="pwe" id="sgE"></p>
     <button class="bm" id="sgBtn" onclick="doSignup()" style="margin-top:var(--sp-1)">🌳 나무 심기 완료!</button>
     <div class="link-txt" onclick="goTo('login')">이미 가입했어요? 로그인 →</div>
@@ -2488,7 +2488,7 @@ body.ask-open .fab-ask{display:none!important}
       <label class="fl">새 비밀번호</label>
       <input class="fi" id="pwNew" type="password" placeholder="4자 이상" autocomplete="new-password" style="margin-bottom:8px">
       <label class="fl">새 비밀번호 확인</label>
-      <input class="fi" id="pwNew2" type="password" placeholder="한 번 더 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePw()">
+      <input class="fi" id="pwNew2" type="password" placeholder="한 번 더 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229)doChangePw()">
       <div id="pwMsg" style="margin-top:10px;font-size:var(--fs-xs);font-weight:700;min-height:18px"></div>
       <button class="more-close" id="pwSaveBtn" onclick="doChangePw()" style="background:linear-gradient(135deg,#5CB86E,#3F8B4F);color:#fff;border:none;margin-top:10px">변경하기</button>
       <button class="more-close" onclick="closePwChange()" style="margin-top:8px">취소</button>
@@ -2571,7 +2571,7 @@ body.ask-open .fab-ask{display:none!important}
         <div class="qq-flags" id="qqFlags" hidden></div>
         <div class="qq-tree" id="qqTree" hidden></div>
         <div class="qq-iw">
-          <input class="q-i" id="qqInp" placeholder="궁금한 것을 적어요" onkeydown="if(event.key==='Enter'&&!event.repeat)qqPlant()">
+          <input class="q-i" id="qqInp" placeholder="궁금한 것을 적어요" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229&&!event.repeat)qqPlant()">
           <button class="ba" id="qqBtn" onclick="qqPlant()">심기</button>
         </div>
         <div class="q-quota" id="qqQuota" style="display:none"></div>
@@ -3880,6 +3880,14 @@ const KBD = [
       '오른쪽 <b>Alt</b> 키가 «한/영» 키예요. 한 번 눌러 보세요.',
       '그래도 안 되면 <b>그냥 그대로 쓰고 심으세요.</b>',
       '심을 때 「이걸 쓰려던 거예요?」 하고 <b>한글로 바꿔서 보여줘요</b> 🌱'
+    ] },
+  { ic:'🗾', t:'일본어 글자(あ·く·ん)가 섞여 나와요',
+    ex:'くfdml qkfrrl',
+    fix:[
+      '자판이 <b>일본어</b>로 바뀐 거예요. <b>Alt + Shift</b> 를 누르면 이렇게 돼요.',
+      '<b>Windows 키</b> + <b>Space</b> 를 눌러 «한국어» 를 고르세요.',
+      '화면 오른쪽 아래 «あ» 나 «A» 를 눌러서 «한국어» 를 골라도 돼요.',
+      '그대로 쓰고 심어도 <b>앱이 한글로 바꿔서 보여줘요</b> 🌱'
     ] },
   { ic:'🧩', t:'ㅎㅏㄴㄱㅡㄹ 처럼 따로따로 써져요',
     ex:'ﾡￜﾵﾼￆﾩﾷￜ',
@@ -7578,6 +7586,7 @@ function addPendingTag(raw){
 }
 function removePendingTag(t){S.pendingTags=S.pendingTags.filter(x=>x!==t);renderPendingTags();}
 function handleTagKey(e){
+  if(e.isComposing || e.keyCode === 229) return;   /* 한글 조합 중 Space·Enter 는 글자 확정이 먼저 */
   if(e.key==='Enter'||e.key===','||e.key===' '){
     e.preventDefault();
     const inp=e.target;
@@ -8957,7 +8966,56 @@ function hanScore(s){
      영어로 친 한글  최저 0.83  (오타 있는 실제 학생 문장)
    0.75 면 양쪽 다 0건. 0.85 로 조였더니 오타 있는 한글을 놓쳤다. */
 const IME_MIN_LEN = 6, IME_MIN_SCORE = 0.75;
+/* ── 일본어 자판(로마자 입력)으로 쳐진 글 ──
+   한/영 대신 Alt+Shift 를 누르면 일본어 자판으로 넘어간다. 두벌식 자리로 친 글자 중
+   a·i·u·e·o 와 그 앞 자음이 가나로 바뀐다(qu→く, e→え, le→ぇ, n→ん). 가나를 «가능한 로마자» 로
+   되돌려 보고, 한글 음절이 가장 잘 맞는 것을 고른다. */
+const _KANA2 = {'くぁ':['qa','kwa'],'くぃ':['qi'],'くぇ':['qe'],'くぉ':['qo'],'ふぁ':['fa'],'ふぃ':['fi'],'ふぇ':['fe'],'ふぉ':['fo'],'うぃ':['wi'],'うぇ':['we'],'いぇ':['ye'],
+  'きゃ':['kya'],'きゅ':['kyu'],'きょ':['kyo'],'しゃ':['sya','sha'],'しゅ':['syu','shu'],'しょ':['syo','sho'],'ちゃ':['tya','cha'],'ちゅ':['tyu','chu'],'ちょ':['tyo','cho'],
+  'にゃ':['nya'],'にゅ':['nyu'],'にょ':['nyo'],'ひゃ':['hya'],'ひゅ':['hyu'],'ひょ':['hyo'],'みゃ':['mya'],'みゅ':['myu'],'みょ':['myo'],'りゃ':['rya'],'りゅ':['ryu'],'りょ':['ryo'],
+  'ぎゃ':['gya'],'ぎゅ':['gyu'],'ぎょ':['gyo'],'じゃ':['ja','zya'],'じゅ':['ju','zyu'],'じょ':['jo','zyo'],'びゃ':['bya'],'びゅ':['byu'],'びょ':['byo'],'ぴゃ':['pya'],'ぴゅ':['pyu'],'ぴょ':['pyo'],
+  'てぃ':['thi'],'でぃ':['dhi'],'ゔぁ':['va'],'ゔぃ':['vi'],'ゔぇ':['ve'],'ゔぉ':['vo']};
+const _KANA1 = {'あ':['a'],'い':['i'],'う':['u'],'え':['e'],'お':['o'],'か':['ka','ca'],'き':['ki'],'く':['qu','ku','cu'],'け':['ke'],'こ':['ko','co'],
+  'さ':['sa'],'し':['si','shi','ci'],'す':['su'],'せ':['se','ce'],'そ':['so'],'た':['ta'],'ち':['ti','chi'],'つ':['tu','tsu'],'て':['te'],'と':['to'],
+  'な':['na'],'に':['ni'],'ぬ':['nu'],'ね':['ne'],'の':['no'],'は':['ha'],'ひ':['hi'],'ふ':['hu','fu'],'へ':['he'],'ほ':['ho'],
+  'ま':['ma'],'み':['mi'],'む':['mu'],'め':['me'],'も':['mo'],'や':['ya'],'ゆ':['yu'],'よ':['yo'],'ら':['ra'],'り':['ri'],'る':['ru'],'れ':['re'],'ろ':['ro'],
+  'わ':['wa'],'を':['wo'],'ん':['n','nn'],'が':['ga'],'ぎ':['gi'],'ぐ':['gu'],'げ':['ge'],'ご':['go'],'ざ':['za'],'じ':['zi','ji'],'ず':['zu'],'ぜ':['ze'],'ぞ':['zo'],
+  'だ':['da'],'ぢ':['di'],'づ':['du'],'で':['de'],'ど':['do'],'ば':['ba'],'び':['bi'],'ぶ':['bu'],'べ':['be'],'ぼ':['bo'],'ぱ':['pa'],'ぴ':['pi'],'ぷ':['pu'],'ぺ':['pe'],'ぽ':['po'],
+  'ぁ':['la','xa'],'ぃ':['li','xi'],'ぅ':['lu','xu'],'ぇ':['le','xe'],'ぉ':['lo','xo'],'ゃ':['lya','xya'],'ゅ':['lyu','xyu'],'ょ':['lyo','xyo'],'っ':['ltu','xtu',''],'ゔ':['vu'],
+  'ー':['-'],'、':[','],'。':['.'],'「':['['],'」':[']'],'・':['/'],'？':['?'],'！':['!']};
+function hasKana(s){ return /[\u3041-\u30ff]/.test(String(s || '')); }
+function kanaToHan(src){
+  /* 가타카나는 히라가나로 */
+  const s = String(src || '').replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  const parts = [];   /* 문자열 또는 후보 배열 */
+  for(let i = 0; i < s.length; ){
+    const two = s.substr(i, 2);
+    if(_KANA2[two]){ parts.push(_KANA2[two]); i += 2; continue; }
+    const one = s[i];
+    if(_KANA1[one]){
+      /* っ 다음 글자의 자음을 겹쳐 친 것일 수도 있다 */
+      parts.push(_KANA1[one]); i++; continue;
+    }
+    parts.push(one); i++;
+  }
+  /* 후보 조합을 너무 많이 만들지 않게 — 앞에서부터 하나씩 골라 가며 가장 좋은 것을 남긴다 */
+  let best = [''];
+  const score = t => { const r = qwertyToHan(t); const tot = r.made + r.orphan; return tot ? r.made / tot : 0; };
+  for(const p of parts){
+    if(typeof p === 'string'){ best = best.map(b => b + p); continue; }
+    const next = [];
+    best.forEach(b => p.forEach(c => next.push(b + c)));
+    next.sort((x, y) => score(y) - score(x));
+    best = next.slice(0, 6);
+  }
+  const pick = best.sort((x, y) => score(y) - score(x))[0];
+  return { qwerty: pick, text: qwertyToHan(pick).text, score: score(pick) };
+}
 function maybeKorean(src){
+  if(hasKana(src)){
+    const k = kanaToHan(src);
+    if(k.score >= 0.7 && !hasKana(k.text)) return { text: k.text, score: k.score, jp: true };
+  }
   const s = String(src || '');
   const letters = (s.match(/[A-Za-z]/g) || []).length;
   if(letters < IME_MIN_LEN) return null;
@@ -8982,11 +9040,12 @@ const _imeKeepSet = new Set();      /* «영어 맞아요» 라고 답한 글 */
 
 function imeChipClose(){ const c = $('_imeChip'); if(c) c.remove(); }
 
-function imeChip(el, fixed){
+function imeChip(el, fixed, jp){
   imeChipClose();
   const box = document.createElement('div');
   box.className = 'ime-chip'; box.id = '_imeChip';
-  box.innerHTML = '<div class="ic-t">⌨️ 자판이 영어로 되어 있었나 봐요. 혹시 이거예요?</div>' +
+  box.innerHTML = '<div class="ic-t">⌨️ 자판이 ' + (jp ? '일본어' : '영어') + '로 되어 있었나 봐요. 혹시 이거예요?</div>' +
+    (jp ? '<div class="ic-t" style="font-weight:400;font-size:.9em">화면 오른쪽 아래 「あ」를 눌러 「한국어」를 고르거나, <b>Windows 키 + Space</b> 를 눌러 한국어로 바꿔요.</div>' : '') +
     '<div class="ic-g">' + esc(fixed) + '</div>' +
     '<div class="ic-b"><button type="button" class="ic-yes">네, 고쳐줘</button>' +
     '<button type="button" class="ic-no">영어 맞아요</button></div>';
@@ -9011,7 +9070,7 @@ function imeFixField(el){
     flashKbdBtn();
   }
   const ko = maybeKorean(el.value);
-  if(ko && !_imeKeepSet.has(el.value)){ flashKbdBtn(); imeChip(el, ko.text); }
+  if(ko && !_imeKeepSet.has(el.value)){ flashKbdBtn(); imeChip(el, ko.text, ko.jp); }
   else imeChipClose();
 }
 
@@ -9027,6 +9086,30 @@ document.addEventListener('focusout', function(e){
   setTimeout(function(){ imeFixField(el); }, 0);   /* 버튼 클릭이 먼저 먹게 */
 }, true);
 
+/* ══ 📋 내 생각 칸은 붙여넣기 막기 ══════════════════════════════════════
+   AI 답 붙여넣기(svAi·svAi2)·출처(svSource)·프롬프트·수식·로그인·참여 코드는 그대로 두고,
+   예상·까닭·정리·알아낸 것·아직 모르는 것·막힌 곳·새 질문·질문 칸은 «내 말» 로 쓰게 한다.
+   Ctrl+V·오른쪽 클릭 붙여넣기·Win+V·끌어 놓기 모두 막는다. */
+const NOPASTE_RE = /^(svGuess|svWhy|svKnown|svAnswer|svStuckW|svNewq|svUnclear|svChange|svResult|svChH|svChL|svResL|hvFind|hvWonder|expText|ansText|scR|qInp|qqInp|msInp|liveInp)(-|$)/;
+function _noPasteEl(t){ return t && t.id && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') && NOPASTE_RE.test(t.id); }
+let _npLast = 0;
+function _noPasteSay(el){
+  const now = Date.now(); if(now - _npLast < 1500) return; _npLast = now;
+  if(typeof toast === 'function') toast('✍️ 여기는 내 생각을 쓰는 칸이라 붙여넣기가 안 돼요. 내 말로 적어 볼까요?');
+  if(el && typeof shk === 'function') shk(el);
+}
+['paste', 'drop'].forEach(function(ev){
+  document.addEventListener(ev, function(e){
+    if(!_noPasteEl(e.target)) return;
+    e.preventDefault(); e.stopPropagation(); _noPasteSay(e.target);
+  }, true);
+});
+document.addEventListener('beforeinput', function(e){
+  if((e.inputType === 'insertFromPaste' || e.inputType === 'insertFromDrop' || e.inputType === 'insertFromPasteAsQuotation') && _noPasteEl(e.target)){
+    e.preventDefault(); _noPasteSay(e.target);
+  }
+}, true);
+
 /* 입력이 깨진 모드였는지 (안내 문구용) */
 function imeBroken(src){
   const s = String(src || '');
@@ -9039,11 +9122,11 @@ function imeBroken(src){
 let _imeAsk = null;      /* 지금 물어보는 중인 것 */
 let _imeKeep = null;     /* «영어 맞아요» 라고 답한 문장 — 다시 안 묻는다 */
 
-function showImeAsk(msgId, inpId, fixed){
+function showImeAsk(msgId, inpId, fixed, jp){
   _imeAsk = { text: fixed, inp: inpId, msg: msgId };
   const m = $(msgId); if(!m) return;
   m.innerHTML =
-    '<div class="qf-t">⌨️ 자판이 영어로 되어 있었나 봐요</div>' +
+    '<div class="qf-t">⌨️ 자판이 ' + (jp ? '일본어' : '영어') + '로 되어 있었나 봐요</div>' +
     '<div class="qf-b">혹시 이걸 쓰려던 거예요?<br>' +
       '<span class="ime-guess">' + esc(fixed) + '</span></div>' +
     '<div class="ime-btns">' +
@@ -9102,7 +9185,7 @@ async function addQ(ctx){
 
   /* 한영전환이 안 된 글은 되돌릴 수 있지만 «진짜 영어» 일 수도 있다 — 물어본다 */
   const _ko = maybeKorean(t);
-  if(_ko && _imeKeep !== t){ flashKbdBtn(); showImeAsk(_msgId, _inpId, _ko.text); return; }
+  if(_ko && _imeKeep !== t){ flashKbdBtn(); showImeAsk(_msgId, _inpId, _ko.text, _ko.jp); return; }
   /* 고를 차시가 있는데 안 골랐으면 «차시 없음» 으로 조용히 올라가지 않게 먼저 묻는다 */
   if((_inpId === 'qInp' || _inpId === 'qqInp') && unitUnchosen()){
     const m = _setMsg('몇 차시 질문인지 먼저 골라 주세요. 수업과 상관없는 질문이면 「차시 없음」을 골라요.', 'err');
@@ -10030,7 +10113,7 @@ function renderLiveBanner(s){
     <div class="live-banner-meta">${s.subject_label?('📚 '+esc(s.subject_label)+' · '):''}떠오른 질문을 바로 보내보세요!</div>
     ${s.material_id?`<button class="live-banner-mat" onclick="openMatSheet(${s.material_id})">📖 지금 자료 열고 질문하기</button>`:''}
     <div class="live-banner-iw">
-      <input id="liveInp-${s.id}" placeholder="궁금한 것을 적어보세요..." onkeydown="if(event.key==='Enter')submitLiveQuestion(${s.id})">
+      <input id="liveInp-${s.id}" placeholder="궁금한 것을 적어보세요..." onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229)submitLiveQuestion(${s.id})">
       <button class="live-banner-send" onclick="submitLiveQuestion(${s.id})">질문 보내기 🚀</button>
     </div>
     <div class="live-banner-done" id="liveDone-${s.id}" style="${sent?'':'display:none'}">✓ 보냈어요! 더 보내도 좋아요 🌱</div>`;
@@ -13483,7 +13566,7 @@ applyBranding();
         <div id="matLinkBanner" class="mat-link-banner" style="display:none"></div>
         <div class="q-iw">
           <div class="q-quota" id="qQuota" style="display:none"></div>
-          <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ()">
+          <input class="q-i" id="qInp" placeholder="궁금한 것을 적어보세요... ($수식$ 가능)" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229&&!event.repeat)addQ()">
           <button class="ba" id="addBtn" onclick="addQ()">심기</button>
         </div>
         <div class="q-stems" id="qStems"></div>
@@ -13546,7 +13629,7 @@ applyBranding();
     <div class="q-quota" id="msQuota" style="display:none"></div>
     <div class="ms-ask">✍️ 여기에 질문을 적어요</div>
     <div class="ms-iw">
-      <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter'&&!event.repeat)addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
+      <input id="msInp" placeholder="이 자료를 보고 궁금한 것은?" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229&&!event.repeat)addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">
       <button id="msBtn" onclick="addQ({inp:'msInp',msg:'msMsg',btn:'msBtn',keepMaterial:true,after:onSheetPlanted})">심기</button>
     </div>
     <button class="ms-done-row" id="msDone" onclick="nsSheetDone()" hidden>✅ 다 심었어요 — 다음은 뭘 할까요?</button>
