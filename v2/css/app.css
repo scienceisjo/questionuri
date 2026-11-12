@@ -187,7 +187,7 @@ input,textarea,select{font-family:inherit;font-size:15px;color:var(--ink)}
 .ph-empty{display:none}
 
 /* ── 넓은 화면(760px 이상) — 시제품 @media 그대로, html.wide 로 ── */
-html.wide .app{max-width:1180px;display:grid;grid-template-columns:96px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+html.wide .app{max-width:none;display:grid;grid-template-columns:96px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
 html.wide .top{grid-column:1 / -1;padding:14px 22px 12px;border-bottom:1px solid var(--line)}
 html.wide .top h1{font-size:23px}
 html.wide .nav{position:static;grid-column:1;grid-row:2;flex-direction:column;justify-content:flex-start;gap:6px;border-top:none;border-right:1px solid var(--line);padding:12px 8px}

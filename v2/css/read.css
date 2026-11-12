@@ -1,0 +1,57 @@
+/* 책 보며 심기(read.js) — 탐구 탭 문 · 심기 화면 · 일지의 읽은 곳 상자 · 찾기 칸의 찾은 뜻
+   틀(.qm-view·.qm-head·.qm-x·.qm-plant)은 materials.css 것을 같이 쓴다. */
+.rd-entry{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:11px 13px;border-radius:12px;border:1.5px dashed var(--leaf);background:#fff;text-align:left;min-height:52px}
+.rd-entry .rd-ic{flex:none;color:var(--leaf-d)}
+.rd-entry b{display:block;font-size:15px;color:var(--leaf-d)}
+.rd-entry small{display:block;font-size:12.5px;color:var(--mute);margin-top:1px}
+.rd-tag{display:inline-block;font-size:11.5px;font-weight:800;color:var(--clue-d);background:var(--clue-l);border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+
+.rd-scroll{padding-bottom:24px}
+.rd-step{margin-top:14px}
+.rd-tt{display:flex;align-items:center;font-size:15px;font-weight:800;margin-bottom:8px}
+.rd-no{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--leaf);color:#fff;font-size:12.5px;font-weight:800;align-items:center;justify-content:center;margin-right:7px;flex:none}
+.rd-need{margin-left:auto;font-size:12px;font-weight:800;color:var(--fruit)}
+.rd-opt{margin-left:auto;font-size:12px;font-weight:700;color:var(--mute)}
+.rd-lbl{font-size:13px;font-weight:800;color:var(--sub);margin:14px 0 6px}
+.rd-gap{margin-top:8px}
+.rd-mini{display:flex;gap:8px;margin-top:10px}
+.rd-mini #x_rdloc{flex:0 0 96px}
+.rd-mini #x_rdword{flex:1;min-width:0}
+.rd-guess{margin-top:10px;background:var(--wait-l);border-radius:12px;padding:10px}
+.rd-guess .hint{color:var(--wait);margin-bottom:6px}
+.rd-step textarea.inp{min-height:68px;display:block}
+.rd-under{font-size:12.5px;color:var(--mute);margin-top:6px;line-height:1.5}
+.rd-stems{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.rd-stems button{font-size:13.5px;font-weight:700;padding:7px 11px;border-radius:99px;background:var(--leaf-l);color:var(--leaf-d);min-height:40px}
+.rd-stems button.w{background:var(--wait-l);color:var(--wait)}
+.rd-view .err{margin-top:12px}
+.rd-foot{padding-top:10px}
+
+/* 종류 색 — 갸우뚱 · 중요해 보임 · 모르는 낱말 */
+.chip.rd-k1.on{border-color:#7A6BB0;background:#EEEAF7;color:#4E4186}
+.chip.rd-k2.on{border-color:var(--clue);background:var(--clue-l);color:var(--clue-d)}
+.chip.rd-k3.on{border-color:var(--wait);background:var(--wait-l);color:var(--wait)}
+.rd-kind{display:inline-block;font-size:11.5px;font-weight:800;border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+.rd-kind.rd-k1{background:#EEEAF7;color:#4E4186}
+.rd-kind.rd-k2{background:var(--clue-l);color:var(--clue-d)}
+.rd-kind.rd-k3{background:var(--wait-l);color:var(--wait)}
+
+/* 일지 맨 위 — 읽은 곳 */
+.rd-box{margin:2px 0 14px;border-radius:14px;background:#fff;border:1px solid var(--line);overflow:hidden}
+.rd-bh{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--clue-l);font-size:13.5px;font-weight:800;color:var(--clue-d)}
+.rd-bh .rd-ic{flex:none}
+.rd-bh .rd-bl{flex:none;white-space:nowrap}
+.rd-bh span{flex:1;min-width:0;margin-left:auto;font-weight:700;font-size:12.5px;text-align:right}
+.rd-br{padding:10px 12px;border-top:1px solid var(--line);font-size:14px;line-height:1.55}
+.rd-br b{display:block;font-size:12px;color:var(--mute);margin-bottom:2px}
+.rd-word{font-weight:800}
+.rd-gs{color:var(--wait);margin-top:2px}
+.rd-fd{color:var(--leaf-d);font-weight:700;margin-top:2px}
+.rd-later{font-size:12.5px;color:var(--mute);margin-top:2px}
+
+/* 찾기 칸 — 찾은 뜻 */
+.rd-found{margin-top:10px;background:var(--wait-l);border-radius:12px;padding:10px}
+.rd-found label{display:block;font-size:13.5px;font-weight:800;color:var(--wait);margin-bottom:4px}
+.rd-found .hint{margin-bottom:6px}
+.rd-found .row{display:flex;gap:8px}
+.rd-found .inp{flex:1;min-width:0}

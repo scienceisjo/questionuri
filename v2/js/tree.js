@@ -134,6 +134,13 @@ const SHOP = {
 };
 const ITEM = {}; Object.keys(SHOP).forEach(c => SHOP[c].forEach(it => { ITEM[it.id] = Object.assign({cat:c}, it); }));
 const myLook = () => { const m = QO.state.me || {}; return {tree:ITEM[m.active_tree] && ITEM[m.active_tree].cat === 'tree' ? m.active_tree : 'default', comp:ITEM[m.active_companion] ? m.active_companion : null}; };
+/* 계절(2026-11-11) — 학생이 고른다. 이 기기에만 저장(꾸미기라 서버에 안 보냄). 「오늘 계절」은 날짜로. 앱 바탕도 같은 계절로 꾸민다(season.css) */
+const SEASONS = [['auto', '오늘 계절'], ['spring', '봄'], ['summer', '여름'], ['autumn', '가을'], ['winter', '겨울']];
+const seasonKey = () => 'qo2-season-' + (T.uid || uidNow() || 'x');
+function seasonPick(){ try{ const v = localStorage.getItem(seasonKey()); return SEASONS.some(s => s[0] === v) ? v : 'auto'; }catch(_){ return 'auto'; } }
+function seasonNow(){ const m = Number(String(U.kstDay()).slice(5, 7)); return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter'; }
+function seasonOf(){ const p = seasonPick(); return p === 'auto' ? seasonNow() : p; }
+function paintSeason(){ document.documentElement.dataset.season = seasonOf(); }
 const owned = id => { const m = QO.state.me || {}; return ITEM[id] && (ITEM[id].price === 0 || (m.unlocked_items || ['default']).indexOf(id) >= 0); };
 function shopHTML(){
   const m = QO.state.me || {}, seeds = m.seeds || 0, look = myLook(), cat = T.shopCat;
@@ -258,8 +265,10 @@ function renderTree(root){
   const nFruit = +t.fruit || 0, nFog = +t.fog || 0, nGroup = +t.group_fruit || 0, all = nFruit + nFog + nGroup;
   const sub = [nFog ? '안개\u00a0' + nFog : '', nGroup ? '모둠\u00a0' + nGroup : ''].filter(Boolean).join(' · ');
   const note = (t.legacy_level != null && !noteSeen()) ? '<div class="guide tr-note"><span>이제 나무는 열매로 커요. 지금 나무 크기는 그대로예요.</span><button type="button" class="link" data-tr="note-ok">알겠어요</button></div>' : '';
-  const treeCard = '<div class="card tr-tree" data-ready="1" data-level="' + lv + '"><div class="tr-cap"><span>내 나무</span></div>' +
-    '<div class="tree-wrap">' + treeSVG(t) + '</div>' +
+  const sp = seasonPick(), ss = seasonOf();
+  const seasonChips = '<div class="tr-season" role="group" aria-label="계절 고르기">' + SEASONS.map(s => '<button type="button" data-tr="season" data-s="' + s[0] + '" aria-pressed="' + (sp === s[0]) + '"' + (sp === s[0] ? ' class="on"' : '') + '>' + s[1] + '</button>').join('') + '</div>';
+  const treeCard = '<div class="card tr-tree" data-ready="1" data-level="' + lv + '"><div class="tr-cap"><span>내 나무</span></div>' + seasonChips +
+    '<div class="tree-wrap" data-season="' + ss + '">' + treeSVG(t) + '</div>' +
     '<div class="stats"><div class="tr-st-fruit"><b>' + all + '</b><span>' + ICON_FRUIT + ' 열매</span>' + (sub ? '<small class="tr-sub">' + FOG_SMALL.replace('width="14" height="14"', 'width="12" height="12"') + ' ' + esc(sub) + '</small>' : '') + '</div>' +
     '<div class="tr-st-sprout"><b>' + (+t.sprout || 0) + '</b><span>🌱 새싹 달린 열매</span></div><div class="tr-st-flower"><b>' + (+t.flowers || 0) + '</b><span>🌸 꽃</span></div>' +
     (t.water != null ? '<div class="tr-st-water"><b>' + (+t.water || 0) + '</b><span>💧 받은 물</span></div>' : '') + '</div>' +
@@ -282,10 +291,14 @@ function renderTree(root){
       : '') + '<div class="hint">일지 칸을 내 말로 처음 채우면 ' + (fp.length ? '그 칸에' : '여기에') + ' 발자국이 남아요.</div></div>';
   const seeds = QO.state.me ? (QO.state.me.seeds || 0) : 0;
   const acHTML = '<div class="card tr-acorn"><span class="e" aria-hidden="true">🌰</span><div><b>도토리 <span class="tr-seeds">' + seeds + '</span></b><div class="hint">도토리는 질문을 심거나 친구 질문에 물을 줄 때, 선생님이 열매를 확인할 때 받아요. 꾸미기에서 써요.</div></div></div>';
-  const right = acHTML + shopHTML() + flHTML + fpHTML + (QO.growth ? QO.growth.html() : '');   // 나의 성장(growth.js)
+  const right = acHTML + shopHTML() + flHTML;   // 발자국·나의 성장은 「나의 성장」 탭(growth.js)으로 옮김(11-11)
   root.innerHTML = U.wide() ? '<div class="cols tr-cols"><div>' + note + treeCard + '</div><div>' + right + '</div></div>' : note + treeCard + right;
   /* 3D 나무(되면) — 안 되면 위 SVG 그대로 */
-  if(QO.tree3d){ const w = root.querySelector('.tr-tree .tree-wrap'); QO.tree3d.mount(w, Object.assign({}, t, {level:lv}), myLook(), T.uid); }
+  if(QO.tree3d){
+    const w = root.querySelector('.tr-tree .tree-wrap'); QO.tree3d.mount(w, Object.assign({}, t, {level:lv}), Object.assign(myLook(), {season:ss}), T.uid);
+    if(T.shopCat === 'tree' && QO.tree3d.shopThumbs) QO.tree3d.shopThumbs(root);   // 상점 나무 그림 = 실제 3D 나무(그 나무의 대표 계절)
+  }
+  if(QO.buddy) QO.buddy.mount(root.querySelector('.tr-tree .tree-wrap'));   // 과수원 친구 말풍선(buddy.js)
 }
 
 /* ═══════════ 우리 반 숲 ═══════════ */
@@ -435,6 +448,7 @@ document.addEventListener('click', async e => {
   else if(act === 'retry-forest'){ T.forestErr = ''; repaint('forest'); loadForest(); }
   else if(act === 'note-ok'){ try{ localStorage.setItem(legacyNoteKey(), '1'); }catch(_){} repaint('tree'); }
   else if(act === 'fl-all'){ T.flAll = !T.flAll; repaint('tree'); }
+  else if(act === 'season'){ try{ localStorage.setItem(seasonKey(), b.dataset.s); }catch(_){} paintSeason(); repaint('tree'); }
   else if(act === 'pick'){
     T.pick = T.pick === qid ? null : qid;
     if(T.pick != null) T.friend = null;
@@ -495,6 +509,7 @@ QO.tabs.register({
 /* 다시 들어오면(로그인·시연 학생 바꾸기) 지난 화면 자료는 버리고, 지금 탭이 나무·숲이면 새로 읽는다 */
 QO.bus.on('ready', () => {
   clear(uidNow());
+  paintSeason();
   const c = QO.tabs.current();
   if(c === 'tree') loadTree(); else if(c === 'forest') loadForest();
 });
@@ -557,13 +572,14 @@ add('나무 · 받은 꽃(덕분에 __)이 목록·그림·수에 나온다', as
   t.as('B'); t.eq((await t.api.receivedFlowers()).length, 0, '준 사람에게는 받은 꽃 없음'); t.as('A');
 });
 
-add('나무 · 발자국은 숫자 없이 칸 종류만, 도토리는 머리글과 같다', async t => {
-  await t.click('#nav [data-t="tree"]');
-  await treeReady(t);
+add('나무 · 발자국은 숫자 없이 칸 종류만(나의 성장 탭), 도토리는 머리글과 같다', async t => {
+  await t.click('#nav [data-t="grow"]');
   await t.waitFor(() => t.state.footprints.length > 0 && U.$('#body .tr-fp-chips'));
   const has = {}; t.state.footprints.forEach(f => { has[f.step] = true; });
   for(const s of ['predict', 'method', 'find', 'wrap', 'extend']) t.eq(U.$('#body .tr-fp-chips [data-step="' + s + '"]').classList.contains('on'), !!has[s], '발자국 ' + s);
   t.expect(!/[0-9]/.test(U.$('#body .tr-fp').textContent), '발자국에 숫자가 없음');
+  await t.click('#nav [data-t="tree"]');
+  await treeReady(t);
   t.eq(U.$('#body .tr-seeds').textContent, document.getElementById('acorn').textContent, '도토리 = 머리글');
   t.eq(U.$('#body .tr-seeds').textContent, String(t.state.me.seeds), '도토리 = profile.seeds');
   t.expect(U.$('#body .tr-shop'), '꾸미기 있음');

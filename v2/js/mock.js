@@ -5,7 +5,7 @@
 (function(){
 'use strict';
 const QO = window.QO, cfg = QO.cfg;
-const KEY = 'qo2-mock-v1', VER = 1;
+const KEY = 'qo2-mock-v1', VER = 2;   // 2: 책 보며 심기 시연 자료(11-10)
 const WHO_KEY = 'qo2-mock-who-' + cfg.page;
 const COLS = QO.COLS.split(',').concat(QO.COLS.indexOf('teacher_answer') < 0 ? ['teacher_answer'] : []);
 const CLUE_COLS = QO.CLUE_COLS.split(',');
@@ -258,6 +258,7 @@ def('plantQuestion', function(input){
     is_anonymous:!!input.is_anonymous, phase:input.phase || 'before', water_count:0, watered_by:[]};
   if(unit) row.unit = unit;
   if(input.material_id) row.material_id = input.material_id;
+  if(input.read && typeof input.read === 'object') row.journal = {read:clone(input.read)};
   if(input.parent_id){
     if(!qById(input.parent_id)) throw sysErr('insert or update on table "questions" violates foreign key constraint "questions_parent_id_fkey"');
     row.parent_id = Number(input.parent_id);
@@ -332,6 +333,15 @@ def('loadMarks', function(qids){
   const id = me(); const set = new Set((qids || []).map(Number));
   return db.step_marks.filter(m => set.has(m.question_id) && canSeeQ(qById(m.question_id), id))
     .sort((a, b) => a.question_id - b.question_id || a.step.localeCompare(b.step)).map(m => pick(m, ['question_id', 'step', 'first_at', 'last_at', 'text_md5']));
+});
+def('saveReadFound', function(qid, text){               // save_read_found(v2_07)
+  const id = needMe(), q = qById(qid);
+  if(!q || q.user_id !== id) throw userErr('내 질문만 고칠 수 있어요');
+  if(!q.journal || !q.journal.read || typeof q.journal.read !== 'object') throw userErr('책 보며 심은 질문이 아니에요');
+  const t = Array.from(String(text || '').trim()).slice(0, 300).join('');
+  if(Array.from(t).length < 2) throw userErr('찾은 뜻을 두 글자 넘게 적어요');
+  q.journal = Object.assign({}, q.journal, {read:Object.assign({}, q.journal.read, {found:t, found_at:nowISO()})});
+  return clone(q.journal.read);
 });
 def('loadMyFootprints', function(){ const id = needMe(); return db.footprints.filter(f => f.user_id === id).sort((a, b) => a.id - b.id).map(f => pick(f, ['id', 'question_id', 'step', 'source', 'kst_day', 'created_at'])); });
 def('loadCluesOnMine', function(qids){
@@ -626,6 +636,14 @@ def('pendingFruits', function(g, c){
     .sort((a, b) => String(a.resolve_requested_at).localeCompare(String(b.resolve_requested_at)))
     .map(q => Object.assign(qCols(q), {user_id:q.user_id, student:{name:by.get(q.user_id).name, number:by.get(q.user_id).number}}));
 });
+def('classReading', function(g, c){
+  if(!isTeacher(me())) return [];
+  const by = new Map(students(g, c).map(p => [p.id, p]));
+  return db.questions.filter(q => by.has(q.user_id) && q.journal && q.journal.read && typeof q.journal.read === 'object')
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+    .map(q => Object.assign(pick(q, ['id', 'text', 'refined_text', 'journal', 'material_id', 'unit', 'is_anonymous', 'created_at', 'user_id']),
+      {student:{name:by.get(q.user_id).name, number:by.get(q.user_id).number}}));
+});
 def('questionDetail', function(qid){
   if(!isTeacher(me())) throw userErr('질문을 찾을 수 없어요');
   const q = qById(qid); if(!q) throw userErr('질문을 찾을 수 없어요');
@@ -861,6 +879,14 @@ function seed(){
     solve:{guess:'멀리 있으면 덜 움직여 보일 것 같다. 왜냐하면 먼 산은 차를 타고 가도 천천히 지나가니까.', how:['src'], change:'', source:'교과서 140쪽', answer:w172, saved_at:ago(1 * D)},
     finding:w172, resolve_requested_at:ago(1 * D)});
 
+  /* 책 보며 심기(read.js) — 선생님 「책 보며 심기」 탭 시연용. 읽기자료 9004 는 materials.js 흉내 자료 */
+  const RD = (id, r) => { const q = db.questions.find(x => x.id === id); if(q) q.journal = Object.assign({}, q.journal || {}, {read:r}); };
+  const M9004 = '별빛은 얼마나 먼 길을 왔을까';
+  RD(141, {src:'mat', mat_id:9004, mat:M9004, unit:'para', loc:'2', kind:1, word:'표면 온도', guess:'', says:'별의 색은 표면 온도에 따라 다르다.', think:'불꽃도 파란 불이 더 뜨거우니까 파란 별이 더 뜨거울 것 같다.'});
+  RD(161, {src:'book', unit:'page', loc:'12', kind:3, word:'대전', guess:'전기가 대신 생기는 것', says:'', think:'', found:'물체가 전기를 띠는 현상', found_at:ago(20 * H)});
+  RD(123, {src:'book', unit:'page', loc:'12', kind:3, word:'대전', guess:'전기가 쌓이는 것', says:'문지르면 두 물체가 서로 다른 전기를 띤다.', think:''});
+  RD(151, {src:'book', unit:'page', loc:'14', kind:2, word:'방전', guess:'', says:'전기를 띤 물체에서 전기가 한꺼번에 빠져나가는 것을 방전이라고 한다.', think:'번개도 방전이라서 길이 지그재그일 것 같다.'});
+  RD(142, {src:'etc', unit:'page', mat:'과학 잡지', loc:'40', kind:1, word:'발전 세포', guess:'', says:'', think:'세포가 건전지처럼 줄지어 있다니 이상하다.'});
   /* 칸 표시·발자국 — 그 질문을 마지막으로 쓴 때 기준 */
   db.questions.forEach(q => {
     const s = q.solve || {}, j = q.journal || {};

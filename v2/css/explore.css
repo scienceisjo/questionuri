@@ -76,3 +76,19 @@ html.wide .app.split .x-plant .unitpick{flex-basis:100%}
   html.wide .app.split .x-plant .inp{padding-left:11px;padding-right:11px}
   html.wide .app.split .x-plant .btn{padding:0 14px}
 }
+
+/* 다듬기 체크 — 방법 한 줄·예시 */
+.rc{padding:8px 0;border-top:1px solid var(--line)}
+.rc:first-of-type{border-top:none}
+.rc .chk{margin:0}
+.rc-how{font-size:13px;color:var(--sub);line-height:1.5;margin:2px 0 0 28px;word-break:keep-all}
+.rc-ex{margin:4px 0 0 28px}
+.rc-ex summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--leaf-d);list-style:none;display:inline-block;padding:2px 0}
+.rc-ex summary::-webkit-details-marker{display:none}
+.rc-ex summary::after{content:' ▾'}
+.rc-ex[open] summary::after{content:' ▴'}
+.rc-pair{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;font-size:13.5px;line-height:1.5}
+.rc-b{color:var(--mute);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25)}
+.rc-arrow{color:var(--leaf-d);font-weight:700}
+.rc-a{background:var(--leaf-l);color:var(--ink);border-radius:8px;padding:3px 8px;font-weight:600}
+.rc-g{font-size:12.5px;font-weight:800;color:var(--leaf-d);margin:12px 0 2px;letter-spacing:.02em}

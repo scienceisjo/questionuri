@@ -1,0 +1,66 @@
+/* 계절 꾸미기(2026-11-11) — tree.js 가 html[data-season] 을 붙인다(학생이 「내 나무」에서 고른 계절, 기본은 오늘 계절).
+   머리글 아래쪽에 낮은 언덕 띠, 내 나무 칸은 계절 하늘. 글 읽는 자리(카드·입력칸)는 건드리지 않는다. */
+html[data-season] .top{position:relative;background-repeat:no-repeat;background-position:right 118px bottom;background-size:auto 100%}
+html:not(.wide)[data-season] .top{background-position:right 96px bottom}
+html[data-season] .top > *{position:relative;z-index:1}
+html[data-season="spring"] .top{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 70' preserveAspectRatio='xMaxYMax meet'%3E%3Cpath d='M0 70 C70 52 140 50 210 60 S350 46 420 54 V70Z' fill='%23CFE8BF'/%3E%3Cpath d='M120 70 C190 58 260 58 320 64 S400 60 420 62 V70Z' fill='%23B6DC9F'/%3E%3Cg fill='%23F4B6C8'%3E%3Ccircle cx='300' cy='22' r='3'/%3E%3Ccircle cx='318' cy='34' r='2.4'/%3E%3Ccircle cx='336' cy='18' r='2.8'/%3E%3Ccircle cx='352' cy='30' r='2.2'/%3E%3C/g%3E%3C/svg%3E")}
+html[data-season="summer"] .top{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 70' preserveAspectRatio='xMaxYMax meet'%3E%3Ccircle cx='350' cy='22' r='11' fill='%23F7D774' opacity='.75'/%3E%3Cpath d='M0 70 C70 52 140 50 210 60 S350 46 420 54 V70Z' fill='%23A9D48F'/%3E%3Cpath d='M120 70 C190 58 260 58 320 64 S400 60 420 62 V70Z' fill='%2387C06C'/%3E%3C/svg%3E")}
+html[data-season="autumn"] .top{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 70' preserveAspectRatio='xMaxYMax meet'%3E%3Cpath d='M0 70 C70 52 140 50 210 60 S350 46 420 54 V70Z' fill='%23E9D49A'/%3E%3Cpath d='M120 70 C190 58 260 58 320 64 S400 60 420 62 V70Z' fill='%23DDB873'/%3E%3Cg fill='%23E08A3C'%3E%3Cellipse cx='304' cy='24' rx='4' ry='2.2' transform='rotate(30 304 24)'/%3E%3Cellipse cx='330' cy='36' rx='3.6' ry='2' transform='rotate(-20 330 36)' fill='%23C9532B'/%3E%3Cellipse cx='352' cy='20' rx='4' ry='2.2' transform='rotate(60 352 20)' fill='%23EFC458'/%3E%3C/g%3E%3C/svg%3E")}
+html[data-season="winter"] .top{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 70' preserveAspectRatio='xMaxYMax meet'%3E%3Cpath d='M0 70 C70 52 140 50 210 60 S350 46 420 54 V70Z' fill='%23DCE6EF'/%3E%3Cpath d='M120 70 C190 58 260 58 320 64 S400 60 420 62 V70Z' fill='%23C3D3E0'/%3E%3Cg fill='%23B4C7D7'%3E%3Ccircle cx='300' cy='18' r='2.2'/%3E%3Ccircle cx='322' cy='32' r='1.8'/%3E%3Ccircle cx='340' cy='14' r='2'/%3E%3Ccircle cx='358' cy='28' r='1.6'/%3E%3Ccircle cx='376' cy='16' r='1.8'/%3E%3C/g%3E%3C/svg%3E")}
+
+/* 내 나무 칸 — 계절 하늘(3D 캔버스는 투명이라 뒤가 비친다) */
+.tr-tree .tree-wrap{border-radius:14px;overflow:hidden;transition:background .4s}
+.tr-tree .tree-wrap[data-season="spring"]{background:linear-gradient(180deg,#E9F4FB 0%,#F6F2F4 70%,#F4F5EF 100%)}
+.tr-tree .tree-wrap[data-season="summer"]{background:linear-gradient(180deg,#D8ECFA 0%,#EEF6F0 72%,#F4F5EF 100%)}
+.tr-tree .tree-wrap[data-season="autumn"]{background:linear-gradient(180deg,#F5EBDD 0%,#F8F1E6 72%,#F4F5EF 100%)}
+.tr-tree .tree-wrap[data-season="winter"]{background:linear-gradient(180deg,#DCE6EF 0%,#EEF2F6 72%,#F4F5EF 100%)}
+
+/* 계절 고르기 */
+.tr-season{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.tr-season button{min-height:38px;padding:6px 12px;border-radius:99px;border:1.5px solid var(--line);background:#fff;font-size:13.5px;font-weight:700;color:var(--sub)}
+.tr-season button.on{border-color:var(--leaf);background:var(--leaf-l);color:var(--leaf-d)}
+
+/* 상점 나무 그림(3D 로 찍은 것) */
+.tr-item .ic.tv img{display:block;width:96px;height:auto}
+
+/* 나의 성장 탭(growth.js) */
+.gr-refi{padding:6px 0;border-top:1px dashed var(--line)}
+.gr-refi:first-of-type{border-top:none}
+.gr-units{padding:6px 14px}
+.gr-u{border-top:1px solid var(--line)}
+.gr-u:first-child{border-top:none}
+.gr-uh{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:8px 0;text-align:left}
+.gr-uh .nm{flex:0 1 auto;min-width:0;font-size:14.5px;font-weight:700;word-break:keep-all}
+.gr-dots{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-end;max-width:55%}
+.gr-dots i{width:10px;height:10px;border-radius:50%;background:var(--leaf-l);box-shadow:inset 0 0 0 1.5px var(--leaf)}
+.gr-dots i.f{background:var(--fruit);box-shadow:none}
+.gr-dots i.g{background:var(--fog);box-shadow:none}
+.gr-dots em{font-style:normal;font-size:12px;color:var(--mute);font-weight:700}
+.gr-ub{padding:0 0 10px}
+.gr-ub p{margin:6px 0;font-size:14px;line-height:1.5;word-break:keep-all}
+.gr-ub small{display:block;font-size:12px;color:var(--mute)}
+.gr-words{padding:6px 14px}
+.gr-w{padding:9px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.55}
+.gr-w:first-child{border-top:none}
+.gr-w b{display:block;font-size:15px}
+.gr-w span{display:block}
+.gr-w .gs{color:var(--wait)}
+.gr-w .fd{color:var(--leaf-d);font-weight:700}
+.gr-w .later{font-size:12.5px;color:var(--mute)}
+.gr-wd p{margin:4px 0;line-height:1.55;word-break:keep-all}
+html.wide .gr-cols .sec:first-child{margin-top:0}
+
+/* 3D 캔버스는 투명하게 — 뒤의 계절 하늘이 보이게 */
+.tr-tree .tree-wrap .tr3d-cv{background:transparent}
+
+/* 과수원 친구(buddy.js) — 말풍선은 3D 캐릭터 머리 위(--bx·--by), 3D 가 아니면 SVG 친구 위 */
+.tr-tree .tree-wrap{position:relative;min-height:220px}
+.bd-svg{position:absolute;left:10px;bottom:6px;z-index:1}
+.bd-box{position:absolute;left:var(--bx,50%);top:var(--by,40%);transform:translate(-50%,calc(-100% - 10px));z-index:2;pointer-events:none;transition:opacity .2s ease}
+.bd-box.bd-swap{opacity:0}
+.tree-wrap:not(.tr3d-on) .bd-box{left:14px;top:auto;bottom:92px;transform:none}
+.bd-bubble{pointer-events:auto;display:block;position:relative;max-width:min(250px,64vw);padding:8px 12px 9px;border-radius:14px;border:1px solid var(--line);background:#fff;box-shadow:0 3px 10px rgba(30,40,30,.12);text-align:left;color:var(--ink);font-size:14px;font-weight:700;line-height:1.45;word-break:keep-all;cursor:pointer}
+.bd-bubble small{display:block;font-size:11.5px;font-weight:700;color:var(--mute);margin-bottom:1px}
+.bd-bubble::after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;background:#fff;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.tree-wrap:not(.tr3d-on) .bd-bubble::after{left:34px}
+@media (prefers-reduced-motion:reduce){.bd-box{transition:none}}

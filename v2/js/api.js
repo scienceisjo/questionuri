@@ -177,6 +177,7 @@ const A = QO.apiReal = {
     if(unit) payload.unit = unit;
     if(input.parent_id) payload.parent_id = input.parent_id;
     if(input.material_id) payload.material_id = input.material_id;   // 선생님 자료를 보며 심은 질문
+    if(input.read && typeof input.read === 'object') payload.journal = {read:input.read};   // 책 보며 심기(read.js) 네 칸
     if(tree) payload.tree_id = tree.id;
     const C = await cols(cl);
     let r = await cl.from('questions').insert(payload).select(C).single();
@@ -189,6 +190,7 @@ const A = QO.apiReal = {
     return r.data;
   },
   saveJournal(qid, patch){ return rpc('save_journal', {p_qid:qid, p_patch:patch || {}}); },
+  saveReadFound(qid, text){ return rpc('save_read_found', {p_qid:qid, p_text:text}); },   // v2_07 모르는 낱말의 찾은 뜻
   async loadMarks(qids){
     qids = (qids || []).filter(x => x != null); if(!qids.length) return [];
     const cl = await client(), out = [];
@@ -346,6 +348,19 @@ const A = QO.apiReal = {
       one(cl.from('profiles').select('id,name,grade,class_no,number').eq('id', q.user_id).maybeSingle())
     ]);
     return {question:q, marks:res[0] || [], footprints:res[1] || [], clues:res[2] || [], student:res[3] || null};
+  },
+  /* 책 보며 심은 질문(journal.read 가 있는 것) — 선생님 「책 보며 심기」 탭 */
+  async classReading(g, c){
+    const cl = await client();
+    const st = await A.classStudents(g, c);
+    const by = new Map(st.map(s => [s.id, s]));
+    const out = [];
+    for(const ch of chunks(st.map(s => s.id), 100)){
+      out.push.apply(out, await pages(() => cl.from('questions').select('id,text,refined_text,journal,material_id,unit,is_anonymous,created_at,user_id').in('user_id', ch).not('journal->read', 'is', null).order('id')));
+    }
+    return out.filter(q => q.journal && q.journal.read && typeof q.journal.read === 'object')
+      .map(q => Object.assign({}, q, {student:{name:(by.get(q.user_id) || {}).name || '', number:(by.get(q.user_id) || {}).number || null}}))
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   },
   confirmFruit(qid, kind){ return rpc('confirm_fruit', {p_qid:qid, p_kind:kind}); },
   returnFruit(qid, step, note){ return rpc('return_fruit', {p_qid:qid, p_step:step, p_note:note == null ? null : note}); },

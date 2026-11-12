@@ -418,7 +418,7 @@ QO.store = {
 };
 
 /* ═══════════ 탭 등록부 ═══════════ */
-const ORDER = {student:['explore', 'together', 'tree', 'forest'], teacher:['fruits', 'live', 'groups', 'clues']};
+const ORDER = {student:['explore', 'together', 'tree', 'grow', 'forest'], teacher:['fruits', 'live', 'groups', 'clues', 'read']};
 const defs = {};
 let built = false;
 function orderedIds(){

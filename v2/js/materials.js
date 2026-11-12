@@ -23,6 +23,9 @@ if(QO.mock){
       description:'영상을 보며 궁금한 것을 하나 심어요.', body_text:'## 볼 것\n못에 도선을 감고 전류를 흘리면 클립이 붙는다.\n전류를 끊으면 어떻게 될까?', source_note:'교과서 214쪽', files:[], is_homework:false, created_at:iso(60 * 6e4)},
     {id:9002, title:'주말 과제 · 집에 있는 자석 찾기', teacher_id:1, teacher_name:'과학', subject_label:'과학', unit:null, target_grade:2, target_class:11,
       description:'냉장고·필통·가방에서 자석을 찾아 사진으로 남겨요.', body_text:'', source_note:'', files:[{kind:'link', name:'자석 안전 안내', url:'https://scienceisjo.github.io/'}], is_homework:true, due_date:new Date(Date.now() + 2 * day).toISOString().slice(0, 10), created_at:iso(1 * day)},
+    {id:9004, title:'별빛은 얼마나 먼 길을 왔을까 (기사 발췌)', teacher_id:1, teacher_name:'과학', subject_label:'과학', unit:'별의 밝기와 등급', target_grade:2, target_class:null,
+      description:'종이로 나눠 준 글을 읽고, 갸우뚱한 곳·중요해 보인 곳·모르는 낱말에서 질문을 심어요.', body_text:'', source_note:'', files:[], is_homework:false,
+      reading:{unit:'para', need:['says']}, created_at:iso(2 * day)},
     {id:9003, title:'다른 반 자료', teacher_id:1, teacher_name:'과학', subject_label:'과학', unit:null, target_grade:2, target_class:5, description:'', files:[], is_homework:false, created_at:iso(2 * day)}
   ];
   QO.mock.api.myMaterials = async function(){ await new Promise(r => setTimeout(r, 30)); return JSON.parse(JSON.stringify(SEED)); };
@@ -48,7 +51,7 @@ async function load(force){
     const same = M.uid === uid && JSON.stringify((M.list || []).map(m => m.id)) === JSON.stringify(r.map(m => m.id));
     M.list = r; M.uid = uid; M.at = Date.now();
     if(!same && QO.tabs.current() === 'explore') QO.tabs.rerender('explore');
-    if(M.want && r.some(m => m.id === M.want)){ const w = M.want; M.want = null; openView(w); }
+    if(M.want && r.some(m => m.id === M.want)){ const w = M.want; M.want = null; const wm = r.find(m => m.id === w); if(wm.reading && QO.read) QO.read.open(w); else openView(w); }
   }catch(_){ if(M.uid !== uid){ M.list = []; M.uid = uid; } }
   finally{ M.busy = false; }
 }
@@ -67,7 +70,9 @@ function html(){
   const show = M.more ? M.list.slice(0, 12) : M.list.slice(0, 3);
   return '<div class="sec">선생님 자료</div><div class="card qm-list">' + show.map(m => {
     const n = myQs(m.id).length, tag = m.is_homework ? '과제 · ' + dueText(m) : (m._today ? '오늘' : U.kstDay(m.created_at).slice(5).replace('-', '/'));
-    return '<button type="button" class="qm-row" data-qm="open" data-id="' + m.id + '"><span class="t">' + esc(m.title || '자료') + '</span>' +
+    /* 읽기자료(lesson_materials.reading)는 본문 없이 「책 보며 심기」로 연다(read.js) */
+    const rd = !!(m.reading && QO.read);
+    return '<button type="button" class="qm-row" ' + (rd ? 'data-rd="open" data-mat="' : 'data-qm="open" data-id="') + m.id + '"><span class="t">' + (rd ? '<span class="rd-tag">읽기</span>' : '') + esc(m.title || '자료') + '</span>' +
       '<span class="m">' + esc(tag) + (n ? ' · 내 질문 ' + n : '') + '</span></button>';
   }).join('') + (M.list.length > 3 ? '<button type="button" class="link qm-more" data-qm="more">' + (M.more ? '접기' : '자료 더 보기') + '</button>' : '') + '</div>';
 }
@@ -160,8 +165,9 @@ if(!QO.selftest || QO.cfg.page !== 'student') return;
 QO.selftest.add('탐구 · 선생님 자료 보며 질문 심기(우리 반만·자료·차시 연결·자료 도토리)', async t => {
   await t.click('#nav [data-t="explore"]');
   await t.waitFor('#body .qm-list');
-  const ids = t.$$('#body .qm-row').map(b => Number(b.dataset.id));
-  t.eq(ids, [9001, 9002], '우리 반 자료만(다른 반 9003 빠짐), 오늘 자료 먼저');
+  const ids = t.$$('#body .qm-row[data-qm]').map(b => Number(b.dataset.id));
+  t.eq(ids, [9001, 9002], '우리 반 자료만(다른 반 9003 빠짐), 오늘 자료 먼저 — 읽기자료 9004 는 「책 보며 심기」로 열려서 따로');
+  t.expect(t.$('#body .qm-row[data-mat="9004"] .rd-tag'), '읽기자료는 「읽기」 표시');
   await t.click('#body .qm-row[data-id="9001"]');
   await t.waitFor('#qm-view:not([hidden]) #qm_inp');
   t.expect(/못에 도선을 감고/.test(t.$('#qm-view .qm-body').textContent) && t.$('#qm-view .qm-body .h2'), '본문·소제목');

@@ -19,7 +19,41 @@ const STAMP = {observe:'본 것을 정확히 적었어요', testable:'이건 알
   connect:'지난 시간이랑 이어졌어요', onemore:'한 걸음만 더 가볼까요?', pick:'수업에서 다룰게요'};
 const AI_RE = /(\bAI\b|\bGPT|ChatGPT|제미나이|Gemini|클로드|Claude|뤼튼|코파일럿|Copilot|퍼플렉시티|인공지능|에이아이)/i;
 const OLD = '<span class="xlegacy">옛 과수원에서 쓴 글</span>';
-const REFINE_CHECKS = ['무엇을 · 언제 · 어디서가 분명한가', '알아볼 수 있는 질문인가', '배운 개념과 이어지나'];
+/* 다듬기 점검 — 과학과 선도교원 연수 「질문 점검 체크리스트」(수행 과제 1 학습지, PDF 12쪽)의 구체성·탐구 가능성 점검을
+   학생 화면에 맞게 다섯으로 줄임. 「왜 ~일까?」는 바꿀 대상이 아니다(같은 자료 10쪽 질문 문장 틀 1번이 「왜 ___일까?」).
+   정교화 단계에서 질문을 정답형으로 바꾸지 않는다(36차시 과학과 p.7·23~24). 예시는 다듬기 전 → 다듬은 뒤, 단원에 맞춰 고른다. */
+const REFINE = [
+  {g:'구체적인가', t:'무엇을 알고 싶은지 분명한가', how:'이거, 그거 대신 무엇인지 이름을 쓰고, 어떤 실험이나 장면에서 본 건지 적어요.'},
+  {g:'구체적인가', t:'너무 넓거나 모호하지 않은가', how:'한 번에 다 묻지 말고 가장 궁금한 한 가지로 좁혀요.'},
+  {g:'구체적인가', t:'배운 개념이 들어 있는가', how:'이번 단원에서 배운 낱말을 하나 넣어 봐요. 어디서 답을 찾을지도 보여요.'},
+  {g:'구체적인가', t:'네·아니요로 끝나지 않는가', how:'네·아니요로 끝나면 왜, 어떻게를 붙여서 이유나 과정을 묻게 해요.'},
+  {g:'알아볼 수 있는가', t:'답을 찾을 방법이 떠오르는가', how:'실험, 관찰, 교과서·자료 중 어디서 알아볼지 떠올려 봐요. 견줄 것이나 바꿔 볼 조건을 넣으면 방법이 잘 보여요.'}
+];
+const REFINE_CHECKS = REFINE.map(r => r.t);
+const REFINE_EX = {
+  star:[['별은 왜 다 달라?', '베텔게우스는 왜 리겔보다 붉게 보일까?'],
+        ['우주는 왜 그렇게 넓어?', '멀리 있는 별까지의 거리는 어떻게 알아낼까?'],
+        ['가까운 별은 어떻게 알아?', '연주 시차가 큰 별은 왜 가까이 있는 별일까?'],
+        ['시리우스가 제일 밝아?', '시리우스는 왜 다른 별보다 밝게 보일까?'],
+        ['별은 왜 밝기가 달라?', '같은 전구를 멀리 두면 왜 더 어둡게 보일까?']],
+  elec:[['왜 따라와?', '털가죽으로 문지른 빨대를 대면 캔은 왜 따라올까?'],
+        ['전기는 왜 생겨?', '털가죽과 빨대를 문지르면 왜 전기를 띠게 될까?'],
+        ['나침반은 왜 돌아?', '전류가 흐르는 도선 주위의 자기장은 왜 나침반 바늘을 움직일까?'],
+        ['전자석은 철을 붙여?', '전자석은 왜 전류가 흐를 때만 철을 붙일까?'],
+        ['전자석은 왜 세져?', '전자석에 흐르는 전류를 세게 하면 왜 클립이 더 많이 붙을까?']],
+  gas:[['왜 부풀어?', '과자 봉지는 높은 산에 올라가면 왜 부풀까?'],
+       ['공기는 왜 신기해?', '공기는 눈에 안 보이는데 왜 병뚜껑을 밀어낼 수 있을까?'],
+       ['풍선은 왜 커져?', '온도가 높아지면 기체 입자가 어떻게 움직이길래 풍선이 커질까?'],
+       ['뜨거운 물에 넣으면 풍선이 커져?', '뜨거운 물에 넣은 페트병 위 풍선은 왜 커질까?'],
+       ['풍선은 왜 커져?', '물 온도를 바꾸면 풍선 크기는 왜, 어떻게 달라질까?']]
+};
+function refineEx(v){
+  const t = (v.unit || '') + ' ' + (v.original || '') + ' ' + (v.text || '');
+  if(/별|등급|시차|은하|우주|광년|행성|태양/.test(t)) return REFINE_EX.star;
+  if(/기체|압력|부피|풍선|과자|공기|온도|입자/.test(t)) return REFINE_EX.gas;
+  if(/전기|전류|전압|자기|자석|코일|정전기|전하|전동기|저항|빨대/.test(t)) return REFINE_EX.elec;
+  return REFINE_EX.star;
+}
 
 /* ── 작은 도우미 ── */
 const obj = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
@@ -275,7 +309,7 @@ function listHTML(L){
     '<div class="row"><input class="inp" id="x_plant" placeholder="' + PH_HINT[X.phase] + '" maxlength="200" autocomplete="off" aria-label="궁금한 것">' +
     '<button type="button" class="btn" data-xa="plant">심기</button></div>' +
     '<div class="x-opts"><label class="unitpick">어느 단원? <select id="x_unit">' + unitOptions() + '</select></label>' +
-    '<label class="chk"><input type="checkbox" id="x_anon">익명으로 심기</label></div>' + errDiv('plant') + '</div>';
+    '<label class="chk"><input type="checkbox" id="x_anon">익명으로 심기</label></div>' + errDiv('plant') + (QO.read ? QO.read.entryHTML() : '') + '</div>';   // 책 보며 심기(read.js)
   h += QO.materials ? QO.materials.html() : '';      // 선생님 자료 보며 질문 심기(materials.js)
   h += '<div class="sec">이어서 해 볼 질문 <span class="n">' + L.open.length + '</span></div>';
   if(!L.open.length) h += '<div class="empty">지금 이어서 할 질문이 없어요. 위에서 하나 심어 봐요.</div>';
@@ -390,8 +424,12 @@ function stepBody(v, st, dn, isCur){
   }
   let f = '<div class="form">';
   if(k === 'refine'){
-    f += '<div class="hint">정답을 묻는 질문으로 바꾸지 않아도 돼요. 비교하거나 관찰할 수 있게 바꾸면 좋아요.</div>' +
-      REFINE_CHECKS.map((c, i) => '<label class="chk"><input type="checkbox" id="x_rc' + i + '">' + esc(c) + '</label>').join('') +
+    const ex = refineEx(v);
+    f += '<div class="hint">왜 ~일까? 는 좋은 질문이에요. 다듬기는 질문을 바꾸는 게 아니라 더 분명하게 만드는 거예요. 걸리는 것 하나만 고쳐도 돼요.</div>' +
+      REFINE.map((c, i) => (i === 0 || REFINE[i - 1].g !== c.g ? '<div class="rc-g">' + esc(c.g) + '</div>' : '') +
+        '<div class="rc"><label class="chk"><input type="checkbox" id="x_rc' + i + '">' + esc(c.t) + '</label>' +
+        '<div class="rc-how">' + esc(c.how) + '</div>' +
+        '<details class="rc-ex"><summary>예시 보기</summary><div class="rc-pair"><span class="rc-b">' + esc(ex[i][0]) + '</span><span class="rc-arrow" aria-label="다듬으면">→</span><span class="rc-a">' + esc(ex[i][1]) + '</span></div></details></div>').join('') +
       '<textarea class="inp" id="x_refine" rows="2" placeholder="더 분명하게 고쳐 써 봐요">' + esc(d.refine.text || v.original) + '</textarea>' +
       '<div class="row">' + (v.refineAsk || dn || v.rk === 'refine' ? '' : '<button type="button" class="btn line" style="flex:1" data-xa="refineSkip">그대로 갈래요</button>') +
       '<button type="button" class="btn" style="flex:1" data-xa="refine">다듬기 저장</button></div>';
@@ -473,6 +511,7 @@ function sheetHTML(row){
   let h = '<div class="sh-top" data-qid="' + v.id + '"><button type="button" class="back" data-xa="close" aria-label="닫기">' + ui.icons.back + '</button>' +
     '<div class="x-head"><div class="qt">' + esc(v.text) + '</div><div class="sub">' + sub + '</div></div></div><div class="sh-body" id="x_body">';
   if(QO.pick) h += QO.pick.html(v);                  // 대표 질문(pick.js)
+  if(QO.read) h += QO.read.boxHTML(v.id);            // 책 보며 심은 질문 — 읽은 곳(read.js)
   if(!guideSeen() && (X.guideFor == null || X.guideFor === v.id)){ X.guideFor = v.id; h += '<div class="guide">칸을 하나 채울 때마다 카드의 점이 하나씩 채워져요.</div>'; }
   /* 「나중에 고를래요」로 심은 질문 — 여기서 단원을 붙인다 */
   if(!v.unit && !v.legacyHarvest) h += '<div class="x-unitset"><label class="unitpick">단원 <select id="x_setunit" aria-label="단원 고르기"><option value="">아직 안 골랐어요</option>' +
@@ -486,6 +525,7 @@ function sheetHTML(row){
     h += teacherBox(v, k);
     if(isCur) h += cluesHTML(v, k);                 // 친구 단서는 입력칸 위
     h += stepBody(v, st, dn, isCur);
+    if(k === 'find' && QO.read && !v.legacyHarvest) h += QO.read.findHTML(v.id);   // 모르는 낱말의 찾은 뜻(read.js)
     if(!isCur) h += dn ? cluesHTML(v, k) : cluesLater(v, k);   // 아직 안 간 칸은 개수만(처음 생각이 끌려가지 않게)
     if(v.d.flag && v.d.flag.step === k) h += '<div class="flagbox">막힘 표시를 세웠어요 — 「' + esc(v.d.flag.tried) + '」 단서 시간에 친구들이 볼 수 있어요.' +
       (v.status === 'open' ? ' <button type="button" class="link teal x-mini" data-xa="unflag">표시 내리기</button>' : '') + '</div>';

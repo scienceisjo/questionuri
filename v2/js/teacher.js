@@ -71,7 +71,8 @@ const T = {
   pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null,
   live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, ex:{no:'', yes:''}, pick:[], showOwner:{},
   groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{},
-  day:null, clues:null, cluesWant:null
+  day:null, clues:null, cluesWant:null,
+  reading:null, rdPer:null, rdSrc:''
 };
 const clsKey = () => S.cls ? S.cls.grade + '-' + S.cls.class_no : '';
 const clsName = () => S.cls ? S.cls.grade + '학년 ' + S.cls.class_no + '반' : '';
@@ -82,7 +83,7 @@ function ensure(){
   const fresh = T.tRef !== S.teacher;
   T.tRef = S.teacher; T.key = key; T.seq++; T.reqs = {};
   Object.assign(T, {students:null, pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
-    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null});
+    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:''});
   if(fresh){ T.cutover = null; T.ex = {no:'', yes:''}; T.day = null; }
   if(!S.teacher || !S.cls) return;
   loadPending(); loadGroups(); loadLive(); loadStudents();
@@ -984,6 +985,77 @@ ACT['c-hide'] = async b => {
   QO.tabs.rerender('clues'); boardRefresh();
 };
 
+/* ═══════════ 책 보며 심기(학생 read.js 로 심은 질문) ═══════════
+   학생이 종이 책·읽기자료를 읽다 고른 곳(갸우뚱 · 중요해 보임 · 모르는 낱말)을 반 단위로 모아 본다.
+   본문은 앱에 없으므로 「어디」는 자료 이름 + 쪽/문단 + 그 부분의 낱말로 묶는다. */
+const RD_KIND = {1:'갸우뚱', 2:'중요해 보임', 3:'모르는 낱말'};
+function loadReading(){ return load('reading', () => QO.api.classReading(G(), C()), r => { T.reading = r; soft('read'); }); }
+const rdOf = q => (q && q.journal && q.journal.read) || {};
+const rdSrcKey = r => r.src === 'mat' ? 'm' + r.mat_id : r.src === 'etc' ? 'e:' + (r.mat || '') : 'book';
+const rdSrcName = r => r.src === 'book' ? '교과서' : (r.mat || '읽은 글');
+const rdLocW = r => r.unit === 'para' ? '문단' : '쪽';
+const rdNorm = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+const rdWho = q => q.is_anonymous ? '익명' : (q.student && q.student.number ? q.student.number + '번 ' : '') + ((q.student && q.student.name) || '');
+function renderRead(root){
+  ensure();
+  if(!S.cls){ root.innerHTML = '<div class="empty">학생이 있는 반이 없어요.</div>'; return; }
+  if(!T.reading && !T.reqs.reading) loadReading();
+  if(!T.reading){ root.innerHTML = '<div class="empty">책 보며 심은 질문을 불러오는 중이에요.</div>'; return; }
+  const per = T.rdPer || 'week', today = ui.kstToday();
+  const since = per === 'today' ? ui.dayStartISO(today) : per === 'week' ? ui.dayStartISO(ui.addDays(today, -6)) : null;
+  let list = T.reading.filter(q => !since || String(q.created_at) >= since);
+  const srcs = new Map();
+  list.forEach(q => { const r = rdOf(q), k = rdSrcKey(r); if(!srcs.has(k)) srcs.set(k, {k:k, name:rdSrcName(r), n:0}); srcs.get(k).n++; });
+  const sel = T.rdSrc && srcs.has(T.rdSrc) ? T.rdSrc : '';
+  if(sel) list = list.filter(q => rdSrcKey(rdOf(q)) === sel);
+  const chip = (act, v, on, label) => '<button type="button" class="chip' + (on ? ' on' : '') + '" data-act="' + act + '" data-v="' + esc(v) + '" aria-pressed="' + on + '">' + esc(label) + '</button>';
+  let h = '<div class="t-rd-head"><div class="chips" role="group" aria-label="기간">' +
+    chip('rd-per', 'today', per === 'today', '오늘') + chip('rd-per', 'week', per === 'week', '이번 주') + chip('rd-per', 'all', per === 'all', '전체') +
+    '<button type="button" class="link" data-act="rd-reload">새로 읽기</button></div>';
+  if(srcs.size > 1) h += '<div class="chips t-rd-srcs" role="group" aria-label="읽은 것">' + chip('rd-src', '', !sel, '모두') +
+    Array.from(srcs.values()).map(s => chip('rd-src', s.k, sel === s.k, s.name + ' ' + s.n)).join('') + '</div>';
+  h += '</div>';
+  if(!list.length){ root.innerHTML = h + '<div class="card empty">이 기간에 책 보며 심은 질문이 없어요. 읽기자료는 옛 대시보드 「수업 자료」에서 「읽기자료」로 올리면 학생 목록에 떠요.</div>'; return; }
+  /* 많이 고른 곳 — 자료 + 위치 + 낱말로 묶기 */
+  const grp = new Map();
+  list.forEach(q => {
+    const r = rdOf(q), w = rdNorm(r.word), key = rdSrcKey(r) + '|' + (w ? '' : String(r.loc || '')) + '|' + w;
+    if(!grp.has(key)) grp.set(key, {label:r.word || (r.loc ? r.loc + rdLocW(r) : '위치 없음'), src:rdSrcName(r), n:0, k:{1:0, 2:0, 3:0}, locs:new Set()});
+    const g = grp.get(key); g.n++; g.k[Number(r.kind)] = (g.k[Number(r.kind)] || 0) + 1; if(r.loc) g.locs.add(r.loc + rdLocW(r));
+  });
+  const top = Array.from(grp.values()).sort((a, b) => b.n - a.n || String(a.label).localeCompare(String(b.label))).slice(0, 12);
+  const max = Math.max.apply(null, top.map(g => g.n).concat([1]));
+  h += '<div class="sec">많이 고른 곳 <span class="n">질문 ' + list.length + '개</span></div><div class="card t-rd-bars">' + top.map(g => {
+    const seg = [1, 2, 3].filter(k => g.k[k]).map(k => '<i class="k' + k + '" style="width:' + (g.k[k] / max * 100).toFixed(1) + '%" title="' + RD_KIND[k] + ' ' + g.k[k] + '"></i>').join('');
+    const locs = Array.from(g.locs).join(', ');
+    return '<div class="t-rd-bar"><span class="w"><b>' + esc(g.label) + '</b><small>' + esc(g.src + (locs ? ' · ' + locs : '')) + '</small></span><span class="g">' + seg + '</span><span class="n">' + g.n + '개</span></div>';
+  }).join('') + '<div class="t-rd-legend"><span><i class="k1"></i>갸우뚱</span><span><i class="k2"></i>중요해 보임</span><span><i class="k3"></i>모르는 낱말</span></div></div>';
+  /* 모르는 낱말 — 내 짐작과 찾은 뜻 나란히 */
+  const unk = list.filter(q => Number(rdOf(q).kind) === 3);
+  if(unk.length){
+    h += '<div class="sec">모르는 낱말 <span class="n">' + unk.length + '</span></div><div class="card t-rd-words">' +
+      unk.slice().sort((a, b) => rdNorm(rdOf(a).word).localeCompare(rdNorm(rdOf(b).word))).map(q => {
+        const r = rdOf(q);
+        return '<div class="t-rd-w"><div class="t-rd-wh"><b>' + esc(r.word || '') + '</b><span>' + esc(rdWho(q)) + '</span></div>' +
+          '<div>짐작 · ' + (r.guess ? esc(r.guess) : '<span class="t-empty">안 적음</span>') + '</div>' +
+          '<div class="t-rd-fd">찾은 뜻 · ' + (r.found ? esc(r.found) : '<span class="t-empty">아직</span>') + '</div></div>';
+      }).join('') + '</div><p class="hint">짐작과 찾은 뜻을 견줘 보면 엇나간 낱말이 보여요. 다음 시간 첫 장면 거리예요.</p>';
+  }
+  /* 질문 목록 */
+  h += '<div class="sec">질문 <span class="n">' + list.length + '</span></div><div class="t-rd-qs">' + list.map(q => {
+    const r = rdOf(q), k = Number(r.kind) || 0;
+    return '<div class="card t-rd-q"><div class="t-rd-qh">' + (k ? '<span class="t-rd-kind k' + k + '">' + RD_KIND[k] + '</span>' : '') +
+      '<span class="t-rd-where">' + esc(rdSrcName(r) + (r.loc ? ' · ' + r.loc + rdLocW(r) : '') + (r.word ? ' · ' + r.word : '')) + '</span><span class="t-rd-who">' + esc(rdWho(q)) + '</span></div>' +
+      '<div class="t-rd-qt">' + esc(q.refined_text || q.text) + '</div>' +
+      (r.says ? '<div class="t-rd-l"><b>책에 나온 것</b>' + esc(r.says) + '</div>' : '') +
+      (r.think ? '<div class="t-rd-l"><b>내 생각</b>' + esc(r.think) + '</div>' : '') + '</div>';
+  }).join('') + '</div>';
+  root.innerHTML = h;
+}
+ACT['rd-per'] = b => { T.rdPer = b.dataset.v; QO.tabs.rerender('read'); };
+ACT['rd-src'] = b => { T.rdSrc = b.dataset.v || ''; QO.tabs.rerender('read'); };
+ACT['rd-reload'] = () => { T.reading = null; loadReading(); QO.tabs.rerender('read'); };
+
 /* ═══════════ 시연 도구(?mock=1 에서만) — 학생 쪽 움직임을 흉내 DB 에 바로 적는다 ═══════════ */
 function demoBox(){
   if(!cfg.mock) return '';
@@ -1088,6 +1160,7 @@ QO.tabs.register({id:'fruits', label:'열매 확인', render:renderFruits, badge
 QO.tabs.register({id:'live', label:'수업 진행', render:renderLive, badge(){ return !!T.live; }});
 QO.tabs.register({id:'groups', label:'모둠', render:renderGroups, badge(){ return !!(T.groups && T.groups.some(g => g.inquiry && g.inquiry.status === 'wait')); }});
 QO.tabs.register({id:'clues', label:'단서 살피기', render:renderClues});
+QO.tabs.register({id:'read', label:'책 보며 심기', render:renderRead});
 
 function bind(el, ev){
   const k = el.dataset.bind;
@@ -1474,6 +1547,25 @@ add('선생님 · 빠르게 확인: 키보드 1·3·→ 로 한 장씩', async t
   t.eq(t.db.questions.find(q => q.id === second).fruit_kind, null, '되돌린 건 열매 아님');
   t.expect(total >= 3, '확인 요청 셋 이상이었음');
   key('Escape'); await t.waitFor(() => !t.$('.t-quick'));
+  await TV.idle();
+});
+add('선생님 · 책 보며 심기: 많이 고른 곳·모르는 낱말(짐작·찾은 뜻)·질문', async t => {
+  await to211(t, 'read');
+  await t.click('#body [data-act="rd-per"][data-v="all"]');
+  await t.waitFor('#body .t-rd-bars');
+  const bars = t.$$('#body .t-rd-bar');
+  t.expect(/대전/.test(bars[0].textContent) && /2개/.test(bars[0].textContent), '같은 쪽·같은 낱말 둘이 한 줄로 묶여 맨 위: ' + bars[0].textContent);
+  t.expect(bars[0].querySelector('.g i.k3'), '모르는 낱말 색');
+  const words = t.$('#body .t-rd-words').textContent;
+  t.expect(/전기가 대신 생기는 것/.test(words) && /물체가 전기를 띠는 현상/.test(words) && /아직/.test(words), '짐작·찾은 뜻·아직');
+  t.expect(/익명/.test(words) && !/나래/.test(words), '익명 질문은 이름 가림');
+  const qs = t.$$('#body .t-rd-q');
+  t.eq(qs.length, 5, '2-11 책 보며 심은 질문 5개');
+  t.expect(t.$('#body').textContent.indexOf('불꽃도 파란 불이') >= 0 && t.$('#body').textContent.indexOf('별의 색은 표면 온도에 따라') >= 0, '책에 나온 것·내 생각');
+  await t.click('#body [data-act="rd-src"][data-v="m9004"]');
+  await t.waitFor(() => t.$$('#body .t-rd-q').length === 1);
+  t.expect(/별빛은 얼마나 먼 길을 왔을까 · 2문단/.test(t.$('#body .t-rd-q .t-rd-where').textContent), '읽기자료는 문단');
+  await t.click('#body [data-act="rd-src"][data-v=""]');
   await TV.idle();
 });
 add('선생님 · 확인할 답 CSV(일지 칸·AI 사용, 실명 없음)', async t => {

@@ -247,3 +247,36 @@ html.shot-phone .tapp .board .cmp{grid-template-columns:1fr}
 .t-qacts{flex-wrap:wrap}
 .t-qacts kbd{display:inline-block;min-width:18px;padding:0 4px;margin-right:4px;border:1px solid currentColor;border-radius:4px;font-size:12px;line-height:16px;opacity:.75}
 .t-qhint{margin-top:10px}
+
+/* 책 보며 심기 탭(teacher.js renderRead) */
+.t-rd-head .chips{align-items:center}
+.t-rd-srcs{margin-top:8px}
+.t-rd-bars{padding:10px 14px}
+.t-rd-bar{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px}
+.t-rd-bar .w{flex:0 0 150px;min-width:0}
+.t-rd-bar .w b{display:block;word-break:keep-all}
+.t-rd-bar .w small{display:block;font-size:12px;color:var(--mute);font-weight:600}
+.t-rd-bar .g{flex:1;height:18px;border-radius:5px;background:var(--bg);display:flex;overflow:hidden}
+.t-rd-bar .g i,.t-rd-legend i{display:block;height:100%}
+.t-rd-bar .n{flex:0 0 40px;text-align:right;font-size:12.5px;color:var(--mute);font-weight:700}
+.t-rd-bar .k1,.t-rd-legend .k1{background:#7A6BB0}
+.t-rd-bar .k2,.t-rd-legend .k2{background:var(--clue)}
+.t-rd-bar .k3,.t-rd-legend .k3{background:var(--wait)}
+.t-rd-legend{display:flex;gap:14px;font-size:12px;color:var(--mute);font-weight:700;margin-top:8px}
+.t-rd-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.t-rd-words{padding:4px 14px}
+.t-rd-w{padding:9px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.55}
+.t-rd-w:first-child{border-top:0}
+.t-rd-wh{display:flex;gap:8px;align-items:baseline}
+.t-rd-wh span{font-size:12.5px;color:var(--mute)}
+.t-rd-fd{color:var(--leaf-d)}
+.t-rd-q{margin-bottom:10px}
+.t-rd-qh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--sub)}
+.t-rd-kind{font-size:11.5px;font-weight:800;border-radius:6px;padding:1px 6px}
+.t-rd-kind.k1{background:#EEEAF7;color:#4E4186}
+.t-rd-kind.k2{background:var(--clue-l);color:var(--clue-d)}
+.t-rd-kind.k3{background:var(--wait-l);color:var(--wait)}
+.t-rd-who{margin-left:auto;font-weight:700}
+.t-rd-qt{font-size:15px;font-weight:700;margin-top:6px;line-height:1.45}
+.t-rd-l{margin-top:6px;font-size:14px;line-height:1.55}
+.t-rd-l b{display:block;font-size:12px;color:var(--mute)}
