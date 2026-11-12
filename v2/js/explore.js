@@ -317,7 +317,7 @@ function listHTML(L){
     '<button type="button" class="btn" data-xa="plant">심기</button></div>' +
     '<div class="x-opts"><label class="unitpick">어느 단원? <select id="x_unit">' + unitOptions() + '</select></label>' +
     '<label class="chk"><input type="checkbox" id="x_anon">익명으로 심기</label></div>' + errDiv('plant') + (QO.read ? QO.read.entryHTML() : '') + '</div>';   // 책 보며 심기(read.js)
-  h += QO.materials ? QO.materials.html() : '';      // 선생님 자료 보며 질문 심기(materials.js)
+  /* 선생님 자료는 「선생님 자료」 탭으로 옮김(2026-11-12, materials.js) */
   h += '<div class="sec">이어서 해 볼 질문 <span class="n">' + L.open.length + '</span></div>';
   if(!L.open.length) h += '<div class="empty">지금 이어서 할 질문이 없어요. 위에서 하나 심어 봐요.</div>';
   L.open.forEach(v => { h += cardHTML(v, wide); });

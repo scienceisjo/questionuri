@@ -1,4 +1,5 @@
-/* 선생님 자료 보며 질문 심기 — 옛 앱 📚 자료 탭(renderMaterials·openMatSheet)을 탐구 탭 안 카드로 옮김(2026-11-06).
+/* 선생님 자료 보며 질문 심기 — 옛 앱 📚 자료 탭(renderMaterials·openMatSheet)을 탐구 탭 안 카드로 옮겼다가(2026-11-06)
+   「선생님 자료」 탭으로 따로 뺌(2026-11-12, 사용자 「선생님 자료는 선생님 자료 탭에 따로」).
    · 자료는 선생님이 옛 대시보드 「수업 자료」에서 올린다(lesson_materials 표 그대로, 새 SQL 없음).
    · 우리 반·내가 참여한 선생님 자료만(옛 앱과 같은 거르기). 오늘 자료·마감 전 과제를 먼저.
    · 자료 화면: 유튜브 구간·사진·영상·링크·본문·출처를 보며 그 자리에서 질문을 심는다 → 질문에 material_id·차시가 붙고
@@ -50,32 +51,51 @@ async function load(force){
     const r = mine(await QO.api.myMaterials());
     const same = M.uid === uid && JSON.stringify((M.list || []).map(m => m.id)) === JSON.stringify(r.map(m => m.id));
     M.list = r; M.uid = uid; M.at = Date.now();
-    if(!same && QO.tabs.current() === 'explore') QO.tabs.rerender('explore');
+    if(!same && QO.tabs.current() === 'mat') QO.tabs.rerender('mat');
+    if(QO.tabs.current() === 'mat') markSeen();
+    QO.tabs.paintBadges();
     if(M.want && r.some(m => m.id === M.want)){ const w = M.want; M.want = null; const wm = r.find(m => m.id === w); if(wm.reading && QO.read) QO.read.open(w); else openView(w); }
   }catch(_){ if(M.uid !== uid){ M.list = []; M.uid = uid; } }
   finally{ M.busy = false; }
 }
 
-/* ── 탐구 탭 안 카드 ── */
+/* ── 선생님 자료 탭 ── */
 const myQs = id => (QO.state.questions || []).filter(q => q && Number(q.material_id) === Number(id));
 function dueText(m){
   if(!m.is_homework || !m.due_date) return '';
   const d = Math.round((Date.parse(String(m.due_date).slice(0, 10)) - Date.parse(U.kstToday())) / 864e5);
   return d <= 0 ? '오늘 마감' : d + '일 남음';
 }
-function html(){
-  const uid = QO.state.me ? QO.state.me.id : null;
-  if(M.uid !== uid){ load(true); return ''; }
-  if(!M.list || !M.list.length) return '';
-  const show = M.more ? M.list.slice(0, 12) : M.list.slice(0, 3);
-  return '<div class="sec">선생님 자료</div><div class="card qm-list">' + show.map(m => {
-    const n = myQs(m.id).length, tag = m.is_homework ? '과제 · ' + dueText(m) : (m._today ? '오늘' : U.kstDay(m.created_at).slice(5).replace('-', '/'));
-    /* 읽기자료(lesson_materials.reading)는 본문 없이 「책 보며 심기」로 연다(read.js) */
-    const rd = !!(m.reading && QO.read);
-    return '<button type="button" class="qm-row" ' + (rd ? 'data-rd="open" data-mat="' : 'data-qm="open" data-id="') + m.id + '"><span class="t">' + (rd ? '<span class="rd-tag">읽기</span>' : '') + esc(m.title || '자료') + '</span>' +
-      '<span class="m">' + esc(tag) + (n ? ' · 내 질문 ' + n : '') + '</span></button>';
-  }).join('') + (M.list.length > 3 ? '<button type="button" class="link qm-more" data-qm="more">' + (M.more ? '접기' : '자료 더 보기') + '</button>' : '') + '</div>';
+/* 오늘 올라온 자료 중 아직 안 본 것이 있으면 탭에 점(이 기기에서 본 것만 기억) */
+const seenKey = () => 'qo2-matseen-' + ((QO.state.me || {}).id || 'x');
+function seenIds(){ try{ return JSON.parse(localStorage.getItem(seenKey()) || '[]'); }catch(_){ return []; } }
+function markSeen(){
+  const ids = (M.list || []).filter(m => m._today).map(m => m.id); if(!ids.length) return;
+  const s = seenIds(), add = ids.filter(id => s.indexOf(id) < 0); if(!add.length) return;
+  try{ localStorage.setItem(seenKey(), JSON.stringify(s.concat(add).slice(-200))); }catch(_){}
+  QO.tabs.paintBadges();
 }
+function cardHTML(m){
+  const n = myQs(m.id).length, tag = m.is_homework ? '과제 · ' + dueText(m) : (m._today ? '오늘' : U.kstDay(m.created_at).slice(5).replace('-', '/'));
+  /* 읽기자료(lesson_materials.reading)는 본문 없이 「책 보며 심기」로 연다(read.js) */
+  const rd = !!(m.reading && QO.read);
+  const desc = String(m.description || '').trim();
+  return '<button type="button" class="qm-card" ' + (rd ? 'data-rd="open" data-mat="' : 'data-qm="open" data-id="') + m.id + '">' +
+    '<span class="t">' + (rd ? '<span class="rd-tag">읽기</span>' : '') + esc(m.title || '자료') + '</span>' +
+    '<span class="m">' + esc([tag, m.unit].filter(Boolean).join(' · ')) + '</span>' +
+    (desc ? '<span class="d">' + esc(Array.from(desc).length > 70 ? Array.from(desc).slice(0, 70).join('') + '…' : desc) + '</span>' : '') +
+    '<span class="n">' + (n ? '이 자료로 심은 질문 ' + n + '개' : '아직 심은 질문 없음') + '</span></button>';
+}
+function render(root){
+  const uid = QO.state.me ? QO.state.me.id : null;
+  if(M.uid !== uid || !M.list){ load(true); root.innerHTML = '<div class="empty">선생님 자료를 불러오는 중이에요.</div>'; return; }
+  if(!M.list.length){ root.innerHTML = '<div class="empty">아직 선생님이 올린 자료가 없어요.</div>'; return; }
+  const today = M.list.filter(m => m._today), hw = M.list.filter(m => !m._today && m.is_homework), rest = M.list.filter(m => !m._today && !m.is_homework);
+  const sec = (name, list) => list.length ? '<div class="sec">' + name + ' <span class="n">' + list.length + '</span></div><div class="qm-cards">' + list.map(cardHTML).join('') + '</div>' : '';
+  root.innerHTML = '<div class="hint qm-top">자료를 열어 보며 궁금한 것을 심어요. 심은 질문은 탐구 탭에서 이어서 해요.</div>' +
+    sec('오늘 자료', today) + sec('과제', hw) + sec('지난 자료', rest);
+}
+function html(){ return ''; }   // 예전 탐구 탭 자리(지금은 탭으로)
 
 /* ── 자료 화면 ── */
 function ytId(url){
@@ -140,13 +160,13 @@ async function plant(btn){
   if(!row) return;
   const got = (await QO.acorn('plant', row.id)) + (await QO.acorn('material', row.id));
   U.toast('🌱 자료를 보며 질문을 심었어요' + (got ? ' · 🌰 +' + got : '') + '.');
+  QO.tabs.rerender('mat');
   if(M.open === m){ const el = document.getElementById('qm-view'); const keep = el.querySelector('.qm-scroll').scrollTop; el.innerHTML = viewHTML(m); el.querySelector('.qm-scroll').scrollTop = keep; }
 }
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-qm]'); if(!b) return;
   const k = b.dataset.qm;
   if(k === 'open') openView(b.dataset.id);
-  else if(k === 'more'){ M.more = !M.more; QO.tabs.rerender('explore'); }
   else if(k === 'close') closeView();
   else if(k === 'plant') plant(b);
 });
@@ -155,20 +175,31 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ closeView(); return; }
   if(e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && e.target && e.target.id === 'qm_inp'){ e.preventDefault(); const b = document.querySelector('#qm-view [data-qm="plant"]'); if(b) b.click(); }
 });
-QO.bus.on('ready', () => { M.list = null; M.uid = null; M.more = false; closeView(); });
-QO.bus.on('tab:show', id => { if(id === 'explore') load(false); else closeView(); });
+QO.bus.on('ready', () => { M.list = null; M.uid = null; M.more = false; closeView(); setTimeout(() => load(true), 0); });   // 탭 점·?mat= 링크 때문에 바로 읽는다
+QO.bus.on('tab:show', id => { if(id === 'explore' || id === 'mat') load(false); if(id !== 'mat') closeView(); });
 
-QO.materials = {html:html, load:load, open:openView, close:closeView, _m:M};
+const MAT_IC = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13h8"/></svg>';
+QO.tabs.register({id:'mat', label:'선생님 자료', icon:MAT_IC, render:render, onShow(){ markSeen(); },
+  badge(){ const s = seenIds(); return !!(M.list && M.list.some(m => m._today && s.indexOf(m.id) < 0)); }});
+
+QO.materials = {html:html, load:load, open:openView, close:closeView, render:render, _m:M};
 
 /* ── 스스로 시험 ── */
 if(!QO.selftest || QO.cfg.page !== 'student') return;
-QO.selftest.add('탐구 · 선생님 자료 보며 질문 심기(우리 반만·자료·차시 연결·자료 도토리)', async t => {
+QO.selftest.add('선생님 자료 탭 · 자료 보며 질문 심기(우리 반만·자료·차시 연결·자료 도토리)', async t => {
   await t.click('#nav [data-t="explore"]');
-  await t.waitFor('#body .qm-list');
-  const ids = t.$$('#body .qm-row[data-qm]').map(b => Number(b.dataset.id));
+  t.expect(!t.$('#body .qm-card'), '탐구 탭에는 자료 목록이 없음');
+  try{ localStorage.removeItem('qo2-matseen-' + t.state.me.id); }catch(_){}
+  await QO.materials.load(true);
+  await t.waitFor(() => !document.querySelector('#nav [data-t="mat"] .dot').hidden);
+  await t.click('#nav [data-t="mat"]');
+  await t.waitFor('#body .qm-cards');
+  t.expect(document.querySelector('#nav [data-t="mat"] .dot').hidden, '열어 보면 점이 꺼짐');
+  const ids = t.$$('#body .qm-card[data-qm]').map(b => Number(b.dataset.id));
   t.eq(ids, [9001, 9002], '우리 반 자료만(다른 반 9003 빠짐), 오늘 자료 먼저 — 읽기자료 9004 는 「책 보며 심기」로 열려서 따로');
-  t.expect(t.$('#body .qm-row[data-mat="9004"] .rd-tag'), '읽기자료는 「읽기」 표시');
-  await t.click('#body .qm-row[data-id="9001"]');
+  t.expect(t.$('#body .qm-card[data-mat="9004"] .rd-tag'), '읽기자료는 「읽기」 표시');
+  t.expect(/오늘 자료/.test(t.$('#body').textContent) && /과제/.test(t.$('#body').textContent), '오늘 자료·과제 묶음');
+  await t.click('#body .qm-card[data-id="9001"]');
   await t.waitFor('#qm-view:not([hidden]) #qm_inp');
   t.expect(/못에 도선을 감고/.test(t.$('#qm-view .qm-body').textContent) && t.$('#qm-view .qm-body .h2'), '본문·소제목');
   const s0 = t.state.me.seeds, n0 = t.db.questions.length;
@@ -181,6 +212,6 @@ QO.selftest.add('탐구 · 선생님 자료 보며 질문 심기(우리 반만·
   await t.waitFor(() => /이 자료로 심은 질문/.test((t.$('#qm-view .qm-mine') || {}).textContent || ''));
   await t.click('#qm-view [data-qm="close"]');
   t.expect(t.$('#qm-view').hidden, '닫힘');
-  await t.waitFor(() => /내 질문 1/.test((t.$('#body .qm-row[data-id="9001"]') || {}).textContent || ''));
+  await t.waitFor(() => /심은 질문 1개/.test((t.$('#body .qm-card[data-id="9001"]') || {}).textContent || ''));
 });
 })();

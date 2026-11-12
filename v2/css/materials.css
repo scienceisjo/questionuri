@@ -29,3 +29,14 @@ html.qm-on{overflow:hidden}
 .qm-plant .inp{flex:1;min-width:0}
 .qm-mine{margin-top:10px;font-size:13.5px;color:var(--sub);max-height:7.5em;overflow:auto}
 .qm-mine b{display:block;color:var(--ink);margin-bottom:2px}
+
+/* 선생님 자료 탭(2026-11-12) */
+.qm-top{margin:2px 2px 4px}
+.qm-cards{display:flex;flex-direction:column;gap:10px}
+html.wide .qm-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.qm-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;min-height:64px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:left;cursor:pointer}
+.qm-card .t{font-weight:800;font-size:15.5px;color:var(--ink);word-break:keep-all;line-height:1.4}
+.qm-card .m{font-size:12.5px;color:var(--sub);font-weight:700}
+.qm-card .d{font-size:13.5px;color:var(--ink);line-height:1.5;word-break:keep-all}
+.qm-card .n{font-size:12.5px;color:var(--leaf-d);font-weight:700}
+.nav button span{white-space:nowrap;letter-spacing:-.3px}

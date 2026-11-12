@@ -122,14 +122,14 @@ add('뼈대 · mock 로그인과 머리글(제목·도토리·얼굴)', async t 
   t.eq(t.state.questions.length, t.db.questions.filter(q => q.user_id === 'u-A').length, '내 질문 수');
   t.expect(t.state.marks instanceof Map && t.state.marks.size > 0, '칸 표시(Map)');
 });
-add('뼈대 · 탭 다섯 전환', async t => {
-  for(const id of ['together', 'tree', 'grow', 'forest', 'explore']){
+add('뼈대 · 탭 여섯 전환', async t => {
+  for(const id of ['mat', 'together', 'tree', 'grow', 'forest', 'explore']){
     await t.click('#nav [data-t="' + id + '"]');
     t.eq(QO.tabs.current(), id, '지금 탭');
     t.expect(document.querySelector('#nav [data-t="' + id + '"]').classList.contains('on'), id + ' 단추 표시');
     t.expect(document.getElementById('body').children.length > 0, id + ' 화면이 비었어요');
   }
-  t.eq(QO.tabs.ids(), ['explore', 'together', 'tree', 'grow', 'forest'], '탭 순서');
+  t.eq(QO.tabs.ids(), ['explore', 'mat', 'together', 'tree', 'grow', 'forest'], '탭 순서');
 });
 add('뼈대 · 학생 로그인 화면(틀린 비밀번호 → 맞는 비밀번호)', async t => {
   await QO.app.signOut(true);

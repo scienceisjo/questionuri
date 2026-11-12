@@ -207,7 +207,7 @@ document.addEventListener('keydown', e => {
   }
 });
 QO.bus.on('ready', () => close());
-QO.bus.on('tab:show', id => { if(id !== 'explore') close(); });
+QO.bus.on('tab:show', id => { if(id !== 'explore' && id !== 'mat') close(); });
 
 QO.read = {entryHTML, open, close, boxHTML, findHTML, readOf, whereText, KIND, _r:R};
 
@@ -216,9 +216,10 @@ if(!QO.selftest || QO.cfg.page !== 'student') return;
 QO.selftest.add('탐구 · 책 보며 심기(읽기자료·네 칸·필수 칸·찾은 뜻)', async t => {
   await t.click('#nav [data-t="explore"]');
   await t.waitFor('#body [data-rd="open"]');
-  /* 선생님 읽기자료에서 열기 — 그 자료가 골라진 채, 위치는 문단 */
-  await t.waitFor('#body .qm-row[data-mat="9004"]');
-  await t.click('#body .qm-row[data-mat="9004"]');
+  /* 선생님 읽기자료에서 열기(선생님 자료 탭) — 그 자료가 골라진 채, 위치는 문단 */
+  await t.click('#nav [data-t="mat"]');
+  await t.waitFor('#body .qm-card[data-mat="9004"]');
+  await t.click('#body .qm-card[data-mat="9004"]');
   await t.waitFor('#rd-view:not([hidden]) #x_rdq');
   t.expect(t.$('#rd-view [data-rd="src"][data-src="mat"].on'), '읽기자료가 골라짐');
   t.eq(t.$('#x_rdloc').placeholder, '문단', '읽기자료 위치는 문단');
