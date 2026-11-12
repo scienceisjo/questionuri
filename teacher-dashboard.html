@@ -4534,7 +4534,7 @@ function ndBuildPrompt(){
     L.push('');
   }
   L.push('■ 되묻는 종류 — 질문 하나에 «하나만» 고르세요');
-  L.push('① 질문 종류: 이건 「왜」로 이유를 찾는 질문이네. 「만약 ~라면?」으로 바꿔 물으면 뭐가 궁금해져? (점수가 아니라 «다른 쪽으로도 가 볼래?» 라는 방향입니다)');
+  L.push('① 질문 종류 (네·아니요나 사실만 묻는 질문일 때만. 「왜·어떻게」 질문은 좋은 질문이라 이걸 쓰지 않습니다): 네·아니요로 끝나네. 「왜」나 「어떻게」를 붙여 물으면 뭐가 궁금해져?');
   L.push('② 낱말 뜻 (낱말이 애매할 때): 「커진다」는 게 부피가 커지는 거야, 모양이 바뀌는 거야?');
   L.push('③ 좁히기 (두 가지가 섞였을 때): 두 가지가 섞여 있는 것 같아. 하나만 고르면 뭐부터 알고 싶어?');
   L.push('④ 사전지식 (문구를 바꾸지 마세요): 이 질문 어디서 떠올랐어? 전에 알던 거나 본 거 있어?');
@@ -7913,6 +7913,25 @@ async function submitBulkCreate(){
           </div>
         </div>
       </div>
+      <div style="margin-top:4px;margin-bottom:6px;padding:10px 12px;border:1px solid rgba(154,91,12,.28);background:rgba(154,91,12,.06);border-radius:4px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:700;color:#9A5B0C;text-transform:none;letter-spacing:0;font-family:inherit;margin-bottom:0">
+          <input type="checkbox" id="matReading" onchange="toggleReadingFields()" style="width:auto;margin:0"> 📖 종이 읽기자료로 내기 (질문과수원 2 「책 보며 심기」)
+        </label>
+        <div id="matReadingFields" style="display:none;margin-top:10px">
+          <div style="font-size:11.5px;color:var(--ink2);line-height:1.6;margin-bottom:8px">학생은 종이로 나눠 준 글을 직접 읽고, 갸우뚱한 곳·중요해 보인 곳·모르는 낱말에서 질문을 심어요. 본문은 안 적어도 올라가요. 기사·논문 발췌라면 문단마다 ①②③ 번호를 붙여 나눠 주세요. 교과서를 읽힐 때도 「교과서 ○~○쪽」으로 올리고 위치를 「쪽」으로 고르면 돼요.</div>
+          <div class="row">
+            <div style="flex:1;min-width:160px">
+              <label>위치를 어떻게 적게 할까요</label>
+              <select id="matReadUnit"><option value="para">문단 번호 (기사·발췌)</option><option value="page">쪽 (교과서·책)</option></select>
+            </div>
+            <div style="flex:2;min-width:220px">
+              <label>심을 때 꼭 쓸 칸 (어디·질문은 늘 꼭)</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;letter-spacing:0;font-family:inherit;cursor:pointer"><input type="checkbox" id="matNeedSays" style="width:auto;margin:0"> 책에 나온 것 (내 말로 한 줄)</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;text-transform:none;letter-spacing:0;font-family:inherit;cursor:pointer"><input type="checkbox" id="matNeedThink" style="width:auto;margin:0"> 내 생각</label>
+            </div>
+          </div>
+        </div>
+      </div>
       <div style="text-align:right;margin-top:8px">
         <button class="mat-btn primary" id="matSubmitBtn" onclick="submitMaterial()">📤 자료 올리기</button>
       </div>
@@ -8114,6 +8133,19 @@ function toggleHomeworkFields(){
   const box = $('matHomeworkFields');
   if(box) box.style.display = on ? 'block' : 'none';
 }
+/* 종이 읽기자료(질문과수원 2 「책 보며 심기」, v2_07 lesson_materials.reading) */
+function toggleReadingFields(){
+  const on = $('matReading') && $('matReading').checked;
+  const box = $('matReadingFields');
+  if(box) box.style.display = on ? 'block' : 'none';
+}
+function readingValue(){
+  if(!($('matReading') && $('matReading').checked)) return null;
+  const need = [];
+  if($('matNeedSays') && $('matNeedSays').checked) need.push('says');
+  if($('matNeedThink') && $('matNeedThink').checked) need.push('think');
+  return {unit: ($('matReadUnit') && $('matReadUnit').value === 'page') ? 'page' : 'para', need};
+}
 
 /* «1:30» «90» «1:02:03» 을 초로. 빈 값이면 null. 못 알아보면 null(=구간 미지정). */
 function isDigits(x){
@@ -8185,7 +8217,7 @@ function onMatPlanPick(){
    PostgREST 는 모르는 컬럼이 하나라도 섞이면 insert 전체를 거절한다
    («Could not find the 'body_text' column ... in the schema cache»).
    그래서 새 칸을 빼고 한 번 더 시도한다. 자료 자체는 올라가야 한다. */
-const MAT_NEW_COLS = ['body_text','source_note','yt_start','yt_end'];
+const MAT_NEW_COLS = ['body_text','source_note','yt_start','yt_end','reading'];
 
 function isUnknownColumnError(err, cols){
   const m = String(err && err.message || '');
@@ -8354,8 +8386,9 @@ async function submitMaterial(){
   if(!title){ alert('제목을 입력해주세요'); return; }
   const _body = ($('matBody')?.value || '').trim();
   /* 읽기자료는 글만 있어도 자료다. 예전엔 파일·유튜브가 없으면 저장을 막았다. */
-  if(!_matPending.length && !_body && !_matEditId){
-    alert('읽기자료 본문을 적거나, 사진·영상·유튜브 링크를 1개 이상 추가해주세요');
+  const _reading = readingValue();
+  if(!_matPending.length && !_body && !_matEditId && !_reading){
+    alert('읽기자료 본문을 적거나, 사진·영상·유튜브 링크를 1개 이상 추가해주세요. 종이로 나눠 줄 글이면 아래 「종이 읽기자료로 내기」를 켜면 돼요.');
     $('matBody')?.focus(); return;
   }
   const _ytS = mmssToSec($('matYtStart')?.value);
@@ -8408,6 +8441,7 @@ async function submitMaterial(){
     due_date: ($('matHomework')?.checked && $('matDueDate')) ? ($('matDueDate').value.trim() || null) : null,
     is_active: true
   };
+  if(_reading) payload.reading = _reading;
 
   const res = await insertWithFallback('lesson_materials', payload, MAT_NEW_COLS);
   const error = res.error;
@@ -8423,11 +8457,13 @@ async function submitMaterial(){
     /* 본문이 통째로 날아간 경우는 반드시 눈에 띄게 알린다. 조용히 넘기면
        읽기자료를 올렸다고 믿은 채 수업에 들어가게 된다. */
     const _lostBody = _dropped.indexOf('body_text') >= 0;
+    const _lostRead = _dropped.indexOf('reading') >= 0;
     $('matResult').innerHTML =
       '<div style="color:var(--pd);font-size:12px;font-weight:700">✅ 자료가 올라갔어요!</div>' +
       '<div style="color:var(--ar);font-size:12px;font-weight:700;margin-top:6px;line-height:1.6">' +
-      (_lostBody ? '⚠ 다만 <b>읽기자료 본문은 저장되지 않았습니다.</b><br>' : '⚠ 영상 구간·출처는 저장되지 않았습니다.<br>') +
-      'Supabase SQL Editor 에서 <b>자료기능_1단계.sql</b> 을 한 번 실행한 뒤 다시 올려 주세요.<br>' +
+      (_lostRead ? '⚠ 다만 <b>종이 읽기자료 표시가 저장되지 않아</b> 학생 「책 보며 심기」 목록에 안 떠요.<br>Supabase SQL Editor 에서 <b>질문과수원2_v2_07_책보며심기.sql</b> 을 한 번 실행한 뒤, 이 자료를 지우고 다시 올려 주세요.<br>' :
+       (_lostBody ? '⚠ 다만 <b>읽기자료 본문은 저장되지 않았습니다.</b><br>' : '⚠ 영상 구간·출처는 저장되지 않았습니다.<br>') +
+       'Supabase SQL Editor 에서 <b>자료기능_1단계.sql</b> 을 한 번 실행한 뒤 다시 올려 주세요.<br>') +
       '아래 본문 칸은 지우지 않았으니 그대로 두셔도 됩니다.</div>';
   } else {
     $('matResult').innerHTML = '<div style="color:var(--pd);font-size:12px;font-weight:700">✅ 자료가 올라갔어요! 학생들이 볼 수 있어요.</div>';
@@ -8446,6 +8482,9 @@ async function submitMaterial(){
   if($('matVideoUrl')) $('matVideoUrl').value = '';
   if($('matDueDate')) $('matDueDate').value = '';
   if($('matHomework')){ $('matHomework').checked = false; toggleHomeworkFields(); }
+  if($('matReading')){ $('matReading').checked = false; toggleReadingFields(); }
+  if($('matNeedSays')) $('matNeedSays').checked = false;
+  if($('matNeedThink')) $('matNeedThink').checked = false;
   _matPending = [];
   renderMatPreviews();
   loadMaterials();
@@ -8493,6 +8532,7 @@ async function loadMaterials(){
             ${m.description?`<div class="mat-card-desc">${esc(m.description)}</div>`:''}
             <div class="mat-card-stats">
               ${m.is_homework?`<span style="color:var(--blue)">📼 주말과제${m.due_date?` · 마감 ${esc(m.due_date)}`:''}</span>`:''}
+              ${m.reading?`<span style="color:#9A5B0C">📖 종이 읽기자료 · ${m.reading.unit==='page'?'쪽':'문단'}${(m.reading.need||[]).length?' · 꼭: '+(m.reading.need||[]).map(k=>k==='says'?'책에 나온 것':'내 생각').join(', '):''}</span>`:''}
               <span>📎 ${fileCount}개 파일</span>
               <span>💡 ${qCount}개 질문 생성</span>
               <span>${m.is_active?'🟢 공개중':'⚪ 숨김'}</span>
