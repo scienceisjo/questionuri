@@ -15,6 +15,13 @@ const LEGACY_HOW = {exp:'exp', obs:'exp', cmp:'exp', src:'book'};
 const HOW_NAME = {exp:'실험', obs:'관찰', cmp:'비교', src:'조사'};
 const VERDICT = {same:'right', half:'part', diff:'changed'};
 const CMP_NAME = {right:'맞았어요', part:'일부 맞았어요', changed:'바뀌었어요'};
+/* 답만 달기(2026-11-12, 사용자 「해결의 자유도 — 모든 절차를 거치는 길과 답만 다는 길 둘」).
+   일지 칸을 다 거치지 않고 답과 어디서 알았는지만 적어 선생님께 보낸다(AI 도 출처로 고를 수 있다).
+   서버 save_journal(v2_02)이 정리 칸을 known/unknown 으로만 받아서, 새 SQL 없이 표시를 붙인다: wrap.cmp='quick', wrap.changedBy=출처.
+   도토리는 발자국 칸 수 + 5 라서, 끝까지 탐구한 질문이 자연히 더 받는다. */
+const QUICK = 'quick';
+const isQuick = w => !!w && w.cmp === QUICK;
+const QSRC = ['교과서', '선생님', '실험·관찰', '인터넷 검색', 'AI', '친구', '원래 알던 것'];
 const STAMP = {observe:'본 것을 정확히 적었어요', testable:'이건 알아볼 수 있는 질문이에요', unknown:'선생님도 몰라요. 같이 찾아봐요',
   connect:'지난 시간이랑 이어졌어요', onemore:'한 걸음만 더 가볼까요?', pick:'수업에서 다룰게요'};
 const AI_RE = /(\bAI\b|\bGPT|ChatGPT|제미나이|Gemini|클로드|Claude|뤼튼|코파일럿|Copilot|퍼플렉시티|인공지능|에이아이)/i;
@@ -194,9 +201,9 @@ const curV = () => { const r = curRow(); return r ? V(r) : null; };
 const nextName = v => v.cur === 'wrap' && v.done.wrap ? '선생님께 보내기' : stepName(v.cur);
 
 /* ═══════════ 모듈 상태 ═══════════ */
-const X = {edit:null, peek:null, flagFor:null, thx:{}, f:{}, msg:{}, showDone:false, nowUnit:null, nowAt:0, unitTouched:false,
+const X = {edit:null, peek:null, flagFor:null, thx:{}, f:{}, msg:{}, showDone:false, nowUnit:null, nowAt:0, unitTouched:false, qmode:{}, sosFor:null,
   saving:0, next:null, seenBusy:new Set(), guide:false, guideFor:null, phase:'before'};
-function resetForm(){ X.edit = null; X.peek = null; X.flagFor = null; X.thx = {}; X.f = {}; X.msg = {}; }
+function resetForm(){ X.edit = null; X.peek = null; X.flagFor = null; X.sosFor = null; X.thx = {}; X.f = {}; X.msg = {}; }
 function resetAll(){ resetForm(); X.showDone = false; X.nowUnit = null; X.nowAt = 0; X.unitTouched = false; X.next = null; X.seenBusy.clear(); X.guideFor = null; }
 function guideSeen(){ try{ return localStorage.getItem('qo2-x-guide') === '1' || X.guide; }catch(_){ return X.guide; } }
 function markGuide(){ X.guide = true; X.guideFor = null; try{ localStorage.setItem('qo2-x-guide', '1'); }catch(_){} }
@@ -340,7 +347,7 @@ function summary(v, k, noOld){
     const cmp = w.cmp && CMP_NAME[w.cmp] ? '<b>내 예상은</b> ' + CMP_NAME[w.cmp] + (w.changedBy ? ' — ' + esc(w.changedBy) : '') + '<br>' : '';
     const body = w.mode === 'unknown'
       ? '<b>아직 모름</b> · 여기까지: ' + esc(w.reached || '') + (w.stuckQ ? '<br>막힌 곳: ' + esc(w.stuckQ) + (w.why ? ' (' + esc(w.why) + ')' : '') : '')
-      : esc(w.text || '');
+      : (isQuick(w) ? '<b>답만 달기</b> · ' : '') + esc(w.text || '') + (isQuick(w) && w.changedBy ? '<br><b>어디서</b> · ' + esc(w.changedBy) : '');
     return (w.legacy ? o : '') + cmp + body;
   }
   if(k === 'extend') return (d.extend.legacy ? o : '') + '<b>' + (d.extend.kind === 'life' ? '생활과 잇기' : '새 질문') + '</b> · ' + esc(d.extend.text);
@@ -389,7 +396,7 @@ function cluesLater(v, k){
   return n ? '<div class="x-cluewait x-later">친구 단서 ' + n + '개가 와 있어요. 이 칸을 쓸 차례가 되면 보여요.</div>' : '';
 }
 function flagAskHTML(k){
-  return '<div class="ask"><div class="q">어디까지 해 봤어요?</div><input class="inp" id="x_tried" placeholder="여기까지 해 봤는데 __에서 막혔어요" autocomplete="off" maxlength="200">' +
+  return '<div class="ask"><div class="q">어디까지 해 봤어요? (안 써도 돼요)</div><input class="inp" id="x_tried" placeholder="여기까지 해 봤는데 __에서 막혔어요" autocomplete="off" maxlength="200">' +
     '<div class="row"><button type="button" class="btn line sm" data-xa="flagCancel">그만두기</button><button type="button" class="btn teal sm" style="flex:1" data-xa="flag" data-k="' + k + '">막힘 표시 세우기</button></div>' + errDiv('flag') + '</div>';
 }
 function segHTML(id, g, items, on){
@@ -516,7 +523,10 @@ function sheetHTML(row){
   /* 「나중에 고를래요」로 심은 질문 — 여기서 단원을 붙인다 */
   if(!v.unit && !v.legacyHarvest) h += '<div class="x-unitset"><label class="unitpick">단원 <select id="x_setunit" aria-label="단원 고르기"><option value="">아직 안 골랐어요</option>' +
     UNITS.map(u => '<option value="' + esc(u) + '">' + esc(u) + '</option>').join('') + '</select></label>' + errDiv('unit') + '</div>';
-  const steps = v.legacyHarvest ? K.STEPS.filter(st => st.k === 'plant' || st.k === 'extend') : K.STEPS;
+  const paths = v.status === 'open' && !v.legacyHarvest;
+  if(paths) h += pathsHTML(v);                          // 끝까지 탐구 / 답만 달기 · 친구에게 SOS
+  const quick = paths && X.qmode[v.id] === QUICK;
+  const steps = v.legacyHarvest ? K.STEPS.filter(st => st.k === 'plant' || st.k === 'extend') : quick ? K.STEPS.filter(st => st.k === 'plant') : K.STEPS;
   steps.forEach(st => {
     const k = st.k, i = K.STEPS.indexOf(st), dn = v.done[k];
     const isCur = X.edit === k || (!X.edit && k === v.cur);
@@ -527,10 +537,11 @@ function sheetHTML(row){
     h += stepBody(v, st, dn, isCur);
     if(k === 'find' && QO.read && !v.legacyHarvest) h += QO.read.findHTML(v.id);   // 모르는 낱말의 찾은 뜻(read.js)
     if(!isCur) h += dn ? cluesHTML(v, k) : cluesLater(v, k);   // 아직 안 간 칸은 개수만(처음 생각이 끌려가지 않게)
-    if(v.d.flag && v.d.flag.step === k) h += '<div class="flagbox">막힘 표시를 세웠어요 — 「' + esc(v.d.flag.tried) + '」 단서 시간에 친구들이 볼 수 있어요.' +
+    if(v.d.flag && v.d.flag.step === k) h += '<div class="flagbox">친구에게 SOS를 보냈어요' + (v.d.flag.tried ? ' — 「' + esc(v.d.flag.tried) + '」' : '') + '. 우리 반 숲 깃발과 단서 시간에 친구들이 볼 수 있어요.' +
       (v.status === 'open' ? ' <button type="button" class="link teal x-mini" data-xa="unflag">표시 내리기</button>' : '') + '</div>';
     h += '</div></div>';
   });
+  if(quick) h += quickHTML(v);
   if(QO.photos) h += QO.photos.html(v);              // 사진(photos.js)
   if(v.legacyHarvest) h += '<div class="statusbar fruit">🍎 옛 과수원에서 거둔 열매예요. 그때는 일지 칸 없이 거뒀어요.' + (v.sprout ? ' 넓히기까지 해서 열매에 새싹 🌱이 달렸어요.' : '') + '</div>';
   else if(v.status === 'wait') h += '<div class="statusbar wait">선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.</div>';
@@ -555,6 +566,36 @@ function seenFb(row){
     .catch(e => { if(!ui.userMsg(e)) QO.err(e, 'explore:markFbSeen'); })
     .finally(() => { X.seenBusy.delete(id); });
 }
+/* 쓰던 글 붙잡기(2026-11-12, 사용자 「끝까지 못 하고 중간에 나가면 하던 게 사라진다」).
+   「○○ 남기기」를 누른 칸은 원래도 서버에 저장된다. 사라지던 건 단추를 누르기 전에 쓰던 글이다.
+   → 일지 칸에 쓰는 글을 이 기기에 바로 저장해 두고, 다시 열면 빈 칸에 되살린다. 그 칸을 저장하면 지운다. 서버엔 안 보낸다. */
+const DRAFT_IDS = /^x_(refine|predict|mplan|fsrc|find|samewhy|aicmp|wrap|reached|stuckq|changed|extend|tried|sos|qans|qsrcd)$/;
+const DRAFT_OF = {refine:['x_refine'], predict_add:['x_predict'], method:['x_mplan'], find_add:['x_fsrc', 'x_find'], same:['x_samewhy'], aiCmp:['x_aicmp'],
+  wrap:['x_wrap', 'x_reached', 'x_stuckq', 'x_changed', 'x_qans', 'x_qsrcd'], extend:['x_extend'], flag:['x_tried', 'x_sos']};
+const dKey = (qid, id) => 'qo2-draft-' + ((QO.state.me || {}).id || 'x') + '-' + qid + '-' + id;
+function dropDrafts(qid, keys){
+  keys.forEach(k => (DRAFT_OF[k] || []).forEach(id => { try{ localStorage.removeItem(dKey(qid, id)); }catch(_){} }));
+}
+function restoreDrafts(el, qid){
+  let n = 0;
+  el.querySelectorAll('input[id], textarea[id]').forEach(f => {
+    if(!DRAFT_IDS.test(f.id) || f.value.trim()) return;
+    let v = null; try{ v = localStorage.getItem(dKey(qid, f.id)); }catch(_){}
+    if(v){ f.value = v; n++; }
+  });
+  if(n && X.restoredFor !== qid){ X.restoredFor = qid; ui.toast('지난번에 쓰던 글을 되살렸어요. 이어서 써 봐요.'); }
+}
+/* 스스로 시험은 시험마다 흉내 DB 를 새로 깔므로 쓰던 글도 비운다(앞 시험 글이 되살아나지 않게) */
+QO.bus.on('ready', () => {
+  if(!QO.cfg.selftest) return;
+  try{ Object.keys(localStorage).filter(k => k.indexOf('qo2-draft-') === 0).forEach(k => localStorage.removeItem(k)); }catch(_){}
+});
+document.addEventListener('input', e => {
+  const t = e.target, sh = $('#sheet');
+  if(!t || !t.id || !DRAFT_IDS.test(t.id) || !sh || !sh.contains(t) || S.openQ == null) return;
+  try{ if(t.value.trim()) localStorage.setItem(dKey(S.openQ, t.id), t.value); else localStorage.removeItem(dKey(S.openQ, t.id)); }catch(_){}
+}, true);
+
 function paintSheet(o){
   o = o || {};
   const el = $('#sheet'); if(!el) return;
@@ -566,6 +607,7 @@ function paintSheet(o){
   if(o.scroll && keep) keep.scroll = null;
   el.innerHTML = sheetHTML(row);
   put(el, keep);
+  restoreDrafts(el, row.id);                            // 이 기기에 남겨 둔 쓰던 글
   seenFb(row);
   if(o.scroll){
     const v = V(row);
@@ -615,6 +657,7 @@ async function run(btn, key, work){
 }
 async function saveTo(id, patch){
   const res = await QO.api.saveJournal(id, patch);
+  dropDrafts(id, Object.keys(patch || {}));            // 저장한 칸의 쓰던 글은 지운다
   QO.store.upsertQuestion(res);
   await QO.store.refreshQuestion(id);
   return res;
@@ -834,12 +877,64 @@ async function raiseFlag(btn){
   const v = curV(); if(!v) return;
   setErr('flag', '');
   const k = btn.dataset.k || 'find';
-  const t = need('x_tried', 6, 'flag', [v.original]); if(t == null) return;
+  const el = document.getElementById('x_tried'), raw = (el && el.value || '').trim();
+  let t = '';                                            // 한 줄은 안 써도 된다(11-12 「막혔어요까지 너무 길다」)
+  if(raw){ t = need('x_tried', 4, 'flag', [v.original]); if(t == null) return; }
   const r = await run(btn, 'flag', () => saveTo(v.id, {flag:{step:k, tried:t}}));
   if(!r) return;
   X.flagFor = null;
   paint();
-  ui.toast('막힘 표시를 세웠어요. 단서 시간에 친구들이 길을 알려 줄 수 있어요.');
+  ui.toast('친구에게 SOS를 보냈어요. 우리 반 숲에 깃발이 섰어요.');
+}
+/* ── 끝까지 탐구 / 답만 달기 · 친구에게 SOS(일지 맨 위) ── */
+function pathsHTML(v){
+  const q = X.qmode[v.id] === QUICK, d = v.d;
+  let h = '<div class="x-paths"><div class="seg" role="group" aria-label="어떻게 해결할까요?">' +
+    '<button type="button" data-xa="qmode" data-m="full" aria-pressed="' + !q + '"' + (q ? '' : ' class="on"') + '>끝까지 탐구</button>' +
+    '<button type="button" data-xa="qmode" data-m="quick" aria-pressed="' + q + '"' + (q ? ' class="on"' : '') + '>답만 달기</button></div>';
+  if(d.flag) h += '<div class="x-sos on"><span>친구에게 SOS를 보냈어요. 우리 반 숲 깃발 숲에 깃발이 섰어요.</span><button type="button" class="link teal x-mini" data-xa="unflag">SOS 내리기</button></div>';
+  else if(X.sosFor === v.id) h += '<div class="x-sos ask"><input class="inp" id="x_sos" maxlength="200" autocomplete="off" placeholder="어디서 막혔는지 한 줄 (안 써도 돼요)">' +
+    '<div class="row"><button type="button" class="btn line sm" data-xa="sosCancel">그만</button><button type="button" class="btn teal sm" style="flex:1" data-xa="sosSend">SOS 보내기</button></div>' + errDiv('sos') + '</div>';
+  else h += '<button type="button" class="x-sosbtn" data-xa="sosOpen">친구에게 SOS</button>';
+  return h + '</div>';
+}
+function quickHTML(v){
+  return '<div class="card x-quick"><div class="lbl">알아낸 답</div>' +
+    '<textarea class="inp" id="x_qans" rows="3" maxlength="1000" placeholder="알아낸 답을 내 말로 한두 문장"></textarea>' +
+    '<div class="lbl" style="margin:12px 0 6px">어디서 알았어요?</div>' + chipsHTML('x_qsrc', 'qsrc', QSRC.map(s => [s, s]), fget('qsrc', '')) +
+    '<input class="inp" id="x_qsrcd" style="margin-top:8px" maxlength="80" autocomplete="off" placeholder="자세히 (안 써도 돼요) 예: 교과서 120쪽">' +
+    '<button type="button" class="btn wide" style="margin-top:12px" data-xa="quick">선생님께 보내기</button>' + errDiv('quick') +
+    '<div class="hint" style="margin-top:8px">끝까지 탐구로 칸을 채울수록 발자국이 남아서, 열매를 맺을 때 도토리를 더 받아요.</div></div>';
+}
+async function saveQuick(btn){
+  const v = curV(); if(!v) return;
+  const k = 'quick'; setErr(k, '');
+  const el = document.getElementById('x_qans');
+  if(el && el.value.trim() && QO.ime && QO.ime.ask(el)) return setErr(k, '글자가 영어로 쳐진 것 같아요. 아래에서 골라 주세요.');
+  const t = need('x_qans', 10, k, [v.original, v.text]); if(t == null) return;
+  const src = fget('qsrc', '');
+  if(!src) return setErr(k, '어디서 알았는지 하나 골라 주세요.');
+  const det = (document.getElementById('x_qsrcd') || {}).value || '';
+  const where = Array.from((det.trim() ? src + ' · ' + det.trim() : src)).slice(0, 190).join('');
+  const r = await run(btn, k, () => saveTo(v.id, {wrap:{mode:'known', text:t, cmp:QUICK, changedBy:where}}));
+  if(!r) return;
+  X.qmode[v.id] = null; X.f = {};
+  paint({scroll:true, toStatus:true});
+  ui.toast('선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.');
+}
+async function sendSos(btn){
+  const v = curV(); if(!v) return;
+  setErr('sos', '');
+  const el = document.getElementById('x_sos'), t = (el && el.value || '').trim();
+  if(t){
+    if(QO.ime && QO.ime.ask(el)) return setErr('sos', '글자가 영어로 쳐진 것 같아요. 아래에서 골라 주세요.');
+    const jw = QO.check.junkWhy(t, [v.original]); if(jw) return setErr('sos', jw);
+  }
+  const step = ['predict', 'method', 'find', 'wrap'].indexOf(v.cur) >= 0 ? v.cur : 'find';   // 지금 하고 있는 칸에
+  const r = await run(btn, 'sos', () => saveTo(v.id, {flag:{step:step, tried:t}}));
+  if(!r) return;
+  X.sosFor = null; paint();
+  ui.toast('친구에게 SOS를 보냈어요. 우리 반 숲에 깃발이 섰어요.');
 }
 async function lowerFlag(btn){
   const v = curV(); if(!v) return;
@@ -890,6 +985,11 @@ const ACT = {
   refine:b => saveRefine(b, false), refineSkip:b => saveRefine(b, true),
   predict:savePredict, method:saveMethod, find:saveFind, wrap:saveWrap, extend:saveExtend,
   flagOpen:b => { X.flagFor = b.dataset.k; paint(); focusId('x_tried'); },
+  qmode:b => { const v = curV(); if(!v) return; X.qmode[v.id] = b.dataset.m === QUICK ? QUICK : null; X.f = {}; delete X.msg.quick; paint(); if(X.qmode[v.id]) focusId('x_qans'); },
+  quick:saveQuick,
+  sosOpen:() => { const v = curV(); if(!v) return; X.sosFor = v.id; paint(); focusId('x_sos'); },
+  sosCancel:() => { X.sosFor = null; delete X.msg.sos; paint(); },
+  sosSend:sendSos,
   flagCancel:() => { X.flagFor = null; delete X.msg.flag; paint(); },
   flag:raiseFlag, unflag:lowerFlag,
   thxYes:b => { X.thx[b.dataset.cid] = 'yes'; paint(); focusId('x_thx_' + b.dataset.cid); },
@@ -1232,6 +1332,43 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.waitFor(() => dbq(t, 105).resolve_requested_at);
     t.eq(dbq(t, 105).journal.wrap.text, '건전지를 직렬로 연결하면 전압이 커져서 전구에 흐르는 전류가 세지고 더 밝아진다.', '정리 저장');
     t.eq(dbq(t, 105).solve.guess, '전구가 더 밝아질 것 같다', '옛 solve 는 그대로');
+  });
+
+  add('탐구 · 쓰던 글은 닫았다 열어도 남고, 저장하면 지워짐', async t => {
+    await openQ(t, 101);
+    await t.type('#x_predict', '정류자가 방향을 바꿔 줄 것 같다. 왜냐하면 반 바퀴마다 힘이 바뀌니까.');
+    ui.sheet.close(true);
+    await openQ(t, 101);
+    await t.waitFor(() => q$('#x_predict') && /정류자가 방향을/.test(q$('#x_predict').value));
+    await t.click('[data-xa="predict"]');
+    await t.waitFor(() => (dbq(t, 101).journal || {}).predict);
+    let left = null; try{ left = localStorage.getItem('qo2-draft-' + t.state.me.id + '-101-x_predict'); }catch(_){}
+    t.eq(left, null, '저장하면 쓰던 글은 지움');
+  });
+  add('탐구 · 답만 달기(답과 출처만 보내면 선생님 확인 대기)', async t => {
+    await openQ(t, 101);
+    await t.click('#sheet [data-xa="qmode"][data-m="quick"]');
+    await t.waitFor('#x_qans');
+    t.expect(!q$('#x_st_predict'), '일지 칸이 숨음');
+    await t.type('#x_qans', '정류자가 반 바퀴마다 전류 방향을 바꿔 줘서 같은 쪽으로 계속 돈다.');
+    await t.click('#sheet [data-xa="quick"]');
+    t.expect(/골라/.test(q$('#x_e_quick').textContent), '출처를 안 고르면 막힘');
+    await t.click('#x_qsrc [data-v="교과서"]');
+    await t.type('#x_qsrcd', '120쪽');
+    await t.click('#sheet [data-xa="quick"]');
+    await t.waitFor(() => dbq(t, 101).resolve_requested_at);
+    const w = dbq(t, 101).journal.wrap;
+    t.eq([w.mode, w.cmp, w.changedBy], ['known', 'quick', '교과서 · 120쪽'], '답만 달기 표시');
+    await t.waitFor(() => VV(101).status === 'wait');
+  });
+  add('탐구 · 친구에게 SOS(한 번에, 한 줄은 안 써도 됨)', async t => {
+    await openQ(t, 102);
+    await t.click('#sheet [data-xa="sosOpen"]');
+    await t.click(await t.waitFor('#sheet [data-xa="sosSend"]'));
+    await t.waitFor(() => (dbq(t, 102).journal || {}).flag);
+    t.eq(dbq(t, 102).journal.flag.step, 'find', '지금 칸(찾기)에 SOS');
+    await t.click(await t.waitFor('#sheet .x-sos [data-xa="unflag"]'));
+    await t.waitFor(() => !(dbq(t, 102).journal || {}).flag);
   });
 
   add('탐구 · 단서 뒤 칸을 안 고치면 고마움 막힘, 고친 뒤 열림', async t => {

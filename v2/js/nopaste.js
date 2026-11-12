@@ -2,7 +2,7 @@
    출처 칸(x_fsrc)·차시 고르기 등은 그대로. Ctrl+V·오른쪽 클릭·Win+V·끌어 놓기 모두 막는다. */
 (function(){
 'use strict';
-const IDS = /^x_(body|refine|predict|method|mplan|find|wrap|reached|extend|aicmp|stuckq|tried|samewhy|changed|rdq|rdsays|rdthink|rdguess|rdfound)$/;   // rd*: 책 보며 심기(read.js)
+const IDS = /^x_(body|refine|predict|method|mplan|find|wrap|reached|extend|aicmp|stuckq|tried|samewhy|changed|rdq|rdsays|rdthink|rdguess|rdfound|qans|sos)$/;   // rd*: 책 보며 심기(read.js)
 const isOwn = t => !!t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') &&
   ((t.id && IDS.test(t.id)) || (t.dataset && t.dataset.tgk != null));
 let last = 0;

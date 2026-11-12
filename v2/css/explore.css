@@ -92,3 +92,16 @@ html.wide .app.split .x-plant .unitpick{flex-basis:100%}
 .rc-arrow{color:var(--leaf-d);font-weight:700}
 .rc-a{background:var(--leaf-l);color:var(--ink);border-radius:8px;padding:3px 8px;font-weight:600}
 .rc-g{font-size:12.5px;font-weight:800;color:var(--leaf-d);margin:12px 0 2px;letter-spacing:.02em}
+
+/* 끝까지 탐구 / 답만 달기 · 친구에게 SOS(2026-11-12) */
+.x-paths{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
+.x-paths .seg{background:var(--card);border:1px solid var(--line)}
+.x-sosbtn{align-self:flex-start;min-height:40px;padding:6px 14px;border-radius:99px;border:1.5px solid var(--clue);color:var(--clue-d);background:#fff;font-size:14px;font-weight:800}
+.x-sos{border-radius:12px;padding:10px 12px;background:var(--clue-l);font-size:13.5px;line-height:1.5}
+.x-sos.on{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--clue-d);font-weight:700}
+.x-sos.on span{flex:1;min-width:160px}
+.x-sos.ask .row{margin-top:8px;gap:8px}
+.x-quick{margin:4px 0 14px}
+.x-quick textarea.inp{min-height:80px}
+.tr-pin .tr-pin-t{display:block;font-weight:700;text-align:left;word-break:keep-all}
+.tr-pin small{display:block;font-size:11.5px;opacity:.8}

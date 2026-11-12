@@ -182,6 +182,7 @@ function itemHTML(q){
   const v = J.view(q), w = v.d.wrap, st = q.student || {}, on = T.open === q.id;
   let tags = '';
   if(w && w.mode === 'unknown') tags += '<span class="tag fog">' + ui.FOG_SVG + '아직 모름</span>';
+  if(w && w.cmp === 'quick') tags += '<span class="tag">답만 달기</span>';   // explore.js QUICK — 일지 칸 없이 답·출처만
   if(isLegacyReq(q)) tags += '<span class="tag t-old">옛 앱에서 마침</span>';
   if(J.hasAI(v)) tags += '<span class="tag t-ai">AI 사용</span>';
   return '<button type="button" class="t-item' + (on ? ' sel' : '') + '" data-act="f-open" data-q="' + q.id + '" aria-expanded="' + on + '">' +
@@ -210,10 +211,12 @@ function journalRows(v){
   if(w && w.mode === 'unknown'){
     wr = (w.cmp ? '<div><b>내 예상은</b> ' + esc(CMP[w.cmp] || w.cmp) + (w.changedBy ? ' — ' + esc(w.changedBy) : '') + '</div>' : '') +
       '<div class="t-fogbox"><div><b>여기까지 알아냈어요</b>' + esc(w.reached || '—') + '</div><div><b>여기서 막혔어요</b>' + esc(w.stuckQ || '—') + '</div><div><b>왜 막혔나</b>' + esc(w.why || '—') + '</div></div>';
+  } else if(w && w.cmp === 'quick'){
+    wr = '<div><b>답만 달기</b>' + (w.changedBy ? ' · 어디서: ' + esc(w.changedBy) : '') + '</div><div>' + esc(w.text || '') + '</div>';
   } else if(w){
     wr = (w.cmp ? '<div><b>내 예상은</b> ' + esc(CMP[w.cmp] || w.cmp) + (w.changedBy ? ' — ' + esc(w.changedBy) : '') + '</div>' : '') + '<div>' + esc(w.text || '') + '</div>';
   }
-  h += row(w && w.mode === 'unknown' ? '정리 · 아직 모름' : '정리', wr);
+  h += row(w && w.mode === 'unknown' ? '정리 · 아직 모름' : w && w.cmp === 'quick' ? '정리 · 답만 달기' : '정리', wr);
   if(d.extend) h += row('넓히기', '<b>' + (d.extend.kind === 'newq' ? '새 질문' : '생활과 잇기') + '</b> · ' + esc(d.extend.text));
   return h;
 }
@@ -273,7 +276,7 @@ function csvOf(list){
       (d.predict || []).map((p, i) => (i ? '바뀐 생각: ' : '') + p.text).join(' / '),
       d.method ? methodName(d.method.kind) + (d.method.plan ? ' · ' + d.method.plan : '') : '',
       (d.find || []).map(f => (f.src || '') + (f.ai ? '(AI)' : '') + ': ' + (f.text || '')).join(' / '),
-      d.same || '', d.aiCmp || '', w.cmp ? (CMP[w.cmp] || w.cmp) + (w.changedBy ? ' — ' + w.changedBy : '') : '',
+      d.same || '', d.aiCmp || '', w.cmp === 'quick' ? '답만 달기' + (w.changedBy ? ' · 어디서: ' + w.changedBy : '') : w.cmp ? (CMP[w.cmp] || w.cmp) + (w.changedBy ? ' — ' + w.changedBy : '') : '',
       w.mode === 'known' ? w.text || '' : '', w.mode === 'unknown' ? w.reached || '' : '', w.mode === 'unknown' ? w.stuckQ || '' : '', w.mode === 'unknown' ? w.why || '' : '',
       d.extend ? (d.extend.kind === 'newq' ? '새 질문: ' : '생활과 잇기: ') + d.extend.text : '', J.hasAI(v) ? '예' : '',
       q.resolve_requested_at ? ui.kstDay(q.resolve_requested_at) + ' ' + ui.kstHM(q.resolve_requested_at) : '', '', '', ''];

@@ -304,17 +304,16 @@ function renderTree(root){
 /* ═══════════ 우리 반 숲 ═══════════ */
 /* 막힘 깃발 자리(지도 좌표) — 단서가 적은 질문부터 골라, 질문 id 로 자리를 정해 다시 읽어도 그대로 */
 const SLOTS = 8;   // 깃발 숲 나무 수(world.js FLAG_AT 과 같다)
+/* SOS(막힘 표시) 전부 — 깃발에는 이름이 없어서 익명 질문도 싣는다(11-12). 숲 나무 깃발은 단서가 적은 것부터 8개, 나머지는 아래 목록에서 고른다 */
 function pickFlags(qs){
-  const flagged = qs.filter(q => q && q.flag_step && !q.is_anonymous)
-    .sort((a, b) => (a.clue_count || 0) - (b.clue_count || 0) || b.id - a.id).slice(0, SLOTS)
-    .sort((a, b) => a.id - b.id);
-  const used = {};
-  return flagged.map(q => {
+  const flagged = qs.filter(q => q && q.flag_step).sort((a, b) => (a.clue_count || 0) - (b.clue_count || 0) || b.id - a.id);
+  const used = {}, slot = {};
+  flagged.slice(0, SLOTS).sort((a, b) => a.id - b.id).forEach(q => {
     let s = (Number(q.id) * 7) % SLOTS;
     while(used[s]) s = (s + 1) % SLOTS;
-    used[s] = true;
-    return {id:q.id, body:q.body, unit:q.unit || '', step:q.flag_step, tried:q.flag_tried || '', slot:s};
+    used[s] = true; slot[q.id] = s;
   });
+  return flagged.map(q => ({id:q.id, body:q.body, unit:q.unit || '', step:q.flag_step, tried:q.flag_tried || '', slot:slot[q.id] != null ? slot[q.id] : null}));
 }
 function kindOf(x){ return T.kind[x.id] || QO.K.STUCK_KIND[x.step] || 'where'; }
 function friendCardHTML(x, f){
@@ -349,11 +348,11 @@ function renderForest(root){
   const pins = f.flags.length ? '<div class="tr-pins">' + f.flags.map(x => {
     const sent = f.sent[x.id] != null, nm = QO.journal.stepName(x.step) || '한 칸';
     return '<button type="button" class="tr-pin" data-tr="pick" data-q="' + x.id + '"' + (sent ? ' data-sent="1"' : '') + ' aria-pressed="' + (T.pick === x.id) + '"' +
-      ' aria-label="' + esc(sent ? '단서를 보낸 친구 질문' : '막힌 친구 질문 — ' + nm + '에서 막힘') + '"><i aria-hidden="true"></i>' + esc(sent ? '단서 보냄' : nm + '에서 막힘') + '</button>';
+      ' aria-label="' + esc((sent ? '단서를 보낸 친구 질문 — ' : '친구 SOS — ' + nm + '에서 막힘 — ') + x.body) + '"><i aria-hidden="true"></i><span class="tr-pin-t">' + esc(cut(x.body, 22)) + '</span><small>' + esc(sent ? '단서 보냄' : nm + '에서 막힘') + '</small></button>';
   }).join('') + '</div>' : '';
   const map = '<div class="wd-slot"></div>' + pins +
-    '<div class="hint tr-maphint">' + (f.flags.length ? '청록 깃발은 친구가 막혀 있는 질문이에요. 깃발 숲의 나무 앞에서 살펴보기를 누르면 찾아갈 길을 알려 줄 수 있어요. 깃발에는 이름이 없어요.'
-      : '친구가 질문에 막힘 표시를 하면 깃발 숲에 청록 깃발이 서요.') + '</div>';
+    '<div class="hint tr-maphint">' + (f.flags.length ? '청록 깃발은 친구가 SOS를 보낸 질문이에요. 깃발 숲의 나무 앞에서 살펴보거나 위 목록에서 골라 찾아갈 길(단서)을 알려 줄 수 있어요. 깃발에는 이름이 없어요.'
+      : '친구가 질문에 SOS를 보내면 깃발 숲에 청록 깃발이 서요.') + '</div>';
   const x = T.pick != null ? f.flags.find(y => y.id === T.pick) : null;
   const card = x ? friendCardHTML(x, f) : (T.friend != null ? friendHTML() : '');
   const mates = matesHTML();
@@ -630,12 +629,12 @@ add('나무 · 숲 장소 열림·잠김과 다음에 열릴 곳(숫자 없음)'
   t.expect(U.$('#body .wd-sr [data-place="obs"]'), '열린 곳은 다시 잠기지 않음');
 });
 
-add('나무 · 숲 깃발(익명 빼고) → 단서 보내기·다른 종류·나도 궁금해요', async t => {
+add('나무 · 숲 깃발(익명 SOS 도 이름 없이) → 단서 보내기·다른 종류·나도 궁금해요', async t => {
   await t.click('#nav [data-t="forest"]');
   await forestReady(t);
   const ids = U.$$('#body .tr-pin').map(g => Number(g.dataset.q)).sort((a, b) => a - b);
-  t.eq(ids, [121, 131, 141], '막힘 깃발(익명 123 빼고)');
-  t.eq(U.$$('#body .tr-pin').length, 3, '누를 곳');
+  t.eq(ids, [121, 123, 131, 141], 'SOS 깃발(익명 123 도 — 깃발엔 이름이 없음)');
+  t.eq(U.$$('#body .tr-pin').length, 4, '누를 곳');
   t.expect(U.$$('#body .tr-pin').every(b => b.offsetWidth >= 44 && b.offsetHeight >= 44), '누를 곳 44px');
   /* 이미 단서를 보낸 질문 */
   await t.click('#body .tr-pin[data-q="121"]');
