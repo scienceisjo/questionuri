@@ -96,7 +96,7 @@ async function loadMates(){
   }
 }
 async function openFriend(num){
-  T.friend = num; T.fqs = null; T.fqErr = '';
+  T.friend = num; T.fqs = null; T.fqErr = ''; T.hint = null;
   repaint('forest');
   const uid = uidNow();
   try{
@@ -322,14 +322,23 @@ function friendCardHTML(x, f){
   if(f.sent[x.id] != null) return h + '<div class="sent">단서를 보냈어요 — 「' + esc(f.sent[x.id]) + '」</div></div>';
   const L = QO.state.live;
   if(L && L.mode === 'clue') return h + '<div class="hint tr-lock">단서 시간에는 함께 탭에서 단서를 보내요.</div></div>';
-  const kind = kindOf(x), K = QO.K.CLUE_KINDS[kind];
-  h += '<div class="lbl" style="margin:12px 0 6px">정답 말고, 찾아갈 길을 알려 줘요 · ' + esc(K.n) + '</div><div class="tpl" data-q="' + x.id + '" data-kind="' + kind + '">' +
-    K.parts.map((p, i) => typeof p === 'string' ? '<span>' + esc(p) + '</span>'
-      : '<input data-i="' + i + '" placeholder="' + esc(p.ph) + '" aria-label="' + esc(p.ph) + '" style="max-width:' + p.w + 'px" maxlength="24"' + (p.ph === '쪽' ? ' inputmode="numeric"' : '') + '>').join('') + '</div>' +
-    '<div class="row" style="margin-top:10px"><button type="button" class="btn teal" style="flex:1" data-tr="send" data-q="' + x.id + '">보내기</button></div><div class="err" id="tr-ce" role="alert">' + esc(T.ce && T.ce.q === x.id ? T.ce.m : '') + '</div>' +
+  h += clueFormHTML(x) +
     '<div class="row" style="justify-content:space-between;flex-wrap:wrap"><button type="button" class="link teal" data-tr="kind" data-q="' + x.id + '">다른 종류로</button>' +
     (T.curious[x.id] ? '<span class="hint">💧 물을 줬어요</span>' : '<button type="button" class="link" data-tr="curious" data-q="' + x.id + '">💧 물 주기</button>') + '</div></div>';
   return h;
+}
+/* 단서 칸(빈칸 채우기) — 깃발 카드와 친구 나무 카드가 같이 쓴다 */
+function clueFormHTML(x){
+  const kind = kindOf(x), K = QO.K.CLUE_KINDS[kind];
+  return '<div class="lbl" style="margin:12px 0 6px">정답 말고, 찾아갈 길을 알려 줘요 · ' + esc(K.n) + '</div><div class="tpl" data-q="' + x.id + '" data-kind="' + kind + '">' +
+    K.parts.map((p, i) => typeof p === 'string' ? '<span>' + esc(p) + '</span>'
+      : '<input data-i="' + i + '" placeholder="' + esc(p.ph) + '" aria-label="' + esc(p.ph) + '" style="max-width:' + p.w + 'px" maxlength="24"' + (p.ph === '쪽' ? ' inputmode="numeric"' : '') + '>').join('') + '</div>' +
+    '<div class="row" style="margin-top:10px"><button type="button" class="btn teal" style="flex:1" data-tr="send" data-q="' + x.id + '">보내기</button></div><div class="err" id="tr-ce" role="alert">' + esc(T.ce && T.ce.q === x.id ? T.ce.m : '') + '</div>';
+}
+/* 단서를 보낼 질문 찾기 — SOS 깃발 질문, 아니면 지금 연 친구 나무의 질문(2026-11-12 SOS 없는 질문에도 단서) */
+function clueQ(qid){
+  const f = T.forest;
+  return (f && f.flags.find(y => y.id === qid)) || (T.fqs && T.fqs.find(y => y.id === qid)) || null;
 }
 function renderForest(root){
   sync();
@@ -397,10 +406,28 @@ function friendHTML(){
   if(T.fqs == null) return h + '<div class="hint">질문을 불러오는 중이에요…</div></div>';
   if(T.fqErr) return h + '<div class="err">' + esc(T.fqErr) + '</div></div>';
   if(!T.fqs.length) return h + '<div class="hint">아직 보이는 질문이 없어요.</div></div>';
-  return h + '<div class="hint" style="margin-bottom:6px">궁금한 질문에 물을 주면 친구 나무에 💧가 쌓여요.</div>' + T.fqs.map(q =>
-    '<div class="tr-fqrow" data-q="' + q.id + '"><div class="qt">' + esc(q.body) + (q.fruit_kind === 'fruit' ? ' <span class="tag">열매</span>' : q.fruit_kind === 'fog' ? ' <span class="tag">안개 열매</span>' : '') + '</div>' +
-    '<div class="row">' + (q.watered ? '<span class="hint">💧 물을 줬어요 · ' + (+q.water_count || 0) + '</span>'
-      : '<button type="button" class="btn soft sm" data-tr="water" data-q="' + q.id + '">💧 물 주기</button><span class="hint">💧 ' + (+q.water_count || 0) + '</span>') + '</div></div>').join('') + '</div>';
+  const me = QO.state.me || {}, mine = me.number != null && +me.number === +T.friend;
+  const sent = (T.forest && T.forest.sent) || {}, sos = new Set(((T.forest && T.forest.flags) || []).map(y => y.id));
+  return h + '<div class="hint" style="margin-bottom:6px">' + (mine ? '내 질문이에요. 친구들이 보낸 단서는 탐구 일지에서 볼 수 있어요.'
+      : '궁금한 질문엔 물을 주고, 찾아갈 길이 떠오르면 단서를 보내 줘요.') + '</div>' + T.fqs.map(q => {
+    const done = q.fruit_kind === 'fruit' || q.fruit_kind === 'fog', open = T.hint === q.id;
+    let r = '<div class="tr-fqrow' + (open ? ' open' : '') + '" data-q="' + q.id + '"><div class="qt">' + esc(q.body) +
+      (q.fruit_kind === 'fruit' ? ' <span class="tag">열매</span>' : q.fruit_kind === 'fog' ? ' <span class="tag">안개 열매</span>' : sos.has(q.id) ? ' <span class="tag flag">SOS</span>' : '') + '</div>' +
+      '<div class="row">' + (q.watered ? '<span class="hint">💧 물을 줬어요 · ' + (+q.water_count || 0) + '</span>'
+        : '<button type="button" class="btn soft sm" data-tr="water" data-q="' + q.id + '">💧 물 주기</button><span class="hint">💧 ' + (+q.water_count || 0) + '</span>');
+    if(!mine && !done){
+      r += sent[q.id] != null ? '<span class="hint tr-hsent">💡 단서 보냄</span>'
+        : '<button type="button" class="btn soft sm tr-hbtn" data-tr="hint" data-q="' + q.id + '" aria-expanded="' + open + '">💡 단서 주기</button>';
+    }
+    r += '</div>';
+    if(sent[q.id] != null && open) r += '<div class="sent">단서를 보냈어요 — 「' + esc(sent[q.id]) + '」</div>';
+    else if(open && !mine && !done){
+      const L = QO.state.live;
+      r += L && L.mode === 'clue' ? '<div class="hint tr-lock">단서 시간에는 함께 탭에서 단서를 보내요.</div>'
+        : '<div class="tr-hform">' + clueFormHTML(q) + '<div class="row" style="justify-content:space-between;flex-wrap:wrap"><button type="button" class="link teal" data-tr="kind" data-q="' + q.id + '">다른 종류로</button><button type="button" class="link" data-tr="hint" data-q="' + q.id + '">접기</button></div></div>';
+    }
+    return r + '</div>';
+  }).join('') + '</div>';
 }
 
 /* ═══════════ 단서 보내기 ═══════════ */
@@ -419,16 +446,16 @@ function ceErr(qid, msg){ T.ce = {q:qid, m:msg || ''}; const e = U.$('#tr-ce'); 
 async function sendClue(btn, qid){
   const f = T.forest; if(!f) return;
   ceErr(qid, '');
-  const x = f.flags.find(y => y.id === qid); if(!x) return;
+  const x = clueQ(qid); if(!x) return;
   const kind = kindOf(x), K = QO.K.CLUE_KINDS[kind], err = U.$('#tr-ce');
-  const ins = U.$$('#body .tr-fq .tpl[data-q="' + qid + '"] input');
+  const ins = U.$$('#body .tpl[data-q="' + qid + '"] input');
   const filled = ins.filter(i => i.value.trim());
   if(K.any ? !filled.length : filled.length < ins.length){
     const emp = ins.find(i => !i.value.trim());
     ceErr(qid, K.any ? '쪽수나 검색어 중 하나는 적어 주세요.' : '빈칸을 채워 주세요.');
     (emp || ins[0]).focus(); return;
   }
-  for(const i of filled){ if(/([^\d\s])\1\1/.test(i.value) || /[ㅋㅎ]{2,}/.test(i.value) || /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(i.value) || i.value.indexOf('__') >= 0){ ceErr(qid, '장난 글자는 보낼 수 없어요.'); i.focus(); return; } }
+  for(const i of filled){ if(/[ㅋㅎ\u110F\u1112]{2,}/.test(i.value) || /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(i.value) || i.value.indexOf('__') >= 0){ ceErr(qid, '장난 글자는 보낼 수 없어요.'); i.focus(); return; } }
   const text = clueText(kind, ins);
   if(Array.from(text).length < 5){ ceErr(qid, '빈칸을 조금 더 채워 주세요.'); return; }
   const r = await U.busy(btn, () => QO.api.addClue(qid, kind, text), {errEl:err});
@@ -458,12 +485,18 @@ document.addEventListener('click', async e => {
     const pin = U.$('#body .tr-pin[data-q="' + qid + '"]'); if(pin) try{ pin.focus({preventScroll:true}); }catch(_){}
   }
   else if(act === 'kind'){
-    const f = T.forest, x = f && f.flags.find(y => y.id === qid); if(!x) return;
+    const x = clueQ(qid); if(!x) return;
     const ks = Object.keys(QO.K.CLUE_KINDS), cur = kindOf(x);
     T.kind[qid] = ks[(ks.indexOf(cur) + 1) % ks.length];
     repaint('forest');
   }
   else if(act === 'send') await sendClue(b, qid);
+  else if(act === 'hint'){
+    T.hint = T.hint === qid ? null : qid; ceErr(qid, '');
+    repaint('forest');
+    const i = T.hint != null && U.$('#body .tr-fqrow[data-q="' + qid + '"] .tpl input');
+    if(i) try{ i.focus({preventScroll:true}); i.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(_){}
+  }
   else if(act === 'curious' || act === 'water'){
     const r = await U.busy(b, () => QO.api.markCurious(qid));
     if(r === undefined) return;
@@ -488,7 +521,7 @@ document.addEventListener('click', async e => {
 /* 단서 칸에서 Enter = 보내기(한글 조합 중에는 무시) */
 document.addEventListener('keydown', e => {
   if(e.key !== 'Enter' || e.isComposing || e.keyCode === 229 || e.repeat) return;
-  const i = e.target.closest && e.target.closest('#body .tr-fq .tpl[data-q] input'); if(!i) return;
+  const i = e.target.closest && e.target.closest('#body .tr-fq .tpl[data-q] input, #body .tr-fqrow .tpl[data-q] input'); if(!i) return;
   e.preventDefault();
   const btn = U.$('#body [data-tr="send"][data-q="' + i.closest('.tpl').dataset.q + '"]');
   if(btn) btn.click();
@@ -724,6 +757,38 @@ add('나무 · 우리 반 나무 → 친구 질문 → 물 주기(한 번만, �
   t.eq(t.db.questions.find(x => x.id === qid).water_count, before + 1, '두 번 줘도 한 번');
   await t.click('#body [data-tr="friend-close"]');
   await t.waitFor(() => !U.$('#tr-friend'));
+});
+
+add('나무 · 친구 나무의 SOS 없는 질문에도 단서 주기(열매 질문엔 없음)', async t => {
+  await t.click('#nav [data-t="forest"]');
+  await forestReady(t);
+  await t.waitFor('#body .tr-mate');
+  await t.click('#body .tr-mate[data-n="2"]');
+  await t.waitFor('#tr-friend .tr-fqrow');
+  const sos = new Set(T.forest.flags.map(y => y.id));
+  const row = U.$$('#tr-friend .tr-fqrow').find(r => !sos.has(Number(r.dataset.q)) && r.querySelector('[data-tr="hint"]'));
+  t.expect(row, 'SOS 아닌 질문에 단서 주기 단추');
+  const fr = T.fqs.filter(q => q.fruit_kind === 'fruit' || q.fruit_kind === 'fog');
+  t.expect(fr.every(q => !U.$('#tr-friend [data-tr="hint"][data-q="' + q.id + '"]')), '열매 질문엔 단서 주기 없음');
+  const qid = Number(row.dataset.q);
+  await t.click('#tr-friend [data-tr="hint"][data-q="' + qid + '"]');
+  await t.waitFor('#tr-friend .tpl[data-q="' + qid + '"]');
+  t.eq(U.$('#tr-friend .tpl[data-q="' + qid + '"]').dataset.kind, 'where', '처음은 찾아볼 곳');
+  await t.click('#body [data-tr="send"][data-q="' + qid + '"]');
+  t.eq(U.$('#tr-ce').textContent, '쪽수나 검색어 중 하나는 적어 주세요.', '빈칸 검사');
+  await t.click('#body [data-tr="kind"][data-q="' + qid + '"]');
+  t.eq(U.$('#tr-friend .tpl[data-q="' + qid + '"]').dataset.kind, 'test', '다른 종류로');
+  await t.click('#body [data-tr="kind"][data-q="' + qid + '"]');
+  await t.click('#body [data-tr="kind"][data-q="' + qid + '"]');
+  await t.click('#body [data-tr="kind"][data-q="' + qid + '"]');
+  const ins = U.$$('#tr-friend .tpl[data-q="' + qid + '"] input');
+  await t.type(ins[1], '자석 세기');
+  await t.click('#body [data-tr="send"][data-q="' + qid + '"]');
+  await t.waitFor(() => U.$('#tr-friend .tr-fqrow[data-q="' + qid + '"] .tr-hsent'));
+  const c = t.db.clues.find(x => x.question_id === qid && x.author_id === 'u-A');
+  t.expect(c && c.kind === 'where' && c.body === '검색어 자석 세기', '보낸 단서 — ' + (c && c.body));
+  t.expect(/단서를 보냈어요/.test(U.$('#tr-friend .tr-fqrow[data-q="' + qid + '"]').textContent), '보낸 단서 글');
+  t.expect(!U.$('#tr-friend [data-tr="hint"][data-q="' + qid + '"]'), '보낸 뒤엔 단추 대신 보냄 표시');
 });
 
 add('나무 · 단서 시간에는 숲에서 단서를 보내지 않고 함께 탭으로', async t => {

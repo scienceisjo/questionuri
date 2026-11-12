@@ -184,7 +184,7 @@ async function sendClue(btn){
   }
   for(const i of filled){
     const v = val(i);
-    if(/([^\d\s])\1\1/.test(v) || /[ㅋㅎ]{2,}/.test(v) || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(v)){ say(key, err, '장난 글자는 보낼 수 없어요.'); i.focus(); return; }
+    if(/[ㅋㅎ\u110F\u1112]{2,}/.test(v) || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(v)){ say(key, err, '장난 글자는 보낼 수 없어요.'); i.focus(); return; }
   }
   let text = '';
   KD.parts.forEach((p, idx) => {

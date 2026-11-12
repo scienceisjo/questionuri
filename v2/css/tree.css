@@ -92,6 +92,11 @@ html.wide .tr-cols .sec:first-child{margin-top:0}
 .tr-fqrow{padding:10px 0;border-top:1px solid var(--line)}
 .tr-fqrow .qt{font-size:14.5px;line-height:1.5;word-break:keep-all}
 .tr-fqrow .row{display:flex;align-items:center;gap:10px;margin-top:6px}
+.tr-fqrow .row .tr-hbtn{margin-left:auto}
+.tr-fqrow .row .tr-hsent{margin-left:auto;color:var(--clue-d);font-weight:700}
+.tr-fqrow.open{background:var(--clue-l);margin:0 -12px;padding:10px 12px;border-radius:12px}
+.tr-hform .tpl input{background:#fff}
+.tr-hform .tpl input[inputmode="numeric"]{min-width:56px}
 
 /* ── 3D 나무 ── */
 .tree-wrap.tr3d-on{position:relative;min-height:240px}

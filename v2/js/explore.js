@@ -1106,6 +1106,9 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.type('#x_plant', 'ㅋㅋㅋㅋㅋㅋ');
     await t.click('[data-xa="plant"]');
     t.expect(q$('#x_e_plant').textContent.length > 0, '장난 글 막힘');
+    t.eq(QO.check.junkWhy('별의 표면 온도가 30000K 이면 무슨 색일까? 아아아 궁금해'), '', '같은 글자 반복은 막지 않음(30000K)');
+    t.expect(QO.check.junkWhy('\u110F\u110F\u110F\u110F') && QO.check.junkWhy('\u1100\u1102'), '첫소리 모양 ᄏᄏ·자모도 막음');
+    t.eq(QO.check.junkWhy('\u1100\u1161\u1102\u1161'.repeat(3)), '', '풀어 쓴 글자(가나)는 막지 않음');
     await t.type('#x_plant', '자석을 반으로 자르면 극은 어떻게 될까?');
     await t.click('[data-xa="plant"]');
     await t.waitFor(() => t.$$('#body .qcard').find(b => b.textContent.indexOf('자석을 반으로') >= 0));

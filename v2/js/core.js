@@ -166,10 +166,9 @@ QO.ui = {
 /* ═══════════ 글 검사(모든 칸 공통) — 시제품 junkWhy 그대로 ═══════════ */
 function grams(s){ s = String(s || '').replace(/\s+/g, ''); const g = new Set(); for(let i = 0; i < s.length - 1; i++) g.add(s.slice(i, i + 2)); return g; }
 function containedIn(a, b){ const A = grams(a), B = grams(b); if(A.size < 3) return 0; let n = 0; A.forEach(x => { if(B.has(x)) n++; }); return n / A.size; }
-function junkWhy(v, others){
-  const s = String(v || '').replace(/\s+/g, '');
-  if(/(.)\1\1/.test(s)) return '같은 글자가 계속 이어져요. 내 말로 적어 주세요.';
-  if(/^[ㄱ-ㅎㅏ-ㅣ]+$/.test(s) || /[ㅋㅎ]{2,}/.test(s)) return '자음·모음만 쓰지 말고 문장으로 적어 주세요.';
+function junkWhy(v, others){   /* 같은 글자 반복 검사는 뺐다(2026-11-12, 30000K·3000000 같은 수가 막혀서) */
+  const s = String(v || '').normalize('NFC').replace(/\s+/g, '');
+  if(/^[ㄱ-ㅎㅏ-ㅣ\u1100-\u11FF]+$/.test(s) || /[ㅋㅎ\u110F\u1112]{2,}/.test(s)) return '자음·모음만 쓰지 말고 문장으로 적어 주세요.';   // ᄏ(첫소리 모양)도
   for(const o of (others || [])){ if(o && containedIn(v, o) >= 0.6) return '앞에 쓴 글과 거의 같아요. 이 칸에 맞게 새로 적어 주세요.'; }
   return '';
 }
