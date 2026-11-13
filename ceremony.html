@@ -133,13 +133,36 @@ footer#app-credit{margin-top:30px;color:rgba(231,215,184,.6);font-size:12px}
 .hint{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:rgba(231,215,184,.55);font-size:13px;z-index:6}
 .top-btns{position:fixed;top:14px;right:18px;display:flex;gap:8px;z-index:7}
 .top-btns button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--sub);border-radius:10px;padding:6px 12px;font-size:13px}
+.top-btns button.on{color:#1A0A0A;background:var(--gold);border-color:var(--gold)}
+/* 시상식 음악 — 골든벨처럼 이 브라우저에 넣어 두고 칩을 눌러 직접 튼다 */
+.mus{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:8;width:min(980px,94vw);background:rgba(14,6,10,.92);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.mus.on{display:block}
+.mus .hd{display:flex;align-items:center;gap:10px;color:var(--gold);font-weight:800;font-size:14px;margin-bottom:8px}
+.mus .hd small{color:var(--sub);font-weight:600}
+.mus .hd .sp{flex:1}
+.mus .hd input[type=range]{width:120px;accent-color:var(--gold)}
+.mus .row{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-start;align-items:center;margin:2px 0 6px;width:auto;padding:0}
+.mus .lbl{color:var(--sub);font-size:12px;margin:4px 0 3px;text-align:left}
+.mchip{border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--ink);border-radius:999px;padding:7px 13px;font-size:14px;font-weight:700}
+.mchip.here{border-color:var(--gold);color:var(--gold)}
+.mchip.play{background:var(--gold);color:#1A0A0A;border-color:var(--gold)}
+.mchip.stop{color:#FFB4B4;border-color:rgba(255,180,180,.5)}
+.mlib{width:min(1000px,100%);margin-top:18px;text-align:left;background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:14px;padding:14px}
+.mlib h3{margin:0 0 4px;color:var(--gold);font-size:16px}
+.mlib .note{margin:0 0 10px}
+.mlib table{width:100%;border-collapse:collapse;font-size:14px}
+.mlib td{padding:5px 4px;border-bottom:1px solid rgba(240,207,110,.15);vertical-align:middle}
+.mlib td.nm{color:var(--ink);font-weight:700}
+.mlib select{background:#1A0A10;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 6px;font:inherit;font-size:13px}
+.mlib .mini{background:transparent;border:1px solid var(--line);color:var(--sub);border-radius:8px;padding:4px 9px;font-size:13px}
+.mlib .src{font-size:11px;color:var(--sub);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:600}
 </style>
 </head>
 <body>
 <div class="beam l"></div><div class="beam r"></div><div class="carpet"></div>
 <div class="bulbs" id="bulbs"></div>
 <canvas id="fx"></canvas>
-<div class="top-btns"><button type="button" id="sndBtn" title="소리 (S)">소리 켜짐</button><button type="button" id="fsBtn" title="전체 화면 (F)">전체 화면</button><button type="button" id="homeBtn" title="처음으로 (Esc)">처음으로</button></div>
+<div class="top-btns"><button type="button" id="musBtn" title="음악 (M) · 이 장면 노래 틀기/멈추기 (P)">음악</button><button type="button" id="sndBtn" title="소리 (S)">소리 켜짐</button><button type="button" id="fsBtn" title="전체 화면 (F)">전체 화면</button><button type="button" id="homeBtn" title="처음으로 (Esc)">처음으로</button></div>
 
 <section class="screen on" id="home">
   <div class="kicker">HAENURI QUESTION AWARDS</div>
@@ -156,10 +179,12 @@ footer#app-credit{margin-top:30px;color:rgba(231,215,184,.6);font-size:12px}
     <div class="note">진행: 화면을 누르거나 스페이스·→ 다음, ← 이전, Esc 처음, F 전체 화면, S 소리</div>
   </div>
   <div class="edit" id="edit"></div>
+  <div class="mlib" id="mlib"></div>
   <footer id="app-credit">© 2026 조승재(과학이조선생) · 해누리중학교 · 최종 업데이트 2026-11-13</footer>
 </section>
 
 <section class="screen" id="stage"><div id="slide" style="width:100%;display:flex;flex-direction:column;align-items:center"></div><div class="hint" id="hint"></div></section>
+<div class="mus" id="mus"></div>
 
 <script>
 (function(){
@@ -177,20 +202,26 @@ const SHOW = {
          desc:'예상과 결과가 달랐던 걸 솔직하게 적고 새로 배운 친구'},
   deep: {show:'질문대상', cat:'탐구 장인 부문 대상', epi:'포기를 모르는 집념의 굴착기 · 일지를 끝까지 채운 철인',
          desc:'질문 하나를 붙잡고 탐구 일지를 끝까지 채운 친구'},
+  think:{show:'노벨 질문상', cat:'과학 부문 · 깊은 질문상', epi:'선생님도 바로 답하지 못한 질문 · 교과서 너머를 본 눈',
+         desc:'선생님도 미처 생각하지 못한 깊이 있는 질문을 던진 친구'},
   month:{show:'질문도르', cat:"Ballon d'Question · 이달의 황금 질문", epi:'반 친구들이 직접 뽑은, 이달 가장 빛난 질문의 주인',
          desc:'우리 반 친구들이 가장 궁금해한 질문의 주인', ball:true}
 };
-const ORDER = ['fun', 'kong', 'life', 'miss', 'deep', 'month'];
+const ORDER = ['fun', 'kong', 'life', 'miss', 'deep', 'think', 'month'];
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* 11월 수상 명단 — 반·번호·상·질문만(이름은 넣지 않음). 이름은 이 브라우저의 선생님 로그인으로 DB 에서 읽는다 */
-const BUILTIN = {"ver": "2026-11c", "title": "11월 질문 상장", "date": "2026년 11월 27일", "prize": "칭찬도장 5개", "classes": [{"grade": 2, "class": 1, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "24", "name": "", "q": "OMG!!I can’t korean! I want to know electronic", "nominees": [{"n": "24", "name": "", "q": "OMG!!I can’t korean! I want to know electronic"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "12", "name": "", "q": "자유전자는 왜 다른 전자를 만나면 도선(전기가 통하는 길) 안에서 밀려날까?", "nominees": [{"n": "12", "name": "", "q": "자유전자는 왜 다른 전자를 만나면 도선(전기가 통하는 길) 안에서 밀려날까?"}, {"n": "5", "name": "", "q": "전지가 없는데 어떻게 불이 들어왔을까?"}, {"n": "6", "name": "", "q": "알루미늄 캔과 비슷한 성질을 가진 물체도 될까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "13", "name": "", "q": "외르스테드는 이것 말고 또 어떤 발견을 했을까?", "nominees": [{"n": "13", "name": "", "q": "외르스테드는 이것 말고 또 어떤 발견을 했을까?"}, {"n": "26", "name": "", "q": "전자석은 코일로만 만들어 질까?"}, {"n": "12", "name": "", "q": "자석인데 전기가 흘러야 하는 자석은 반도체 와 도체중  뭐로  이루어져 잇을까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "10", "name": "", "q": "진동으로 소리를 낼 때 음의 높낮이와 크기를 바꾸려면 무엇을 어떻게 바꾸어야할까?", "nominees": [{"n": "10", "name": "", "q": "진동으로 소리를 낼 때 음의 높낮이와 크기를 바꾸려면 무엇을 어떻게 바꾸어야할까?"}, {"n": "3", "name": "", "q": "무선충전기같은건 유선충전기랑 다르게 전기가 오는곳이 없는데 핸드폰은 무선충전기에서 어떻게 충전되는걸까?"}, {"n": "12", "name": "", "q": "빨대말고 다른 물질으로 하면 어떻게 될까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "2", "name": "", "q": "공이 붙은 상태에서 전류가(+)에서(-)로 바뀌면 어떻게 두 공은 어떻게 움직일까?", "nominees": [{"n": "2", "name": "", "q": "공이 붙은 상태에서 전류가(+)에서(-)로 바뀌면 어떻게 두 공은 어떻게 움직일까?"}, {"n": "1", "name": "", "q": "전류가 흐르고 자기장이 생기면 어떤 힘이, 왜 어떻게 생기며, 전류가 흐르는 방향과 그 힘의 방향이 관계가 있을까?"}, {"n": "12", "name": "", "q": "자유전자는 왜 다른 전자를 만나면 도선(전기가 통하는 길) 안에서 밀려날까?"}]}]}, {"grade": 2, "class": 2, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "2", "name": "", "q": "why bbaldae jeongeonggi is easy", "nominees": [{"n": "2", "name": "", "q": "why bbaldae jeongeonggi is easy"}, {"n": "6", "name": "", "q": "무엇이 happens if other material meets with fur?"}, {"n": "13", "name": "", "q": "왜does the straw touched by fur move?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "11", "name": "", "q": "쇠 말고 고무 공에 했으면 결과가 어떻게 달랐을까요?", "nominees": [{"n": "11", "name": "", "q": "쇠 말고 고무 공에 했으면 결과가 어떻게 달랐을까요?"}, {"n": "19", "name": "", "q": "왜 알루미늄 캔이 - 전하로 대전된 빨대를 가까이 대면 움직일까?"}, {"n": "24", "name": "", "q": "정전기로 인해 죽을 수도 있을까? (얼마나 큰 전류에 몇 초 동안 노출되야 위험한지 가정 등)"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "4", "name": "", "q": "플라스틱 빨대에 닿지도 않았는데 사람 캐릭터가 어떻게 일어났을까?", "nominees": [{"n": "4", "name": "", "q": "플라스틱 빨대에 닿지도 않았는데 사람 캐릭터가 어떻게 일어났을까?"}, {"n": "14", "name": "", "q": "왜 하필 빨대를 사용해야할까?"}, {"n": "11", "name": "", "q": "전기 때문에  자석이 된 두 물체 사이에 인력과 척력이 작용할까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "9", "name": "", "q": "무엇이 전기가 흐를 때 자석을 흐르게 만들까?", "nominees": [{"n": "9", "name": "", "q": "무엇이 전기가 흐를 때 자석을 흐르게 만들까?"}, {"n": "8", "name": "", "q": "스피커에 영구자석이 아닌 다른 자석이 붙어 있다면 스피커가 작동할까?"}, {"n": "24", "name": "", "q": "실생활에서 이와 같이 전기를 이용한 실험이나 활동은 무엇이 있을까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "1", "name": "", "q": "기체도 마찰이 일어날까?", "nominees": [{"n": "1", "name": "", "q": "기체도 마찰이 일어날까?"}, {"n": "4", "name": "", "q": "어떻게 털과 빨대를 비벼서 정전기가 캔을 움직일까"}, {"n": "11", "name": "", "q": "털이 어떤 역할을 했을까요?"}]}]}, {"grade": 2, "class": 3, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "22", "name": "", "q": "히포라테스는 어떻게 별을 보고 6등급으로 나누었을까(주관적인 요소로 나누었을까)", "nominees": [{"n": "22", "name": "", "q": "히포라테스는 어떻게 별을 보고 6등급으로 나누었을까(주관적인 요소로 나누었을까)"}, {"n": "8", "name": "", "q": "새로운 밝은 별이 발견될 때마다 계속 음수 등급을 만들기보다 그냥 새로운 등급 체계를 만드는 것이 낫지 않을까?"}, {"n": "29", "name": "", "q": "코일 없이 세탁기를 만들수있을까?"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "13", "name": "", "q": "if munjilmunjil can wih fur, can can pull paldae too?", "nominees": [{"n": "13", "name": "", "q": "if munjilmunjil can wih fur, can can pull paldae too?"}, {"n": "2", "name": "", "q": "bandaro hado dllaganayo? 왜"}, {"n": "5", "name": "", "q": "왜 why straw pull the can"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "7", "name": "", "q": "알루미늄 공이 더 멀면 둘이 만나지 않을까?", "nominees": [{"n": "7", "name": "", "q": "알루미늄 공이 더 멀면 둘이 만나지 않을까?"}, {"n": "8", "name": "", "q": "막대를 많이 문지르면 종이 인형이 잘 올라오나?"}, {"n": "19", "name": "", "q": "원래 닿지 않았는데 어떠한 힘이 작용ｇｏㅆ길래 닿은 것일까？"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "21", "name": "", "q": "테슬라 코일은 왜 가까이하면 전류가 흐를 까?", "nominees": [{"n": "21", "name": "", "q": "테슬라 코일은 왜 가까이하면 전류가 흐를 까?"}, {"n": "1", "name": "", "q": "인력이 정확히 뭐예요?"}, {"n": "7", "name": "", "q": "알루미늄 공이 더 멀면 둘이 만나지 않을까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "29", "name": "", "q": "코일 없이 세탁기를 만들수있을까?", "nominees": [{"n": "29", "name": "", "q": "코일 없이 세탁기를 만들수있을까?"}, {"n": "7", "name": "", "q": "알루미늄 공이 더 멀면 둘이 만나지 않을까?"}, {"n": "21", "name": "", "q": "스피커를 이용해서 유리를깰려면 1초에 몇번 진동시켜야되나요?"}]}, {"key": "month", "award": "이달의 질문상", "n": "18", "name": "", "q": "무조건 빨대로 털에문질러야할까?", "nominees": [{"n": "18", "name": "", "q": "무조건 빨대로 털에문질러야할까?"}, {"n": "1", "name": "", "q": "인력이 정확히 뭐예요?"}, {"n": "5", "name": "", "q": "저거계속서있게고정하는방법은무엇일까 ???!!"}]}]}, {"grade": 2, "class": 4, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "12", "name": "", "q": "왜 캔이 how move?", "nominees": [{"n": "12", "name": "", "q": "왜 캔이 how move?"}, {"n": "26", "name": "", "q": "mulajimyen why dark?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?", "nominees": [{"n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?", "nominees": [{"n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "10", "name": "", "q": "이 현상으로 배터리를 충전할수 있을까?(혹은 발전기를 만들 수 있을까?)", "nominees": [{"n": "10", "name": "", "q": "이 현상으로 배터리를 충전할수 있을까?(혹은 발전기를 만들 수 있을까?)"}, {"n": "16", "name": "", "q": "이 실험을 집에서 했을때 성공률이 몇 퍼센트 정도일까"}, {"n": "4", "name": "", "q": "정전기를 유도하여 우리 실생활 속에서 활용할 수 있는 것은?"}]}, {"key": "month", "award": "이달의 질문상", "n": "7", "name": "", "q": "오른쪽 애가 일어날때 왼쪽 애는 왜 안 일어날까", "nominees": [{"n": "7", "name": "", "q": "오른쪽 애가 일어날때 왼쪽 애는 왜 안 일어날까"}, {"n": "2", "name": "", "q": "왜 빨대에 털가죽으로  문질렀을까?"}, {"n": "26", "name": "", "q": "머리에는 정전기가 왜 통하나요?"}]}]}, {"grade": 2, "class": 9, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "6", "name": "", "q": "만약 전동기나 스피커가 자기장을 받지 않는다면 자기장 말고 어떤 힘으로 움직일 수 있을까?", "nominees": [{"n": "6", "name": "", "q": "만약 전동기나 스피커가 자기장을 받지 않는다면 자기장 말고 어떤 힘으로 움직일 수 있을까?"}, {"n": "19", "name": "", "q": "전기랑 자석이랑 관계인가요?"}, {"n": "20", "name": "", "q": "왜 나침반이 움직였나요"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "deep", "award": "끝까지 팠상", "n": "5", "name": "", "q": "털가죽으로 빨대를 더 많이 비비면 그만큼 더 멀리서도 캔을 끌어올 수 있을까?", "nominees": [{"n": "5", "name": "", "q": "털가죽으로 빨대를 더 많이 비비면 그만큼 더 멀리서도 캔을 끌어올 수 있을까?"}, {"n": "11", "name": "", "q": "같은 전압에서 길이를 늘리고 도선의 두께를 넓히면 전구의 밝기는 그대로일까"}, {"n": "14", "name": "", "q": "전지가 없는데 네온이  어떻게 잠깐 빛난건지 궁금하다"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "28", "name": "", "q": "스피커에 겁나게 센 자석을 가까이 하면 소리에 이상이 생길까??", "nominees": [{"n": "28", "name": "", "q": "스피커에 겁나게 센 자석을 가까이 하면 소리에 이상이 생길까??"}, {"n": "11", "name": "", "q": "같은 전압에서 길이를 늘리고 도선의 두께를 넓히면 전구의 밝기는 그대로일까"}, {"n": "14", "name": "", "q": "전지가 없는데 네온이  어떻게 잠깐 빛난건지 궁금하다"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "9", "name": "", "q": "겨울철에 옷을 입는 때 정전기가 통하는 것도 비슷한 원리일까?", "nominees": [{"n": "9", "name": "", "q": "겨울철에 옷을 입는 때 정전기가 통하는 것도 비슷한 원리일까?"}, {"n": "26", "name": "", "q": "겨울철에 밖에서 금속 물체를 잡으면 왜 따가울까?"}, {"n": "23", "name": "", "q": "우리 집이나 학교에서는 어디서 볼 수 있을까?가끔 미끄럼틀을 만질 때 정전기가 일어나는 것도 비슷한 원리일까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "17", "name": "", "q": "왜 전류의 방향을 바꾸면 힘의 방향이 반대가 될까?", "nominees": [{"n": "17", "name": "", "q": "왜 전류의 방향을 바꾸면 힘의 방향이 반대가 될까?"}, {"n": "24", "name": "", "q": "어떤 장치는 코일을 회전시키고, 어떤 장치는 코일을 진동시키는데 장치마다 다른 이유는?"}, {"n": "26", "name": "", "q": "겨울철에 밖에서 금속 물체를 잡으면 왜 따가울까?"}]}]}, {"grade": 2, "class": 10, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "5", "name": "", "q": "별은 왜 존재 하는 걸까?", "nominees": [{"n": "5", "name": "", "q": "별은 왜 존재 하는 걸까?"}, {"n": "3", "name": "", "q": "스타이로폼 접시에 털가죽을  10초 문지른 것과 1분 문지른것 중에 어떤 전구가 더 많이 켜질까"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "9", "name": "", "q": "star size ga star light kucie younghang?", "nominees": [{"n": "9", "name": "", "q": "star size ga star light kucie younghang?"}, {"n": "14", "name": "", "q": "why can fallow strow?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "28", "name": "", "q": "빨대를 털에 비비는 횟수가 빨대가 캔을 끌어당기는 힘의 크기에 영향을 미칠까?", "nominees": [{"n": "28", "name": "", "q": "빨대를 털에 비비는 횟수가 빨대가 캔을 끌어당기는 힘의 크기에 영향을 미칠까?"}, {"n": "25", "name": "", "q": "자석의 세기를 낮추고 전압을 올리면 회전의 속도가 유지될까?"}, {"n": "9", "name": "", "q": "대전된 빨대가 끌어당기지 못하는 모양이 있을까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "25", "name": "", "q": "자석의 세기를 낮추고 전압을 올리면 회전의 속도가 유지될까?", "nominees": [{"n": "25", "name": "", "q": "자석의 세기를 낮추고 전압을 올리면 회전의 속도가 유지될까?"}, {"n": "17", "name": "", "q": "왜 전기가 흐르면 나침반의 방향이 바뀔까?"}, {"n": "22", "name": "", "q": "호일 공의 크기가 다르고 대전된(전기를 띤) 정도가 같으면 서로를 밀어내는 거리가 어떻게 달라질까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "15", "name": "", "q": "무선이어폰을 작동시키기위해 전기를 흐르게할떄 자기장이 발생한다", "nominees": [{"n": "15", "name": "", "q": "무선이어폰을 작동시키기위해 전기를 흐르게할떄 자기장이 발생한다"}, {"n": "29", "name": "", "q": "병렬연결을 사용한 물품은 우리 생활에서 무엇이 있을까?"}, {"n": "28", "name": "", "q": "코트를 벗을 때 머리카락이 코트에 달라붙는 힘도 입은 시간과 벗는 속도에 따라 결정될까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "20", "name": "", "q": "두 물체를 마찰시킬때 전자를 뺏기는쪽이 어디일까", "nominees": [{"n": "20", "name": "", "q": "두 물체를 마찰시킬때 전자를 뺏기는쪽이 어디일까"}, {"n": "8", "name": "", "q": "플라스틱 빨대가 아닌 종이빨대로도 실험해도 털가죽에 비벼서 대전된 빨대끼리 밀리는 현상이 나올까?"}, {"n": "25", "name": "", "q": "정전기로 감전당해서사망할수있나"}]}]}, {"grade": 2, "class": 11, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "deep", "award": "끝까지 팠상", "n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?", "nominees": [{"n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?"}, {"n": "5", "name": "", "q": "스피커에서 소리가 커지면 코일의 움직임은 어떻게 변할까?"}, {"n": "4", "name": "", "q": "알루미늄의 크기가 중요한가?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "28", "name": "", "q": "왜 바닥과 평행한 상태일 때 코일이 받는 힘이 가장 클까?", "nominees": [{"n": "28", "name": "", "q": "왜 바닥과 평행한 상태일 때 코일이 받는 힘이 가장 클까?"}, {"n": "5", "name": "", "q": "스피커에서 소리가 커지면 코일의 움직임은 어떻게 변할까?"}, {"n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "14", "name": "", "q": "전동기와 스피커가 무슨 차이일까?", "nominees": [{"n": "14", "name": "", "q": "전동기와 스피커가 무슨 차이일까?"}, {"n": "5", "name": "", "q": "스피커에서 소리가 커지면 코일의 움직임은 어떻게 변할까?"}, {"n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "11", "name": "", "q": "왼쪽 공과 오른쪽 공은 무슨 차이점이 있을까?", "nominees": [{"n": "11", "name": "", "q": "왼쪽 공과 오른쪽 공은 무슨 차이점이 있을까?"}, {"n": "6", "name": "", "q": "다른 물체를 털가죽과 비벼도 종이가 일어 설까?"}, {"n": "1", "name": "", "q": "털가죽보다 대전열 뒤쪽에 있는 플라스틱 막대로도 문질러도 종이인형을 일으킬 수 있을까?"}]}]}, {"grade": 2, "class": 12, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "9", "name": "", "q": "내가 제일 좋아하는 보라색 별은 없을까?", "nominees": [{"n": "9", "name": "", "q": "내가 제일 좋아하는 보라색 별은 없을까?"}, {"n": "24", "name": "", "q": "베텔기우스 이름은 누가 지었을까"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "10", "name": "", "q": "how zeongi created?", "nominees": [{"n": "10", "name": "", "q": "how zeongi created?"}, {"n": "9", "name": "", "q": "왜 bbaldae is millinayoo?"}, {"n": "22", "name": "", "q": "왜 빨대 each other pull out?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "2", "name": "", "q": "빨대를 호일, 종이에서 떼지 않으면 영원히 서 있을까?", "nominees": [{"n": "2", "name": "", "q": "빨대를 호일, 종이에서 떼지 않으면 영원히 서 있을까?"}, {"n": "5", "name": "", "q": "빨대와 알루미늄이 왜 서로 붙을까?"}, {"n": "9", "name": "", "q": "’왜 로봇이 빨대에 의해 움직이나요?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "17", "name": "", "q": "종이 인형이 어떤 재질의 빨대에 가장 잘 붙어 있을까?", "nominees": [{"n": "17", "name": "", "q": "종이 인형이 어떤 재질의 빨대에 가장 잘 붙어 있을까?"}, {"n": "27", "name": "", "q": "동물의 털 말고 사람의 털과 같이 다른 종류의 털로 문질러도 될까?"}, {"n": "1", "name": "", "q": "빨대를 문지르기만 했는데 종이가 어떻게 들리는 걸까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "15", "name": "", "q": "대전을 이용해 물체를 대전시켜 먼지 청소를 할 수 있을까요?", "nominees": [{"n": "15", "name": "", "q": "대전을 이용해 물체를 대전시켜 먼지 청소를 할 수 있을까요?"}, {"n": "17", "name": "", "q": "종이 인형이 어떤 재질의  빨대에 가장 잘 붙어 있을까?"}, {"n": "27", "name": "", "q": "동물의 털 말고 사람의 털과 같이 다른 종류의 털로 문질러도 될까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "22", "name": "", "q": "어떤 조건에서 빨대가 서로 밀어낼까?", "nominees": [{"n": "22", "name": "", "q": "어떤 조건에서 빨대가 서로 밀어낼까?"}, {"n": "3", "name": "", "q": "두번째 실험에서 +극과 -극이 서로 붙어있어도 불이 켜질까?"}, {"n": "25", "name": "", "q": "대전체에 가까이 가져갔을 때 휴지는 왜 다시 떨어지고 알루미늄은 계속 올라와있나요?"}]}]}]};
+const BUILTIN = {"ver": "2026-11f", "title": "11월 질문 상장", "date": "2026년 11월 27일", "prize": "칭찬도장 5개", "classes": [{"grade": 2, "class": 1, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "24", "name": "", "q": "OMG!!I can’t korean! I want to know electronic", "nominees": [{"n": "24", "name": "", "q": "OMG!!I can’t korean! I want to know electronic"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "12", "name": "", "q": "자유전자는 왜 다른 전자를 만나면 도선(전기가 통하는 길) 안에서 밀려날까?", "nominees": [{"n": "12", "name": "", "q": "자유전자는 왜 다른 전자를 만나면 도선(전기가 통하는 길) 안에서 밀려날까?"}, {"n": "5", "name": "", "q": "전지가 없는데 어떻게 불이 들어왔을까?"}, {"n": "6", "name": "", "q": "알루미늄 캔과 비슷한 성질을 가진 물체도 될까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "13", "name": "", "q": "외르스테드는 이것 말고 또 어떤 발견을 했을까?", "nominees": [{"n": "13", "name": "", "q": "외르스테드는 이것 말고 또 어떤 발견을 했을까?"}, {"n": "26", "name": "", "q": "전자석은 코일로만 만들어 질까?"}, {"n": "12", "name": "", "q": "자석인데 전기가 흘러야 하는 자석은 반도체 와 도체중  뭐로  이루어져 잇을까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "10", "name": "", "q": "진동으로 소리를 낼 때 음의 높낮이와 크기를 바꾸려면 무엇을 어떻게 바꾸어야할까?", "nominees": [{"n": "10", "name": "", "q": "진동으로 소리를 낼 때 음의 높낮이와 크기를 바꾸려면 무엇을 어떻게 바꾸어야할까?"}, {"n": "3", "name": "", "q": "무선충전기같은건 유선충전기랑 다르게 전기가 오는곳이 없는데 핸드폰은 무선충전기에서 어떻게 충전되는걸까?"}, {"n": "12", "name": "", "q": "빨대말고 다른 물질으로 하면 어떻게 될까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "2", "name": "", "q": "공이 붙은 상태에서 전류가(+)에서(-)로 바뀌면 어떻게 두 공은 어떻게 움직일까?", "nominees": [{"n": "2", "name": "", "q": "공이 붙은 상태에서 전류가(+)에서(-)로 바뀌면 어떻게 두 공은 어떻게 움직일까?"}, {"n": "1", "name": "", "q": "전류가 흐르고 자기장이 생기면 어떤 힘이, 왜 어떻게 생기며, 전류가 흐르는 방향과 그 힘의 방향이 관계가 있을까?"}, {"n": "12", "name": "", "q": "자유전자는 왜 다른 전자를 만나면 도선(전기가 통하는 길) 안에서 밀려날까?"}]}]}, {"grade": 2, "class": 2, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "2", "name": "", "q": "why bbaldae jeongeonggi is easy", "nominees": [{"n": "2", "name": "", "q": "why bbaldae jeongeonggi is easy"}, {"n": "6", "name": "", "q": "무엇이 happens if other material meets with fur?"}, {"n": "13", "name": "", "q": "왜does the straw touched by fur move?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "11", "name": "", "q": "쇠 말고 고무 공에 했으면 결과가 어떻게 달랐을까요?", "nominees": [{"n": "11", "name": "", "q": "쇠 말고 고무 공에 했으면 결과가 어떻게 달랐을까요?"}, {"n": "19", "name": "", "q": "왜 알루미늄 캔이 - 전하로 대전된 빨대를 가까이 대면 움직일까?"}, {"n": "24", "name": "", "q": "정전기로 인해 죽을 수도 있을까? (얼마나 큰 전류에 몇 초 동안 노출되야 위험한지 가정 등)"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "4", "name": "", "q": "플라스틱 빨대에 닿지도 않았는데 사람 캐릭터가 어떻게 일어났을까?", "nominees": [{"n": "4", "name": "", "q": "플라스틱 빨대에 닿지도 않았는데 사람 캐릭터가 어떻게 일어났을까?"}, {"n": "14", "name": "", "q": "왜 하필 빨대를 사용해야할까?"}, {"n": "11", "name": "", "q": "전기 때문에  자석이 된 두 물체 사이에 인력과 척력이 작용할까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "9", "name": "", "q": "무엇이 전기가 흐를 때 자석을 흐르게 만들까?", "nominees": [{"n": "9", "name": "", "q": "무엇이 전기가 흐를 때 자석을 흐르게 만들까?"}, {"n": "8", "name": "", "q": "스피커에 영구자석이 아닌 다른 자석이 붙어 있다면 스피커가 작동할까?"}, {"n": "24", "name": "", "q": "실생활에서 이와 같이 전기를 이용한 실험이나 활동은 무엇이 있을까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "1", "name": "", "q": "기체도 마찰이 일어날까?", "nominees": [{"n": "1", "name": "", "q": "기체도 마찰이 일어날까?"}, {"n": "4", "name": "", "q": "어떻게 털과 빨대를 비벼서 정전기가 캔을 움직일까"}, {"n": "11", "name": "", "q": "털이 어떤 역할을 했을까요?"}]}]}, {"grade": 2, "class": 3, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "15", "name": "", "q": "히파로크스의 시력은 몇일까?", "nominees": [{"n": "15", "name": "", "q": "히파로크스의 시력은 몇일까?"}, {"n": "1", "name": "", "q": "왜 달이 무슨 -26.7? 이라는데 왜 우주에서는 4일떄 4가 더 낮은거에요???"}, {"n": "6", "name": "", "q": "くfdml qkfrrldml 1えmdrmqdml rlwんsdl えhlsms くfdl Ekfh dlTskdy?"}], "more": [{"n": "1", "name": "", "q": "왜 달이 무슨 -26.7? 이라는데 왜 우주에서는 4일떄 4가 더 낮은거에요???"}, {"n": "6", "name": "", "q": "くfdml qkfrrldml 1えmdrmqdml rlwんsdl えhlsms くfdl Ekfh dlTskdy?"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "13", "name": "", "q": "if munjilmunjil can wih fur, can can pull paldae too?", "nominees": [{"n": "13", "name": "", "q": "if munjilmunjil can wih fur, can can pull paldae too?"}, {"n": "17", "name": "", "q": "두 실험 왜 gkvlf(하필) 둘다 털(?)로 문질렀을까?"}, {"n": "5", "name": "", "q": "저거계속서있게고정하는방법은무엇일까 ???!!"}], "more": [{"n": "17", "name": "", "q": "두 실험 왜 gkvlf(하필) 둘다 털(?)로 문질렀을까?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "7", "name": "", "q": "알루미늄 공이 더 멀면 둘이 만나지 않을까?", "nominees": [{"n": "7", "name": "", "q": "알루미늄 공이 더 멀면 둘이 만나지 않을까?"}, {"n": "19", "name": "", "q": "원래 닿지 않았는데 어떠한 힘이 작용했길래 닿은 것일까?"}, {"n": "28", "name": "", "q": "빨대로 어떤 물건을 끌어 당길수 인나요?"}], "more": [{"n": "19", "name": "", "q": "원래 닿지 않았는데 어떠한 힘이 작용했길래 닿은 것일까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "21", "name": "", "q": "테슬라 코일은 왜 가까이하면 전류가 흐를 까?", "nominees": [{"n": "21", "name": "", "q": "테슬라 코일은 왜 가까이하면 전류가 흐를 까?"}, {"n": "8", "name": "", "q": "막대를 많이 문지르면 종이 인형이 잘 올라오나?"}, {"n": "28", "name": "", "q": "빨대로 어떤 물건을 끌어 당길수 인나요?"}], "more": [{"n": "8", "name": "", "q": "막대를 많이 문지르면 종이 인형이 잘 올라오나?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "29", "name": "", "q": "코일 없이 세탁기를 만들수있을까?", "nominees": [{"n": "29", "name": "", "q": "코일 없이 세탁기를 만들수있을까?"}, {"n": "2", "name": "", "q": "지구의 불은 가스가 있어야 파란색이고 자연적인 불은 빨간색인데 뜨거운 정도는비슷하다 지구에선 이런는데 왜 우주에선 파란색과 붉은색이 온도가 다르게 될까 우주에서도 파란색 행성은 가스가 많을까?"}, {"n": "27", "name": "", "q": "정전기가 또 무슨 일을 할수있을까?"}], "more": [{"n": "2", "name": "", "q": "지구의 불은 가스가 있어야 파란색이고 자연적인 불은 빨간색인데 뜨거운 정도는비슷하다 지구에선 이런는데 왜 우주에선 파란색과 붉은색이 온도가 다르게 될까 우주에서도 파란색 행성은 가스가 많을까?"}]}, {"key": "think", "award": "선생님도 생각 못 했상", "n": "13", "name": "", "q": "지구 궤도는 타원인데 그러면 장축의 양끝에서 나타나는 차이만 연주시차라고 하는걸까?", "more": [{"n": "14", "name": "", "q": "별의 밝기는 계속 변화하고 우리는 별의 과거를 보고 있는데 절대 등급과 겉보기 등급을 다른 별과 비교하는 것이 의미가 있을까?"}, {"n": "11", "name": "", "q": "만약 지구가 태양 주위를 공전하지 않고 자전만 한다면, 별의 연주시차는 아예 나타나지 않을까?"}, {"n": "24", "name": "", "q": "별에서 지구까지 오는 빛은 별에서 나온 뒤 몇 년이 지난 후인데, 그러면 별의 밝기가 그 기간 사이에 바뀌었을 수도 있는 데 그것은 고려하지 않는 것일까?"}, {"n": "22", "name": "", "q": "히포라테스는 어떻게 별을 보고 6등급으로 나누었을까(주관적인 요소로 나누었을까)"}, {"n": "16", "name": "", "q": "왜 별의 절대등급은 태양을 0으로 기준삼지 않았을까?"}], "nominees": [{"n": "13", "name": "", "q": "지구 궤도는 타원인데 그러면 장축의 양끝에서 나타나는 차이만 연주시차라고 하는걸까?"}, {"n": "14", "name": "", "q": "별의 밝기는 계속 변화하고 우리는 별의 과거를 보고 있는데 절대 등급과 겉보기 등급을 다른 별과 비교하는 것이 의미가 있을까?"}, {"n": "11", "name": "", "q": "만약 지구가 태양 주위를 공전하지 않고 자전만 한다면, 별의 연주시차는 아예 나타나지 않을까?"}, {"n": "24", "name": "", "q": "별에서 지구까지 오는 빛은 별에서 나온 뒤 몇 년이 지난 후인데, 그러면 별의 밝기가 그 기간 사이에 바뀌었을 수도 있는 데 그것은 고려하지 않는 것일까?"}, {"n": "22", "name": "", "q": "히포라테스는 어떻게 별을 보고 6등급으로 나누었을까(주관적인 요소로 나누었을까)"}, {"n": "16", "name": "", "q": "왜 별의 절대등급은 태양을 0으로 기준삼지 않았을까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "18", "name": "", "q": "무조건 빨대로 털에문질러야할까?", "nominees": [{"n": "18", "name": "", "q": "무조건 빨대로 털에문질러야할까?"}, {"n": "5", "name": "", "q": "저거계속서있게고정하는방법은무엇일까 ???!!"}, {"n": "20", "name": "", "q": "빛이 알갱이면 눈에 들오올때 따갑지 않나요? 눈을 뚫고 오는 걸까요?"}]}]}, {"grade": 2, "class": 4, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "12", "name": "", "q": "왜 캔이 how move?", "nominees": [{"n": "12", "name": "", "q": "왜 캔이 how move?"}, {"n": "26", "name": "", "q": "mulajimyen why dark?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?", "nominees": [{"n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?", "nominees": [{"n": "4", "name": "", "q": "정전기가 우리에게 미치는 영향은 무엇일까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "10", "name": "", "q": "이 현상으로 배터리를 충전할수 있을까?(혹은 발전기를 만들 수 있을까?)", "nominees": [{"n": "10", "name": "", "q": "이 현상으로 배터리를 충전할수 있을까?(혹은 발전기를 만들 수 있을까?)"}, {"n": "16", "name": "", "q": "이 실험을 집에서 했을때 성공률이 몇 퍼센트 정도일까"}, {"n": "4", "name": "", "q": "정전기를 유도하여 우리 실생활 속에서 활용할 수 있는 것은?"}]}, {"key": "month", "award": "이달의 질문상", "n": "7", "name": "", "q": "오른쪽 애가 일어날때 왼쪽 애는 왜 안 일어날까", "nominees": [{"n": "7", "name": "", "q": "오른쪽 애가 일어날때 왼쪽 애는 왜 안 일어날까"}, {"n": "2", "name": "", "q": "왜 빨대에 털가죽으로  문질렀을까?"}, {"n": "26", "name": "", "q": "머리에는 정전기가 왜 통하나요?"}]}]}, {"grade": 2, "class": 9, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "6", "name": "", "q": "만약 전동기나 스피커가 자기장을 받지 않는다면 자기장 말고 어떤 힘으로 움직일 수 있을까?", "nominees": [{"n": "6", "name": "", "q": "만약 전동기나 스피커가 자기장을 받지 않는다면 자기장 말고 어떤 힘으로 움직일 수 있을까?"}, {"n": "19", "name": "", "q": "전기랑 자석이랑 관계인가요?"}, {"n": "20", "name": "", "q": "왜 나침반이 움직였나요"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "deep", "award": "끝까지 팠상", "n": "5", "name": "", "q": "털가죽으로 빨대를 더 많이 비비면 그만큼 더 멀리서도 캔을 끌어올 수 있을까?", "nominees": [{"n": "5", "name": "", "q": "털가죽으로 빨대를 더 많이 비비면 그만큼 더 멀리서도 캔을 끌어올 수 있을까?"}, {"n": "11", "name": "", "q": "같은 전압에서 길이를 늘리고 도선의 두께를 넓히면 전구의 밝기는 그대로일까"}, {"n": "14", "name": "", "q": "전지가 없는데 네온이  어떻게 잠깐 빛난건지 궁금하다"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "28", "name": "", "q": "스피커에 겁나게 센 자석을 가까이 하면 소리에 이상이 생길까??", "nominees": [{"n": "28", "name": "", "q": "스피커에 겁나게 센 자석을 가까이 하면 소리에 이상이 생길까??"}, {"n": "11", "name": "", "q": "같은 전압에서 길이를 늘리고 도선의 두께를 넓히면 전구의 밝기는 그대로일까"}, {"n": "14", "name": "", "q": "전지가 없는데 네온이  어떻게 잠깐 빛난건지 궁금하다"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "9", "name": "", "q": "겨울철에 옷을 입는 때 정전기가 통하는 것도 비슷한 원리일까?", "nominees": [{"n": "9", "name": "", "q": "겨울철에 옷을 입는 때 정전기가 통하는 것도 비슷한 원리일까?"}, {"n": "26", "name": "", "q": "겨울철에 밖에서 금속 물체를 잡으면 왜 따가울까?"}, {"n": "23", "name": "", "q": "우리 집이나 학교에서는 어디서 볼 수 있을까?가끔 미끄럼틀을 만질 때 정전기가 일어나는 것도 비슷한 원리일까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "17", "name": "", "q": "왜 전류의 방향을 바꾸면 힘의 방향이 반대가 될까?", "nominees": [{"n": "17", "name": "", "q": "왜 전류의 방향을 바꾸면 힘의 방향이 반대가 될까?"}, {"n": "24", "name": "", "q": "어떤 장치는 코일을 회전시키고, 어떤 장치는 코일을 진동시키는데 장치마다 다른 이유는?"}, {"n": "26", "name": "", "q": "겨울철에 밖에서 금속 물체를 잡으면 왜 따가울까?"}]}]}, {"grade": 2, "class": 10, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "5", "name": "", "q": "별은 왜 존재 하는 걸까?", "nominees": [{"n": "5", "name": "", "q": "별은 왜 존재 하는 걸까?"}, {"n": "3", "name": "", "q": "스타이로폼 접시에 털가죽을  10초 문지른 것과 1분 문지른것 중에 어떤 전구가 더 많이 켜질까"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "9", "name": "", "q": "star size ga star light kucie younghang?", "nominees": [{"n": "9", "name": "", "q": "star size ga star light kucie younghang?"}, {"n": "14", "name": "", "q": "why can fallow strow?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "28", "name": "", "q": "빨대를 털에 비비는 횟수가 빨대가 캔을 끌어당기는 힘의 크기에 영향을 미칠까?", "nominees": [{"n": "28", "name": "", "q": "빨대를 털에 비비는 횟수가 빨대가 캔을 끌어당기는 힘의 크기에 영향을 미칠까?"}, {"n": "25", "name": "", "q": "자석의 세기를 낮추고 전압을 올리면 회전의 속도가 유지될까?"}, {"n": "9", "name": "", "q": "대전된 빨대가 끌어당기지 못하는 모양이 있을까?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "25", "name": "", "q": "자석의 세기를 낮추고 전압을 올리면 회전의 속도가 유지될까?", "nominees": [{"n": "25", "name": "", "q": "자석의 세기를 낮추고 전압을 올리면 회전의 속도가 유지될까?"}, {"n": "17", "name": "", "q": "왜 전기가 흐르면 나침반의 방향이 바뀔까?"}, {"n": "22", "name": "", "q": "호일 공의 크기가 다르고 대전된(전기를 띤) 정도가 같으면 서로를 밀어내는 거리가 어떻게 달라질까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "15", "name": "", "q": "무선이어폰을 작동시키기위해 전기를 흐르게할떄 자기장이 발생한다", "nominees": [{"n": "15", "name": "", "q": "무선이어폰을 작동시키기위해 전기를 흐르게할떄 자기장이 발생한다"}, {"n": "29", "name": "", "q": "병렬연결을 사용한 물품은 우리 생활에서 무엇이 있을까?"}, {"n": "28", "name": "", "q": "코트를 벗을 때 머리카락이 코트에 달라붙는 힘도 입은 시간과 벗는 속도에 따라 결정될까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "20", "name": "", "q": "두 물체를 마찰시킬때 전자를 뺏기는쪽이 어디일까", "nominees": [{"n": "20", "name": "", "q": "두 물체를 마찰시킬때 전자를 뺏기는쪽이 어디일까"}, {"n": "8", "name": "", "q": "플라스틱 빨대가 아닌 종이빨대로도 실험해도 털가죽에 비벼서 대전된 빨대끼리 밀리는 현상이 나올까?"}, {"n": "25", "name": "", "q": "정전기로 감전당해서사망할수있나"}]}]}, {"grade": 2, "class": 11, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "kong", "award": "콩글리쉬상", "n": "", "name": "", "q": "", "nominees": []}, {"key": "deep", "award": "끝까지 팠상", "n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?", "nominees": [{"n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?"}, {"n": "5", "name": "", "q": "스피커에서 소리가 커지면 코일의 움직임은 어떻게 변할까?"}, {"n": "4", "name": "", "q": "알루미늄의 크기가 중요한가?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "28", "name": "", "q": "왜 바닥과 평행한 상태일 때 코일이 받는 힘이 가장 클까?", "nominees": [{"n": "28", "name": "", "q": "왜 바닥과 평행한 상태일 때 코일이 받는 힘이 가장 클까?"}, {"n": "5", "name": "", "q": "스피커에서 소리가 커지면 코일의 움직임은 어떻게 변할까?"}, {"n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "14", "name": "", "q": "전동기와 스피커가 무슨 차이일까?", "nominees": [{"n": "14", "name": "", "q": "전동기와 스피커가 무슨 차이일까?"}, {"n": "5", "name": "", "q": "스피커에서 소리가 커지면 코일의 움직임은 어떻게 변할까?"}, {"n": "7", "name": "", "q": "스피커에서 소리가 커진다면 전동기에는 어떤 변화가 있을까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "11", "name": "", "q": "왼쪽 공과 오른쪽 공은 무슨 차이점이 있을까?", "nominees": [{"n": "11", "name": "", "q": "왼쪽 공과 오른쪽 공은 무슨 차이점이 있을까?"}, {"n": "6", "name": "", "q": "다른 물체를 털가죽과 비벼도 종이가 일어 설까?"}, {"n": "1", "name": "", "q": "털가죽보다 대전열 뒤쪽에 있는 플라스틱 막대로도 문질러도 종이인형을 일으킬 수 있을까?"}]}]}, {"grade": 2, "class": 12, "awards": [{"key": "fun", "award": "교실을 즐겁게 했상", "n": "9", "name": "", "q": "내가 제일 좋아하는 보라색 별은 없을까?", "nominees": [{"n": "9", "name": "", "q": "내가 제일 좋아하는 보라색 별은 없을까?"}, {"n": "24", "name": "", "q": "베텔기우스 이름은 누가 지었을까"}]}, {"key": "kong", "award": "콩글리쉬상", "n": "10", "name": "", "q": "how zeongi created?", "nominees": [{"n": "10", "name": "", "q": "how zeongi created?"}, {"n": "9", "name": "", "q": "왜 bbaldae is millinayoo?"}, {"n": "22", "name": "", "q": "왜 빨대 each other pull out?"}]}, {"key": "deep", "award": "끝까지 팠상", "n": "2", "name": "", "q": "빨대를 호일, 종이에서 떼지 않으면 영원히 서 있을까?", "nominees": [{"n": "2", "name": "", "q": "빨대를 호일, 종이에서 떼지 않으면 영원히 서 있을까?"}, {"n": "5", "name": "", "q": "빨대와 알루미늄이 왜 서로 붙을까?"}, {"n": "9", "name": "", "q": "’왜 로봇이 빨대에 의해 움직이나요?"}]}, {"key": "miss", "award": "예상이 빗나갔상", "n": "17", "name": "", "q": "종이 인형이 어떤 재질의 빨대에 가장 잘 붙어 있을까?", "nominees": [{"n": "17", "name": "", "q": "종이 인형이 어떤 재질의 빨대에 가장 잘 붙어 있을까?"}, {"n": "27", "name": "", "q": "동물의 털 말고 사람의 털과 같이 다른 종류의 털로 문질러도 될까?"}, {"n": "1", "name": "", "q": "빨대를 문지르기만 했는데 종이가 어떻게 들리는 걸까?"}]}, {"key": "life", "award": "실생활로 확장했상", "n": "15", "name": "", "q": "대전을 이용해 물체를 대전시켜 먼지 청소를 할 수 있을까요?", "nominees": [{"n": "15", "name": "", "q": "대전을 이용해 물체를 대전시켜 먼지 청소를 할 수 있을까요?"}, {"n": "17", "name": "", "q": "종이 인형이 어떤 재질의  빨대에 가장 잘 붙어 있을까?"}, {"n": "27", "name": "", "q": "동물의 털 말고 사람의 털과 같이 다른 종류의 털로 문질러도 될까?"}]}, {"key": "month", "award": "이달의 질문상", "n": "22", "name": "", "q": "어떤 조건에서 빨대가 서로 밀어낼까?", "nominees": [{"n": "22", "name": "", "q": "어떤 조건에서 빨대가 서로 밀어낼까?"}, {"n": "3", "name": "", "q": "두번째 실험에서 +극과 -극이 서로 붙어있어도 불이 켜질까?"}, {"n": "25", "name": "", "q": "대전체에 가까이 가져갔을 때 휴지는 왜 다시 떨어지고 알루미늄은 계속 올라와있나요?"}]}]}]};
 const SB_URL = 'https://hmzklbrksfdhzsgwzfyg.supabase.co', SB_KEY = 'sb_publishable_OFVhbjVPbJiMWXVz2nKQuw_m6RmVVZE';
 let data = null, sound = true, NAMES = null, nameState = 'wait';
+/* 이 컴퓨터에서 열었는지(파일로 열기·내 컴퓨터 서버) — 내 노래·내 명단은 이때만 쓴다 */
+const LOCAL = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 try{ data = JSON.parse(localStorage.getItem(KEY) || 'null'); }catch(_){ data = null; }
 if(!data || data.ver !== BUILTIN.ver) data = JSON.parse(JSON.stringify(BUILTIN));
 /* 이름 읽기 — 교사 대시보드와 같은 주소라 그 로그인을 그대로 쓴다. 학생·로그인 없음이면 번호로만 */
 async function loadNames(){
+  /* 이 컴퓨터에서 열 때: ceremony.html 옆 시상식_이름_로컬.js(배포하지 않는 파일)에 이름이 있으면 그걸 쓴다 */
+  if(window.CEREMONY_NAMES && typeof window.CEREMONY_NAMES === 'object'){ NAMES = window.CEREMONY_NAMES; nameState = 'local'; return; }
   try{
     if(!window.supabase){ nameState = 'none'; return; }
     const sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -206,7 +237,7 @@ async function loadNames(){
 const nm = (c, n, own) => String(own || '').trim() || (NAMES && NAMES[c.grade + '-' + c.class + '-' + n]) || (n ? n + '번' : '');
 function resolveClass(c){
   const x = JSON.parse(JSON.stringify(c));
-  x.awards.forEach(a => { a.name = nm(x, a.n, a.name); (a.nominees || []).forEach(o => { o.name = nm(x, o.n, o.name); }); });
+  x.awards.forEach(a => { a.name = nm(x, a.n, a.name); (a.nominees || []).concat(a.more || []).forEach(o => { o.name = nm(x, o.n, o.name); }); });
   return x;
 }
 try{ sound = localStorage.getItem(KEY + '-snd') !== '0'; }catch(_){}
@@ -225,9 +256,11 @@ const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(data)); }catc
 function paintHome(){
   $('hTitle').textContent = '해누리 질문 어워즈';
   $('hLead').textContent = data ? (data.title || '') + ' · 반을 고르면 레드카펫이 깔려요.' : '먼저 명단 파일을 불러와 주세요.';
-  const ns = $('nameState'); if(ns) ns.textContent = nameState === 'ok' ? '학생 이름은 선생님 로그인으로 불러왔어요.' : nameState === 'wait' ? '학생 이름을 불러오는 중이에요…' : '학생 이름이 안 보여요. 이 브라우저에서 교사 대시보드에 로그인한 뒤 다시 열어 주세요(그 전엔 번호로 나와요).';
+  const ns = $('nameState'); if(ns) ns.textContent = nameState === 'ok' ? '학생 이름은 선생님 로그인으로 불러왔어요.' : nameState === 'local' ? '학생 이름은 이 컴퓨터의 명단 파일(시상식_이름_로컬.js)에서 불러왔어요.' : nameState === 'wait' ? '학생 이름을 불러오는 중이에요…' :
+    LOCAL ? '학생 이름이 안 보여요. ceremony.html 옆에 시상식_이름_로컬.js 가 있는지 확인해 주세요(그 전엔 번호로 나와요).' : '학생 이름이 안 보여요. 이 브라우저에서 교사 대시보드에 로그인한 뒤 다시 열어 주세요(그 전엔 번호로 나와요).';
+  paintLib();
   $('classes').innerHTML = data ? data.classes.map((c, i) => {
-    const n = c.awards.filter(a => String(a.name || '').trim() || a.n).length;
+    const n = c.awards.reduce((k, a) => k + ((String(a.name || '').trim() || a.n) ? 1 : 0) + (a.more || []).filter(x => x && (x.n || x.name)).length, 0);
     return '<button type="button" class="cls" data-c="' + i + '">' + c.grade + '학년 ' + c.class + '반<small>트로피 ' + n + '개</small></button>';
   }).join('') : '';
   $('editBtn').style.display = data ? '' : 'none';
@@ -256,12 +289,17 @@ function paintEdit(){
       '<tr><td>' + c.class + '반</td><td>' + esc((SHOW[a.key] || {}).show || '') + ' · ' + esc(a.award) + '</td>' +
       '<td class="n"><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="n" value="' + esc(a.n) + '"></td>' +
       '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="name" value="' + esc(a.name) + '"></td>' +
-      '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="q" value="' + esc(a.q) + '"></td></tr>').join('')).join('') +
+      '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-k="q" value="' + esc(a.q) + '"></td></tr>' +
+      (a.more || []).map((m, mi) => '<tr><td></td><td>└ 공동 수상</td>' +
+        '<td class="n"><input data-ci="' + ci + '" data-ai="' + ai + '" data-m="' + mi + '" data-k="n" value="' + esc(m.n) + '"></td>' +
+        '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-m="' + mi + '" data-k="name" value="' + esc(m.name) + '"></td>' +
+        '<td><input data-ci="' + ci + '" data-ai="' + ai + '" data-m="' + mi + '" data-k="q" value="' + esc(m.q) + '"></td></tr>').join('')).join('')).join('') +
     '</tbody></table><div class="note">이름이 빈 상은 시상식에서 건너뛰어요. 여기서 바꾼 수상자는 후보 소개에도 들어가요.</div>';
 }
 $('edit').addEventListener('input', e => {
   const t = e.target; if(!t.dataset.k) return;
-  data.classes[+t.dataset.ci].awards[+t.dataset.ai][t.dataset.k] = t.value; save(); paintHome();
+  const a = data.classes[+t.dataset.ci].awards[+t.dataset.ai];
+  (t.dataset.m != null ? a.more[+t.dataset.m] : a)[t.dataset.k] = t.value; save(); paintHome();
 });
 
 /* ── 그림 ── */
@@ -278,9 +316,12 @@ const ENV = '<svg class="env" id="env" viewBox="0 0 200 130" aria-hidden="true">
 
 /* ── 무대 ── */
 let slides = [], idx = 0, cls = null, timer = null;
+/* 후보 카드 — 수상자(공동 수상 포함)는 꼭 넣고, 남는 자리를 후보로 채운다. 기본 3장, 공동 수상이 많으면 수상자 수 + 1장 */
 function nomsOf(a){
-  let L = (a.nominees || []).filter(x => x && x.name).slice(0, 3);
-  if(!L.some(x => x.name === a.name)) L = [{n:a.n, name:a.name, q:a.q}].concat(L).slice(0, 3);
+  const wins = [{n:a.n, name:a.name, q:a.q}].concat(a.more || []).filter(x => x && x.name);
+  let L = wins.slice();
+  (a.nominees || []).forEach(x => { if(x && x.name && !L.some(y => String(y.n) === String(x.n))) L.push(x); });
+  L = L.slice(0, Math.max(3, wins.length + 1));
   /* 순서 섞기(수상자가 늘 첫째로 보이지 않게) — 같은 반은 같은 순서 */
   return L.map((x, i) => ({x, k:(x.name.charCodeAt(0) * 7 + i * 13) % 17})).sort((p, q) => p.k - q.k).map(p => p.x);
 }
@@ -295,6 +336,8 @@ function start(ci){
     slides.push({t:(a.key === 'month' && nomsOf(a).length > 1) ? 'vote' : 'nom', a});
     slides.push({t:'env', a});
     slides.push({t:'win', a});
+    /* 공동 수상자는 한 사람씩 이어서 발표 */
+    (a.key === 'month' ? [] : (a.more || [])).filter(x => x && x.name).forEach(co => slides.push({t:'win', a, co}));
   });
   slides.push({t:'end', list});
   idx = 0;
@@ -304,13 +347,15 @@ function start(ci){
 function show(){
   const s = slides[idx], el = $('slide');
   stopFx(); stopDrum(); if(timer){ clearInterval(timer); timer = null; }
+  /* 선생님이 튼 음악이 나오는 동안에는 합성 효과음을 내지 않는다(음악은 장면을 넘겨도 계속) */
+  const hasSong = !!MUS.cur;
   const title = data.title || '질문 상장';
   if(s.t === 'open'){
     el.innerHTML = '<div class="kicker rise">THE 1ST HAENURI QUESTION AWARDS</div>' +
       '<div class="mega myeong gold shine pop">해누리<br>질문 어워즈</div>' +
       '<div class="subt rise d1">' + esc(title) + ' · ' + cls.grade + '학년 ' + cls.class + '반 특별 시상식</div>' +
       '<div class="small rise d2">레드카펫 입장 · 조명 준비 완료 · 트로피 반짝반짝</div>';
-    fanfare(); sparkle();
+    if(!hasSong) fanfare(); sparkle();
   } else if(s.t === 'mc'){
     el.innerHTML = '<div class="kicker">진행</div><div class="mega myeong gold pop" style="font-size:clamp(44px,7vw,96px)">MC 조승재</div>' +
       '<div class="subt rise d1">끝까지 묻고, 찾고, 틀리고, 웃게 만든<br>우리 반 질문가들을 위한 밤</div>' +
@@ -332,7 +377,7 @@ function show(){
       (L.length === 1 ? '<div class="epi">단독 후보! 그래도 두구두구는 합니다</div>' : '') +
       '<div class="noms">' + L.map((x, i) => '<div class="nom" style="animation-delay:' + (i * .45) + 's"><div class="no">' + cls.class + '반 ' + esc(x.n) + '번</div>' +
         '<div class="nm myeong gold">' + esc(x.name) + '</div>' + (x.q ? '<div class="q">“' + esc(x.q) + '”</div>' : '') + '<span class="tag">NOMINEE</span></div>').join('') + '</div>';
-    L.forEach((x, i) => later(() => tick(), i * 450));
+    if(!hasSong) L.forEach((x, i) => later(() => tick(), i * 450));
   } else if(s.t === 'vote'){
     const S = SHOW[s.a.key] || {}, L = s.L || (s.L = nomsOf(s.a)), ABC = 'ABC';
     el.innerHTML = '<div class="kicker">' + esc(S.show) + ' · ' + esc(S.cat) + '</div>' +
@@ -342,31 +387,32 @@ function show(){
         '<div class="lt myeong">' + ABC[i] + '</div><div class="q">“' + esc(x.q) + '”</div><div class="cnt">손 든 수가 가장 많으면 눌러 주세요</div></div>').join('') + '</div>' +
       '<div class="vote-go" id="voteGo">' + (s.pick != null ? '질문 ' + ABC[s.pick] + ' 로 봉투를 열어요 · 스페이스' : '') + '</div>';
     el.querySelectorAll('[data-v]').forEach(c => c.addEventListener('click', e => { e.stopPropagation(); votePick(+c.dataset.v); }));
-    if(s.pick == null) L.forEach((x, i) => later(() => tick(), i * 450));
+    if(s.pick == null && !hasSong) L.forEach((x, i) => later(() => tick(), i * 450));
   } else if(s.t === 'env'){
     const S = SHOW[s.a.key] || {};
     el.innerHTML = '<div class="kicker">' + esc(S.show) + '</div><div class="awardname" style="margin-top:6px">봉투를 열겠습니다</div>' + ENV +
       '<div class="drum myeong gold">두구두구두구</div>';
-    drumroll();
+    if(!hasSong) drumroll();
     later(() => { const e = $('env'); if(e) e.classList.add('open'); }, 900);
   } else if(s.t === 'win'){
-    const S = SHOW[s.a.key] || {}, q = String(s.a.q || '').trim();
-    el.innerHTML = '<div class="ribbon">' + esc(S.show) + ' · ' + esc(s.a.award) + '</div>' +
-      (s.a.n ? '<div class="winno pop">' + cls.grade + '학년 ' + cls.class + '반 ' + esc(s.a.n) + '번</div>' : '') +
-      '<div class="winner myeong gold shine pop">' + esc(s.a.name) + '</div>' +
+    const S = SHOW[s.a.key] || {}, w = s.co || s.a, q = String(w.q || '').trim();
+    el.innerHTML = '<div class="ribbon">' + esc(S.show) + ' · ' + esc(s.a.award) + (s.co ? ' · 공동 수상' : '') + '</div>' +
+      (w.n ? '<div class="winno pop">' + cls.grade + '학년 ' + cls.class + '반 ' + esc(w.n) + '번</div>' : '') +
+      '<div class="winner myeong gold shine pop">' + esc(w.name) + '</div>' +
       (q ? '<div class="qbox rise d2"><small>수상작 · 이 친구가 올린 질문</small><span class="qm l">“</span>' + esc(q) + '<span class="qm r">”</span></div>' : '') +
       (data.prize ? '<div class="prize rise d3">부상 · ' + esc(data.prize) + ' · 상장 · 그리고 우리 반의 박수</div>' : '') +
       '<div class="speech rise d4">수상 소감 한마디! <b id="sp">15</b></div>';
-    fanfare(); cheer(); fireworks(S.ball ? 9 : 5); confetti(S.ball);
+    if(!hasSong){ fanfare(); cheer(); } fireworks(S.ball ? 9 : 5); confetti(S.ball);
     let left = 15;
     timer = setInterval(() => { left--; const b = $('sp'); if(b) b.textContent = left > 0 ? left : '박수!'; if(left <= 0){ clearInterval(timer); timer = null; cheer(); } }, 1000);
   } else if(s.t === 'end'){
     el.innerHTML = '<div class="kicker pop">THANK YOU</div><div class="mega myeong gold shine pop" style="font-size:clamp(44px,7vw,96px)">모두 축하해요!</div>' +
       '<div style="position:relative;width:100%;height:58vh;overflow:hidden;margin-top:10px"><div class="credits">' +
-      s.list.map(a => '<h3>' + esc((SHOW[a.key] || {}).show || '') + '</h3><small>' + esc(a.award) + '</small><p class="myeong gold">' + esc(a.name) + '</p>').join('') +
+      s.list.map(a => '<h3>' + esc((SHOW[a.key] || {}).show || '') + '</h3><small>' + esc(a.award) + '</small><p class="myeong gold">' + [a.name].concat(a.key === 'month' ? [] : (a.more || []).map(x => x && x.name)).filter(Boolean).map(esc).join(' · ') + '</p>').join('') +
       '<h3>그리고</h3><p>질문을 올려 준 ' + cls.grade + '학년 ' + cls.class + '반 모두</p><h3>다음 달 시상식에서 만나요</h3><p class="myeong gold">질문은 계속된다</p></div></div>';
-    fanfare(); fireworks(8); confetti(true);
+    if(!hasSong) fanfare(); fireworks(8); confetti(true);
   }
+  paintMus();
   $('hint').textContent = (idx + 1) + ' / ' + slides.length + (s.t === 'vote' ? ' · 손을 가장 많이 든 질문을 누르거나 1·2·3, 그다음 스페이스로 봉투 열기' : ' · 화면을 누르거나 스페이스로 다음');
 }
 /* 투표로 고른 질문의 주인이 이 상의 수상자가 된다(봉투·수상·엔딩 화면이 같은 상 객체를 본다) */
@@ -378,19 +424,22 @@ function votePick(i){
 }
 function next(){ if(idx < slides.length - 1){ idx++; show(); } }
 function prev(){ if(idx > 0){ idx--; if(slides[idx].t === 'env') idx--; show(); } }
-function home(){ stopFx(); stopDrum(); if(timer){ clearInterval(timer); timer = null; } $('stage').classList.remove('on'); $('home').classList.add('on'); paintHome(); }
+function home(){ stopFx(); stopDrum(); musStop(); $('mus').classList.remove('on'); if(timer){ clearInterval(timer); timer = null; } $('stage').classList.remove('on'); $('home').classList.add('on'); paintHome(); }
 $('stage').addEventListener('click', next);
 $('homeBtn').addEventListener('click', e => { e.stopPropagation(); home(); });
 $('fsBtn').addEventListener('click', e => { e.stopPropagation(); fs(); });
 $('sndBtn').addEventListener('click', e => { e.stopPropagation(); toggleSnd(); });
+$('musBtn').addEventListener('click', e => { e.stopPropagation(); musToggle(); });
 function fs(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); }
-function toggleSnd(){ sound = !sound; try{ localStorage.setItem(KEY + '-snd', sound ? '1' : '0'); }catch(_){} $('sndBtn').textContent = sound ? '소리 켜짐' : '소리 꺼짐'; if(!sound) stopDrum(); }
+function toggleSnd(){ sound = !sound; try{ localStorage.setItem(KEY + '-snd', sound ? '1' : '0'); }catch(_){} $('sndBtn').textContent = sound ? '소리 켜짐' : '소리 꺼짐'; if(!sound){ stopDrum(); musStop(); } }
 $('sndBtn').textContent = sound ? '소리 켜짐' : '소리 꺼짐';
 document.addEventListener('keydown', e => {
   if(e.target && e.target.matches && e.target.matches('input')) return;
   if(e.key === 'f' || e.key === 'F'){ fs(); return; }
   if(e.key === 's' || e.key === 'S'){ toggleSnd(); return; }
   if(!$('stage').classList.contains('on')) return;
+  if(e.key === 'm' || e.key === 'M'){ musToggle(); return; }
+  if(e.key === 'p' || e.key === 'P'){ musQuick(); return; }
   if(slides[idx] && slides[idx].t === 'vote' && /^[1-3]$/.test(e.key)){ votePick(+e.key - 1); return; }
   if(e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === 'PageDown'){ e.preventDefault(); next(); }
   else if(e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); prev(); }
@@ -416,18 +465,18 @@ function tone(t, freq, dur, vol, type){
   o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + .05);
 }
 function stopDrum(){ if(drumTimer){ clearInterval(drumTimer); drumTimer = null; } }
-function drumroll(){ stopDrum(); if(!sound) return; let k = 0; drumTimer = setInterval(() => { noise(actx().currentTime, .08, .3 + Math.min(k, 50) * .009, 160, 3000); k++; if(k > 500) stopDrum(); }, 50); }
-function tick(){ if(!sound) return; const t = actx().currentTime; tone(t, 1318, .25, .1, 'sine'); tone(t + .06, 1760, .3, .07, 'sine'); }
-function chime(){ if(!sound) return; const t = actx().currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(t + i * .1, f, .7, .1, 'sine')); }
+function drumroll(){ stopDrum(); if(!fxOn()) return; let k = 0; drumTimer = setInterval(() => { noise(actx().currentTime, .08, .3 + Math.min(k, 50) * .009, 160, 3000); k++; if(k > 500) stopDrum(); }, 50); }
+function tick(){ if(!fxOn()) return; const t = actx().currentTime; tone(t, 1318, .25, .1, 'sine'); tone(t + .06, 1760, .3, .07, 'sine'); }
+function chime(){ if(!fxOn()) return; const t = actx().currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(t + i * .1, f, .7, .1, 'sine')); }
 function fanfare(){
-  if(!sound) return;
+  if(!fxOn()) return;
   const t = actx().currentTime; noise(t, 1.6, .45, 3000);
   [[392, 0], [523, .14], [659, .28], [784, .42], [1046, .62]].forEach(p => tone(t + p[1], p[0], .8, .14, 'sawtooth'));
   [523, 659, 784, 1046].forEach(f => tone(t + .85, f, 1.8, .09, 'triangle'));
   [262, 392].forEach(f => tone(t + .85, f, 1.8, .12, 'square'));
 }
 function cheer(){
-  if(!sound) return;
+  if(!fxOn()) return;
   const a = actx(), t = a.currentTime;
   for(let i = 0; i < 40; i++) noise(t + Math.random() * 1.8, .05 + Math.random() * .05, .18, 900, 5000);   // 박수
   noise(t, 2.2, .12, 400, 1800);                                                                          // 웅성웅성 함성
@@ -450,7 +499,7 @@ function fireworks(n){
     const x = cv.width * (.15 + Math.random() * .7), y = cv.height * (.12 + Math.random() * .35), c = COLS[b % COLS.length];
     for(let i = 0; i < 70; i++){ const a = i / 70 * Math.PI * 2, sp = (3 + Math.random() * 5) * DPR;
       parts.push({k:'f', x, y, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, c, life:0, max:70 + Math.random() * 30, s:(1.6 + Math.random() * 1.6) * DPR}); }
-    if(sound){ const t = actx().currentTime; noise(t, .5, .25, 80, 900); }
+    if(fxOn()){ const t = actx().currentTime; noise(t, .5, .25, 80, 900); }
     run();
   }, b * 380);
 }
@@ -478,8 +527,191 @@ const timers = [];
 function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
 function stopFx(){ while(timers.length) clearTimeout(timers.pop()); parts = []; if(raf){ cancelAnimationFrame(raf); raf = null; } cx.clearRect(0, 0, cv.width, cv.height); }
 
+/* ── 시상식 음악 (골든벨 「내 음악 넣기」와 같은 방식) ──
+   선생님이 고른 음악 파일을 이 «브라우저»에만 넣어 둔다(IndexedDB). 사이트에는 올라가지 않는다.
+   음악마다 「어느 상 노래」인지 정해 두면 시상식 중 「음악」(M) 칸에서 그 상의 노래가 맨 앞에 뜬다.
+   틀고 멈추는 것은 선생님이 직접 한다(P = 지금 장면 노래 틀기/멈추기). 음악이 나오는 동안 효과음은 쉰다. */
+const MUS = {list:null, cur:null, open:false, vol:.8, busy:false};
+try{ const v = parseFloat(localStorage.getItem(KEY + '-mvol')); if(isFinite(v) && v >= 0 && v <= 1) MUS.vol = v; }catch(_){}
+const SLOT_LABEL = {'':'아무 때나', open:'입장(시작)', fun:'교실을 즐겁게 했상', kong:'콩글리쉬상', life:'실생활로 확장했상', miss:'예상이 빗나갔상', deep:'끝까지 팠상', think:'선생님도 생각 못 했상', month:'이달의 질문상', end:'엔딩'};
+function fxOn(){ return sound && !MUS.cur; }
+function musDB(name, make){
+  return new Promise((res, rej) => {
+    if(!window.indexedDB){ rej(0); return; }
+    const rq = make ? indexedDB.open(name, 1) : indexedDB.open(name);
+    if(make) rq.onupgradeneeded = () => { const d = rq.result; if(!d.objectStoreNames.contains('snd')) d.createObjectStore('snd', {keyPath:'id'}); };
+    rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+  });
+}
+function readAll(d){
+  return new Promise(res => {
+    if(!d.objectStoreNames.contains('snd')){ res([]); return; }
+    const out = [], rq = d.transaction('snd', 'readonly').objectStore('snd').openCursor();
+    rq.onsuccess = () => { const c = rq.result; if(c){ out.push(c.value); c.continue(); } else res(out); };
+    rq.onerror = () => res(out);
+  });
+}
+/* 골든벨에 넣어 둔 음악도 같이 보인다(같은 주소에서 열었을 때만). 골든벨 저장소는 읽기만 하고, 자리(어느 상)는 여기 따로 적는다 */
+let GBSLOT = {}; try{ GBSLOT = JSON.parse(localStorage.getItem(KEY + '-gbslot') || '{}') || {}; }catch(_){}
+async function musLoad(){
+  if(MUS.list || MUS.busy) return;
+  MUS.busy = true;
+  const out = [];
+  try{ (await readAll(await musDB('qa_ceremony_snd', true))).forEach(v => out.push({id:v.id, name:v.name, slot:v.slot || '', src:'mine', url:URL.createObjectURL(v.blob)})); }catch(_){}
+  try{
+    const dbs = indexedDB.databases ? await indexedDB.databases() : [];
+    if(dbs.some(x => x.name === 'gb_user_snd')){
+      const d = await musDB('gb_user_snd', false);
+      (await readAll(d)).forEach(v => out.push({id:'gb:' + v.id, name:v.name, slot:GBSLOT['gb:' + v.id] || '', src:'gb', url:URL.createObjectURL(v.blob)}));
+      d.close();
+    }
+  }catch(_){}
+  MUS.list = out; MUS.busy = false;
+  paintLib(); paintMus();
+}
+const musAt = id => (MUS.list || []).find(x => x.id === id) || null;
+const tidyName = n => String(n).replace(/\.[^.]+$/, '').replace(/_+/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 30) || '내 음악';
+function musAdd(input){
+  /* input.files 는 살아 있는 목록이라 먼저 배열로 옮긴 뒤 입력칸을 비운다 */
+  const picked = Array.from(input.files || []).filter(f => /^audio\//.test(f.type || '') || /\.(mp3|m4a|ogg|wav|aac|flac|opus)$/i.test(f.name));
+  input.value = '';
+  if(!picked.length){ alert('음악 파일을 골라 주세요'); return; }
+  musDB('qa_ceremony_snd', true).then(d => {
+    const tx = d.transaction('snd', 'readwrite'), st = tx.objectStore('snd');
+    if(!MUS.list) MUS.list = [];
+    picked.forEach((f, j) => {
+      const rec = {id:'c_' + Date.now().toString(36) + j, name:tidyName(f.name), slot:'', blob:f};
+      st.put(rec);
+      MUS.list.push({id:rec.id, name:rec.name, slot:'', src:'mine', url:URL.createObjectURL(f)});
+    });
+    tx.oncomplete = () => paintLib();
+    tx.onerror = () => alert('넣지 못했어요. 저장 공간을 확인해 주세요');
+  }).catch(() => alert('이 브라우저에는 음악을 넣을 수 없어요'));
+}
+function musPatch(id, patch){
+  const it = musAt(id); if(!it) return;
+  Object.assign(it, patch);
+  if(it.src === 'gb'){
+    if('slot' in patch){ GBSLOT[id] = it.slot; try{ localStorage.setItem(KEY + '-gbslot', JSON.stringify(GBSLOT)); }catch(_){} }
+  } else {
+    musDB('qa_ceremony_snd', true).then(d => {
+      const st = d.transaction('snd', 'readwrite').objectStore('snd'), rq = st.get(id);
+      rq.onsuccess = () => { const r = rq.result; if(!r) return; r.name = it.name; r.slot = it.slot; st.put(r); };
+    }).catch(() => {});
+  }
+  paintLib(); paintMus();
+}
+function musDel(id){
+  const it = musAt(id); if(!it || it.src !== 'mine') return;
+  if(!confirm('「' + it.name + '」을 뺄까요? (원래 파일은 그대로예요)')) return;
+  if(MUS.cur && MUS.cur.id === id) musStop();
+  musDB('qa_ceremony_snd', true).then(d => { d.transaction('snd', 'readwrite').objectStore('snd').delete(id); }).catch(() => {});
+  MUS.list = MUS.list.filter(x => x.id !== id);
+  try{ URL.revokeObjectURL(it.url); }catch(_){}
+  paintLib(); paintMus();
+}
+function musPlay(id){
+  const it = musAt(id); if(!it) return;
+  if(MUS.cur && MUS.cur.id === id){ musStop(); return; }
+  musStop();
+  if(!sound) toggleSnd();
+  const a = it.aud || (it.aud = new Audio(it.url));
+  clearInterval(a._fade); a.loop = true; a.volume = MUS.vol;
+  try{ a.currentTime = 0; }catch(_){}
+  const p = a.play(); if(p && p.catch) p.catch(() => {});
+  MUS.cur = {id, a};
+  stopDrum();
+  /* 시상식 중에 틀었으면 칸을 닫아 화면을 가리지 않는다(M 으로 다시 열기) */
+  if($('stage').classList.contains('on')) MUS.open = false;
+  paintLib(); paintMus();
+}
+function musStop(){
+  if(!MUS.cur) return;
+  const a = MUS.cur.a; MUS.cur = null;
+  clearInterval(a._fade);
+  a._fade = setInterval(() => { a.volume = Math.max(0, a.volume - .08); if(a.volume <= .01){ clearInterval(a._fade); a.pause(); } }, 50);
+  paintLib(); paintMus();
+}
+/* 지금 장면이 어느 상인지 — 시작·MC 는 입장, 엔딩은 엔딩, 나머지는 그 상 */
+function sceneKey(){
+  if(!$('stage').classList.contains('on') || !slides[idx]) return '';
+  const s = slides[idx];
+  if(s.t === 'open' || s.t === 'mc') return 'open';
+  if(s.t === 'end') return 'end';
+  return s.a ? s.a.key : '';
+}
+function musQuick(){
+  if(MUS.cur){ musStop(); return; }
+  const k = sceneKey(), it = k ? (MUS.list || []).find(x => x.slot === k) : null;
+  if(it) musPlay(it.id); else { MUS.open = true; musLoad(); paintMus(); }
+}
+function musToggle(){ MUS.open = !MUS.open; musLoad(); paintMus(); }
+function paintMus(){
+  const el = $('mus'), btn = $('musBtn');
+  if(btn) btn.classList.toggle('on', !!MUS.cur);
+  if(!el) return;
+  const onStage = $('stage').classList.contains('on');
+  el.classList.toggle('on', MUS.open && onStage);
+  if(!MUS.open || !onStage) return;
+  const k = sceneKey(), L = MUS.list || [];
+  const chip = x => '<button type="button" class="mchip' + (MUS.cur && MUS.cur.id === x.id ? ' play' : (k && x.slot === k) ? ' here' : '') + '" data-mp="' + esc(x.id) + '">' +
+    (MUS.cur && MUS.cur.id === x.id ? '■ ' : '▶ ') + esc(x.name) + '</button>';
+  const here = L.filter(x => k && x.slot === k), rest = L.filter(x => !(k && x.slot === k));
+  el.innerHTML = '<div class="hd">시상식 음악<small>' + (k ? '지금 · ' + esc(SLOT_LABEL[k] || '') : '') + '</small><span class="sp"></span>' +
+    '<label style="font-size:12px;color:var(--sub)">크기 <input type="range" min="0" max="1" step=".05" value="' + MUS.vol + '" data-mv></label>' +
+    (MUS.cur ? '<button type="button" class="mchip stop" data-mstop>■ 멈춤</button>' : '') + '</div>' +
+    (L.length
+      ? (here.length ? '<div class="lbl">이 장면 노래</div><div class="row">' + here.map(chip).join('') + '</div>' : '') +
+        (rest.length ? '<div class="lbl">' + (here.length ? '다른 음악' : '음악') + '</div><div class="row">' + rest.map(chip).join('') + '</div>' : '')
+      : '<div class="lbl">아직 넣은 음악이 없어요. 처음 화면 아래 「시상식 음악」에서 넣어 주세요.</div>');
+}
+$('mus').addEventListener('click', e => {
+  e.stopPropagation();
+  const b = e.target.closest('[data-mp]'); if(b){ musPlay(b.dataset.mp); return; }
+  if(e.target.closest('[data-mstop]')) musStop();
+});
+$('mus').addEventListener('input', e => {
+  if(!e.target.matches('[data-mv]')) return;
+  MUS.vol = +e.target.value; if(MUS.cur) MUS.cur.a.volume = MUS.vol;
+  try{ localStorage.setItem(KEY + '-mvol', String(MUS.vol)); }catch(_){}
+});
+/* 처음 화면: 음악 넣기·자리 정하기·듣기·이름·빼기 */
+function paintLib(){
+  const el = $('mlib'); if(!el) return;
+  musLoad();
+  const L = MUS.list || [];
+  el.innerHTML = '<h3>시상식 음악</h3><div class="note">음악 파일을 넣고 어느 상 노래인지 정해 두세요. 이 브라우저에만 저장되고 사이트에는 올라가지 않아요. 시상식 중 「음악」 단추(M)를 누르면 지금 상의 노래가 맨 앞에 뜨고, 누르면 나오고 다시 누르면 멈춰요. P 는 지금 장면의 노래를 바로 틀거나 멈춰요.</div>' +
+    '<div style="margin:0 0 10px"><label class="btn" for="mfile">음악 넣기</label><input type="file" id="mfile" accept="audio/*" multiple hidden></div>' +
+    (L.length ? '<table>' + L.map(x => '<tr><td class="nm">' + esc(x.name) + (x.src === 'gb' ? '<span class="src">골든벨</span>' : '') + '</td>' +
+      '<td><select data-ms="' + esc(x.id) + '">' + Object.keys(SLOT_LABEL).map(k => '<option value="' + k + '"' + (x.slot === k ? ' selected' : '') + '>' + SLOT_LABEL[k] + '</option>').join('') + '</select></td>' +
+      '<td><button type="button" class="mini" data-mp="' + esc(x.id) + '">' + (MUS.cur && MUS.cur.id === x.id ? '■ 멈춤' : '▶ 듣기') + '</button></td>' +
+      '<td>' + (x.src === 'mine' ? '<button type="button" class="mini" data-mr="' + esc(x.id) + '">이름</button> <button type="button" class="mini" data-md="' + esc(x.id) + '">빼기</button>' : '') + '</td></tr>').join('') + '</table>'
+      : (MUS.list ? '<div class="note">아직 넣은 음악이 없어요.</div>' : ''));
+}
+$('mlib').addEventListener('change', e => {
+  if(e.target.id === 'mfile') musAdd(e.target);
+  else if(e.target.dataset.ms != null) musPatch(e.target.dataset.ms, {slot:e.target.value});
+});
+$('mlib').addEventListener('click', e => {
+  const p = e.target.closest('[data-mp]'), r = e.target.closest('[data-mr]'), d = e.target.closest('[data-md]');
+  if(p) musPlay(p.dataset.mp);
+  else if(r){ const it = musAt(r.dataset.mr); if(it){ const n = prompt('이 음악을 뭐라고 부를까요?', it.name); if(n && n.trim()) musPatch(it.id, {name:n.trim().slice(0, 30)}); } }
+  else if(d) musDel(d.dataset.md);
+});
+
+/* ── 이 컴퓨터에서 열 때: 이름은 옆 파일 시상식_이름_로컬.js 에서(사이트에 올리지 않는 파일) ── */
+function loadLocalNames(){
+  return new Promise(res => {
+    if(!LOCAL) return res();
+    const sc = document.createElement('script');
+    sc.src = encodeURI('시상식_이름_로컬.js');
+    sc.onload = sc.onerror = () => res();
+    document.head.appendChild(sc);
+  });
+}
+
 paintHome();
-loadNames().then(paintHome);
+loadLocalNames().then(loadNames).then(paintHome);
 })();
 </script>
 </body>
