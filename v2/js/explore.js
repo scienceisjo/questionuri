@@ -38,6 +38,13 @@ const REFINE = [
   {g:'알아볼 수 있는가', t:'답을 찾을 방법이 떠오르는가', how:'실험, 관찰, 교과서·자료 중 어디서 알아볼지 떠올려 봐요. 견줄 것이나 바꿔 볼 조건을 넣으면 방법이 잘 보여요.'}
 ];
 const REFINE_CHECKS = REFINE.map(r => r.t);
+/* 다듬지 않기(2026-11-13, 사용자 「질문 다듬기는 선택인데 지금 거의 무조건 하게 돼있잖아 — 다듬기·다듬지 않기를 먼저 고르고,
+   다듬지 않기면 체크리스트를 체크하고 다듬지 않아도 되는 이유를 쓰게」). 서버 save_refine_skip(v2_09) → journal.refine_skip = {checks, reason, at}.
+   이유는 빈칸 틀 하나: 「내 질문은 이미 ____. 그래서 다듬지 않아도 돼요.」 — 완성 문장을 reason 으로 보낸다(서버는 10자 넘게) */
+const KEEP_A = '내 질문은 이미 ', KEEP_B = '. 그래서 다듬지 않아도 돼요.';
+const keepBlank = r => { r = String(r || ''); return r.indexOf(KEEP_A) === 0 && r.slice(-KEEP_B.length) === KEEP_B ? r.slice(KEEP_A.length, -KEEP_B.length) : r; };
+/* v2_09 SQL 을 아직 안 돌린 서버(함수 없음) — 화면은 안 깨지고 조용한 안내로 */
+const isSoon = e => /save_refine_skip|schema cache|PGRST202|42883|42P01|does not exist|Could not find the function/i.test(String((e && e.message) || e || '') + ' ' + String((e && e.code) || ''));
 const REFINE_EX = {
   star:[['별은 왜 다 달라?', '베텔게우스는 왜 리겔보다 붉게 보일까?'],
         ['우주는 왜 그렇게 넓어?', '멀리 있는 별까지의 거리는 어떻게 알아낼까?'],
@@ -101,7 +108,11 @@ function view(row, marks, clues, all){
   const vis = (clues || []).filter(c => c && !c.hidden_at);
   const d = {}, old = {};
   /* 다듬기 */
-  d.refine = {done:!!j.refine_done || has(row.refined_text), text:has(row.refined_text) ? String(row.refined_text).trim() : ''};
+  /* 다듬지 않기(v2_09 refine_skip) — 나중에 다듬어서 refined_text 가 생기면 그쪽을 먼저 본다 */
+  const rs = obj(j.refine_skip);
+  const skip = !has(row.refined_text) && has(rs.reason)
+    ? {checks:(Array.isArray(rs.checks) ? rs.checks : []).map(str).map(x => x.trim()).filter(Boolean), reason:String(rs.reason).trim(), at:rs.at || null} : null;
+  d.refine = {done:!!j.refine_done || has(row.refined_text), text:has(row.refined_text) ? String(row.refined_text).trim() : '', skip};
   /* 예상 — 덮어쓰지 않는다. 옛 guess(+why)가 첫 예상과 다르면 맨 앞 */
   const pj = (Array.isArray(j.predict) ? j.predict : []).filter(p => p && has(p.text)).map(p => ({text:String(p.text).trim(), at:p.at || null}));
   d.predict = pj;
@@ -162,7 +173,8 @@ function view(row, marks, clues, all){
      · 글 시각(teacher_fb_at)이 없는 옛 글은 보여만 주고 다듬기를 막지 않는다
      · save_journal 은 refined_at 을 돌려주지 않으니 서버 칸 표시(refine.last_at)도 본다 */
   const fbAt = ms(row.teacher_fb_at);
-  const refinedAt = Math.max(ms(row.refined_at), marks.refine ? ms(marks.refine.last_at) : 0);
+  /* 다듬지 않기도 선생님 글에 답한 것(이유를 남겼으니) — save_refine_skip 도 refined_at 을 돌려주지 않아서 refine_skip.at 을 본다 */
+  const refinedAt = Math.max(ms(row.refined_at), marks.refine ? ms(marks.refine.last_at) : 0, skip ? ms(skip.at) : 0);
   const isRet = !!(j.returned && has(j.returned.step));
   const wrapAt = j.wrap && j.wrap.at ? ms(j.wrap.at) : 0, resent = !!wrapAt && wrapAt >= fbAt;
   const refNote = has(row.teacher_refine_note) ? String(row.teacher_refine_note).trim() : '';
@@ -174,7 +186,9 @@ function view(row, marks, clues, all){
   const answered = fbAt ? (refinedAt > fbAt || (refined && (isRet || resent))) : refined;
   const refineAsk = !!tch && !!fbAt && status === 'open' && !legacyHarvest && !isRet && !answered;
   const rk = d.returned ? (d.returned.step === 'plant' ? 'refine' : d.returned.step) : null;
-  const returnedFixed = !!d.returned && rk !== 'wrap' && !!marks[rk] && ms(marks[rk].last_at) > ms(d.returned.at);
+  /* 다듬기로 되돌린 질문은 다듬지 않기(이유)를 남겨도 고친 것으로 본다(빈 다듬기는 칸 표시가 안 바뀌어서) */
+  const returnedFixed = !!d.returned && rk !== 'wrap' && ((!!marks[rk] && ms(marks[rk].last_at) > ms(d.returned.at)) ||
+    (rk === 'refine' && !!skip && ms(skip.at) > ms(d.returned.at)));
   let cur = null;
   if(status === 'open' && !legacyHarvest){
     if(refineAsk) cur = 'refine';
@@ -203,9 +217,9 @@ const nextName = v => v.cur === 'wrap' && v.done.wrap ? '선생님께 보내기'
 
 /* ═══════════ 모듈 상태 ═══════════ */
 const X = {edit:null, peek:null, flagFor:null, thx:{}, f:{}, msg:{}, showDone:false, nowUnit:null, nowAt:0, unitTouched:false, qmode:{}, sosFor:null,
-  saving:0, next:null, seenBusy:new Set(), guide:false, guideFor:null, phase:'before'};
+  saving:0, next:null, seenBusy:new Set(), guide:false, guideFor:null, phase:'before', rkReady:null, rkProbe:false};
 function resetForm(){ X.edit = null; X.peek = null; X.flagFor = null; X.sosFor = null; X.thx = {}; X.f = {}; X.msg = {}; }
-function resetAll(){ resetForm(); X.showDone = false; X.nowUnit = null; X.nowAt = 0; X.unitTouched = false; X.next = null; X.seenBusy.clear(); X.guideFor = null; }
+function resetAll(){ resetForm(); X.showDone = false; X.nowUnit = null; X.nowAt = 0; X.unitTouched = false; X.next = null; X.seenBusy.clear(); X.guideFor = null; X.rkReady = null; X.rkAt = 0; }
 function guideSeen(){ try{ return localStorage.getItem('qo2-x-guide') === '1' || X.guide; }catch(_){ return X.guide; } }
 function markGuide(){ X.guide = true; X.guideFor = null; try{ localStorage.setItem('qo2-x-guide', '1'); }catch(_){} }
 
@@ -336,7 +350,13 @@ function listHTML(L){
 /* ═══════════ 탐구 일지 시트 ═══════════ */
 function summary(v, k, noOld){
   const d = v.d, o = noOld ? '' : OLD;
-  if(k === 'refine') return d.refine.text ? '다듬은 질문: ' + esc(d.refine.text) : '처음 질문 그대로 탐구해요';
+  if(k === 'refine'){
+    const r = d.refine;
+    if(r.text) return '다듬은 질문: ' + esc(r.text);
+    if(r.skip) return '<b>다듬지 않음</b> · ' + esc(r.skip.reason) +
+      (r.skip.checks.length ? '<br><span class="x-rk-has"><b>이미 갖춘 것</b>' + r.skip.checks.map(c => '<span class="x-rk-chip">' + esc(c) + '</span>').join('') + '</span>' : '');
+    return '처음 질문 그대로 탐구해요';
+  }
   if(k === 'predict'){
     const p = d.predict;
     return p.map((x, i) => (i ? '<br><b>바뀐 생각</b> ' : '') + (x.legacy ? o : '') + (i < p.length - 1 ? '<span class="x-was">' + esc(x.text) + '</span>' : esc(x.text))).join('');
@@ -373,7 +393,7 @@ function teacherBox(v, k, fs){
   if(k === 'plant' && v.stamp) h += box('done', '선생님 도장', v.stamp);
   if(k === 'refine' && v.tch){
     if(v.refineAsk) h += box('', '선생님 글', v.tch);
-    else if(v.answered) h += box('done', '선생님 글 → 내가 고친 것', v.tch);
+    else if(v.answered) h += box('done', v.d.refine.skip ? '선생님 글 → 나는 다듬지 않기로 했어요' : '선생님 글 → 내가 고친 것', v.tch);
     else h += box('', '선생님 글', v.tch);
     if(v.tch2) h += box(v.refineAsk ? '' : 'done', '선생님 글', v.tch2);
   }
@@ -430,6 +450,35 @@ function chipsHTML(id, g, items, on){
 }
 const fget = (g, dflt) => X.f[g] != null ? X.f[g] : dflt;
 
+/* ── 다듬기 칸: 두 갈래 카드와 「다듬지 않기」 상자 ── */
+function rpBtn(m, on, title, sub, extra){
+  return '<button type="button" class="x-rp' + (m === on ? ' on' : '') + '" id="x_rp_' + m + '" data-xa="seg" data-v="' + m + '" aria-pressed="' + (m === on) + '">' +
+    '<span class="x-radio" aria-hidden="true"></span><span class="x-rp-tx"><span class="x-rp-h"><b>' + esc(title) + '</b>' + (extra || '') + '</span><small>' + esc(sub) + '</small></span></button>';
+}
+function keepHTML(v, askT){
+  const r = v.d.refine;
+  if(X.rkReady === false){
+    /* v2_09 SQL 전 — 예전 「그대로 가기」(이유 없이)로 막히지 않게. 선생님 글이 와 있으면 예전처럼 다듬기로 답한다 */
+    return '<div class="x-rk-soon" role="status"><b>다듬지 않기 저장은 선생님이 준비를 마치면 돼요.</b>' +
+      (askT ? '<span>선생님 글이 와 있으니 지금은 「다듬기」를 골라 질문을 고쳐 써 주세요.</span>'
+        : '<span>지금은 까닭을 적지 않고 처음 질문 그대로 탐구할 수 있어요.</span>' +
+          (r.text ? '<span class="x-rk-warn">다듬어 둔 질문 「' + esc(cut(r.text, 40)) + '」 대신 처음 질문으로 탐구하게 돼요.</span>' : '') +
+          '<button type="button" class="btn line wide" data-xa="refineSkip">처음 질문 그대로 탐구하기</button>') + '</div>';
+  }
+  const had = r.skip ? r.skip.checks : [];
+  let h = '<div class="x-rk-q"><span class="lbl">처음 질문</span><span class="x-rk-qt">' + esc(v.original) + '</span></div>';
+  if(r.text) h += '<div class="hint x-rk-warn">다듬어 둔 질문 「' + esc(cut(r.text, 40)) + '」 대신 처음 질문으로 탐구하게 돼요.</div>';
+  h += '<fieldset class="x-rk-list"><legend class="lbl">내 질문이 이미 갖춘 것 <span class="x-rk-n">하나 넘게 체크</span></legend>' +
+    REFINE.map((c, i) => (i === 0 || REFINE[i - 1].g !== c.g ? '<div class="rc-g">' + esc(c.g) + '</div>' : '') +
+      '<label class="chk"><input type="checkbox" id="x_rk' + i + '"' + (had.indexOf(c.t) >= 0 ? ' checked' : '') + '>' + esc(c.t) + (c.opt ? '<span class="rc-opt">선택</span>' : '') + '</label>').join('') +
+    '</fieldset>' +
+    '<div class="lbl">다듬지 않아도 되는 까닭</div>' +
+    '<div class="tpl x-rk-tpl"><span>' + esc(KEEP_A.trim()) + '</span><textarea id="x_rkwhy" rows="2" maxlength="200" aria-label="내 질문은 이미 어떤가요"' +
+      ' placeholder="예) 무엇이 궁금한지 분명하고, 실험으로 알아볼 수 있어요">' + esc(r.skip ? keepBlank(r.skip.reason) : '') + '</textarea><span>그래서 다듬지 않아도 돼요.</span></div>' +
+    '<button type="button" class="btn wide" data-xa="refineKeep">다듬지 않기로 저장</button>';
+  return h;
+}
+
 function stepBody(v, st, dn, isCur){
   const d = v.d, k = st.k, open = v.status === 'open';
   if(k === 'plant') return '<div class="val">' + esc(v.original) + '</div>';
@@ -448,21 +497,31 @@ function stepBody(v, st, dn, isCur){
     return '<button type="button" class="sumline" data-xa="peek" data-k="' + k + '">' + (v.old[k] ? OLD : '') + esc(cut(p, 30)) + ' <b>펼치기</b></button>';
   }
   if(!isCur){
-    if(k === 'refine' && open && !dn) return '<button type="button" class="link" data-xa="edit" data-k="refine">다듬어 보기</button>';
+    if(k === 'refine' && open && !dn) return '<button type="button" class="link" data-xa="edit" data-k="refine">다듬을지 고르기</button>';
     if(k === 'extend' && !dn && v.status !== 'open') return '<button type="button" class="link" data-xa="edit" data-k="extend">넓혀 보기</button>';
     return '';
   }
   let f = '<div class="form">';
   if(k === 'refine'){
-    const ex = refineEx(v);
-    f += '<div class="hint">왜 ~일까? 는 좋은 질문이에요. 다듬기는 질문을 바꾸는 게 아니라 더 분명하게 만드는 거예요. 걸리는 것 하나만 고쳐도 돼요.</div>' +
+    /* 먼저 두 갈래(다듬기 / 다듬지 않기)를 고른다. 두 상자를 다 그려 두고 고른 쪽만 보인다(seg → tog, 쓰던 글이 남게).
+       고치기로 다시 열면 지난번에 고른 쪽이 골라진 채. 선생님 글이 와 있으면 「다듬기」에 표시만 하고 고르는 건 학생 */
+    const ex = refineEx(v), r = d.refine;
+    const askT = v.refineAsk || (v.rk === 'refine' && !v.returnedFixed);
+    const mode = fget('rmode', r.text ? 'refine' : r.skip ? 'keep' : '');
+    if(open) probeKeep();
+    f += '<div class="hint">다듬기는 해도 되고 안 해도 돼요. 어느 쪽으로 할지 먼저 골라요.</div>' +
+      '<div class="x-rpick" id="x_rpick" data-g="rmode" role="group" aria-label="질문을 다듬을까요?">' +
+        rpBtn('refine', mode, '다듬기', '질문을 더 분명하게 고쳐 써요', askT ? '<span class="x-rp-t">선생님 글이 있어요</span>' : '') +
+        rpBtn('keep', mode, '다듬지 않기', '점검표로 확인하고 지금 질문 그대로 탐구해요', '') + '</div>';
+    f += '<div class="x-rbox" id="x_rRefine"' + (mode === 'refine' ? '' : ' hidden') + '>' +
+      '<div class="hint">왜 ~일까? 는 좋은 질문이에요. 다듬기는 질문을 바꾸는 게 아니라 더 분명하게 만드는 거예요. 걸리는 것 하나만 고쳐도 돼요.</div>' +
       REFINE.map((c, i) => (i === 0 || REFINE[i - 1].g !== c.g ? '<div class="rc-g">' + esc(c.g) + '</div>' : '') +
         '<div class="rc"><label class="chk"><input type="checkbox" id="x_rc' + i + '">' + esc(c.t) + (c.opt ? '<span class="rc-opt">선택</span>' : '') + '</label>' +
         '<div class="rc-how">' + esc(c.how) + '</div>' +
         '<details class="rc-ex"><summary>예시 보기</summary><div class="rc-pair"><span class="rc-b">' + esc(ex[i][0]) + '</span><span class="rc-arrow" aria-label="다듬으면">→</span><span class="rc-a">' + esc(ex[i][1]) + '</span></div></details></div>').join('') +
-      '<textarea class="inp" id="x_refine" rows="2" placeholder="더 분명하게 고쳐 써 봐요">' + esc(d.refine.text || v.original) + '</textarea>' +
-      '<div class="row">' + (v.refineAsk || dn || v.rk === 'refine' ? '' : '<button type="button" class="btn line" style="flex:1" data-xa="refineSkip">그대로 갈래요</button>') +
-      '<button type="button" class="btn" style="flex:1" data-xa="refine">다듬기 저장</button></div>';
+      '<textarea class="inp" id="x_refine" rows="2" placeholder="더 분명하게 고쳐 써 봐요" aria-label="다듬은 질문">' + esc(r.text || v.original) + '</textarea>' +
+      '<button type="button" class="btn wide" data-xa="refine">다듬기 저장</button></div>';
+    f += '<div class="x-rbox" id="x_rKeep"' + (mode === 'keep' ? '' : ' hidden') + '>' + keepHTML(v, askT) + '</div>';
   }
   if(k === 'predict'){
     if(dn) f += '<div class="val" style="margin-top:0">' + summary(v, 'predict') + '</div><div class="hint">처음 생각은 지우지 않고 남겨요. 바뀐 생각만 적어요.</div>';
@@ -570,7 +629,8 @@ function nodeState(v, k){
   if(k === 'plant') return 'done';
   if(v.status === 'open' && k === v.cur) return 'cur';
   if(k === 'extend' && (v.status === 'fruit' || v.status === 'fog') && !v.done.extend) return 'cur';   // 열매 뒤 「다음에 할 일: 넓히기」와 같은 잎
-  if(k === 'refine') return v.d.refine.text ? 'done' : 'skip';   // 안 했거나 「그대로 갈래요」 — 선택 칸
+  /* 다듬기 — 다듬음·다듬지 않음(까닭 있음) = 끝남, 예전 「그대로 갈래요」(까닭 없음) = 건너뜀, 아직 안 고름 = 아직 */
+  if(k === 'refine'){ const r = v.d.refine; return r.text || r.skip ? 'done' : r.done ? 'skip' : 'todo'; }
   return v.done[k] ? 'done' : 'todo';
 }
 function nextHTML(v){
@@ -579,7 +639,7 @@ function nextHTML(v){
     return v.done.extend ? '<b>다 했어요</b><span class="xt-what">넓히기까지 마쳤어요</span>' : '<b>다음에 할 일</b><span class="xt-what">넓히기</span><span class="xt-why">해도 되고 안 해도 돼요. 하면 열매에 새싹이 달려요.</span>';
   const k = v.cur, st = K.STEPS.find(s => s.k === k) || {};
   const what = k === 'wrap' ? (v.done.wrap ? '정리 다시 보고 선생님께 보내기' : '정리하고 선생님께 보내기') : stepName(k);
-  const why = v.refineAsk ? '선생님 글을 보고 질문을 고쳐요.' : (v.d.returned && !v.returnedFixed) ? '선생님이 이 칸을 다시 보자고 했어요.' : (st.s || '');
+  const why = v.refineAsk ? '선생님 글을 읽고 다듬을지 골라요.' : (v.d.returned && !v.returnedFixed) ? '선생님이 이 칸을 다시 보자고 했어요.' : (st.s || '');
   return '<b>다음에 할 일</b><span class="xt-what">' + esc(what) + '</span>' + (why ? '<span class="xt-why">' + esc(why) + '</span>' : '');
 }
 function treeHTML(v, fs){
@@ -607,9 +667,10 @@ function treeHTML(v, fs){
     const rot = p.c ? -90 : (p.x > 150 ? -22 : -158);
     const lx = p.c ? p.x + 24 : (right ? p.x + 24 : p.x - 24), anchor = right ? 'start' : 'end';
     const open = X.edit === k && st !== 'cur';
-    const sub = st === 'cur' ? '지금' : st === 'skip' ? '건너뜀' : open ? '여는 중' : '';
+    const keep = k === 'refine' && st === 'done' && !v.d.refine.text;      // 다듬지 않기로 끝냄
+    const sub = st === 'cur' ? '지금' : st === 'skip' ? '건너뜀' : open ? '여는 중' : keep ? '그대로' : k === 'refine' && st === 'todo' ? '선택' : '';
     const fb = fs === k;
-    const label = name + ' · ' + ST_WORD[st] + (fb ? ' · 안 읽은 선생님 글' : '') + '. 눌러서 열기';
+    const label = name + ' · ' + ST_WORD[st] + (keep ? ' · 다듬지 않기로 함' : '') + (fb ? ' · 안 읽은 선생님 글' : '') + '. 눌러서 열기';
     s += '<g class="xt-node st-' + st + (open ? ' open' : '') + '" id="x_tn_' + k + '" data-xa="node" data-k="' + k + '" role="button" tabindex="0" aria-label="' + esc(label) + '">' +
       '<circle class="xt-hit" cx="' + p.x + '" cy="' + p.y + '" r="22"/>' +
       '<circle class="xt-focus" cx="' + p.x + '" cy="' + p.y + '" r="21"/>' +
@@ -638,7 +699,7 @@ function treeHTML(v, fs){
 function nodeGo(k, fromList, kbd){
   const v = curV(); if(!v || !K.STEPS.some(st => st.k === k)) return;
   const open = v.status === 'open' && !v.legacyHarvest;
-  const skipRef = k === 'refine' && !v.d.refine.text;
+  const skipRef = k === 'refine' && !v.d.refine.text && !v.d.refine.skip;   // 안 골랐거나 예전 「그대로 갈래요」 → 바로 두 갈래
   let to = k;
   X.flagFor = null;
   if(k === 'plant'){ X.peek = null; }
@@ -733,8 +794,8 @@ function seenFb(row){
 /* 쓰던 글 붙잡기(2026-11-12, 사용자 「끝까지 못 하고 중간에 나가면 하던 게 사라진다」).
    「○○ 남기기」를 누른 칸은 원래도 서버에 저장된다. 사라지던 건 단추를 누르기 전에 쓰던 글이다.
    → 일지 칸에 쓰는 글을 이 기기에 바로 저장해 두고, 다시 열면 빈 칸에 되살린다. 그 칸을 저장하면 지운다. 서버엔 안 보낸다. */
-const DRAFT_IDS = /^x_(refine|predict|mplan|fsrc|find|samewhy|aicmp|wrap|reached|stuckq|changed|extend|tried|sos|qans|qsrcd)$/;
-const DRAFT_OF = {refine:['x_refine'], predict_add:['x_predict'], method:['x_mplan'], find_add:['x_fsrc', 'x_find'], same:['x_samewhy'], aiCmp:['x_aicmp'],
+const DRAFT_IDS = /^x_(refine|rkwhy|predict|mplan|fsrc|find|samewhy|aicmp|wrap|reached|stuckq|changed|extend|tried|sos|qans|qsrcd)$/;
+const DRAFT_OF = {refine:['x_refine', 'x_rkwhy'], predict_add:['x_predict'], method:['x_mplan'], find_add:['x_fsrc', 'x_find'], same:['x_samewhy'], aiCmp:['x_aicmp'],
   wrap:['x_wrap', 'x_reached', 'x_stuckq', 'x_changed', 'x_qans', 'x_qsrcd'], extend:['x_extend'], flag:['x_tried', 'x_sos']};
 const dKey = (qid, id) => 'qo2-draft-' + ((QO.state.me || {}).id || 'x') + '-' + qid + '-' + id;
 function dropDrafts(qid, keys){
@@ -920,6 +981,44 @@ async function saveRefine(btn, skip){
   }
   const r = await run(btn, 'refine', () => saveTo(v.id, patch));
   if(r) finish('refine', true, msg);
+}
+/* 다듬지 않기 — 점검표에서 하나 넘게 체크 + 「내 질문은 이미 ____」(여섯 글자 넘게). 저장은 save_refine_skip(v2_09) */
+async function saveRefineKeep(btn){
+  const v = curV(); if(!v) return;
+  setErr('refine', '');
+  const checks = REFINE.filter((c, i) => { const el = document.getElementById('x_rk' + i); return !!(el && el.checked); }).map(c => c.t);
+  if(!checks.length) return setErr('refine', '점검표에서 내 질문에 맞는 것을 하나 넘게 체크해 주세요.');
+  const el = document.getElementById('x_rkwhy');
+  if(el && el.value.trim() && QO.ime && QO.ime.ask(el)) return setErr('refine', '글자가 영어로 쳐진 것 같아요. 아래에서 골라 주세요.');
+  const b = String(el && el.value || '').trim().replace(/[\s.。!?？！]+$/, '');
+  const bad = clen(b) < 6 ? '내 질문이 이미 어떤지 여섯 글자 넘게 적어 주세요.' : QO.check.junkWhy(b, [v.original]);
+  if(bad){ setErr('refine', bad); if(el) el.focus(); return; }
+  const reason = KEEP_A + b + KEEP_B;
+  const r = await run(btn, 'refine', async () => {
+    try{
+      const res = await QO.api.saveRefineSkip(v.id, checks, reason);
+      dropDrafts(v.id, ['refine']);
+      QO.store.upsertQuestion(res);
+      await QO.store.refreshQuestion(v.id);
+      return res;
+    }catch(e){ if(isSoon(e)) return 'soon'; throw e; }
+  });
+  if(r === 'soon'){ X.rkReady = false; X.rkAt = Date.now(); X.f.rmode = 'keep'; paint(); return; }
+  if(r) finish('refine', v.done.refine, '처음 질문 그대로 탐구해요. 다듬지 않는 까닭을 남겼어요.');
+}
+/* 서버에 save_refine_skip 이 있나 — 다듬기 칸을 처음 열 때 한 번 본다(없는 질문 0 으로 불러 보면 함수가 있으면 「내 질문만…」, 없으면 PGRST202).
+   아무것도 바꾸지 않는다. 함수가 없으면 「다듬지 않기」 상자가 안내 + 예전 그대로 가기로 바뀐다 */
+function probeKeep(){
+  /* 알 수 없는 오류(네트워크)면 30초 뒤에, 함수가 없었으면 1분 뒤에 다시(수업 중에 선생님이 SQL 을 돌려도 새로고침 없이 열리게) */
+  if(X.rkReady === true || X.rkProbe || Date.now() - (X.rkAt || 0) < (X.rkReady === false ? 60000 : 30000)) return;
+  X.rkProbe = true;
+  const was = X.rkReady;
+  const repaint = () => { if(QO.tabs.current() === 'explore' && S.openQ != null) paint(); };
+  Promise.resolve().then(() => QO.api.saveRefineSkip(0, [], '')).then(() => { X.rkReady = true; if(was === false) repaint(); }, e => {
+    if(isSoon(e)){ X.rkReady = false; X.rkAt = Date.now(); if(was !== false) repaint(); }
+    else if(ui.userMsg(e)){ X.rkReady = true; if(was === false) repaint(); }   // 함수는 있다(없는 질문이라 막힌 것)
+    else X.rkAt = Date.now();
+  }).finally(() => { X.rkProbe = false; });
 }
 async function savePredict(btn){
   const v = curV(); if(!v) return;
@@ -1149,6 +1248,7 @@ function seg(b){
   if(g === 'mk'){ tog('x_mplan', v !== 'exp'); tog('x_maihint', v !== 'ai'); }
   if(g === 'cmp') tog('x_changed', v !== 'changed');
   if(g === 'wmode'){ tog('x_wKnown', v === 'unknown'); tog('x_wUnknown', v !== 'unknown'); }
+  if(g === 'rmode'){ tog('x_rRefine', v !== 'refine'); tog('x_rKeep', v !== 'keep'); setErr('refine', ''); }
 }
 const ACT = {
   plant, phase:b => setPhase(b.dataset.ph), open:b => open(b.dataset.id), close:() => ui.sheet.close(),
@@ -1157,7 +1257,7 @@ const ACT = {
   edit:b => { X.edit = b.dataset.k; X.peek = null; X.flagFor = null; X.f = {}; delete X.msg[b.dataset.k]; paint({scroll:true}); },
   cancel:() => { X.edit = null; X.flagFor = null; X.f = {}; paint({scroll:true}); },
   seg,
-  refine:b => saveRefine(b, false), refineSkip:b => saveRefine(b, true),
+  refine:b => saveRefine(b, false), refineSkip:b => saveRefine(b, true), refineKeep:saveRefineKeep,
   predict:savePredict, method:saveMethod, find:saveFind, wrap:saveWrap, extend:saveExtend,
   flagOpen:b => { X.flagFor = b.dataset.k; paint(); focusId('x_tried'); },
   qmode:b => { const v = curV(); if(!v) return; X.qmode[v.id] = b.dataset.m === QUICK ? QUICK : null; X.f = {}; delete X.msg.quick; paint(); if(X.qmode[v.id]) focusId('x_qans'); },
@@ -1228,6 +1328,35 @@ QO.tabs.register({
 });
 
 QO.explore = {view, open, UNITS, stepTexts};
+
+/* ═══════════ 데이터 함수 — 다듬지 않기(v2_09 save_refine_skip) ═══════════
+   saveRefineSkip(질문, 체크한 항목 이름[], 이유) → save_journal 과 같은 모양 {id, journal, refined_text, resolve_requested_at, fruit_kind}.
+   journal.refine_skip = {checks, reason, at}, refine_done = true, refined_text = null. 흉내도 SQL 과 같은 규칙·문구 */
+QO.api.saveRefineSkip = async function(qid, checks, reason){
+  const c = await QO.sbClient();
+  const r = await c.rpc('save_refine_skip', {p_qid:qid, p_checks:Array.isArray(checks) ? checks : [], p_reason:reason == null ? '' : String(reason)});
+  if(r.error){ const e = new Error(String(r.error.message || r.error)); e.code = r.error.code; e.details = r.error.details; throw e; }
+  return r.data;
+};
+if(QO.mock && QO.mock.extend) QO.mock.extend({
+  saveRefineSkip(qid, checks, reason){
+    const h = QO.mock.h;
+    const id = h.needMe();                                              // 로그인이 필요해요
+    const q = h.qById(qid);
+    if(!q || q.user_id !== id) throw h.userErr('내 질문만 고칠 수 있어요');
+    if(q.fruit_kind != null) throw h.userErr('선생님이 확인한 질문은 넓히기만 더할 수 있어요');
+    const r = String(reason == null ? '' : reason).trim();
+    if(clen(r) < 10) throw h.userErr('다듬지 않아도 되는 이유를 열 글자 넘게 적어 주세요');
+    const left = (s, n) => Array.from(s).slice(0, n).join('');
+    const ch = (Array.isArray(checks) ? checks : []).filter(e => typeof e === 'string' && e.trim() !== '').slice(0, 10).map(e => left(e.trim(), 40));
+    if(!ch.length) throw h.userErr('점검표에서 내 질문에 맞는 것을 하나 넘게 체크해 주세요');
+    const at = h.nowISO();
+    const j = Object.assign({}, q.journal && typeof q.journal === 'object' && !Array.isArray(q.journal) ? q.journal : {},
+      {refine_done:true, refine_skip:{checks:ch, reason:left(r, 300), at:at}});
+    h.updateQ(q, {journal:j, refined_text:null, refined_at:at}, at);
+    return {id:q.id, journal:q.journal, refined_text:q.refined_text, resolve_requested_at:q.resolve_requested_at, fruit_kind:q.fruit_kind};
+  }
+});
 
 /* ═══════════ 스스로 시험 ═══════════ */
 if(QO.selftest && QO.cfg.page === 'student'){
@@ -1482,10 +1611,13 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await openQ(t, 108);
     t.expect(q$('#x_st_refine.cur'), '다듬기가 지금 칸');
     t.expect(q$('#x_st_refine .tchbox').textContent.indexOf('어떤 별을') >= 0, '선생님 글');
-    t.expect(!q$('[data-xa="refineSkip"]'), '그대로 갈래요가 없음');
+    t.expect(q$('#x_rp_refine .x-rp-t') && q$('#x_rp_keep') && !q$('#x_rp_keep .x-rp-t'), '두 갈래 · 다듬기 쪽에만 「선생님 글이 있어요」');
+    t.expect(q$('#x_rRefine').hidden && q$('#x_rKeep').hidden && !q$('[data-xa="refineSkip"]'), '고르기 전엔 입력칸이 안 보임');
     t.eq(dbq(t, 108).fb_unread, true, '열기만 해서는 안 읽음');
     await t.click('#x_st_refine [data-xa="fbSeen"]');
     await t.waitFor(() => dbq(t, 108).fb_unread === false);
+    await t.click('#x_rp_refine');
+    t.expect(!q$('#x_rRefine').hidden && q$('#x_rKeep').hidden, '다듬기를 고르면 다듬기 상자만');
     await t.type('#x_refine', '별은 왜 반짝거릴까?');
     await t.click('[data-xa="refine"]');
     t.expect(q$('#x_e_refine').textContent.indexOf('거의 같아요') >= 0, '처음 질문과 85% 넘게 같으면 못 냄');
@@ -1667,11 +1799,12 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.eq(nodes.map(n => n.dataset.k), K.STEPS.map(s => s.k), '일곱 잎, 심기부터');
     const ys = nodes.map(n => Number(n.querySelector('.xt-hit').getAttribute('cy')));
     t.expect(ys.every((y, i) => !i || y < ys[i - 1]), '아래에서 위로: ' + ys.join(','));
-    t.eq(nodes.map(stOf), ['done', 'skip', 'done', 'done', 'cur', 'todo', 'todo'], '끝남·건너뜀·지금·아직');
+    t.eq(nodes.map(stOf), ['done', 'todo', 'done', 'done', 'cur', 'todo', 'todo'], '끝남·지금·아직(안 고른 다듬기 = 아직)');
+    t.eq(q$('#x_tn_refine .xt-sub').textContent, '선택', '안 고른 다듬기 잎 = 선택');
     t.expect(/찾기/.test(q$('#sheet .xt-next').textContent), '다음에 할 일: 찾기');
     t.expect(nodes.every(n => n.getAttribute('role') === 'button' && n.getAttribute('tabindex') === '0'), '키보드로도 누름');
     fire('#x_tn_refine');
-    await t.waitFor('#x_st_refine.cur #x_refine');           // 건너뛴 다듬기로 돌아가기
+    await t.waitFor('#x_st_refine.cur #x_rp_keep');          // 안 고른 다듬기 → 두 갈래부터
     t.expect(q$('#x_tn_refine').classList.contains('open'), '여는 중 표시');
     fire('#x_tn_find', true);
     await t.waitFor('#x_st_find.cur #x_fsrc');
@@ -1685,12 +1818,12 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.waitFor('#x_st_method.cur #x_mkind');
     fire('#x_tn_wrap');                                          // 아직 차례가 아닌 칸 → 지금 칸으로
     await t.waitFor(() => q$('#x_st_find.cur') && !q$('#x_st_wrap.cur'));
-    /* 「그대로 갈래요」로 건너뛴 다듬기도 잎으로 다시 연다 */
+    /* 예전 「그대로 갈래요」(까닭 없이)로 건너뛴 다듬기 = 건너뜀, 잎으로 다시 열면 두 갈래부터 */
     await setup(t, 101, [{refine:''}]);
     await openQ(t, 101);
     await t.waitFor(() => q$('#x_tn_refine') && stOf(q$('#x_tn_refine')) === 'skip' && stOf(q$('#x_tn_predict')) === 'cur');
     fire('#x_tn_refine');
-    await t.waitFor('#x_st_refine.cur #x_refine');
+    await t.waitFor('#x_st_refine.cur #x_rp_refine');
     /* 답만 달기에서는 나무가 접힘 */
     await t.click('#sheet [data-xa="qmode"][data-m="quick"]');
     await t.waitFor(() => q$('#x_qans') && !q$('#sheet .xt-svg'));
@@ -1727,6 +1860,109 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.expect(cluesLater(view(row, {}, [c1]), 'find').indexOf('단서 1개') >= 0, '아직 안 간 칸 — 「단서 n개」');
     const r = REFINE.find(x => x.t === '배운 개념이 들어 있는가');
     t.expect(r && r.opt && /꼭 넣어야 하는 건 아니에요/.test(r.how), '배운 개념은 선택');
+  });
+
+  const stOfN = n => (((n && n.getAttribute('class')) || '').match(/st-(\w+)/) || [])[1];
+  const fireN = sel => { const g = q$(sel); if(!g) throw new Error('잎이 없어요: ' + sel); g.dispatchEvent(new MouseEvent('click', {bubbles:true})); };
+  add('탐구 · 다듬지 않기(두 갈래 먼저 → 점검표 체크·까닭 → 요약, 다시 열면 그쪽이 골라져 있음)', async t => {
+    await openQ(t, 101);
+    await t.waitFor('#x_tn_refine');
+    t.eq(stOfN(q$('#x_tn_refine')), 'todo', '안 고른 다듬기 = 아직');
+    fireN('#x_tn_refine');
+    await t.waitFor('#x_st_refine.cur #x_rp_keep');
+    t.expect(q$('#x_rp_refine') && q$('#x_rRefine').hidden && q$('#x_rKeep').hidden, '두 갈래가 먼저, 입력칸은 안 보임');
+    t.eq(t.$$('#x_rpick [aria-pressed="true"]').length, 0, '처음엔 아무것도 안 골라져 있음');
+    await t.click('#x_rp_keep');
+    t.expect(!q$('#x_rKeep').hidden && q$('#x_rRefine').hidden && q$('#x_rp_keep').getAttribute('aria-pressed') === 'true', '다듬지 않기 상자만 열림');
+    await t.waitFor(() => X.rkReady === true);                  // 서버 함수 확인(흉내엔 있음)
+    t.eq(t.$$('#x_rKeep input[type="checkbox"]').length, REFINE.length, '같은 점검표');
+    t.expect(q$('#x_rk2').closest('label').querySelector('.rc-opt'), '「배운 개념」은 선택 표시');
+    await t.type('#x_rkwhy', '무엇이 궁금한지 분명하고 교과서에서 찾아볼 수 있어요');
+    await t.click('#sheet [data-xa="refineKeep"]');
+    t.expect(/체크/.test(q$('#x_e_refine').textContent), '체크 없이 막힘: ' + q$('#x_e_refine').textContent);
+    q$('#x_rk0').checked = true; q$('#x_rk4').checked = true;
+    await t.type('#x_rkwhy', '분명해요');
+    await t.click('#sheet [data-xa="refineKeep"]');
+    t.expect(/여섯 글자/.test(q$('#x_e_refine').textContent), '까닭이 짧으면 막힘');
+    await t.type('#x_rkwhy', 'ㅋㅋㅋㅋㅋㅋㅋㅋ');
+    await t.click('#sheet [data-xa="refineKeep"]');
+    t.expect(/자음/.test(q$('#x_e_refine').textContent), '장난 글 막힘');
+    await t.wait(80);
+    t.expect(!(dbq(t, 101).journal || {}).refine_skip, '막히면 저장 안 됨');
+    await t.type('#x_rkwhy', '무엇을 바꿔 볼지 분명하고 실험으로 알아볼 수 있어요.');
+    await t.click('#sheet [data-xa="refineKeep"]');
+    const sk = await t.waitFor(() => (dbq(t, 101).journal || {}).refine_skip);
+    t.eq([sk.checks, sk.reason, dbq(t, 101).refined_text, dbq(t, 101).journal.refine_done],
+      [[REFINE[0].t, REFINE[4].t], '내 질문은 이미 무엇을 바꿔 볼지 분명하고 실험으로 알아볼 수 있어요. 그래서 다듬지 않아도 돼요.', null, true], '저장된 것');
+    await t.waitFor(() => !q$('#x_st_refine.cur') && stOfN(q$('#x_tn_refine')) === 'done' && (q$('#x_tn_refine .xt-sub') || {}).textContent === '그대로');
+    t.eq(VV(101).cur, 'predict', '다음은 예상');
+    t.expect(/다듬지 않음/.test(q$('#x_st_refine .sumline').textContent), '접힌 요약에 다듬지 않음');
+    await t.click('#x_st_refine [data-xa="peek"][data-k="refine"]');
+    await t.waitFor(() => q$('#x_st_refine .val') && /실험으로 알아볼 수 있어요/.test(q$('#x_st_refine .val').textContent));
+    t.eq(t.$$('#x_st_refine .x-rk-chip').map(c => c.textContent), [REFINE[0].t, REFINE[4].t], '요약에 체크한 것');
+    /* 고치기로 다시 열면 다듬지 않기가 골라진 채, 체크·빈칸 글 그대로 */
+    await t.click('#x_st_refine [data-xa="edit"][data-k="refine"]');
+    await t.waitFor('#x_st_refine.cur #x_rp_keep');
+    t.expect(q$('#x_rp_keep').getAttribute('aria-pressed') === 'true' && !q$('#x_rKeep').hidden && q$('#x_rRefine').hidden, '다시 열면 다듬지 않기가 골라져 있음');
+    t.expect(q$('#x_rk0').checked && q$('#x_rk4').checked && !q$('#x_rk1').checked, '체크한 것 그대로');
+    t.eq(q$('#x_rkwhy').value, '무엇을 바꿔 볼지 분명하고 실험으로 알아볼 수 있어요', '빈칸 글 그대로');
+    /* 나중에 다듬으면 다듬은 질문을 먼저 본다 */
+    await t.click('#x_rp_refine');
+    await t.type('#x_refine', '전동기 속 코일은 왜 반 바퀴마다 전류의 방향이 바뀌어야 계속 돌까?');
+    await t.click('#sheet [data-xa="refine"]');
+    await t.waitFor(() => dbq(t, 101).refined_text);
+    await t.waitFor(() => VV(101).d.refine.text && !VV(101).d.refine.skip && !q$('#x_st_refine.cur'));
+    t.expect(/다듬은 질문/.test(summary(VV(101), 'refine')) && !(q$('#x_tn_refine .xt-sub') || {}).textContent, '다듬은 질문이 먼저(그대로 표시 없음)');
+    /* 데이터 함수 규칙·문구(v2_09 와 같게) */
+    await t.rejects(t.api.saveRefineSkip(101, [], '내 질문은 이미 충분히 분명해요'), '점검표에서 내 질문에 맞는 것을 하나 넘게 체크해 주세요');
+    await t.rejects(t.api.saveRefineSkip(101, [REFINE[0].t], '짧아요'), '다듬지 않아도 되는 이유를 열 글자 넘게 적어 주세요');
+    await t.rejects(t.api.saveRefineSkip(121, [REFINE[0].t], '열 글자가 넘는 이유를 적었어요'), '내 질문만 고칠 수 있어요');
+    await t.rejects(t.api.saveRefineSkip(106, [REFINE[0].t], '열 글자가 넘는 이유를 적었어요'), '선생님이 확인한 질문은 넓히기만 더할 수 있어요');
+    const ok = await t.api.saveRefineSkip(101, [REFINE[1].t, '  ', 3], '열 글자가 넘는 이유를 적었어요');
+    t.eq([ok.refined_text, ok.journal.refine_skip.checks], [null, [REFINE[1].t]], '빈 항목·글자 아닌 항목은 빼고, 다듬은 질문은 비움');
+  });
+
+  add('탐구 · 선생님 글에 다듬지 않기로 답함 · SQL 전에는 안내 + 예전처럼 그대로 가기', async t => {
+    /* 선생님 글이 와 있어도 고르는 건 학생 — 까닭을 남기면 선생님 글에 답한 것 */
+    await openQ(t, 108);
+    await t.waitFor('#x_st_refine.cur #x_rp_keep');
+    await t.click('#x_rp_keep');
+    await t.waitFor(() => X.rkReady === true);
+    q$('#x_rk0').checked = true;
+    await t.type('#x_rkwhy', '어떤 별을 볼지보다 반짝임 자체가 궁금한 거라 분명해요');
+    await t.click('#sheet [data-xa="refineKeep"]');
+    await t.waitFor(() => (dbq(t, 108).journal || {}).refine_skip);
+    await t.waitFor(() => !VV(108).refineAsk && VV(108).cur === 'predict' && q$('#x_st_refine .tchbox.done'));
+    t.expect(/다듬지 않기로/.test(q$('#x_st_refine .tchbox.done').textContent), '선생님 글 → 다듬지 않기로 했어요');
+    /* v2_09 를 아직 안 돌린 서버 */
+    const orig = QO.mock.api.saveRefineSkip;
+    QO.mock.api.saveRefineSkip = async function(qid, checks, reason){
+      const e = new Error('Could not find the function public.save_refine_skip(p_checks, p_qid, p_reason) in the schema cache'); e.code = 'PGRST202'; throw e;
+    };
+    X.rkReady = null;
+    try{
+      await openQ(t, 101);
+      await t.click('#x_st_refine [data-xa="edit"][data-k="refine"]');
+      await t.waitFor('#x_st_refine.cur #x_rp_keep');
+      await t.waitFor(() => X.rkReady === false && q$('#x_rKeep .x-rk-soon'));
+      await t.click('#x_rp_keep');
+      t.expect(/선생님이 준비를 마치면/.test(q$('#x_rKeep').textContent) && !q$('#x_rkwhy'), '안내로 바뀜(점검표·까닭 칸 없음)');
+      await t.click('#x_rKeep [data-xa="refineSkip"]');
+      await t.waitFor(() => (dbq(t, 101).journal || {}).refine_done && !q$('#x_st_refine.cur'));
+      t.expect(!dbq(t, 101).journal.refine_skip && stOfN(q$('#x_tn_refine')) === 'skip', '까닭 없이 넘어감(건너뜀)');
+      /* 다듬어 둔 질문이 있으면 예전 길에서도 처음 질문으로 바뀐다고 알려 준다 */
+      const hv = view({id:-9, text:'별은 왜 반짝일까?', refined_text:'밝은 별과 어두운 별 중 어느 쪽이 더 반짝여 보일까?', journal:{refine_done:true}}, {}, []);
+      t.expect(/대신 처음 질문으로/.test(keepHTML(hv, false)) && /refineSkip/.test(keepHTML(hv, false)), 'SQL 전에도 다듬어 둔 질문이 바뀐다는 안내');
+      /* 수업 중에 SQL 을 돌리면 1분 뒤 다시 확인해서 새로고침 없이 점검표가 열린다 */
+      QO.mock.api.saveRefineSkip = orig;
+      X.rkAt = Date.now() - 61000;
+      await t.click('#x_st_refine [data-xa="peek"][data-k="refine"]');
+      await t.click('#x_st_refine [data-xa="edit"][data-k="refine"]');
+      await t.waitFor(() => X.rkReady === true);
+      await t.click('#x_rp_keep');
+      await t.waitFor('#x_rKeep #x_rkwhy');
+      t.expect(!q$('#x_rKeep .x-rk-soon'), '안내 대신 점검표·까닭 칸');
+    }finally{ QO.mock.api.saveRefineSkip = orig; X.rkReady = null; X.rkAt = 0; }
   });
 }
 })();

@@ -63,6 +63,43 @@ QO.mock.extend({
       .map(q => stuckRow(q, by.get(q.user_id), db.clues.filter(x => x.question_id === q.id && x.hidden_at == null).length)).sort(stuckSort);
   }
 });
+/* 학생 성장 기록(SQL v2_09 growth_notes, 학생 growth.js 가 쓴다) — 선생님은 RLS(v2_growth_read)로 다 읽는다.
+   이름·번호는 다른 목록처럼 classStudents(profiles)로 붙인다. 표가 아직 없으면 e.soon = true 로 던진다(화면은 안내 한 줄) */
+const growSoon = e => /PGRST202|PGRST205|42P01|42883|schema cache|does not exist/i.test(String((e && e.message) || '') + ' ' + String((e && e.code) || ''));
+const growRow = (n, s) => Object.assign({}, n, {student:{name:s ? s.name || '' : '', number:s && s.number != null ? s.number : null}});
+const growSort = (a, b) => String(b.created_at).localeCompare(String(a.created_at)) || b.id - a.id;
+QO.api.classGrowthNotes = async function(g, c){
+  const st = await QO.apiReal.classStudents(g, c);
+  const by = new Map(st.map(s => [s.id, s])), cl = await sb(), out = [];
+  try{
+    for(let from = 0; ; from += 1000){
+      const d = await rows(cl.from('growth_notes').select('id,user_id,frame,parts,body,created_at').eq('school_year', ui.schoolYear()).eq('grade', g).eq('class_no', c)
+        .order('created_at', {ascending:false}).order('id', {ascending:false}).range(from, from + 999));
+      out.push.apply(out, d);
+      if(d.length < 1000) break;
+    }
+  }catch(e){ if(growSoon(e)) e.soon = true; throw e; }
+  return out.map(n => growRow(n, by.get(n.user_id))).sort(growSort);
+};
+QO.mock.extend({
+  classGrowthNotes(g, c){
+    const h = QO.mock.h, db = QO.mock.db, me = h.me(), all = h.isTeacher(me), y = h.schoolYear();
+    if(db.growth_notes == null) growSeed(db, h);
+    return db.growth_notes.filter(n => (all || n.user_id === me) && n.school_year === y && n.grade === Number(g) && n.class_no === Number(c))
+      .map(n => growRow(h.pick(n, ['id', 'user_id', 'frame', 'parts', 'body', 'created_at']), h.prof(n.user_id))).sort(growSort);
+  }
+});
+/* 시연용 몇 줄 — 흉내 DB 에 성장 기록 표가 아직 없을 때 한 번(학생 화면에서 쓰면 그 표를 그대로 쓴다) */
+function growSeed(db, h){
+  const y = h.schoolYear(), ago = hrs => new Date(Date.now() - hrs * 36e5).toISOString();
+  const N = (id, who, frame, parts, body, hrs) => { const p = h.prof(who) || {}; return {id, user_id:who, school_year:y, grade:p.grade, class_no:p.class_no, frame, parts, body, created_at:ago(hrs)}; };
+  db.growth_notes = [
+    N(1, 'u-B', 'change', {before:'저항은 전류를 막는 벽', now:'저항은 전류가 흐르기 어려운 정도'}, '처음에는 저항은 전류를 막는 벽이라고 생각했는데, 지금은 저항은 전류가 흐르기 어려운 정도라고 생각해요.', 50),
+    N(2, 'u-C', 'next', {what:'코일을 감은 횟수를 바꿔 보는 실험'}, '다음에는 코일을 감은 횟수를 바꿔 보는 실험을 해 보고 싶어요.', 26),
+    N(3, 'u-G', 'question', {before:'무엇인지만 묻곤', now:'왜 그런지 까닭을 묻곤'}, '예전 내 질문은 무엇인지만 묻곤 했는데, 요즘은 왜 그런지 까닭을 묻곤 해요.', 5)
+  ];
+  db.seq.growth_notes = Math.max(db.seq.growth_notes || 0, 3);
+}
 
 /* ═══════════ 상태 ═══════════ */
 const T = {
@@ -72,7 +109,8 @@ const T = {
   live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, ex:{no:'', yes:''}, pick:[], showOwner:{},
   groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{},
   day:null, clues:null, cluesWant:null,
-  reading:null, rdPer:null, rdSrc:''
+  reading:null, rdPer:null, rdSrc:'',
+  grow:null, growOpen:false
 };
 const clsKey = () => S.cls ? S.cls.grade + '-' + S.cls.class_no : '';
 const clsName = () => S.cls ? S.cls.grade + '학년 ' + S.cls.class_no + '반' : '';
@@ -83,7 +121,7 @@ function ensure(){
   const fresh = T.tRef !== S.teacher;
   T.tRef = S.teacher; T.key = key; T.seq++; T.reqs = {};
   Object.assign(T, {students:null, pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
-    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:''});
+    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null});
   if(fresh){ T.cutover = null; T.ex = {no:'', yes:''}; T.day = null; }
   if(!S.teacher || !S.cls) return;
   loadPending(); loadGroups(); loadLive(); loadStudents();
@@ -168,7 +206,7 @@ function renderFruits(root){
   if(!list){ root.innerHTML = h; return; }
   if(T.bulk){ root.innerHTML = h + bulkHTML(); return; }
   if(T.quick && list.length){ root.innerHTML = h + quickHTML(); return; }
-  if(!list.length){ root.innerHTML = h + '<div class="card empty">확인을 기다리는 질문이 없어요.</div>' + demoBox(); return; }
+  if(!list.length){ root.innerHTML = h + '<div class="card empty">확인을 기다리는 질문이 없어요.</div>' + growHTML() + demoBox(); return; }
   const wide = ui.wide(), open = list.find(q => q.id === T.open) || null;
   if(open && !T.detail[open.id] && !T.reqs['d' + open.id]) loadDetail(open.id);
   let items = '';
@@ -176,7 +214,7 @@ function renderFruits(root){
   if(wide) h += '<div class="t-split"><div class="t-list">' + items + '</div><div class="t-pane">' +
     (open ? detailHTML(open) : '<div class="t-ph">왼쪽에서 질문을 고르면 탐구 일지가 여기에 열려요.</div>') + '</div></div>';
   else h += '<div class="t-list">' + items + '</div>';
-  root.innerHTML = h + demoBox();
+  root.innerHTML = h + growHTML() + demoBox();
 }
 function itemHTML(q){
   const v = J.view(q), w = v.d.wrap, st = q.student || {}, on = T.open === q.id;
@@ -1059,6 +1097,65 @@ ACT['rd-per'] = b => { T.rdPer = b.dataset.v; QO.tabs.rerender('read'); };
 ACT['rd-src'] = b => { T.rdSrc = b.dataset.v || ''; QO.tabs.rerender('read'); };
 ACT['rd-reload'] = () => { T.reading = null; loadReading(); QO.tabs.rerender('read'); };
 
+/* ═══════════ 학생 성장 기록(v2_09) — 열매 확인 아래 접는 카드 ═══════════
+   학생이 「나의 성장」 탭에서 빈칸 틀로 완성한 한 문장. 지금 고른 반 · 올해 · 최신순.
+   CSV 는 열매 확인 CSV 처럼 실명 없이 학생 번호만(AI 에 그대로 넣어도 되게). 새 탭을 만들지 않고 이 구역 아래에 둔다 */
+const GROW_FRAME = {change:'생각이 바뀐 것', question:'질문이 달라진 것', proud:'내가 잘한 것', next:'다음에 해 볼 것'};
+const growWhen = ts => ui.kstDay(ts).slice(5).replace('-', '/') + ' ' + ui.kstHM(ts);
+function loadGrow(){
+  return load('grow', () => QO.api.classGrowthNotes(G(), C()).catch(e => { if(e && (e.soon || growSoon(e))) return {soon:true}; throw e; }), r => { T.grow = r; soft('fruits'); });
+}
+function growCss(){      // teacher.css 는 이 작업 범위 밖이라 이 구역 모양만 여기서 한 번 넣는다
+  if(document.getElementById('t-grow-css')) return;
+  const st = document.createElement('style'); st.id = 't-grow-css';
+  st.textContent = '.t-sg{margin-top:18px}.t-sgh{display:flex;align-items:center;gap:8px}.t-sgh .n{color:var(--mute);font-weight:700}' +
+    '.t-sgh svg{margin-left:auto;flex:none;transition:transform .2s}.t-sgh[aria-expanded="true"]{border-bottom-left-radius:0;border-bottom-right-radius:0}' +
+    '.t-sgh[aria-expanded="true"] svg{transform:rotate(180deg)}.t-sgb{border-top:none;border-top-left-radius:0;border-top-right-radius:0;padding-top:6px}' +
+    '.t-sgbar{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px}.t-sgbar .hint{flex:1 1 240px}' +
+    '.t-sgi{padding:11px 0;border-top:1px solid var(--line)}.t-sgih{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12.5px;color:var(--sub)}' +
+    '.t-sgiw{font-weight:800;color:var(--ink);font-size:13.5px}.t-sgih .t-at{margin-left:auto;color:var(--mute)}.t-sgit{font-size:15px;line-height:1.55;margin-top:4px;word-break:keep-all}' +
+    '.t-sgi .tag.f-change{color:var(--clue-d)}.t-sgi .tag.f-question{color:var(--leaf-d)}.t-sgi .tag.f-proud{color:var(--wait)}.t-sgi .tag.f-next{color:#3F5574}' +
+    '@media (prefers-reduced-motion:reduce){.t-sgh svg{transition:none}}';
+  document.head.appendChild(st);
+}
+function growHTML(){
+  growCss();
+  const open = !!T.growOpen, list = Array.isArray(T.grow) ? T.grow : null;
+  if(open && !T.grow && !T.reqs.grow) loadGrow();
+  const chev = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  let h = '<div class="t-sg"><button type="button" class="fold t-sgh" data-act="sg-fold" aria-expanded="' + open + '" aria-controls="t_grow"><span>학생 성장 기록</span>' +
+    (list ? '<span class="n">' + list.length + '</span>' : '') + chev + '</button>';
+  if(!open) return h + '</div>';
+  h += '<div class="card t-sgb" id="t_grow">';
+  const reload = '<button type="button" class="link" data-act="sg-reload">새로 읽기</button>';
+  if(T.grow && T.grow.soon) return h + '<div class="hint">성장 기록은 v2_09 SQL 을 실행한 뒤에 볼 수 있어요.</div></div></div>';
+  if(!list) return h + '<div class="t-sgbar"><span class="hint">성장 기록을 불러오는 중이에요.</span>' + reload + '</div></div></div>';
+  h += '<div class="t-sgbar"><span class="hint">' + esc(clsName()) + ' 학생이 「나의 성장」 탭에서 남긴 한 문장 · 최신순</span>' +
+    (list.length ? '<button type="button" class="link" data-act="sg-csv">CSV 내려받기</button>' : '') + reload + '</div>';
+  if(!list.length) return h + '<div class="t-sgi hint">아직 남긴 기록이 없어요.</div></div></div>';
+  return h + list.map(n => {
+    const st = n.student || {};
+    return '<div class="t-sgi" data-id="' + n.id + '"><div class="t-sgih"><span class="t-sgiw">' + esc((st.number != null ? st.number + '번 ' : '') + (st.name || '이름 모름')) + '</span>' +
+      '<span class="tag f-' + esc(n.frame) + '">' + esc(GROW_FRAME[n.frame] || n.frame) + '</span><span class="t-at">' + esc(growWhen(n.created_at)) + '</span></div>' +
+      '<div class="t-sgit">' + esc(n.body) + '</div></div>';
+  }).join('') + '</div></div>';
+}
+function growCsvOf(list){
+  const cell = x => '"' + String(x == null ? '' : x).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+  const rows = (list || []).map(n => [n.student && n.student.number != null ? n.student.number : '', GROW_FRAME[n.frame] || n.frame, n.body, ui.kstDay(n.created_at) + ' ' + ui.kstHM(n.created_at)]);
+  return '﻿' + [['학생 번호', '틀', '문장', '쓴 때']].concat(rows).map(r => r.map(cell).join(',')).join('\r\n');
+}
+ACT['sg-fold'] = () => { T.growOpen = !T.growOpen; QO.tabs.rerender('fruits'); };
+ACT['sg-reload'] = () => { T.grow = null; loadGrow(); QO.tabs.rerender('fruits'); };
+ACT['sg-csv'] = () => {
+  if(!Array.isArray(T.grow) || !T.grow.length || !S.cls) return;
+  const blob = new Blob([growCsvOf(T.grow)], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = '성장기록_' + S.cls.grade + '-' + S.cls.class_no + '_' + ui.kstToday() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+
 /* ═══════════ 시연 도구(?mock=1 에서만) — 학생 쪽 움직임을 흉내 DB 에 바로 적는다 ═══════════ */
 function demoBox(){
   if(!cfg.mock) return '';
@@ -1238,12 +1335,13 @@ async function captureSetup(){
   const op = Number(P.get('topen'));
   if(op){ T.open = op; await loadDetail(op); if(P.get('tret') && T.detail[op]) T.ret = {qid:op, step:retDefault(T.detail[op]), note:''}; }
   if(P.get('tgfold')) T.gFold = true;
+  if(P.get('tgrow')) T.growOpen = true;      // ?tgrow=1 — 학생 성장 기록 펼쳐 두기
   QO.tabs.rerender();
   if(P.get('board') === '1') openBoard();
 }
 
 /* 시험에서 쓴다 */
-QO.teacherView = {T, idle, csvOf, bulkLoad, parseCSV, demo:{clue:demoClue, group:demoGroup, fruit:demoFruit}, async refresh(){ await Promise.all([loadLive(), loadToday(), loadGroups(), loadPending()]); }};
+QO.teacherView = {T, idle, csvOf, growthCsv:growCsvOf, bulkLoad, parseCSV, demo:{clue:demoClue, group:demoGroup, fruit:demoFruit}, async refresh(){ await Promise.all([loadLive(), loadToday(), loadGroups(), loadPending()]); }};
 
 /* ═══════════ 스스로 시험(teacher.html?mock=1&selftest=1) ═══════════ */
 if(!QO.selftest || cfg.page !== 'teacher') return;
@@ -1580,6 +1678,38 @@ add('선생님 · 확인할 답 CSV(일지 칸·AI 사용, 실명 없음)', asyn
   t.eq(lines.length, p.length + 1, '줄 수');
   t.expect(lines[1].indexOf('"104"') === 0 && lines[1].indexOf('과학관 누리집: 빛은 1초에') >= 0 && lines[1].indexOf('맞았어요') >= 0, '104 일지 칸');
   t.expect(!NAMES.some(nm => csv.indexOf(nm) >= 0), 'CSV 에 이름이 없어야 해요');
+  await TV.idle();
+});
+add('선생님 · 학생 성장 기록(열매 확인 아래 접는 카드 · 이름·번호·틀·문장·날짜 · CSV)', async t => {
+  const y = QO.mock.h.schoolYear(), ago = hrs => new Date(Date.now() - hrs * 36e5).toISOString();
+  t.db.growth_notes = [
+    {id:1, user_id:'u-B', school_year:y, grade:2, class_no:11, frame:'change', parts:{before:'저항은 벽', now:'흐르기 어려운 정도'}, body:'처음에는 저항은 벽이라고 생각했는데, 지금은 흐르기 어려운 정도라고 생각해요.', created_at:ago(30)},
+    {id:2, user_id:'u-A', school_year:y, grade:2, class_no:11, frame:'next', parts:{what:'자석 두 개로 하는 실험'}, body:'다음에는 자석 두 개로 하는 실험을 해 보고 싶어요.', created_at:ago(2)},
+    {id:3, user_id:'u-E', school_year:y, grade:2, class_no:5, frame:'proud', parts:{what:'끝까지 한 것', why:'포기 안 했거든요'}, body:'이번에 내가 잘한 것은 끝까지 한 것이에요. 왜냐하면 포기 안 했거든요.', created_at:ago(1)},
+    {id:4, user_id:'u-C', school_year:y - 1, grade:2, class_no:11, frame:'next', parts:{what:'작년 것'}, body:'다음에는 작년 것을 해 보고 싶어요.', created_at:ago(9000)}
+  ];
+  t.db.seq.growth_notes = 4;
+  await to211(t, 'fruits');
+  const fold = await t.waitFor('[data-act="sg-fold"]');
+  t.eq(fold.getAttribute('aria-expanded'), 'false', '처음엔 접혀 있음');
+  await t.click(fold);
+  await t.waitFor(() => t.$$('#t_grow .t-sgi[data-id]').length === 2);
+  const rows = t.$$('#t_grow .t-sgi[data-id]');
+  t.eq(rows.map(r => r.dataset.id), ['2', '1'], '최신 먼저 · 다른 반·지난해 기록은 빠짐');
+  t.expect(/1번 가람/.test(rows[0].textContent) && /다음에 해 볼 것/.test(rows[0].textContent) && rows[0].textContent.indexOf('자석 두 개로 하는 실험을') >= 0, '번호·이름·틀·문장');
+  t.expect(/2번 나래/.test(rows[1].textContent) && /생각이 바뀐 것/.test(rows[1].textContent), '두 번째 줄');
+  t.expect(/\d{2}\/\d{2} \d{2}:\d{2}/.test(rows[0].querySelector('.t-at').textContent), '날짜');
+  t.eq(t.$('[data-act="sg-fold"]').getAttribute('aria-expanded'), 'true', '펼침 표시');
+  t.expect(t.$('#t_grow [data-act="sg-csv"]'), 'CSV 단추');
+  const csv = TV.growthCsv(TV.T.grow), lines = csv.slice(1).split('\r\n');
+  t.eq(csv.charCodeAt(0), 0xFEFF, 'UTF-8 BOM');
+  t.eq(lines[0], '"학생 번호","틀","문장","쓴 때"', '머리줄');
+  t.eq(lines.length, 3, '줄 수');
+  t.expect(lines[1].indexOf('"1","다음에 해 볼 것","다음에는 자석 두 개로') === 0, '첫 줄');
+  t.expect(!NAMES.some(nm => csv.indexOf(nm) >= 0), 'CSV 에 이름이 없어야 해요');
+  /* 반을 바꾸면 그 반 기록으로 */
+  QO.app.setClass(2, 5); await TV.idle();
+  await t.waitFor(() => t.$$('#t_grow .t-sgi[data-id]').length === 1 && t.$('#t_grow .t-sgi[data-id="3"]'));
   await TV.idle();
 });
 })();
