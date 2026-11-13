@@ -11,6 +11,7 @@ const COLS = QO.COLS.split(',').concat(QO.COLS.indexOf('teacher_answer') < 0 ? [
 const CLUE_COLS = QO.CLUE_COLS.split(',').concat(QO.CLUE_COLS.indexOf('by_teacher') < 0 ? ['by_teacher'] : []);   // v2_08 선생님 단서 표시
 const COUNTED = ['predict', 'method', 'find', 'wrap', 'extend'];
 const TEACHER_FB = ['teacher_nudge', 'teacher_stamp', 'teacher_solve_note', 'teacher_refine_note', 'teacher_answer'];
+const EDIT_KEYS = ['refine', 'predict_add', 'method', 'find_add', 'same', 'aiCmp', 'wrap'];   // v2_11: 열매 뒤 고침으로 치는 칸
 let db = null, whoMem = null;
 
 const M = QO.mock = {api:{}, delay:(cfg.selftest && !cfg.slow) ? [15, 45] : [80, 200]};
@@ -266,16 +267,24 @@ def('plantQuestion', function(input){
   if(tree) row.tree_id = tree.id;
   return qCols(insertQ(row));
 });
-def('saveJournal', function(qid, patch){                 // save_journal
+/* jsonb 같음 견주기(키 순서 무시) — save_journal 의 「열매 뒤에 실제로 바뀌었나」. 저장할 때마다 바뀌는 시각은 빼고 견준다 */
+const canon = v => Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
+  : (v && typeof v === 'object') ? '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'
+  : JSON.stringify(v === undefined ? null : v);
+const jCmp = j => { const c = Object.assign({}, j); delete c.edited_at; delete c.flag; delete c.extend; if(c.wrap && typeof c.wrap === 'object' && !Array.isArray(c.wrap)){ c.wrap = Object.assign({}, c.wrap); delete c.wrap.at; } return canon(c); };
+const sCmp = s => { const c = Object.assign({}, s); delete c.saved_at; delete c.newq; return canon(c); };   // 넓히기·막힘 표시는 고침이 아니다
+const nul = v => v == null ? null : v;
+def('saveJournal', function(qid, patch){                 // save_journal(v2_11: 열매 뒤에도 모든 칸)
   const id = me(); patch = patch || {};
   if(!id) throw userErr('로그인이 필요해요');
   const q = qById(qid);
   if(!q || q.user_id !== id) throw userErr('내 질문만 고칠 수 있어요');
   const has = k => Object.prototype.hasOwnProperty.call(patch, k);
-  if(q.fruit_kind != null && (has('wrap') || has('predict_add') || has('method') || has('find_add'))) throw userErr('선생님이 확인한 질문은 넓히기만 더할 수 있어요');
+  const ripe = q.fruit_kind != null;
   const at = nowISO();
   let j = clone(q.journal && typeof q.journal === 'object' ? q.journal : {}), s = clone(q.solve && typeof q.solve === 'object' ? q.solve : {});
   let req = q.resolve_requested_at, refined = q.refined_text, refinedAt = q.refined_at, finding = q.finding, still = q.still_wondering;
+  const j0 = jCmp(j), s0 = sCmp(s), r0 = nul(refined);   // 바꾸기 전(열매 뒤에 실제로 고쳤는지 견줄 때)
   if(has('refine')){
     refined = patch.refine == null ? null : left(btrim(sval(patch.refine)), 500); refinedAt = at;
     if(refined === '') refined = null;
@@ -320,13 +329,85 @@ def('saveJournal', function(qid, patch){                 // save_journal
               why:cut('why', 200), cmp:cut('cmp', 20), changedBy:cut('changedBy', 200), at:at};
     if(v.mode === 'unknown'){ s.stuck = 1; s.stuckWhere = left(sval(v.reached) || '', 500); still = left(sval(v.stuckQ) || '', 500); }
     else { s.answer = left(sval(v.text) || '', 1000); finding = left(sval(v.text) || '', 1000); }
-    req = at;
+    if(!ripe) req = at;                                   // 확인 요청은 열매 전에만 다시 보낸다
   }
   /* 칸을 저장하면 그 칸의 막힘 표시는 내린다 */
   if(j.flag && (has(j.flag.step) || (j.flag.step === 'predict' && has('predict_add')) || (j.flag.step === 'find' && has('find_add')))) delete j.flag;
+  /* 열매 뒤에 내용을 고치면 고친 시각(넓히기·막힘 표시는 고침이 아니다). 바꾸기 전과 견줘 실제로 달라졌을 때만 —
+     정리의 at·solve 의 saved_at·journal 의 edited_at 은 빼고 견준다(SQL 과 같게) */
+  if(ripe && EDIT_KEYS.some(has) && (nul(refined) !== r0 || sCmp(s) !== s0 || jCmp(j) !== j0)) j.edited_at = at;
   s.saved_at = at;
   updateQ(q, {journal:j, solve:s, refined_text:refined, refined_at:refinedAt, finding:finding, still_wondering:still, resolve_requested_at:req}, at);
   return {id:q.id, journal:q.journal, refined_text:q.refined_text, resolve_requested_at:q.resolve_requested_at, fruit_kind:q.fruit_kind};
+});
+/* 예상·찾기 줄 하나 고치기·지우기 — edit_journal(v2_11). op: {op:'predict_set'|'predict_del'|'find_set'|'find_del', i, at, text, src, ai}
+   i 는 0부터. find_set 에 ai 가 없으면 그 줄의 ai 를 그대로 둔다. 검사 순서: 로그인 → 주인 → op → (지우기) 줄 1개 이하 → i → at → 글자 수
+   at(화면이 본 그 줄의 처음 쓴 시각, 없던 줄이면 '')이 오면 지금 그 줄의 at 과 견주고 다르면 멈춘다(낡은 화면). 돌려주는 값에 solve 도
+   진짜 쪽(QO.api.editJournal·editQuestionText)은 explore.js 에 있어 학생 화면에만 있다 → 흉내도 학생 화면에서만 단다
+   (선생님 화면에 달면 「api 이름이 진짜·흉내 양쪽에 같음」 시험이 어긋남. 진짜 쪽을 api.js 로 옮기면 이 조건을 뺀다) */
+const isTrue = v => v === true || v === 'true';                        // ->>'ai' = 'true'
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+const EDIT_HERE = cfg.page !== 'teacher';
+if(EDIT_HERE) def('editJournal', function(qid, op){
+  const id = me();
+  if(!id) throw userErr('로그인이 필요해요');
+  const q = qById(qid);
+  if(!q || q.user_id !== id) throw userErr('내 질문만 고칠 수 있어요');
+  const o = isObj(op) ? op : {}, kind = typeof o.op === 'string' ? o.op : null;
+  if(['predict_set', 'predict_del', 'find_set', 'find_del'].indexOf(kind) < 0) throw userErr('알 수 없는 고치기예요');
+  const k = kind.indexOf('predict') === 0 ? 'predict' : 'find', at = nowISO();
+  const j = clone(q.journal && typeof q.journal === 'object' ? q.journal : {}), s = clone(q.solve && typeof q.solve === 'object' ? q.solve : {});
+  const arr = Array.isArray(j[k]) ? j[k] : [], n = arr.length;
+  if((kind === 'predict_del' || kind === 'find_del') && n <= 1) throw userErr('하나 남은 줄은 지울 수 없어요');
+  const i = o.i;
+  if(typeof i !== 'number' || !Number.isInteger(i) || i < 0 || i >= n) throw userErr('고칠 줄을 찾을 수 없어요');
+  if(Object.prototype.hasOwnProperty.call(o, 'at')){                       // 낡은 화면 막기
+    const was = isObj(arr[i]) ? sval(arr[i].at) : null, saw = sval(o.at);
+    if((was == null ? '' : was) !== (saw == null ? '' : saw)) throw userErr('다른 곳에서 바뀌었어요. 다시 열어 주세요');
+  }
+  const e = isObj(arr[i]) ? arr[i] : {};
+  const firstNonAi = a => { const f = a.find(x => !(isObj(x) && isTrue(x.ai))); return isObj(f) ? sval(f.src) : null; };
+  const oldFirst = isObj(arr[0]) ? sval(arr[0].text) : null, oldSrc = firstNonAi(arr);   // 고치기 전 거울 기준
+  if(kind === 'predict_set'){
+    const t = btrim(sval(o.text) || '');
+    if(clen(t) < 2) throw userErr('두 글자 넘게 적어 주세요');
+    arr[i] = Object.assign({}, e, {text:left(t, 500), edited_at:at});            // 처음 쓴 at 은 그대로
+  } else if(kind === 'find_set'){
+    const src = btrim(sval(o.src) || ''), t = btrim(sval(o.text) || '');
+    if(clen(src) < 2 || clen(t) < 2) throw userErr('두 글자 넘게 적어 주세요');
+    const ai = Object.prototype.hasOwnProperty.call(o, 'ai') ? isTrue(o.ai) : isTrue(e.ai);
+    arr[i] = Object.assign({}, e, {src:left(src, 120), text:left(t, 500), ai:ai, edited_at:at});
+  } else arr.splice(i, 1);
+  j[k] = arr;
+  if(kind === 'find_del' && arr.length < 2) delete j.same;                 // 찾기 줄이 하나만 남으면 「두 곳 비교」 답은 지운다(aiCmp 는 그대로)
+  /* solve 거울: 비어 있거나 원래 첫 줄을 따라가던 때만 맞춘다(옛 앱에서 쓴 다른 글은 그대로) — SQL 과 같게 */
+  const blank = v => v == null || String(v) === '';
+  if(k === 'predict'){ if(blank(s.guess) || String(s.guess) === oldFirst) s.guess = isObj(arr[0]) ? sval(arr[0].text) : null; }
+  else {
+    const fsrc = firstNonAi(arr);
+    if(fsrc != null && (blank(s.source) || String(s.source) === oldSrc)) s.source = fsrc;
+    else if(fsrc == null && oldSrc != null && s.source != null && sval(s.source) === oldSrc) delete s.source;   // 따라가던 출처가 「옛 앱」 줄로 되살아나지 않게
+  }
+  s.saved_at = at;
+  if(q.fruit_kind != null) j.edited_at = at;
+  updateQ(q, {journal:j, solve:s}, at);
+  return {id:q.id, journal:q.journal, solve:nul(q.solve), refined_text:q.refined_text, resolve_requested_at:q.resolve_requested_at, fruit_kind:q.fruit_kind};
+});
+/* 처음 질문 글 고치기 — edit_question_text(v2_11). 처음 고칠 때 옛 글을 journal.text_first 에 한 번만 */
+if(EDIT_HERE) def('editQuestionText', function(qid, text){
+  const id = me();
+  if(!id) throw userErr('로그인이 필요해요');
+  const q = qById(qid);
+  if(!q || q.user_id !== id) throw userErr('내 질문만 고칠 수 있어요');
+  const t = btrim(text == null ? '' : String(text));
+  if(clen(t) < 5) throw userErr('질문을 다섯 글자 넘게 적어 주세요');
+  const at = nowISO();
+  const j = clone(q.journal && typeof q.journal === 'object' ? q.journal : {});
+  if(!Object.prototype.hasOwnProperty.call(j, 'text_first')) j.text_first = q.text == null ? null : q.text;
+  j.text_edited_at = at;
+  if(q.fruit_kind != null) j.edited_at = at;
+  updateQ(q, {text:left(t, 500), journal:j}, at);
+  return {id:q.id, text:q.text, refined_text:q.refined_text, journal:q.journal, solve:nul(q.solve), resolve_requested_at:q.resolve_requested_at, fruit_kind:q.fruit_kind};
 });
 function canSeeQ(q, uid){ return !!q && (q.user_id === uid || isTeacher(uid)); }
 def('loadMarks', function(qids){
@@ -492,6 +573,15 @@ def('equipItem', function(item){                           // equip_item
   if(it[0] === 'tree') p.active_tree = item; else p.active_companion = p.active_companion === item ? null : item;
   return {active_tree:p.active_tree || 'default', active_companion:p.active_companion || null};
 });
+const FRUIT_IDS = ['apple', 'cherry', 'grape', 'watermelon', 'melon', 'chamoe', 'mandarin', 'peach', 'lemon', 'blueberry'];
+def('setFruit', function(kind){                            // set_fruit(v2_10)
+  const id = needMe(), k = String(kind == null ? '' : kind).trim();
+  if(FRUIT_IDS.indexOf(k) < 0) throw userErr('없는 열매예요');
+  const p = prof(id); if(!p) throw userErr('학생 정보를 찾지 못했어요');
+  p.active_fruit = k;
+  return {active_fruit:k};
+});
+def('myFruit', function(){ const p = prof(me()); return p ? (p.active_fruit || null) : null; });
 def('classmateTrees', function(){                          // classmate_trees
   const id = me(), p = prof(id); if(!p) return [];
   const since = new Date(Date.UTC(schoolYear(), 2, 1)).toISOString();
@@ -501,7 +591,7 @@ def('classmateTrees', function(){                          // classmate_trees
     const lv = db.legacy_level.find(l => l.user_id === x.id);
     const open = qs.filter(q => !q.is_anonymous && q.created_at >= since);
     return {owner_number:x.number, owner_name:x.name, active_tree:x.active_tree || 'default', active_companion:x.active_companion || null,
-      level:Math.max(lv ? lv.level : 1, Math.min(f + 1, 10)), fruits:f, questions:open.length, water:open.reduce((a, q) => a + (q.water_count || 0), 0)};
+      level:Math.max(lv ? lv.level : 1, Math.min(f + 1, 10)), fruits:f, questions:open.length, water:open.reduce((a, q) => a + (q.water_count || 0), 0), active_fruit:x.active_fruit || 'apple'};
   });
 });
 def('friendQuestions', function(num){                      // friend_questions

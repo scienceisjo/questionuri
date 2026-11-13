@@ -44,7 +44,14 @@ const REFINE_CHECKS = REFINE.map(r => r.t);
 const KEEP_A = '내 질문은 이미 ', KEEP_B = '. 그래서 다듬지 않아도 돼요.';
 const keepBlank = r => { r = String(r || ''); return r.indexOf(KEEP_A) === 0 && r.slice(-KEEP_B.length) === KEEP_B ? r.slice(KEEP_A.length, -KEEP_B.length) : r; };
 /* v2_09 SQL 을 아직 안 돌린 서버(함수 없음) — 화면은 안 깨지고 조용한 안내로 */
-const isSoon = e => /save_refine_skip|schema cache|PGRST202|42883|42P01|does not exist|Could not find the function/i.test(String((e && e.message) || e || '') + ' ' + String((e && e.code) || ''));
+const isSoon = e => /save_refine_skip|edit_journal|edit_question_text|schema cache|PGRST202|42883|42P01|does not exist|Could not find the function/i.test(String((e && e.message) || e || '') + ' ' + String((e && e.code) || ''));
+/* 어디서나 고치기(2026-11-13, 사용자 「수정은 어디서나 그냥 다 가능하게 해줘」).
+   · 보낸 뒤(선생님이 읽는 중)에 칸 고치기는 지금 서버(save_journal)도 받는다
+   · 예상·찾기 줄 하나 고치기·지우기, 처음 질문 글 고치기, 열매 뒤 고치기는 v2_11 SQL(edit_journal·edit_question_text·새 save_journal)이 있어야
+     → 서버에 있는지 한 번 보고(X.edReady) 없으면 그 단추만 안 보인다 */
+const ripe = v => v.status === 'fruit' || v.status === 'fog';
+const canFix = v => !!v && !v.legacyHarvest && (!ripe(v) || X.edReady === true);
+const canLine = v => canFix(v) && X.edReady === true;
 const REFINE_EX = {
   star:[['별은 왜 다 달라?', '베텔게우스는 왜 리겔보다 붉게 보일까?'],
         ['우주는 왜 그렇게 넓어?', '멀리 있는 별까지의 거리는 어떻게 알아낼까?'],
@@ -114,7 +121,7 @@ function view(row, marks, clues, all){
     ? {checks:(Array.isArray(rs.checks) ? rs.checks : []).map(str).map(x => x.trim()).filter(Boolean), reason:String(rs.reason).trim(), at:rs.at || null} : null;
   d.refine = {done:!!j.refine_done || has(row.refined_text), text:has(row.refined_text) ? String(row.refined_text).trim() : '', skip};
   /* 예상 — 덮어쓰지 않는다. 옛 guess(+why)가 첫 예상과 다르면 맨 앞 */
-  const pj = (Array.isArray(j.predict) ? j.predict : []).filter(p => p && has(p.text)).map(p => ({text:String(p.text).trim(), at:p.at || null}));
+  const pj = (Array.isArray(j.predict) ? j.predict : []).map((p, ji) => p && has(p.text) ? {text:String(p.text).trim(), at:p.at || null, ji, edited:p.edited_at || null} : null).filter(Boolean);
   d.predict = pj;
   if(has(s.guess) && !(pj.length && pj[0].text === String(s.guess).trim())){ d.predict = [{text:cws([s.guess, s.why]), at:null, legacy:true}].concat(pj); old.predict = true; }
   if(has(s.known)) d.known = String(s.known).trim();
@@ -125,7 +132,7 @@ function view(row, marks, clues, all){
     if(how.length || has(s.change)){ d.method = {kind:LEGACY_HOW[how[0]] || 'book', plan:str(s.change).trim(), how:how.map(x => HOW_NAME[x] || x).join(', '), legacy:true}; old.method = true; }
   }
   /* 찾기 — 옛 source·result 와 옛 AI 답을 앞에 */
-  const fj = (Array.isArray(j.find) ? j.find : []).filter(f => f && (has(f.src) || has(f.text))).map(f => ({src:str(f.src).trim(), text:str(f.text).trim(), ai:f.ai === true || f.ai === 'true', at:f.at || null}));
+  const fj = (Array.isArray(j.find) ? j.find : []).map((f, ji) => f && (has(f.src) || has(f.text)) ? {src:str(f.src).trim(), text:str(f.text).trim(), ai:f.ai === true || f.ai === 'true', at:f.at || null, ji, edited:f.edited_at || null} : null).filter(Boolean);
   const lf = [];
   if(has(s.result) || (has(s.source) && !fj.some(f => f.src === String(s.source).trim())) || (s.tried === 'yes' && !fj.length && !has(s.source)))
     lf.push({src:has(s.source) ? String(s.source).trim() : '해 본 것', text:str(s.result).trim(), ai:false, legacy:true});
@@ -157,8 +164,8 @@ function view(row, marks, clues, all){
   /* 칸이 찼나 — 서버 칸 표시가 있으면 찬 칸, 없으면 글 길이 */
   const texts = stepTexts(row);
   const filled = (k, alt) => !!marks[k] || clen(texts[k]) >= minLen(k) || clen(alt) >= minLen(k);
-  const aiUsed = (!!d.method && !d.method.legacy && d.method.kind === 'ai') || d.find.some(f => f.ai);   // 옛 AI 답도(core findOK·선생님 경고와 같은 기준)
-  const findOK = d.find.some(f => !f.ai) && (!aiUsed || has(d.aiCmp));
+  const aiUsed = (!!d.method && !d.method.legacy && d.method.kind === 'ai') || d.find.some(f => f.ai);   // 선생님 화면 「AI 사용」 표시용
+  const findOK = d.find.length > 0;      // AI 답도 출처 하나(2026-11-13 사용자 「AI 아닌 곳 한 군데는 꼭 — 여전히 꼭 해야 해?」, core findOK 와 같게)
   const done = {
     plant:true,
     refine:d.refine.done,
@@ -216,9 +223,9 @@ const curV = () => { const r = curRow(); return r ? V(r) : null; };
 const nextName = v => v.cur === 'wrap' && v.done.wrap ? '선생님께 보내기' : stepName(v.cur);
 
 /* ═══════════ 모듈 상태 ═══════════ */
-const X = {edit:null, peek:null, flagFor:null, thx:{}, f:{}, msg:{}, showDone:false, nowUnit:null, nowAt:0, unitTouched:false, qmode:{}, sosFor:null,
+const X = {edit:null, line:null, delAsk:null, edReady:null, edProbe:false, edAt:0, peek:null, flagFor:null, thx:{}, f:{}, msg:{}, showDone:false, nowUnit:null, nowAt:0, unitTouched:false, qmode:{}, sosFor:null,
   saving:0, next:null, seenBusy:new Set(), guide:false, guideFor:null, phase:'before', rkReady:null, rkProbe:false};
-function resetForm(){ X.edit = null; X.peek = null; X.flagFor = null; X.sosFor = null; X.thx = {}; X.f = {}; X.msg = {}; }
+function resetForm(){ X.edit = null; X.line = null; X.delAsk = null; X.peek = null; X.flagFor = null; X.sosFor = null; X.thx = {}; X.f = {}; X.msg = {}; }
 function resetAll(){ resetForm(); X.showDone = false; X.nowUnit = null; X.nowAt = 0; X.unitTouched = false; X.next = null; X.seenBusy.clear(); X.guideFor = null; X.rkReady = null; X.rkAt = 0; }
 function guideSeen(){ try{ return localStorage.getItem('qo2-x-guide') === '1' || X.guide; }catch(_){ return X.guide; } }
 function markGuide(){ X.guide = true; X.guideFor = null; try{ localStorage.setItem('qo2-x-guide', '1'); }catch(_){} }
@@ -366,7 +373,7 @@ function summary(v, k, noOld){
     if(m.legacy) return o + (m.how ? '<b>' + esc(m.how) + '</b>' : '') + (m.plan ? (m.how ? ' · ' : '') + esc(m.plan) : '');
     return '<b>' + esc(methodName(m.kind)) + '</b>' + (m.plan ? ' · ' + esc(m.plan) : '');
   }
-  if(k === 'find') return findLines(v, noOld) + (d.same ? '<br><b>두 곳 비교</b> · ' + esc(d.same) : '') + (d.aiCmp ? '<br><b>AI 답과 견주기</b> · ' + esc(d.aiCmp) : '');
+  if(k === 'find') return findLines(v, noOld) + (d.same && d.find.length >= 2 ? '<br><b>두 곳 비교</b> · ' + esc(d.same) : '') + (d.aiCmp ? '<br><b>AI 답과 견주기</b> · ' + esc(d.aiCmp) : '');
   if(k === 'wrap'){
     const w = d.wrap;
     const cmp = w.cmp && CMP_NAME[w.cmp] ? '<b>내 예상은</b> ' + CMP_NAME[w.cmp] + (w.changedBy ? ' — ' + esc(w.changedBy) : '') + '<br>' : '';
@@ -479,17 +486,57 @@ function keepHTML(v, askT){
   return h;
 }
 
+/* 펼친 예상·찾기 — 줄마다 「고치기」, 두 줄 넘으면 「지우기」(v2_11). 옛 앱에서 온 줄(legacy)은 보기만 */
+function linesHTML(v, k){
+  const list = k === 'predict' ? v.d.predict : v.d.find;
+  const own = list.filter(x => !x.legacy).length, line = canLine(v);
+  return list.map((x, i) => {
+    const body = k === 'predict'
+      ? (i ? '<b>바뀐 생각</b> ' : '') + (x.legacy ? OLD : '') + (i < list.length - 1 ? '<span class="x-was">' + esc(x.text) + '</span>' : esc(x.text))
+      : (x.legacy ? OLD : '') + '<b>' + esc(x.src) + (x.ai ? ' (AI)' : '') + '</b>' + (x.text ? ' · ' + esc(x.text) : '');
+    let tools = '';
+    if(line && !x.legacy){
+      if(X.delAsk && X.delAsk.k === k && X.delAsk.i === i)
+        tools = '<span class="x-delq">이 줄을 지울까요?</span><button type="button" class="link x-mini x-red" data-xa="delLine" data-k="' + k + '" data-i="' + i + '">지우기</button>' +
+          '<button type="button" class="link x-mini x-quiet" data-xa="delCancel">그만두기</button>';
+      else tools = '<button type="button" class="link x-mini" data-xa="edit" data-k="' + k + '" data-i="' + i + '">고치기</button>' +
+        (own >= 2 ? '<button type="button" class="link x-mini x-quiet" data-xa="delAsk" data-k="' + k + '" data-i="' + i + '">지우기</button>' : '');
+    }
+    return '<div class="x-line"><div class="x-line-t">' + body + (x.edited ? '<span class="x-edited">고침</span>' : '') + '</div>' + (tools ? '<div class="x-line-tools">' + tools + '</div>' : '') + '</div>';
+  }).join('') + (k === 'find' ? (v.d.same && list.length >= 2 ? '<div class="x-line">두 곳 비교 · ' + esc(v.d.same) + '</div>' : '') + (v.d.aiCmp ? '<div class="x-line">AI 답과 견주기 · ' + esc(v.d.aiCmp) + '</div>' : '') : '');
+}
+/* 줄 고치기 중인가 — X.edit 이 그 칸이고 X.line 이 고칠 줄(보이는 순서) */
+function fixLine(v, k){
+  if(X.edit !== k || X.line == null) return null;
+  const x = (k === 'predict' ? v.d.predict : v.d.find)[X.line];
+  return x && !x.legacy ? {i:X.line, x} : null;
+}
+/* 심기 칸 — 처음 쓴 질문. v2_11 이 있으면 「질문 고치기」(오타·말 바꾸기. 다듬기와는 따로) */
+function plantBody(v){
+  if(X.edit === 'plant' && canLine(v)){
+    return '<div class="form"><textarea class="inp" id="x_qtext" rows="2" maxlength="500" aria-label="처음 질문 고치기">' + esc(v.original) + '</textarea>' +
+      (v.d.refine.text ? '<div class="hint">다듬은 질문 「' + esc(cut(v.d.refine.text, 30)) + '」은 그대로 있어요.</div>' : '') +
+      '<button type="button" class="btn wide" data-xa="plantFix">질문 저장</button>' + errDiv('plantfix') +
+      '<button type="button" class="link x-quiet" data-xa="cancel">그만두기</button></div>';
+  }
+  return '<div class="val">' + esc(v.original) + '</div>' +
+    (canLine(v) ? '<div class="x-links"><button type="button" class="link" data-xa="edit" data-k="plant">질문 고치기</button></div>' : '');
+}
+
 function stepBody(v, st, dn, isCur){
   const d = v.d, k = st.k, open = v.status === 'open';
-  if(k === 'plant') return '<div class="val">' + esc(v.original) + '</div>';
+  if(k === 'plant') return plantBody(v);
   if(dn && !isCur){
     if(X.peek === k){
-      let h = '<div class="val">' + summary(v, k) + '</div><div class="x-links">';
-      if(open || k === 'extend'){
+      const lines = (k === 'predict' || k === 'find') && !v.legacyHarvest;
+      let h = '<div class="val">' + (lines ? linesHTML(v, k) : summary(v, k)) + '</div>' + (lines ? errDiv('line_' + k) : '') + '<div class="x-links">';
+      if(canFix(v) || k === 'extend'){
         if(k === 'predict') h += '<button type="button" class="link" data-xa="edit" data-k="predict">생각이 바뀌었어요</button>';
         else if(k === 'find') h += '<button type="button" class="link" data-xa="edit" data-k="find">다른 곳에서 하나 더 찾기</button>';
-        else if(k !== 'wrap') h += '<button type="button" class="link" data-xa="edit" data-k="' + k + '">고치기</button>';
+        else h += '<button type="button" class="link" data-xa="edit" data-k="' + k + '">고치기</button>';
       }
+      if(X.edReady === false && !v.legacyHarvest && k !== 'extend' && (lines || ripe(v)))
+        h += '<span class="hint x-soon">' + (ripe(v) ? '열매가 열린 뒤 고치기는' : '쓴 줄 하나를 고치거나 지우는 건') + ' 선생님이 준비를 마치면 돼요.</span>';
       return h + '<button type="button" class="link x-quiet" data-xa="peek" data-k="">접기</button></div>';
     }
     const w = d.wrap;
@@ -523,8 +570,14 @@ function stepBody(v, st, dn, isCur){
       '<button type="button" class="btn wide" data-xa="refine">다듬기 저장</button></div>';
     f += '<div class="x-rbox" id="x_rKeep"' + (mode === 'keep' ? '' : ' hidden') + '>' + keepHTML(v, askT) + '</div>';
   }
-  if(k === 'predict'){
-    if(dn) f += '<div class="val" style="margin-top:0">' + summary(v, 'predict') + '</div><div class="hint">처음 생각은 지우지 않고 남겨요. 바뀐 생각만 적어요.</div>';
+  if(k === 'predict' && fixLine(v, 'predict')){
+    const fx = fixLine(v, 'predict');
+    f += '<div class="lbl">' + (fx.i ? '바뀐 생각 고치기' : '처음 예상 고치기') + '</div><textarea class="inp" id="x_pfix" rows="3" aria-label="고칠 예상">' + esc(fx.x.text) + '</textarea>' +
+      '<button type="button" class="btn wide" data-xa="predictFix">고친 예상 저장</button>';
+  }
+  else if(k === 'predict'){
+    if(dn) f += '<div class="val" style="margin-top:0">' + (canLine(v) ? linesHTML(v, 'predict') : summary(v, 'predict')) + '</div>' + (canLine(v) ? errDiv('line_predict') : '') +
+      '<div class="hint">처음 생각은 그대로 두고, 바뀐 생각을 한 줄 더 남겨요.</div>';
     f += '<textarea class="inp" id="x_predict" rows="3" placeholder="내 생각은 __. 왜냐하면 __."></textarea>' +
       (dn ? '' : '<div class="hint">틀려도 괜찮아요. 처음 생각을 남겨 두면 정리할 때 얼마나 바뀌었는지 보여요.</div>') +
       '<button type="button" class="btn wide" data-xa="predict">' + (dn ? '바뀐 생각 남기기' : '예상 남기기') + '</button>';
@@ -535,23 +588,33 @@ function stepBody(v, st, dn, isCur){
     f += chipsHTML('x_mkind', 'mk', K.METHODS, mk) +
       '<div id="x_mplan"' + (mk === 'exp' ? '' : ' hidden') + '><div class="lbl" style="margin-bottom:6px">무엇을 바꾸고 무엇을 볼까요?</div>' +
       '<textarea class="inp" id="x_method" rows="2" placeholder="예) 전지를 반대로 끼우고 나침반 바늘이 도는 쪽 보기">' + esc(m.plan || '') + '</textarea></div>' +
-      '<div class="hint" id="x_maihint"' + (mk === 'ai' ? '' : ' hidden') + '>AI 답은 틀릴 수 있어요. 찾기에서 AI가 아닌 곳 한 군데를 더 찾아 견줘야 정리가 열려요.</div>' +
+      '<div class="hint" id="x_maihint"' + (mk === 'ai' ? '' : ' hidden') + '>AI 답은 틀릴 수 있어요. 찾기에 AI 답을 적을 때 「AI가 한 답이에요」에 체크해 주세요.</div>' +
       '<button type="button" class="btn wide" data-xa="method">방법 정하기</button>';
   }
-  if(k === 'find'){
+  if(k === 'find' && fixLine(v, 'find')){
+    const fx = fixLine(v, 'find');
+    f += '<div class="lbl">찾은 것 고치기</div><input class="inp" id="x_ffsrc" aria-label="출처" maxlength="120" autocomplete="off" value="' + esc(fx.x.src) + '">' +
+      '<textarea class="inp" id="x_ffind" rows="3" aria-label="알아낸 것">' + esc(fx.x.text) + '</textarea>' +
+      '<label class="chk"><input type="checkbox" id="x_ffai"' + (fx.x.ai ? ' checked' : '') + '>AI가 한 답이에요</label>' +
+      '<button type="button" class="btn wide" data-xa="findFix">고친 내용 저장</button>';
+  }
+  else if(k === 'find'){
     const list = d.find;
     const fai = fget('fai', !!(d.method && !d.method.legacy && d.method.kind === 'ai' && !list.length));
-    if(list.length) f += '<div class="val" style="margin-top:0">' + findLines(v) + '</div>';
+    if(list.length) f += '<div class="val" style="margin-top:0">' + (canLine(v) ? linesHTML(v, 'find') : findLines(v)) + '</div>' + (canLine(v) ? errDiv('line_find') : '');
     f += '<input class="inp" id="x_fsrc" placeholder="' + (list.length ? '다른 곳은 어디예요?' : '어디서? 예) 교과서 112쪽') + '" autocomplete="off" aria-label="출처" maxlength="120">' +
       '<textarea class="inp" id="x_find" rows="3" placeholder="그곳에서 알아낸 것을 내 말로" aria-label="알아낸 것"></textarea>' +
       '<label class="chk"><input type="checkbox" id="x_fai"' + (fai ? ' checked' : '') + '>AI가 한 답이에요</label>';
     if(list.length) f += '<div class="lbl">두 곳이 같은 말을 하나요?</div>' + segHTML('x_same', 'same', [['같아요', '같아요'], ['달라요', '달라요']], fget('same', '')) +
       '<input class="inp" id="x_samewhy" placeholder="다르다면 무엇이 달라요?" autocomplete="off">';
-    if(list.length) f += '<div id="x_aicmpBox"' + (v.aiUsed || fai ? '' : ' hidden') + '><div class="lbl" style="margin-bottom:6px">AI 답과 견주면?</div>' +
+    if(list.length) f += '<div id="x_aicmpBox"' + (v.aiUsed || fai ? '' : ' hidden') + '><div class="lbl" style="margin-bottom:6px">AI 답과 견주면? (안 써도 돼요)</div>' +
       '<input class="inp" id="x_aicmp" placeholder="AI 답과 같은 점이나 다른 점 한 줄" autocomplete="off" value="' + esc(d.aiCmp || '') + '"></div>';
     f += '<button type="button" class="btn wide" data-xa="find">찾은 것 남기기</button>';
   }
-  if(k === 'wrap'){
+  if(k === 'wrap' && isQuick(d.wrap)){
+    f += quickHTML(v, d.wrap);                       // 답만 달기로 보낸 답 — 같은 틀(답·어디서)로 고친다
+  }
+  else if(k === 'wrap'){
     const p = d.predict, w = d.wrap || {};
     const cmp = fget('cmp', w.cmp || ''), mode = fget('wmode', w.mode || 'known');
     if(p.length) f += '<div class="lbl">처음 내 예상</div><div class="val x-first" style="margin-top:0">' + esc(p[0].text) + '</div>' +
@@ -561,7 +624,7 @@ function stepBody(v, st, dn, isCur){
     f += '<div id="x_wKnown"' + (mode === 'unknown' ? ' hidden' : '') + '>' + (w.legacy && w.mode === 'known' ? '<div style="margin-bottom:6px">' + OLD + '</div>' : '') +
       '<textarea class="inp" id="x_wrap" rows="3" placeholder="알아낸 것을 한두 문장으로, 내 말로">' + esc(w.mode === 'known' ? (w.text || '') : '') + '</textarea></div>';
     f += '<div id="x_wUnknown"' + (mode === 'unknown' ? '' : ' hidden') + '>';
-    if(v.fogOK){
+    if(v.fogOK || v.status === 'fog'){
       f += '<div class="hint" style="margin-bottom:8px">답을 못 찾았어도 괜찮아요. 어디까지 가 봤는지 적으면 그것도 열매가 돼요.</div>' +
         '<div class="lbl" style="margin-bottom:6px">여기까지 알아냈어요</div><textarea class="inp" id="x_reached" rows="2" placeholder="찾은 사실 하나와 어디서 찾았는지">' + esc(w.mode === 'unknown' ? (w.reached || '') : '') + '</textarea>' +
         '<div class="lbl" style="margin:10px 0 6px">여기서 막혔어요 (질문 꼴로)</div><input class="inp" id="x_stuckq" placeholder="__는 왜 __일까?" autocomplete="off" maxlength="200" value="' + esc(w.mode === 'unknown' ? (w.stuckQ || '') : '') + '">' +
@@ -577,7 +640,7 @@ function stepBody(v, st, dn, isCur){
       f += '<div class="lbl" style="margin-top:6px">넓히기 (골라도 되고 건너뛰어도 돼요)</div>' + segHTML('x_xmode', 'xmode', [['life', '생활과 잇기'], ['newq', '새 질문']], fget('xmode', '')) +
         '<textarea class="inp" id="x_extend" rows="2" maxlength="200" placeholder="이걸 알고 나니 무엇이 다르게 보이나요? 또는 새로 궁금해진 것"></textarea>';
     }
-    f += '<button type="button" class="btn wide" data-xa="wrap">선생님께 보내기</button>';
+    f += '<button type="button" class="btn wide" data-xa="wrap">' + (v.status === 'wait' ? '고쳐서 다시 보내기' : ripe(v) ? '고친 정리 저장' : '선생님께 보내기') + '</button>';
   }
   if(k === 'extend'){
     const e = d.extend || {};
@@ -634,7 +697,7 @@ function nodeState(v, k){
   return v.done[k] ? 'done' : 'todo';
 }
 function nextHTML(v){
-  if(v.status === 'wait') return '<b>지금은</b><span class="xt-what">선생님이 읽는 중</span><span class="xt-why">선생님이 읽는 동안에는 쓴 칸을 볼 수만 있어요.' + (v.done.extend ? '' : ' 넓히기는 지금 해도 돼요.') + '</span>';
+  if(v.status === 'wait') return '<b>지금은</b><span class="xt-what">선생님이 읽는 중</span><span class="xt-why">보낸 뒤에도 잎을 눌러 고칠 수 있어요.' + (v.done.extend ? '' : ' 넓히기도 지금 할 수 있어요.') + '</span>';
   if(v.status === 'fruit' || v.status === 'fog')
     return v.done.extend ? '<b>다 했어요</b><span class="xt-what">넓히기까지 마쳤어요</span>' : '<b>다음에 할 일</b><span class="xt-what">넓히기</span><span class="xt-why">해도 되고 안 해도 돼요. 하면 열매에 새싹이 달려요.</span>';
   const k = v.cur, st = K.STEPS.find(s => s.k === k) || {};
@@ -691,7 +754,7 @@ function treeHTML(v, fs){
   const next = go ? '<button type="button" class="xt-next xt-go" data-xa="node" data-k="' + go + '">' + nextHTML(v) + '<span class="xt-goto" aria-hidden="true">이 칸 열기</span></button>'
     : '<div class="xt-next">' + nextHTML(v) + '</div>';
   return '<div class="xt">' + s + '<div class="xt-side">' + next + key +
-    '<div class="xt-tip">' + (v.status === 'open' ? '잎을 누르면 그 칸이 열려요. 끝난 칸도 다시 열어 고칠 수 있어요.' : '잎을 누르면 그 칸에 쓴 것을 볼 수 있어요.') + '</div></div></div>';
+    '<div class="xt-tip">' + (v.status === 'open' ? '잎을 누르면 그 칸이 열려요. 끝난 칸도 다시 열어 고칠 수 있어요.' : canFix(v) ? '잎을 누르면 그 칸을 다시 보고 고칠 수 있어요.' : '잎을 누르면 그 칸에 쓴 것을 볼 수 있어요.') + '</div></div></div>';
 }
 /* 나무 마디·번호·칸 이름을 눌렀을 때 — 기존 펼치기(peek)·고치기(edit) 흐름을 그대로 쓴다.
    선생님께 보낸 뒤(wait)·열매·안개 열매는 보기만(넓히기는 원래처럼 보낸 뒤에도 쓸 수 있음 — stepBody 「넓혀 보기」와 같게).
@@ -703,11 +766,11 @@ function nodeGo(k, fromList, kbd){
   let to = k;
   X.flagFor = null;
   if(k === 'plant'){ X.peek = null; }
-  else if(open && k === v.cur){ if(X.edit && X.edit !== k){ X.edit = null; X.f = {}; } X.peek = null; }
+  else if(open && k === v.cur){ if(X.edit && X.edit !== k){ X.edit = null; X.line = null; X.f = {}; } X.peek = null; }
   else if(X.edit === k){ /* 이미 열려 있음 */ }
-  else if(open && skipRef){ X.edit = 'refine'; X.peek = null; X.f = {}; delete X.msg.refine; }    // 건너뛴 다듬기로 돌아가기
-  else if(v.done[k]){ X.edit = null; X.f = {}; X.peek = fromList && X.peek === k ? null : k; }   // 펼치기 → 그 안에 고치기
-  else if(k === 'extend' && v.status !== 'open'){ X.edit = 'extend'; X.peek = null; X.f = {}; }
+  else if(open && skipRef){ X.edit = 'refine'; X.line = null; X.peek = null; X.f = {}; delete X.msg.refine; }    // 건너뛴 다듬기로 돌아가기
+  else if(v.done[k]){ X.edit = null; X.line = null; X.delAsk = null; X.f = {}; X.peek = fromList && X.peek === k ? null : k; }   // 펼치기 → 그 안에 고치기
+  else if(k === 'extend' && v.status !== 'open'){ X.edit = 'extend'; X.line = null; X.peek = null; X.f = {}; }
   else if(open){ ui.toast('앞 칸부터 차례로 채워요. 지금은 「' + nextName(v) + '」 차례예요.'); to = v.cur; X.edit = null; X.peek = null; }
   else { ui.toast('이 칸은 비어 있어요.'); }
   X.focusTo = kbd ? 'x_st_' + to : null;
@@ -724,6 +787,7 @@ function routeHead(v, m, on){
 }
 function sheetHTML(row){
   const v = V(row);
+  probeEdit();
   const stWord = {wait:' · 선생님이 읽는 중', fruit:' · 열매', fog:' · 안개 열매'}[v.status] || '';
   const sub = (v.unit ? esc(v.unit) + ' · ' : '') + (v.anon ? '익명 · ' : '') + (v.legacyHarvest ? '옛 기록' : v.prints + '/5칸') + stWord;
   let h = '<div class="sh-top" data-qid="' + v.id + '"><button type="button" class="back" data-xa="close" aria-label="닫기">' + ui.icons.back + '</button>' +
@@ -756,7 +820,7 @@ function sheetHTML(row){
   }
   if(QO.photos) h += QO.photos.html(v);              // 사진(photos.js)
   if(v.legacyHarvest) h += '<div class="statusbar fruit">🍎 옛 과수원에서 거둔 열매예요. 그때는 일지 칸 없이 거뒀어요.' + (v.sprout ? ' 넓히기까지 해서 열매에 새싹 🌱이 달렸어요.' : '') + '</div>';
-  else if(v.status === 'wait') h += '<div class="statusbar wait">선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.</div>';
+  else if(v.status === 'wait') h += '<div class="statusbar wait">선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요. 그 전에도 칸을 열어 고칠 수 있어요.</div>';
   else if(v.status === 'fruit') h += '<div class="statusbar fruit">🍎 선생님이 확인했어요. 열매가 열렸어요.' + (v.sprout ? ' 넓히기까지 해서 열매에 새싹 🌱이 달렸어요.' : '') + '</div>';
   else if(v.status === 'fog') h += '<div class="statusbar fog">' + ui.FOG_SVG + ' 끝까지 찾아본 질문이에요. 어디까지 알아냈는지 기록으로 남았어요.</div>';
   return h + '</div>';
@@ -908,7 +972,7 @@ async function plantChild(v, text, patch){
   return row;
 }
 /* 이 질문에서 나온 꼬리 질문(같은 글) */
-const sameText = (a, b) => String(a || '').replace(/\s+/g, '') === String(b || '').replace(/\s+/g, '');
+const sameText = (a, b) => QO.check.sameQ(a, b);      // 띄어쓰기·문장부호·끝 「요」만 다르면 같은 글(심기·질문 고치기와 같게)
 const childWith = (v, text) => S.questions.find(q => q && Number(q.parent_id) === v.id && sameText(q.text, text)) || null;
 /* 「아직 모름」의 막힌 곳 — 되돌림 뒤 다시 보내도 막힘 표시 선 새 질문은 하나만 남긴다.
    같은 글이면 다시 심지 않고, 글이 바뀌었으면 옛 꼬리 질문의 막힘 표시를 내리고 새로 심는다(옛 질문은 지우지 않음) */
@@ -919,14 +983,15 @@ async function plantStuck(v, text, tried){
   if(old && flagged(old)) QO.store.upsertQuestion(await QO.api.saveJournal(old.id, {flag:null}));
   const same = childWith(v, text);
   if(same){
-    if(!flagged(same) && !same.fruit_kind) QO.store.upsertQuestion(await QO.api.saveJournal(same.id, {flag:{step:'find', tried:tried}}));
-    return same;
+    if(!flagged(same) && !same.fruit_kind){ QO.store.upsertQuestion(await QO.api.saveJournal(same.id, {flag:{step:'find', tried:tried}})); return true; }
+    return false;                                       // 이미 심었고 깃발도 서 있음
   }
-  return plantChild(v, text, {flag:{step:'find', tried:tried}});
+  await plantChild(v, text, {flag:{step:'find', tried:tried}});
+  return true;
 }
 /* 칸을 저장한 뒤 — 도토리는 없고, 쓴 말을 돌려준다. 이 칸에 온 단서가 있으면 고마움을 묻는다 */
 function finish(k, wasDone, msg, keepEdit){
-  X.edit = keepEdit ? k : null; X.peek = null; X.flagFor = null; X.f = {};
+  X.edit = keepEdit ? k : null; X.line = null; X.delAsk = null; X.peek = null; X.flagFor = null; X.f = {};
   const keepMsg = keepEdit ? X.msg[k] : '';
   X.msg = {}; if(keepMsg) X.msg[k] = keepMsg;
   const v = curV();
@@ -943,9 +1008,9 @@ async function plant(btn){
   const v = (inp && inp.value || '').trim();
   if(clen(v) < 5){ setErr('plant', '한 마디만 더 붙여 볼까요? 다섯 글자 넘게 적어요.'); if(inp) inp.focus(); return; }
   const jw = QO.check.junkWhy(v); if(jw){ setErr('plant', jw); if(inp) inp.focus(); return; }
-  /* 같은 질문 또 심기(옛 앱 findDupQ 와 같은 일) — 최근 60개 */
-  const dup = S.questions.slice(0, 60).find(q => q && (QO.check.similar(v, q.text) >= 0.85 || (q.refined_text && QO.check.similar(v, q.refined_text) >= 0.85)));
-  if(dup){ setErr('plant', '비슷한 질문 「' + cut(dup.refined_text || dup.text, 24) + '」을 이미 심었어요. 다른 질문이면 조금 더 구체적으로 적어 주세요.'); if(inp) inp.focus(); return; }
+  /* 같은 질문 또 심기 — 띄어쓰기·문장부호·끝의 「요」만 다른 같은 질문만 막는다(예전 「85% 넘게 비슷하면 막기」는 너무 빡세서 뺌, 2026-11-13) */
+  const dup = S.questions.slice(0, 60).find(q => q && (QO.check.sameQ(v, q.text) || (q.refined_text && QO.check.sameQ(v, q.refined_text))));
+  if(dup){ setErr('plant', '같은 질문 「' + cut(dup.refined_text || dup.text, 24) + '」을 이미 심었어요.'); if(inp) inp.focus(); return; }
   const input = {text:v, is_anonymous:!!($('#x_anon') || {}).checked, phase:X.phase};
   const sel = $('#x_unit');
   if(X.unitTouched && sel) input.unit = sel.value;      // '' = 나중에 고를래요, 안 건드리면 지금 차시
@@ -972,11 +1037,11 @@ async function saveRefine(btn, skip){
   if(skip){ patch = {refine:''}; msg = '처음 질문 그대로 탐구해요.'; }
   else {
     const raw = val('x_refine');
-    /* 85% 넘게 같으면 못 낸다 — 끝의 「요」·문장부호만 바꾼 글도 같은 글로 본다 */
-    const near = (a, b) => QO.check.containedIn(a, b) >= 0.85 || QO.check.similar(a, b) >= 0.85;
-    if(clen(raw) >= 6 && near(raw, v.original)) return setErr('refine', '처음 질문과 거의 같아요. 조금 더 분명하게 바꿔 봐요.');
-    if(clen(raw) >= 6 && v.refineAsk && v.d.refine.text && near(raw, v.d.refine.text)) return setErr('refine', '지난번에 다듬은 질문과 거의 같아요. 선생님 글을 보고 조금 더 바꿔 봐요.');
+    /* 똑같으면 못 낸다 — 끝의 「요」·띄어쓰기·문장부호만 바꾼 글도 같은 글(예전 85% 기준은 너무 빡세서 뺌, 2026-11-13) */
+    if(clen(raw) >= 6 && QO.check.sameQ(raw, v.original)) return setErr('refine', '처음 질문과 똑같아요. 한 군데라도 더 분명하게 바꿔 봐요.');
+    if(clen(raw) >= 6 && v.refineAsk && v.d.refine.text && QO.check.sameQ(raw, v.d.refine.text)) return setErr('refine', '지난번에 다듬은 질문과 똑같아요. 선생님 글을 보고 조금 바꿔 봐요.');
     const t = need('x_refine', 6, 'refine'); if(t == null) return;
+    if(v.d.refine.text && t === v.d.refine.text && !v.refineAsk){ X.edit = null; paint({scroll:true}); ui.toast('바뀐 게 없어요.'); return; }
     patch = {refine:t}; msg = '다듬은 질문으로 탐구해요.';
   }
   const r = await run(btn, 'refine', () => saveTo(v.id, patch));
@@ -994,6 +1059,8 @@ async function saveRefineKeep(btn){
   const bad = clen(b) < 6 ? '내 질문이 이미 어떤지 여섯 글자 넘게 적어 주세요.' : QO.check.junkWhy(b, [v.original]);
   if(bad){ setErr('refine', bad); if(el) el.focus(); return; }
   const reason = KEEP_A + b + KEEP_B;
+  const sk = v.d.refine.skip;
+  if(sk && sk.reason === reason && sk.checks.join('|') === checks.join('|') && !v.refineAsk){ X.edit = null; paint({scroll:true}); ui.toast('바뀐 게 없어요.'); return; }
   const r = await run(btn, 'refine', async () => {
     try{
       const res = await QO.api.saveRefineSkip(v.id, checks, reason);
@@ -1020,6 +1087,80 @@ function probeKeep(){
     else X.rkAt = Date.now();
   }).finally(() => { X.rkProbe = false; });
 }
+/* 서버에 v2_11(edit_journal)이 있나 — 일지를 열 때 본다. probeKeep 과 같은 방식(없는 질문 0 → 함수가 있으면 「내 질문만…」) */
+function probeEdit(){
+  if(X.edReady === true || X.edProbe || Date.now() - (X.edAt || 0) < (X.edReady === false ? 60000 : 30000)) return;
+  X.edProbe = true;
+  const was = X.edReady;
+  const repaint = () => { if(QO.tabs.current() === 'explore' && S.openQ != null) paint(); };
+  Promise.resolve().then(() => QO.api.editJournal(0, {op:'predict_del', i:0})).then(() => { X.edReady = true; if(was !== true) repaint(); }, e => {
+    if(isSoon(e)){ X.edReady = false; X.edAt = Date.now(); if(was !== false) repaint(); }
+    else if(ui.userMsg(e)){ X.edReady = true; if(was !== true) repaint(); }   // 함수는 있다(없는 질문이라 막힌 것)
+    else X.edAt = Date.now();
+  }).finally(() => { X.edProbe = false; });
+}
+const noFn = e => { if(isSoon(e)){ X.edReady = false; X.edAt = Date.now(); throw QO.userError('이 고치기는 선생님이 준비를 마치면 돼요.'); } throw e; };
+/* 줄 고치기·지우기(v2_11 edit_journal) — save_journal 과 같은 모양을 돌려받아 같은 길로 */
+const isStale = e => /다른 곳에서 바뀌었어요/.test(String((e && e.message) || ''));
+async function editTo(id, op){
+  const res = await QO.api.editJournal(id, op).catch(e => {
+    if(isStale(e)) Promise.resolve().then(() => QO.store.refreshQuestions()).then(() => { X.edit = null; X.line = null; paint(); }).catch(() => {});
+    return noFn(e);
+  });
+  QO.store.upsertQuestion(res);
+  await QO.store.refreshQuestion(id);
+  return res;
+}
+async function savePredictFix(btn){
+  const v = curV(); if(!v) return;
+  const fx = fixLine(v, 'predict'); if(!fx) return;
+  setErr('predict', '');
+  const t = need('x_pfix', 8, 'predict', [v.original, v.text].concat(v.d.predict.filter((p, i) => i !== fx.i).map(p => p.text))); if(t == null) return;
+  if(!QO.check.hasReason(t)) return setErr('predict', '까닭도 한 마디 붙여 볼까요? 「왜냐하면 __」처럼요.');
+  if(t === fx.x.text){ X.edit = null; X.line = null; paint({scroll:true}); return; }
+  const r = await run(btn, 'predict', () => editTo(v.id, {op:'predict_set', i:fx.x.ji, at:fx.x.at || '', text:t}));
+  if(r) finish('predict', true, '예상을 고쳤어요.');
+}
+async function saveFindFix(btn){
+  const v = curV(); if(!v) return;
+  const fx = fixLine(v, 'find'); if(!fx) return;
+  setErr('find', '');
+  const s = need('x_ffsrc', 2, 'find'); if(s == null) return;
+  const t = need('x_ffind', 10, 'find', [v.original, v.text].concat(v.d.find.filter((f, i) => i !== fx.i).map(f => f.text))); if(t == null) return;
+  const ai = !!($('#x_ffai') || {}).checked || AI_RE.test(s);
+  if(s === fx.x.src && t === fx.x.text && ai === fx.x.ai){ X.edit = null; X.line = null; paint({scroll:true}); return; }
+  const r = await run(btn, 'find', () => editTo(v.id, {op:'find_set', i:fx.x.ji, at:fx.x.at || '', src:s, text:t, ai}));
+  if(r) finish('find', true, '찾은 것을 고쳤어요.');
+}
+async function delLine(btn){
+  const v = curV(); if(!v) return;
+  const k = btn.dataset.k, i = Number(btn.dataset.i), x = (k === 'predict' ? v.d.predict : v.d.find)[i];
+  X.delAsk = null;
+  if(!x || x.legacy){ paint(); return; }
+  const r = await run(btn, 'line_' + k, () => editTo(v.id, {op:k + '_del', i:x.ji, at:x.at || ''}));
+  if(!r) return;
+  X.peek = k; paint();                                 // 펼친 채로 남은 줄을 보여 준다
+  ui.toast(k === 'predict' ? '그 생각을 지웠어요.' : '그 출처를 지웠어요.');
+}
+async function savePlantText(btn){
+  const v = curV(); if(!v) return;
+  setErr('plantfix', '');
+  const inp = $('#x_qtext');
+  if(inp && QO.ime && QO.ime.ask(inp)) return setErr('plantfix', '글자가 영어로 쳐진 것 같아요. 아래에서 골라 주세요.');
+  const t = (inp && inp.value || '').replace(/\s*\n\s*/g, ' ').trim();     // 질문은 한 줄로
+  if(clen(t) < 5){ setErr('plantfix', '한 마디만 더 붙여 볼까요? 다섯 글자 넘게 적어요.'); if(inp) inp.focus(); return; }
+  const jw = QO.check.junkWhy(t); if(jw){ setErr('plantfix', jw); if(inp) inp.focus(); return; }
+  if(t === v.original){ X.edit = null; paint({scroll:true}); return; }
+  const dup = S.questions.find(q => q && Number(q.id) !== v.id && (QO.check.sameQ(t, q.text) || (q.refined_text && QO.check.sameQ(t, q.refined_text))));
+  if(dup) return setErr('plantfix', '같은 질문 「' + cut(dup.refined_text || dup.text, 24) + '」을 이미 심었어요.');
+  const r = await run(btn, 'plantfix', async () => {
+    const res = await QO.api.editQuestionText(v.id, t).catch(noFn);
+    QO.store.upsertQuestion(res);
+    await QO.store.refreshQuestion(v.id);
+    return res;
+  });
+  if(r) finish('plant', true, '질문을 고쳤어요.');
+}
 async function savePredict(btn){
   const v = curV(); if(!v) return;
   setErr('predict', '');
@@ -1038,6 +1179,7 @@ async function saveMethod(btn){
   let plan = '';
   if(kind === 'exp'){ plan = need('x_method', 8, 'method', [v.original]); if(plan == null) return; }
   const was = v.done.method;
+  if(was && !m.legacy && m.kind === kind && (m.plan || '') === plan){ X.edit = null; paint({scroll:true}); ui.toast('바뀐 게 없어요.'); return; }
   const r = await run(btn, 'method', () => saveTo(v.id, {method:{kind, plan}}));
   if(r) finish('method', was, (METHOD_TO[kind] || methodName(kind) + '(으)로') + ' 알아보기로 했어요.');
 }
@@ -1070,13 +1212,6 @@ async function saveFind(btn){
   const r = await run(btn, 'find', () => saveTo(v.id, patch));
   if(!r) return;
   ['x_fsrc', 'x_find', 'x_samewhy'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  const nv = curV();
-  if(nv && !nv.findOK){
-    /* AI 를 썼으면 AI 아닌 출처 + 견주기가 있어야 찾기가 끝난다 */
-    X.msg.find = nv.d.find.some(x => !x.ai) ? 'AI 답과 같은 점이나 다른 점을 한 줄 적어 주세요.' : 'AI 답은 틀릴 수 있어요. AI가 아닌 곳을 한 군데 더 찾아 주세요.';
-    finish('find', true, '찾은 것을 남겼어요.', true);
-    return;
-  }
   finish('find', was, patch.find_add ? (list.length ? '두 곳에서 찾은 것을 견줘 봤어요.' : '찾은 것을 남겼어요.') : 'AI 답과 견준 것을 남겼어요.');
 }
 async function saveWrap(btn){
@@ -1093,7 +1228,7 @@ async function saveWrap(btn){
   /* 알아낸 것은 내 말로 — 찾기 글을 그대로 옮긴 것도 막는다(여기까지 알아냈어요는 찾은 사실을 옮기는 칸이라 뺌) */
   if(mode === 'known'){ const t = need('x_wrap', 10, k, others.concat(v.d.find.map(f => f.text))); if(t == null) return; w = {mode:'known', text:t}; }
   else {
-    if(!v.fogOK) return setErr(k, '아직은 「아직 모름」을 고를 수 없어요.');
+    if(!v.fogOK && v.status !== 'fog') return setErr(k, '아직은 「아직 모름」을 고를 수 없어요.');
     const r = need('x_reached', 8, k, others); if(r == null) return;
     const sq = need('x_stuckq', 6, k, [v.original]); if(sq == null) return;
     if(!/(\?|？|까|까요)$/.test(sq)) return setErr(k, '막힌 곳은 질문 꼴로 적어 주세요. 「__는 왜 __일까?」처럼요.');
@@ -1102,6 +1237,12 @@ async function saveWrap(btn){
     w = {mode:'unknown', reached:r, stuckQ:sq, why};
   }
   w.cmp = cmp; w.changedBy = changedBy;
+  const wk = x => JSON.stringify([x.mode, x.text || '', x.reached || '', x.stuckQ || '', x.why || '', x.cmp || '', x.cmp === 'changed' ? x.changedBy || '' : '']);   // 「무엇이 바꿨나」는 바뀌었어요일 때만 뜻이 있다
+  const extNow = !v.done.extend && !!val('x_extend');
+  if(v.done.wrap && v.status !== 'open' && !w0.legacy && !extNow && wk(w) === wk(w0)){ X.edit = null; paint({scroll:true}); ui.toast('바뀐 게 없어요.'); return; }
+  /* 막힌 곳 새 질문 + 막힘 표시 — 처음 보낼 때·되돌림 뒤(열린 질문)는 늘, 읽는 중엔 막힌 곳이 바뀐 때만, 열매 뒤엔 안 함(고치기만으로 SOS 가 다시 서지 않게) */
+  const stuckNew = !(w0.mode === 'unknown' && !w0.legacy && sameText(w0.stuckQ, w.stuckQ));
+  const doStuck = w.mode === 'unknown' && !ripe(v) && (v.status === 'open' || stuckNew);
   const patch = {wrap:w};
   let ext = null;
   if(!v.done.extend){
@@ -1113,15 +1254,16 @@ async function saveWrap(btn){
       ext = {kind:xm, text:xt}; patch.extend = ext;
     }
   }
+  let planted = false;
   const r = await run(btn, k, async () => {
     const res = await saveTo(v.id, patch);
-    if(w.mode === 'unknown') await plantStuck(v, w.stuckQ, w.reached);   // 막힌 곳은 새 질문 + 막힘 표시(하나만)
+    if(doStuck) planted = await plantStuck(v, w.stuckQ, w.reached);   // 막힌 곳은 새 질문 + 막힘 표시(하나만)
     if(ext && ext.kind === 'newq' && !childWith(v, ext.text)) await plantChild(v, ext.text);
     return res;
   });
   if(!r) return;
-  let msg = '선생님께 보냈어요.';
-  if(w.mode === 'unknown') msg += ' 막힌 곳은 새 질문으로 심고 막힘 표시를 세웠어요.';
+  let msg = v.status === 'wait' ? '고쳐서 다시 보냈어요.' : ripe(v) ? '정리를 고쳤어요. 선생님 화면에 고친 시각이 보여요.' : '선생님께 보냈어요.';
+  if(planted) msg += ' 막힌 곳은 새 질문으로 심고 막힘 표시를 세웠어요.';
   else if(ext && ext.kind === 'newq') msg += ' 새 질문도 씨앗으로 심었어요.';
   finish(k, v.done.wrap, msg);
 }
@@ -1171,13 +1313,21 @@ function sosHTML(v){
   else h += '<button type="button" class="x-sosbtn" data-xa="sosOpen">친구에게 SOS</button>';
   return h + '</div>';
 }
-function quickHTML(v){
+/* 보낸 답의 「어디서」를 칩 이름과 자세히로 나눈다(「교과서 · 120쪽」 → ['교과서', '120쪽'], 칩에 없는 글이면 ['', 그 글]) */
+function quickSrc(w){
+  const cb = w ? String(w.changedBy || '') : '', at = cb.indexOf(' · '), s0 = at >= 0 ? cb.slice(0, at) : cb;
+  return QSRC.indexOf(s0) >= 0 ? [s0, at >= 0 ? cb.slice(at + 3) : ''] : ['', cb];
+}
+/* w 가 있으면 보낸 답 고치기 — 답·어디서를 채워 둔다 */
+function quickHTML(v, w){
+  const qs = quickSrc(w), src = qs[0], det = qs[1];
+  const label = !w || v.status === 'open' ? '선생님께 보내기' : v.status === 'wait' ? '고쳐서 다시 보내기' : '고친 답 저장';
   return '<div class="x-quick"><div class="lbl">알아낸 답</div>' +
-    '<textarea class="inp" id="x_qans" rows="3" maxlength="1000" placeholder="알아낸 답을 내 말로 한두 문장"></textarea>' +
-    '<div class="lbl" style="margin:12px 0 6px">어디서 알았어요?</div>' + chipsHTML('x_qsrc', 'qsrc', QSRC.map(s => [s, s]), fget('qsrc', '')) +
-    '<input class="inp" id="x_qsrcd" style="margin-top:8px" maxlength="80" autocomplete="off" placeholder="자세히 (안 써도 돼요) 예: 교과서 120쪽">' +
-    '<button type="button" class="btn wide" style="margin-top:12px" data-xa="quick">선생님께 보내기</button>' + errDiv('quick') +
-    '<div class="hint" style="margin-top:8px">끝까지 탐구로 칸을 채울수록 발자국이 남아서, 열매를 맺을 때 도토리를 더 받아요.</div></div>';
+    '<textarea class="inp" id="x_qans" rows="3" maxlength="1000" placeholder="알아낸 답을 내 말로 한두 문장">' + (w ? esc(w.text || '') : '') + '</textarea>' +
+    '<div class="lbl" style="margin:12px 0 6px">어디서 알았어요?</div>' + chipsHTML('x_qsrc', 'qsrc', QSRC.map(s => [s, s]), fget('qsrc', src)) +
+    '<input class="inp" id="x_qsrcd" style="margin-top:8px" maxlength="80" autocomplete="off" placeholder="자세히 (안 써도 돼요) 예: 교과서 120쪽" value="' + esc(det) + '">' +
+    '<button type="button" class="btn wide" style="margin-top:12px" data-xa="quick">' + label + '</button>' + errDiv('quick') +
+    (w ? '' : '<div class="hint" style="margin-top:8px">끝까지 탐구로 칸을 채울수록 발자국이 남아서, 열매를 맺을 때 도토리를 더 받아요.</div>') + '</div>';
 }
 async function saveQuick(btn){
   const v = curV(); if(!v) return;
@@ -1185,12 +1335,16 @@ async function saveQuick(btn){
   const el = document.getElementById('x_qans');
   if(el && el.value.trim() && QO.ime && QO.ime.ask(el)) return setErr(k, '글자가 영어로 쳐진 것 같아요. 아래에서 골라 주세요.');
   const t = need('x_qans', 10, k, [v.original, v.text]); if(t == null) return;
-  const src = fget('qsrc', '');
+  const fix = X.edit === 'wrap' || (isQuick(v.d.wrap) && v.cur === 'wrap');      // 보낸 답 고치기 — 칩 기본값은 그릴 때와 같게
+  const src = fget('qsrc', fix && isQuick(v.d.wrap) ? quickSrc(v.d.wrap)[0] : '');
   if(!src) return setErr(k, '어디서 알았는지 하나 골라 주세요.');
   const det = (document.getElementById('x_qsrcd') || {}).value || '';
   const where = Array.from((det.trim() ? src + ' · ' + det.trim() : src)).slice(0, 190).join('');
+  const w0 = v.d.wrap || {};
+  if(fix && v.status !== 'open' && isQuick(w0) && w0.text === t && (w0.changedBy || '') === where){ X.edit = null; paint({scroll:true}); ui.toast('바뀐 게 없어요.'); return; }
   const r = await run(btn, k, () => saveTo(v.id, {wrap:{mode:'known', text:t, cmp:QUICK, changedBy:where}}));
   if(!r) return;
+  if(X.edit === 'wrap'){ finish('wrap', true, v.status === 'open' ? '선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.' : v.status === 'wait' ? '고쳐서 다시 보냈어요.' : '답을 고쳤어요. 선생님 화면에 고친 시각이 보여요.'); return; }
   X.qmode[v.id] = null; X.f = {};
   paint({scroll:true, toStatus:true});
   ui.toast('선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.');
@@ -1253,9 +1407,12 @@ function seg(b){
 const ACT = {
   plant, phase:b => setPhase(b.dataset.ph), open:b => open(b.dataset.id), close:() => ui.sheet.close(),
   fold:() => { X.showDone = !X.showDone; paint(); },
-  peek:b => { X.peek = b.dataset.k || null; paint(); },
-  edit:b => { X.edit = b.dataset.k; X.peek = null; X.flagFor = null; X.f = {}; delete X.msg[b.dataset.k]; paint({scroll:true}); },
-  cancel:() => { X.edit = null; X.flagFor = null; X.f = {}; paint({scroll:true}); },
+  peek:b => { X.peek = b.dataset.k || null; X.delAsk = null; paint(); },
+  edit:b => { X.edit = b.dataset.k; X.line = b.dataset.i != null && b.dataset.i !== '' ? Number(b.dataset.i) : null; X.delAsk = null; X.peek = null; X.flagFor = null; X.f = {}; delete X.msg[b.dataset.k]; if(b.dataset.k === 'plant') delete X.msg.plantfix; paint({scroll:true}); },
+  cancel:() => { X.edit = null; X.line = null; X.flagFor = null; X.f = {}; paint({scroll:true}); },
+  predictFix:savePredictFix, findFix:saveFindFix, plantFix:savePlantText, delLine,
+  delAsk:b => { X.delAsk = {k:b.dataset.k, i:Number(b.dataset.i)}; paint(); },
+  delCancel:() => { X.delAsk = null; paint(); },
   seg,
   refine:b => saveRefine(b, false), refineSkip:b => saveRefine(b, true), refineKeep:saveRefineKeep,
   predict:savePredict, method:saveMethod, find:saveFind, wrap:saveWrap, extend:saveExtend,
@@ -1338,21 +1495,31 @@ QO.api.saveRefineSkip = async function(qid, checks, reason){
   if(r.error){ const e = new Error(String(r.error.message || r.error)); e.code = r.error.code; e.details = r.error.details; throw e; }
   return r.data;
 };
+/* ═══════════ 데이터 함수 — 어디서나 고치기(v2_11 edit_journal · edit_question_text) ═══════════
+   editJournal(질문, {op:'predict_set'|'predict_del'|'find_set'|'find_del', i, text|src·text·ai}) → save_journal 과 같은 모양.
+   editQuestionText(질문, 글) → {id, text, refined_text, journal, solve, resolve_requested_at, fruit_kind}. editJournal 응답에도 solve 가 온다. 흉내는 mock.js */
+async function rpcErr(name, args){
+  const c = await QO.sbClient();
+  const r = await c.rpc(name, args);
+  if(r.error){ const e = new Error(String(r.error.message || r.error)); e.code = r.error.code; e.details = r.error.details; throw e; }
+  return r.data;
+}
+QO.api.editJournal = (qid, op) => rpcErr('edit_journal', {p_qid:qid, p_op:op || {}});
+QO.api.editQuestionText = (qid, text) => rpcErr('edit_question_text', {p_qid:qid, p_text:text == null ? '' : String(text)});
 if(QO.mock && QO.mock.extend) QO.mock.extend({
   saveRefineSkip(qid, checks, reason){
     const h = QO.mock.h;
     const id = h.needMe();                                              // 로그인이 필요해요
     const q = h.qById(qid);
     if(!q || q.user_id !== id) throw h.userErr('내 질문만 고칠 수 있어요');
-    if(q.fruit_kind != null) throw h.userErr('선생님이 확인한 질문은 넓히기만 더할 수 있어요');
-    const r = String(reason == null ? '' : reason).trim();
+    const r = String(reason == null ? '' : reason).trim();     // v2_11: 열매 뒤에도 받는다(열매 뒤면 edited_at)
     if(clen(r) < 10) throw h.userErr('다듬지 않아도 되는 이유를 열 글자 넘게 적어 주세요');
     const left = (s, n) => Array.from(s).slice(0, n).join('');
     const ch = (Array.isArray(checks) ? checks : []).filter(e => typeof e === 'string' && e.trim() !== '').slice(0, 10).map(e => left(e.trim(), 40));
     if(!ch.length) throw h.userErr('점검표에서 내 질문에 맞는 것을 하나 넘게 체크해 주세요');
     const at = h.nowISO();
     const j = Object.assign({}, q.journal && typeof q.journal === 'object' && !Array.isArray(q.journal) ? q.journal : {},
-      {refine_done:true, refine_skip:{checks:ch, reason:left(r, 300), at:at}});
+      {refine_done:true, refine_skip:{checks:ch, reason:left(r, 300), at:at}}, q.fruit_kind != null ? {edited_at:at} : {});
     h.updateQ(q, {journal:j, refined_text:null, refined_at:at}, at);
     return {id:q.id, journal:q.journal, refined_text:q.refined_text, resolve_requested_at:q.resolve_requested_at, fruit_kind:q.fruit_kind};
   }
@@ -1382,10 +1549,10 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.eq([VV(108).cur, VV(101).cur, VV(103).d.flag.step], ['refine', 'predict', 'find'], '108·101·103');
     const row = {id:-1, text:'시험용 질문이에요', journal:{predict:[{text:'짧아'}], method:{kind:'ai', plan:''}, find:[{src:'챗GPT', text:'AI가 한 말을 적었어요', ai:true}]}};
     const a = view(row, {}, []);
-    t.eq([a.done.predict, a.done.method, a.done.find, a.cur, a.prints], [false, true, false, 'predict', 1], '글 길이 기준·AI 만');
+    t.eq([a.done.predict, a.done.method, a.done.find, a.cur, a.prints], [false, true, true, 'predict', 2], '글 길이 기준 · AI 답도 출처 하나');
     const now = new Date().toISOString();
     const b = view(row, {predict:{first_at:now, last_at:now, text_md5:'m'}}, []);
-    t.eq([b.done.predict, b.cur], [true, 'find'], '서버 칸 표시가 있으면 찬 칸');
+    t.eq([b.done.predict, b.cur], [true, 'wrap'], '서버 칸 표시가 있으면 찬 칸');
     const lv = view({id:-2, text:'전지를 넣으면 불이 켜질까?', solve:{guess:'불이 켜질 것 같다', why:'전지가 있으니까', how:['obs', 'src'], change:'전구를 보기', source:'교과서', result:'불이 켜졌다', answer:'전지를 연결하면 전류가 흘러 불이 켜진다', newq:'전지 두 개면 더 밝을까?'}}, {}, []);
     t.eq(lv.d.predict[0].text, '불이 켜질 것 같다 전지가 있으니까', '옛 예상 = guess + why');
     t.eq([lv.d.method.how, lv.d.method.plan, lv.d.find[0].src, lv.d.wrap.text, lv.d.extend.kind], ['관찰, 조사', '전구를 보기', '교과서', '전지를 연결하면 전류가 흘러 불이 켜진다', 'newq'], '옛 칸');
@@ -1441,7 +1608,7 @@ if(QO.selftest && QO.cfg.page === 'student'){
     /* 비슷한 질문은 다시 심지 않음 */
     await t.type('#x_plant', '전동기는 어떻게 계속 같은 방향으로 돌까요?');
     await t.click('[data-xa="plant"]');
-    t.expect(q$('#x_e_plant').textContent.indexOf('비슷한 질문') === 0, '같은 질문 거르기: ' + q$('#x_e_plant').textContent);
+    t.expect(q$('#x_e_plant').textContent.indexOf('같은 질문') === 0, '같은 질문 거르기: ' + q$('#x_e_plant').textContent);
     /* 단원 없이 심은 질문은 일지에서 단원을 붙임 */
     await openQ(t, q2.id);
     const us = await t.waitFor('#x_setunit');
@@ -1499,7 +1666,7 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.waitFor(() => q$('#x_st_method.cur'));
     t.eq(dbq(t, 101).journal.predict.length, 1, '첫 예상');
     await t.click('#x_st_predict [data-xa="peek"][data-k="predict"]');
-    await t.click('#x_st_predict [data-xa="edit"]');
+    await t.click('#x_st_predict [data-xa="edit"]:not([data-i])');      // 줄마다 「고치기」가 아니라 「생각이 바뀌었어요」
     await t.type('#x_predict', '생각이 바뀌었다. 코일에 흐르는 전류의 방향이 반 바퀴마다 바뀌어서 같은 쪽으로 도는 것 같다.');
     await t.click('[data-xa="predict"]');
     await t.waitFor(() => (dbq(t, 101).journal.predict || []).length === 2);
@@ -1527,7 +1694,7 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.waitFor(() => q$('#x_st_find.cur'));
   });
 
-  add('탐구 · AI 찾기는 AI 아닌 출처와 견주기가 있어야 완료', async t => {
+  add('탐구 · AI 답 하나로도 찾기가 끝남(AI 사용 표시는 남음)', async t => {
     await openQ(t, 102);
     t.expect(q$('#x_st_find.cur'), '찾기 칸');
     await t.type('#x_fsrc', '챗GPT');
@@ -1535,21 +1702,194 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.click('[data-xa="find"]');
     await t.waitFor(() => (dbq(t, 102).journal.find || []).length === 1);
     t.expect(dbq(t, 102).journal.find[0].ai === true, 'AI 출처 표시');
-    await t.waitFor(() => q$('#x_e_find') && q$('#x_e_find').textContent.indexOf('AI가 아닌 곳') >= 0);
-    t.eq(VV(102).cur, 'find', 'AI 하나로는 찾기가 안 끝남');
-    await t.type('#x_fsrc', '교과서 112쪽');
-    await t.type('#x_find', '습도가 낮으면 물체에 생긴 전기가 공기 중으로 잘 빠져나가지 못한다.');
-    await t.click('[data-xa="find"]');
-    t.expect(q$('#x_e_find').textContent.indexOf('같은 말') >= 0, '두 곳 비교를 골라야 함');
-    await t.click('#x_same [data-v="같아요"]');
-    await t.click('[data-xa="find"]');
-    await t.waitFor(() => dbq(t, 102).journal.find.length === 2);
-    await t.waitFor(() => q$('#x_e_find') && q$('#x_e_find').textContent.indexOf('AI 답과') >= 0);
-    t.eq(VV(102).cur, 'find', '견주기 없으면 아직');
-    await t.type('#x_aicmp', 'AI 답과 교과서가 같은 말을 했지만 교과서가 더 자세했다.');
-    await t.click('[data-xa="find"]');
-    await t.waitFor(() => dbq(t, 102).journal.aiCmp);
     await t.waitFor(() => VV(102).cur === 'wrap' && q$('#x_st_wrap.cur'));
+    t.expect(VV(102).aiUsed && VV(102).done.find, 'AI 답 하나로 찾기 끝 · AI 사용 표시');
+  });
+
+  add('글 검사 · 거의 그대로 옮긴 글만 막음 · 같은 질문만 같다고 봄', async t => {
+    const J = QO.check.junkWhy;
+    t.eq(J('겨울에 정전기가 잘 생기는 건 공기가 건조하기 때문이야', ['겨울에 정전기가 더 잘 생기는 이유는 뭘까?']), '', '질문 낱말을 써도 내 말이면 통과');
+    t.expect(J('겨울에 정전기가 더 잘 생기는 이유는 뭘까', ['겨울에 정전기가 더 잘 생기는 이유는 뭘까?']) !== '', '질문을 그대로 옮기면 막힘');
+    t.eq([QO.check.sameQ('별은 왜 반짝거릴까요?', '별은 왜 반짝거릴까'), QO.check.sameQ('별은 왜 반짝일까?', '별은 왜 반짝거릴까?')], [true, false], '같은 질문만');
+  });
+
+  add('탐구 · 보낸 뒤에도 고침(정리 → 고쳐서 다시 보내기, 읽는 중 그대로)', async t => {
+    await openQ(t, 104);
+    await t.waitFor('#x_st_wrap .sumline');
+    const at0 = dbq(t, 104).resolve_requested_at;
+    await t.click('#x_st_wrap .sumline');
+    await t.waitFor('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.waitFor('#x_st_wrap.cur #x_wrap');
+    t.eq([q$('#x_wrap').value, q$('#x_st_wrap [data-xa="wrap"]').textContent], ['빛이 소리보다 훨씬 빨라서 번개의 빛이 천둥소리보다 먼저 도착한다.', '고쳐서 다시 보내기'], '보낸 정리가 채워져 있고 단추 이름이 다름');
+    await t.type('#x_wrap', '빛은 1초에 30만 km, 소리는 340 m를 가서 번개의 빛이 천둥소리보다 먼저 도착한다.');
+    await t.click('#x_st_wrap [data-xa="wrap"]');
+    await t.waitFor(() => (dbq(t, 104).journal.wrap.text || '').indexOf('30만 km') >= 0);
+    t.eq([VV(104).status, dbq(t, 104).fruit_kind == null], ['wait', true], '여전히 선생님이 읽는 중');
+    t.expect(dbq(t, 104).resolve_requested_at >= at0, '보낸 시각이 새로');
+    await t.waitFor(() => !q$('#x_st_wrap.cur'));             // 저장이 끝나 정리 칸이 닫힐 때까지
+    /* 방법 칸도 보낸 뒤에 고침 */
+    await t.waitFor('#x_st_method .sumline');
+    await t.click('#x_st_method .sumline');
+    await t.click('#x_st_method [data-xa="edit"][data-k="method"]');
+    await t.waitFor('#x_st_method.cur #x_mkind');
+    await t.click('#x_mkind [data-v="book"]');
+    await t.click('#x_st_method [data-xa="method"]');
+    await t.waitFor(() => dbq(t, 104).journal.method.kind === 'book');
+    t.eq(VV(104).status, 'wait', '방법을 고쳐도 읽는 중 그대로');
+  });
+
+  add('탐구 · 예상·찾기 줄 하나 고치기·지우기(v2_11)', async t => {
+    await setup(t, 101, [{predict_add:'자석과 코일이 서로 밀어서 돌 것 같다. 왜냐하면 자석은 밀고 당기니까.'},
+                         {predict_add:'정류자가 전류 방향을 바꿔서 같은 방향으로 돌 것 같다. 왜냐하면 반 바퀴마다 힘이 바뀌니까.'},
+                         {method:{kind:'book', plan:''}},
+                         {find_add:{src:'교과서 120쪽', text:'정류자는 반 바퀴마다 코일에 흐르는 전류의 방향을 바꾼다.', ai:false}},
+                         {find_add:{src:'챗GPT', text:'브러시와 정류자가 닿는 쪽이 바뀌어서 같은 방향으로 계속 돈다고 했다.', ai:true}, same:'같아요'}]);
+    await openQ(t, 101);
+    await t.waitFor('#x_st_predict .sumline');
+    await t.click('#x_st_predict .sumline');
+    await t.waitFor('#x_st_predict [data-xa="edit"][data-k="predict"][data-i="0"]');
+    t.eq(t.$$('#x_st_predict [data-xa="delAsk"]').length, 2, '두 줄이면 줄마다 지우기');
+    await t.click('#x_st_predict [data-xa="edit"][data-k="predict"][data-i="0"]');
+    await t.waitFor('#x_st_predict.cur #x_pfix');
+    t.eq(q$('#x_pfix').value, '자석과 코일이 서로 밀어서 돌 것 같다. 왜냐하면 자석은 밀고 당기니까.', '고칠 줄이 채워져 있음');
+    await t.type('#x_pfix', '자석과 코일이 서로 밀고 당겨서 돌 것 같다');
+    await t.click('[data-xa="predictFix"]');
+    t.expect(q$('#x_e_predict').textContent.indexOf('까닭') >= 0, '까닭 없으면 막힘');
+    await t.type('#x_pfix', '자석과 코일이 서로 밀고 당겨서 돌 것 같다. 왜냐하면 자석은 극끼리 밀고 당기니까.');
+    await t.click('[data-xa="predictFix"]');
+    await t.waitFor(() => (dbq(t, 101).journal.predict[0] || {}).edited_at);
+    const pr = dbq(t, 101).journal.predict;
+    t.eq([pr.length, pr[0].text], [2, '자석과 코일이 서로 밀고 당겨서 돌 것 같다. 왜냐하면 자석은 극끼리 밀고 당기니까.'], '그 줄만 바뀜');
+    /* 지우기 — 한 번 묻고 지움, 한 줄 남으면 지우기 없음 */
+    await t.waitFor('#x_st_predict .sumline');
+    await t.click('#x_st_predict .sumline');
+    await t.waitFor('#x_st_predict [data-xa="delAsk"][data-i="1"]');
+    await t.click('#x_st_predict [data-xa="delAsk"][data-i="1"]');
+    await t.waitFor('#x_st_predict [data-xa="delLine"][data-i="1"]');
+    t.eq(dbq(t, 101).journal.predict.length, 2, '묻기만 해서는 안 지워짐');
+    await t.click('#x_st_predict [data-xa="delLine"][data-i="1"]');
+    await t.waitFor(() => dbq(t, 101).journal.predict.length === 1);
+    await t.waitFor(() => !q$('#x_st_predict [data-xa="delLine"]') && q$('#x_st_predict [data-xa="edit"][data-k="predict"][data-i="0"]'));   // 다시 그린 뒤
+    t.expect(!q$('#x_st_predict [data-xa="delAsk"]'), '한 줄 남으면 지우기 없음');
+    /* 찾기 줄 고치기 — 출처를 바꾸고 AI 체크를 풂 */
+    await t.waitFor('#x_st_find .sumline');
+    await t.click('#x_st_find .sumline');
+    await t.waitFor('#x_st_find [data-xa="edit"][data-k="find"][data-i="1"]');
+    await t.click('#x_st_find [data-xa="edit"][data-k="find"][data-i="1"]');
+    await t.waitFor('#x_st_find.cur #x_ffsrc');
+    t.eq([q$('#x_ffsrc').value, q$('#x_ffai').checked], ['챗GPT', true], '고칠 줄이 채워져 있음');
+    await t.type('#x_ffsrc', '과학 동아리 선배');
+    q$('#x_ffai').checked = false;
+    await t.click('[data-xa="findFix"]');
+    await t.waitFor(() => (dbq(t, 101).journal.find[1] || {}).src === '과학 동아리 선배');
+    t.eq([dbq(t, 101).journal.find[1].ai, dbq(t, 101).journal.find.length], [false, 2], 'AI 표시도 고침');
+  });
+
+  add('탐구 · 처음 질문 고치기(v2_11) — 같은 질문은 막고 처음 글은 남김', async t => {
+    await openQ(t, 101);
+    await t.waitFor('#x_st_plant [data-xa="edit"][data-k="plant"]');
+    await t.click('#x_st_plant [data-xa="edit"][data-k="plant"]');
+    await t.waitFor('#x_qtext');
+    t.eq(q$('#x_qtext').value, '전동기는 어떻게 계속 같은 방향으로 돌까?', '처음 질문이 채워져 있음');
+    await t.type('#x_qtext', '겨울에 정전기가 더 잘 생기는 이유는 뭘까요');
+    await t.click('[data-xa="plantFix"]');
+    t.expect(q$('#x_e_plantfix').textContent.indexOf('이미 심었어요') >= 0, '내 다른 질문과 같으면 막힘');
+    await t.type('#x_qtext', '전동기의 코일은 어떻게 계속 같은 방향으로 돌까?');
+    await t.click('[data-xa="plantFix"]');
+    await t.waitFor(() => dbq(t, 101).text === '전동기의 코일은 어떻게 계속 같은 방향으로 돌까?');
+    t.eq((dbq(t, 101).journal || {}).text_first, '전동기는 어떻게 계속 같은 방향으로 돌까?', '처음 글을 남김');
+    await t.waitFor(() => q$('#sheet .sh-top .qt').textContent === '전동기의 코일은 어떻게 계속 같은 방향으로 돌까?');
+  });
+
+  add('탐구 · 답만 달기로 보낸 답 고치기(어디서 그대로 · 바뀐 게 없으면 다시 안 보냄) · AI 사용 표시', async t => {
+    await setup(t, 101, [{wrap:{mode:'known', text:'정류자가 반 바퀴마다 전류 방향을 바꿔서 같은 방향으로 돈다.', cmp:'quick', changedBy:'교과서 · 120쪽'}}]);
+    const req0 = dbq(t, 101).resolve_requested_at;
+    await openQ(t, 101);
+    await t.waitFor('#x_st_wrap .sumline');
+    await t.click('#x_st_wrap .sumline');
+    await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.waitFor('#x_st_wrap.cur #x_qans');
+    t.eq([q$('#x_qsrc .chip.on').dataset.v, q$('#x_qsrcd').value], ['교과서', '120쪽'], '어디서가 채워져 있음');
+    await t.click('#x_st_wrap [data-xa="quick"]');
+    await t.waitFor(() => !q$('#x_st_wrap.cur'));
+    t.eq(dbq(t, 101).resolve_requested_at, req0, '바뀐 게 없으면 다시 보내지 않음');
+    await t.click('#x_st_wrap .sumline');
+    await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.waitFor('#x_st_wrap.cur #x_qans');
+    await t.type('#x_qans', '정류자가 반 바퀴마다 코일의 전류 방향을 바꿔 주어서 같은 방향으로 계속 돈다.');
+    await t.click('#x_st_wrap [data-xa="quick"]');
+    await t.waitFor(() => (dbq(t, 101).journal.wrap.text || '').indexOf('코일의 전류') >= 0);
+    t.eq([dbq(t, 101).journal.wrap.changedBy, dbq(t, 101).journal.wrap.cmp], ['교과서 · 120쪽', 'quick'], '칩 다시 안 골라도 저장 · 어디서 그대로');
+    await t.waitFor(() => !q$('#x_st_wrap.cur'));
+    const H = QO.journal.hasAI;
+    t.eq([H({d:{find:[], wrap:{cmp:'quick', changedBy:'AI · 챗GPT'}}}), H({d:{find:[], wrap:{cmp:'quick', changedBy:'AI'}}}), H({d:{find:[], wrap:{cmp:'quick', changedBy:'교과서'}}})],
+      [true, true, false], '답만 달기 「어디서 = AI」도 AI 사용');
+  });
+
+  add('탐구 · 선생님이 되돌린 예상 칸(지금 칸)에서도 쓴 줄 고치기', async t => {
+    const q = dbq(t, 104);
+    q.resolve_requested_at = null;
+    q.journal = Object.assign({}, q.journal, {returned:{step:'predict', at:new Date().toISOString()}});
+    await QO.store.refreshQuestions();
+    await openQ(t, 104);
+    await t.waitFor('#x_st_predict.cur');
+    t.eq(VV(104).cur, 'predict', '되돌린 칸이 지금 칸');
+    await t.waitFor('#x_st_predict.cur [data-xa="edit"][data-k="predict"][data-i="0"]');
+    t.expect(q$('#x_st_predict.cur #x_predict'), '바뀐 생각 남기기 칸도 그대로');
+  });
+
+  add('탐구 · 안개 열매에서 찾기 줄을 지워도 정리를 고침 · 막힌 곳 새 질문은 다시 안 심음 · 두 곳 비교는 숨김', async t => {
+    await openQ(t, 107);
+    const kids0 = (QO.state.questions || []).filter(x => x && Number(x.parent_id) === 107).length;
+    await t.waitFor('#x_st_find .sumline');
+    await t.click('#x_st_find .sumline');
+    await t.waitFor('#x_st_find [data-xa="delAsk"][data-i="1"]');
+    await t.click('#x_st_find [data-xa="delAsk"][data-i="1"]');
+    await t.click('#x_st_find [data-xa="delLine"][data-i="1"]');
+    await t.waitFor(() => dbq(t, 107).journal.find.length === 1);
+    await t.waitFor(() => !q$('#x_st_find [data-xa="delLine"]') && q$('#x_st_find .val'));
+    t.expect(q$('#x_st_find').textContent.indexOf('두 곳 비교') < 0, '한 곳뿐이면 두 곳 비교 숨김');
+    await t.click('#x_st_wrap .sumline');
+    await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.waitFor('#x_st_wrap.cur #x_reached');
+    t.expect(!q$('#x_st_wrap [data-xa="flagOpen"]'), '열매 뒤엔 막힘 단추 없음');
+    await t.type('#x_reached', '우주가 계속 팽창하고 있다는 것까지 교과서 160쪽에서 찾았고, 은하들이 서로 멀어진다는 것도 알았다.');
+    await t.click('#x_st_wrap [data-xa="wrap"]');
+    await t.waitFor(() => (dbq(t, 107).journal.wrap.reached || '').indexOf('멀어진다') >= 0 && dbq(t, 107).journal.edited_at);
+    t.eq([dbq(t, 107).fruit_kind, (QO.state.questions || []).filter(x => x && Number(x.parent_id) === 107).length], ['fog', kids0], '안개 열매 그대로 · 새 꼬리 질문 없음');
+  });
+
+  add('탐구 · 바뀐 게 없으면 저장하지 않고 닫음(열매 뒤 「고침」이 거짓으로 안 뜸)', async t => {
+    await openQ(t, 106);
+    await t.waitFor('#x_st_method .sumline');
+    await t.click('#x_st_method .sumline');
+    await t.click('#x_st_method [data-xa="edit"][data-k="method"]');
+    await t.waitFor('#x_st_method.cur #x_mkind');
+    await t.click('#x_st_method [data-xa="method"]');
+    await t.waitFor(() => !q$('#x_st_method.cur'));
+    await t.click('#x_st_wrap .sumline');
+    await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.waitFor('#x_st_wrap.cur #x_wrap');
+    await t.click('#x_st_wrap [data-xa="wrap"]');
+    await t.waitFor(() => !q$('#x_st_wrap.cur'));
+    t.expect(!(dbq(t, 106).journal || {}).edited_at, '그대로 저장하면 「열매 뒤 고침」 안 찍힘');
+  });
+
+  add('탐구 · 열매 뒤에도 고침(v2_11) → 열매 그대로, 고친 시각', async t => {
+    await openQ(t, 106);
+    await t.waitFor('#x_st_wrap .sumline');
+    await t.click('#x_st_wrap .sumline');
+    await t.waitFor('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
+    await t.waitFor('#x_st_wrap.cur #x_wrap');
+    t.eq(q$('#x_st_wrap [data-xa="wrap"]').textContent, '고친 정리 저장', '단추 이름');
+    const req0 = dbq(t, 106).resolve_requested_at;
+    await t.type('#x_wrap', '자석 주위에는 자기장이 있고, 철가루 하나하나가 작은 자석이 되어 자기장 방향으로 늘어서서 무늬가 생긴다.');
+    await t.click('#x_st_wrap [data-xa="wrap"]');
+    await t.waitFor(() => (dbq(t, 106).journal || {}).edited_at);
+    t.eq([dbq(t, 106).fruit_kind, dbq(t, 106).resolve_requested_at, VV(106).status], ['fruit', req0, 'fruit'], '열매·보낸 시각 그대로');
+    t.expect(dbq(t, 106).journal.wrap.text.indexOf('작은 자석') >= 0, '고친 정리');
   });
 
   add('탐구 · 정리 → 선생님이 읽는 중(처음 예상과 견주기)', async t => {
@@ -1582,7 +1922,7 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.expect(q$('#x_e_wrap').textContent.indexOf('아직 모름') >= 0, '못 보냄');
     t.expect(!dbq(t, 101).resolve_requested_at, '보내지지 않음');
     await t.click('#x_st_find [data-xa="peek"][data-k="find"]');
-    await t.click('#x_st_find [data-xa="edit"]');
+    await t.click('#x_st_find [data-xa="edit"]:not([data-i])');         // 「다른 곳에서 하나 더 찾기」
     await t.type('#x_fsrc', '과학관 누리집');
     await t.type('#x_find', '정류자가 반 바퀴마다 코일에 흐르는 전류의 방향을 바꿔 준다.');
     await t.click('#x_same [data-v="달라요"]');
@@ -1620,10 +1960,10 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.expect(!q$('#x_rRefine').hidden && q$('#x_rKeep').hidden, '다듬기를 고르면 다듬기 상자만');
     await t.type('#x_refine', '별은 왜 반짝거릴까?');
     await t.click('[data-xa="refine"]');
-    t.expect(q$('#x_e_refine').textContent.indexOf('거의 같아요') >= 0, '처음 질문과 85% 넘게 같으면 못 냄');
+    t.expect(q$('#x_e_refine').textContent.indexOf('똑같아요') >= 0, '처음 질문과 똑같으면 못 냄');
     await t.type('#x_refine', '별은 왜 반짝거릴까요?');
     await t.click('[data-xa="refine"]');
-    t.expect(q$('#x_e_refine').textContent.indexOf('거의 같아요') >= 0, '끝에 「요」만 붙여도 못 냄');
+    t.expect(q$('#x_e_refine').textContent.indexOf('똑같아요') >= 0, '끝에 「요」만 붙여도 못 냄');
     t.expect(!dbq(t, 108).refined_text, '저장 안 됨');
     await t.type('#x_refine', '밤하늘에서 밝은 별과 어두운 별 중 어느 쪽이 더 반짝여 보일까?');
     await t.click('[data-xa="refine"]');
@@ -1836,7 +2176,7 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.expect(/선생님이 읽는 중/.test(q$('#sheet .xt-next').textContent), '다음에 할 일 대신 읽는 중');
     fire('#x_tn_predict');
     await t.waitFor('#x_st_predict .val');
-    t.expect(!q$('#x_st_predict [data-xa="edit"]'), '고치기 없음');
+    t.expect(q$('#x_st_predict [data-xa="edit"][data-k="predict"]'), '보낸 뒤에도 고치기(생각이 바뀌었어요)');
     if(!VV(104).done.extend){                                     // 넓히기는 보낸 뒤에도(「넓혀 보기」와 같게)
       fire('#x_tn_extend');
       await t.waitFor('#x_st_extend.cur #x_extend');
@@ -1917,7 +2257,8 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.rejects(t.api.saveRefineSkip(101, [], '내 질문은 이미 충분히 분명해요'), '점검표에서 내 질문에 맞는 것을 하나 넘게 체크해 주세요');
     await t.rejects(t.api.saveRefineSkip(101, [REFINE[0].t], '짧아요'), '다듬지 않아도 되는 이유를 열 글자 넘게 적어 주세요');
     await t.rejects(t.api.saveRefineSkip(121, [REFINE[0].t], '열 글자가 넘는 이유를 적었어요'), '내 질문만 고칠 수 있어요');
-    await t.rejects(t.api.saveRefineSkip(106, [REFINE[0].t], '열 글자가 넘는 이유를 적었어요'), '선생님이 확인한 질문은 넓히기만 더할 수 있어요');
+    const fk = await t.api.saveRefineSkip(106, [REFINE[0].t], '열 글자가 넘는 이유를 적었어요');
+    t.expect(fk.fruit_kind === 'fruit' && fk.journal.edited_at, '열매 뒤에도 저장(v2_11) · 고친 시각');
     const ok = await t.api.saveRefineSkip(101, [REFINE[1].t, '  ', 3], '열 글자가 넘는 이유를 적었어요');
     t.eq([ok.refined_text, ok.journal.refine_skip.checks], [null, [REFINE[1].t]], '빈 항목·글자 아닌 항목은 빼고, 다듬은 질문은 비움');
   });

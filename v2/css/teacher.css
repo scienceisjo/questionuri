@@ -10,7 +10,6 @@
 .t-empty{color:var(--mute)}
 .t-grow1{flex:1}
 .t-note{font-size:13.5px;color:var(--sub);background:var(--bg);border-radius:10px;padding:8px 10px;margin-top:6px;line-height:1.55}
-.t-warn{font-size:13.5px;font-weight:700;color:var(--ink);background:#F3F4EF;border-left:3px solid var(--fruit);border-radius:0 10px 10px 0;padding:8px 10px;margin-top:6px;line-height:1.5}
 .tag.t-ai,.tag.t-old{color:var(--sub)}
 .demo .chips a.chip{display:inline-flex;align-items:center;text-decoration:none;color:var(--sub)}
 .tbody .sec:first-child{margin-top:4px}
@@ -238,6 +237,7 @@ html.shot-phone .tapp .board .cmp{grid-template-columns:1fr}
 .t-bq .qt{font-weight:700;line-height:1.45;word-break:keep-all}
 .t-bmemo{font-size:13px;color:var(--sub);margin-top:4px}
 .t-bok{font-size:13px;color:var(--leaf-d);font-weight:700;margin-top:4px}
+.t-bchg{font-size:13px;font-weight:800;color:var(--wait);margin-top:4px}
 .t-bset{display:flex;flex-direction:column;gap:6px}
 .t-bacts{justify-content:flex-end;gap:8px;margin-top:12px}
 @media (max-width:640px){.t-brow{grid-template-columns:28px 1fr}.t-bset{grid-column:2}}
@@ -247,6 +247,16 @@ html.shot-phone .tapp .board .cmp{grid-template-columns:1fr}
 .t-qacts{flex-wrap:wrap}
 .t-qacts kbd{display:inline-block;min-width:18px;padding:0 4px;margin-right:4px;border:1px solid currentColor;border-radius:4px;font-size:12px;line-height:16px;opacity:.75}
 .t-qhint{margin-top:10px}
+
+/* ── 열린 열매(보기만) · 고친 때 · 새로 들어온 줄 ── */
+.t-oitem .t-osum{font-size:13.5px;line-height:1.55;color:var(--sub);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+.t-oitem .t-osum b{font-weight:800;color:#3F5574;margin-right:2px}
+.t-otags{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:4px}
+.t-edited{font-size:12.5px;font-weight:800;color:var(--wait);white-space:nowrap}
+.t-ed{font-size:12px;font-weight:700;color:var(--wait);margin-left:6px;white-space:nowrap}
+.t-first{font-size:13.5px;color:var(--sub);line-height:1.55;padding:9px 0;border-top:1px solid var(--line)}
+.t-item.t-new{animation:t-flash 1.8s ease-out}
+@keyframes t-flash{0%,35%{background:var(--leaf-l);border-color:var(--leaf)}100%{background:var(--card);border-color:var(--line)}}
 
 /* 책 보며 심기 탭(teacher.js renderRead) */
 .t-rd-head .chips{align-items:center}

@@ -103,3 +103,10 @@ html.wide .tr-cols .sec:first-child{margin-top:0}
 .tree-wrap.tr3d-on > svg{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none}
 .tr3d-cv{display:block;margin:0 auto;border-radius:14px;background:radial-gradient(120% 90% at 50% 10%,#EAF5FF 0%,#F6FBF1 60%,#FFFFFF 100%);touch-action:pan-y;cursor:grab}
 .tr3d-cv:active{cursor:grabbing}
+
+/* 열매 고르기(2026-11-13) — 10가지, 도토리 없이 */
+.tr-fruit-hint{margin:-2px 0 10px}
+.tr-fruit-grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}
+.tr-fruit-grid .tr-item{min-height:96px;padding:8px 4px}
+.tr-item .ic.fv svg{display:block;width:44px;height:44px}
+.tr-item .ic.fv{margin:0 0 2px}

@@ -150,6 +150,14 @@ const A = QO.apiReal = {
   /* 상점·우리 반 나무(v2_03) — 값은 서버가 정한다 */
   buyItem(id){ return rpc('buy_item', {p_item:id}); },
   equipItem(id){ return rpc('equip_item', {p_item:id}); },
+  /* 열매 종류(v2_10) — 바꾸기 {active_fruit}, 내 것 읽기(칸이 아직 없으면 null) */
+  setFruit(kind){ return rpc('set_fruit', {p_kind:kind}); },
+  async myFruit(){
+    const id = await needUid(), cl = await client();
+    const r = await cl.from('profiles').select('active_fruit').eq('id', id).maybeSingle();
+    if(r.error) return null;
+    return r.data ? (r.data.active_fruit || null) : null;
+  },
   async classmateTrees(){ return (await rpc('classmate_trees')) || []; },
   async friendQuestions(num){ return (await rpc('friend_questions', {p_number:num})) || []; },
   async myForest(){ return (await rpc('my_forest')) || []; },
@@ -444,6 +452,23 @@ const A = QO.apiReal = {
     const cl = await client();
     return (await one(cl.from('v2_cutover').select('*').order('grade').order('class_no'))) || [];
   }
+};
+
+/* 선생님 「열린 열매」 — 그 반 학생 질문 중 열매·안개 열매가 열린 것 전부(1000줄 넘어도 나눠 받기).
+   최신 먼저: 열린 때(resolved_at)와 열매 뒤 고친 때(journal.edited_at) 중 늦은 것.
+   흉내 쪽은 teacher.js(QO.mock.extend)에 있어서 선생님 화면에서만 넣는다(학생 화면의 이름 견주기 시험이 깨지지 않게) */
+const tms = ts => { const n = ts ? Date.parse(ts) : NaN; return isNaN(n) ? 0 : n; };
+const fruitAt = q => { const e = tms(q.journal && typeof q.journal === 'object' ? q.journal.edited_at : null); return Math.max(tms(q.resolved_at), e > Date.now() + 3e5 ? 0 : e); };   // 고친 때가 지금 + 5분보다 뒤면 없는 것으로(teacher.js 와 같게)
+if(cfg.page === 'teacher') A.classFruits = async function(g, c){
+  const cl = await client(), C = await cols(cl);
+  const st = await A.classStudents(g, c);
+  const by = new Map(st.map(s => [s.id, s]));
+  const out = [];
+  for(const ch of chunks(st.map(s => s.id), 100)){
+    out.push.apply(out, await pages(() => cl.from('questions').select(C + ',user_id').in('user_id', ch).not('fruit_kind', 'is', null).order('id')));
+  }
+  return out.map(q => Object.assign({}, q, {student:{name:(by.get(q.user_id) || {}).name || '', number:(by.get(q.user_id) || {}).number || null}}))
+    .sort((a, b) => fruitAt(b) - fruitAt(a) || b.id - a.id);
 };
 
 /* ── 앞문: 시연 모드면 흉내, 아니면 진짜. 넣기는 언제나 진짜 쪽으로 ── */

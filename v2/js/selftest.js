@@ -306,11 +306,15 @@ add('흉내 규칙 · wrap 은 확인 요청, 되돌림 표시는 지운다', as
   const q2 = t.db.questions.find(x => x.id === 122);
   t.eq([q2.solve.stuck, q2.still_wondering], [1, '저항은 왜 전류를 방해할까?'], '아직 모름 → stuck·still_wondering');
 });
-add('흉내 규칙 · 열매 뒤에는 넓히기만 · 남의 질문은 못 고침', async t => {
-  await t.rejects(t.api.saveJournal(106, {predict_add:'다시 생각해 보니 다르다'}), '선생님이 확인한 질문은 넓히기만 더할 수 있어요');
+add('흉내 규칙 · 열매 뒤에도 고침(v2_11 고친 시각) · 남의 질문은 못 고침', async t => {
   const r = await t.api.saveJournal(106, {extend:{kind:'newq', text:'지구도 큰 자석일까?'}});
   t.eq(r.journal.extend.kind, 'newq', '넓히기');
   t.eq(t.db.questions.find(x => x.id === 106).solve.newq, '지구도 큰 자석일까?', 'solve.newq');
+  t.expect(!r.journal.edited_at, '넓히기는 고침으로 치지 않아요');
+  const r2 = await t.api.saveJournal(106, {predict_add:'다시 생각해 보니 다르다'});
+  t.expect(r2.journal.predict.length === 2 && !!r2.journal.edited_at && r2.fruit_kind === 'fruit', '열매 뒤에도 예상을 더하고 고친 시각이 찍혀야 해요');
+  const r3 = await t.api.saveJournal(106, {wrap:{mode:'known', text:'열매 뒤에 정리를 고쳤어요. 철가루가 자기장을 따라 늘어선다.', cmp:'part'}});
+  t.eq([r3.resolve_requested_at, r3.fruit_kind], [null, 'fruit'], '열매 뒤 정리는 확인 요청을 다시 보내지 않아요');
   await t.rejects(t.api.saveJournal(121, {predict_add:'남의 질문'}), '내 질문만 고칠 수 있어요');
   t.as('T');
   await t.rejects(t.api.saveJournal(101, {predict_add:'선생님도 못 고침'}), '내 질문만 고칠 수 있어요');
@@ -571,9 +575,9 @@ add('선생님 뼈대 · 반 고르기(class:changed)', async t => {
   QO.bus.off('class:changed', fn);
   t.eq(t.state.cls, {grade:2, class_no:5}, '2-5');
 });
-add('선생님 뼈대 · 구역 다섯 전환', async t => {
-  t.eq(QO.tabs.ids(), ['fruits', 'live', 'groups', 'clues', 'read'], '구역 순서');
-  for(const id of ['live', 'groups', 'clues', 'read', 'fruits']){
+add('선생님 뼈대 · 구역 여섯 전환', async t => {
+  t.eq(QO.tabs.ids(), ['fruits', 'opened', 'live', 'groups', 'clues', 'read'], '구역 순서');
+  for(const id of ['opened', 'live', 'groups', 'clues', 'read', 'fruits']){
     await t.click('#nav [data-t="' + id + '"]');
     t.eq(QO.tabs.current(), id, '지금 구역');
     t.expect(document.getElementById('body').children.length > 0, id + ' 화면이 비었어요');

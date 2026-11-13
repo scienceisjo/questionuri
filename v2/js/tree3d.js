@@ -4,7 +4,9 @@
    · 계절: 봄(연두·꽃잎 날림) · 여름(짙은 초록) · 가을(노랑·주황·빨강, 낙엽) · 겨울(잎 지는 나무는 맨가지+눈, 늘푸른 나무는 눈 덮임, 눈 내림).
      학생이 고른 계절은 tree.js 가 look.season 으로 넘긴다. 나무 모양(가지)은 계절이 바뀌어도 그대로(아이디 씨앗).
    · 상점 나무 그림도 이 코드로 그린다(shopThumbs) — 산 나무가 그림과 똑같게. 그림마다 그 나무의 대표 계절(벚나무 봄, 단풍나무 가을 …).
-   · 열매(빨강)·안개 열매(파란 회색+구름)·모둠 열매(셋)·새싹·받은 꽃(땅)·동반자는 그대로.
+   · 열매(학생이 고른 10가지 — 11-13)·안개 열매(파란 회색+구름)·모둠 열매(셋)·새싹·받은 꽃(땅)·동반자.
+   · 11-13: 열매가 잎에 가려 안 보이던 것 → 잎 덩어리 겉면 바깥에, 둘레를 고르게 돌아가며 단다(다른 덩어리 속이면 자리를 다시 고름).
+     소나무는 원뿔 쌓기 대신 우리 소나무처럼 붉은 줄기가 휘고 가지 끝마다 납작한 솔잎 구름이 층층이 얹힌다.
    · WebGL 이 안 되거나 three 를 못 불러오면 원래 SVG 그대로. 화면에 안 보이면 그리기를 멈춘다(태블릿 배터리). */
 (function(){
 'use strict';
@@ -42,7 +44,7 @@ const GREEN = {
   autumn:[0xE8A93E, 0xDB7A30, 0xC85A2C, 0xEFC458]
 };
 function leafColors(kind, season){
-  if(kind === 'pine') return [0x2F6B48, 0x37794F, 0x2A5F40, 0x3F8457];
+  if(kind === 'pine') return [0x2F6A46, 0x3A7B53, 0x2B5F40, 0x45895E];
   if(kind === 'palm') return [0x4E9A5B, 0x5DAA68, 0x3F8A4D, 0x6CB474];
   if(kind === 'storytree') return [0x2F5D7C, 0x3A6B8C, 0x244C66, 0x4A7FA0];
   if(season === 'winter') return null;                                   // 잎 지는 나무는 맨가지
@@ -172,6 +174,100 @@ function buildBuddy(season){
   return {group:g, anim:anim, headY:0.82};
 }
 
+/* ── 열매 10가지(2026-11-13) — 가운데가 원점, 꼭지가 위(+y). 크기 r 은 지름의 반쯤 ── */
+const TEX = {};
+function stripeTex(key, base, line, fn){
+  if(TEX[key]) return TEX[key];
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+  const g = c.getContext('2d'); g.fillStyle = base; g.fillRect(0, 0, 256, 128);
+  g.strokeStyle = line; fn(g);
+  const tx = new THREE.CanvasTexture(c); tx.wrapS = THREE.RepeatWrapping;
+  return (TEX[key] = tx);
+}
+function fruitMesh(fk, R){
+  const F = (QO.K && QO.K.FRUIT && QO.K.FRUIT[fk]) || {id:'apple', c:'#D2413A', c2:'#FF9C8A'};
+  const c = new THREE.Color(F.c), c2 = new THREE.Color(F.c2), g = new THREE.Group();
+  const ball = (r, col, x, y, z, rough, sx, sy, sz) => {
+    const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), std(col, {roughness:rough == null ? 0.35 : rough})), true, false);
+    m.position.set(x || 0, y || 0, z || 0); if(sx) m.scale.set(sx, sy, sz); g.add(m); return m;
+  };
+  const shine = (x, y, z, r) => { const h = new THREE.Mesh(new THREE.SphereGeometry(r || 0.028, 8, 6), new THREE.MeshBasicMaterial({color:0xFFFFFF, transparent:true, opacity:0.55})); h.position.set(x, y, z); g.add(h); };
+  const stem = (x, y, z, h, tilt) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, h, 5), lam(0x5A4630)); m.position.set(x, y + h / 2, z); m.rotation.z = tilt || 0; g.add(m); return m; };
+  const leaf = (x, y, z, rz) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 6), std(0x4E9A4E, {roughness:0.6})); m.scale.set(1.5, 0.28, 0.75); m.position.set(x, y, z); m.rotation.z = rz == null ? -0.5 : rz; g.add(m); };
+  switch(F.id){
+    case 'cherry':
+      ball(0.085, c, -0.07, -0.05, 0.02, 0.25); ball(0.085, c, 0.075, -0.07, -0.02, 0.25);
+      shine(-0.1, -0.02, 0.07, 0.022); shine(0.045, -0.04, 0.05, 0.022);
+      [[-0.07, -0.05], [0.075, -0.07]].forEach(q => { const len = Math.hypot(q[0], 0.2 - q[1]); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, len, 4), lam(0x4E7A2E)); m.position.set(q[0] / 2, (0.2 + q[1]) / 2, 0); m.rotation.z = Math.atan2(q[0], 0.2 - q[1]); g.add(m); });
+      leaf(0.05, 0.2, 0, -0.3);
+      break;
+    case 'grape': {
+      const rows = [[0.07, 3, 0.07], [-0.01, 4, 0.068], [-0.09, 3, 0.055], [-0.16, 2, 0.035], [-0.22, 1, 0]];
+      rows.forEach((rw, i) => { for(let k = 0; k < rw[1]; k++){ const a = k / rw[1] * Math.PI * 2 + i * 0.6; const col = c.clone().multiplyScalar(0.88 + R() * 0.24); ball(0.052, col, Math.cos(a) * rw[2], rw[0], Math.sin(a) * rw[2], 0.3); } });
+      shine(-0.04, 0.1, 0.07, 0.018); stem(0, 0.1, 0, 0.09); leaf(0.06, 0.17, 0, -0.4);
+      break;
+    }
+    case 'watermelon': {
+      const tx = stripeTex('wm', F.c, F.c2, gg => { gg.lineWidth = 9; for(let i = 0; i < 9; i++){ gg.beginPath(); const x0 = i * 256 / 9; for(let y = 0; y <= 128; y += 8) gg.lineTo(x0 + Math.sin(y * 0.22 + i) * 5, y); gg.stroke(); } });
+      const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.2, 26, 18), std(0xFFFFFF, {map:tx, roughness:0.4})), true, false);
+      m.scale.set(0.95, 1.18, 0.95); m.rotation.z = Math.PI / 2; m.position.y = -0.04; g.add(m);
+      shine(-0.06, 0.08, 0.15, 0.04); stem(0, 0.13, 0, 0.06);
+      break;
+    }
+    case 'melon': {
+      const tx = stripeTex('ml', F.c, F.c2, gg => { gg.lineWidth = 2.2; gg.globalAlpha = 0.9; for(let i = 0; i < 70; i++){ gg.beginPath(); const x = (i * 37) % 256, y = (i * 53) % 128; gg.moveTo(x, y); gg.quadraticCurveTo(x + 14, y + 10 * ((i % 3) - 1), x + 26, y + 6 * ((i % 5) - 2)); gg.stroke(); } });
+      ball(0.165, 0xFFFFFF, 0, -0.03, 0, 0.75).material.map = tx;
+      const t1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.09, 5), lam(0x6B8A3A)); t1.rotation.z = Math.PI / 2; t1.position.y = 0.17; g.add(t1);
+      stem(0, 0.13, 0, 0.05);
+      break;
+    }
+    case 'chamoe': {
+      const tx = stripeTex('cm', F.c, F.c2, gg => { gg.lineWidth = 7; for(let i = 0; i < 10; i++){ gg.beginPath(); const x = i * 25.6 + 4; gg.moveTo(x, 0); gg.lineTo(x, 128); gg.stroke(); } });
+      const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 16), std(0xFFFFFF, {map:tx, roughness:0.35})), true, false);
+      m.scale.set(0.82, 1.22, 0.82); m.rotation.z = Math.PI / 2; m.position.y = -0.02; g.add(m);
+      shine(-0.05, 0.05, 0.1, 0.03); stem(0, 0.1, 0, 0.05);
+      break;
+    }
+    case 'mandarin': {
+      const m = ball(0.14, c, 0, -0.02, 0, 0.62, 1, 0.86, 1);
+      const pos = m.geometry.attributes.position;
+      for(let i = 0; i < pos.count; i++){ const k = 1 + 0.018 * Math.sin(pos.getX(i) * 90) * Math.sin(pos.getZ(i) * 90); pos.setXYZ(i, pos.getX(i) * k, pos.getY(i) * k, pos.getZ(i) * k); }
+      m.geometry.computeVertexNormals();
+      shine(-0.05, 0.05, 0.09, 0.03);
+      const cal = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.02, 6), lam(0x5E8A3A)); cal.position.y = 0.105; g.add(cal);
+      leaf(0.05, 0.13, 0, -0.45);
+      break;
+    }
+    case 'peach': {
+      const geo = new THREE.SphereGeometry(0.15, 22, 16), pos = geo.attributes.position, col = new Float32Array(pos.count * 3), cc = new THREE.Color();
+      for(let i = 0; i < pos.count; i++){ const x = pos.getX(i), z = pos.getZ(i), y = pos.getY(i); const t = Math.max(0, Math.min(1, (x * 0.7 + z * 0.7) / 0.15 * 0.5 + 0.45 + y * 1.2)); cc.copy(c).lerp(c2, t * 0.75); col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b; }
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const m = shadowy(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.75})), true, false); m.position.y = -0.02; g.add(m);
+      leaf(0.05, 0.14, 0, -0.55); stem(0, 0.11, 0, 0.04);
+      break;
+    }
+    case 'lemon': {
+      const geo = new THREE.SphereGeometry(0.13, 22, 16), pos = geo.attributes.position;
+      for(let i = 0; i < pos.count; i++){ const y = pos.getY(i) / 0.13; pos.setY(i, pos.getY(i) * (1.25 + 0.3 * Math.pow(Math.abs(y), 6))); }
+      geo.computeVertexNormals();
+      const m = shadowy(new THREE.Mesh(geo, std(c, {roughness:0.5})), true, false); m.rotation.z = Math.PI / 2; m.position.y = -0.02; g.add(m);
+      shine(-0.05, 0.04, 0.08, 0.03); leaf(0.04, 0.1, 0, -0.4);
+      break;
+    }
+    case 'blueberry':
+      [[-0.07, -0.04, 0.03], [0.07, -0.05, -0.02], [0, 0.05, 0.01], [0.01, -0.09, 0.07]].forEach(q => {
+        ball(0.068, c, q[0], q[1], q[2], 0.55);
+        const cr = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.006, 4, 8), lam(0x1E2650)); cr.position.set(q[0], q[1] + 0.06, q[2]); cr.rotation.x = Math.PI / 2; g.add(cr);
+      });
+      shine(-0.09, -0.02, 0.08, 0.02);
+      break;
+    default:   // 사과
+      ball(0.15, c, 0, -0.02, 0, 0.3, 1, 0.92, 1); shine(-0.055, 0.04, 0.11, 0.035);
+      stem(0, 0.1, 0, 0.07, 0.15); leaf(0.06, 0.15, 0, -0.5);
+  }
+  return g;
+}
+
 /* ── 나무 만들기 ── */
 function build(t, look, seed){
   const kind = look.tree || 'default', season = SEASONS.indexOf(look.season) >= 0 ? look.season : SIG[kind] || 'summer';
@@ -180,8 +276,8 @@ function build(t, look, seed){
   const winter = season === 'winter', bare = winter && !EVERGREEN[kind];
   const G = new THREE.Group();
   const leafCol = leafColors(kind, season);
-  const H = (kind === 'palm' ? 1.7 : kind === 'pine' ? 1.0 : 0.95) + lv * (kind === 'palm' ? 0.14 : 0.09);   // 줄기 높이
-  const thick = (kind === 'baobab' ? 0.46 : kind === 'palm' ? 0.14 : 0.2) + lv * 0.014;
+  const H = (kind === 'palm' ? 1.7 : kind === 'pine' ? 1.55 : 0.95) + lv * (kind === 'palm' ? 0.14 : kind === 'pine' ? 0.12 : 0.09);   // 줄기 높이
+  const thick = (kind === 'baobab' ? 0.46 : kind === 'palm' ? 0.14 : kind === 'pine' ? 0.13 : 0.2) + lv * (kind === 'pine' ? 0.011 : 0.014);
   const anim = [];
 
   /* 땅 — 떠 있는 섬: 풀(또는 눈) 윗면 + 흙 층 + 아래 뾰족 */
@@ -222,20 +318,23 @@ function build(t, look, seed){
   }
 
   const sway = new THREE.Group(); G.add(sway);      // 줄기 위쪽이 살랑
-  const bark = lam(kind === 'storytree' ? 0x584634 : kind === 'baobab' ? 0x9A7A5C : 0x7B5A3E);
+  const bark = lam(kind === 'storytree' ? 0x584634 : kind === 'baobab' ? 0x9A7A5C : kind === 'pine' ? 0xA65A36 : 0x7B5A3E);
   const tips = [];                                  // 잎·열매가 달릴 자리
+  const canopy = [];                                // 잎 덩어리 {p, r, sq} — 열매를 겉면에 단다
+  const trunkPts = [];                              // 줄기 마디 자리(소나무 가지가 여기서 나온다)
   /* 줄기: 마디를 쌓아 살짝 휜다 */
   const segs = kind === 'palm' ? 10 : 6;
   let p = new THREE.Vector3(0, 0, 0), dir = UP();
-  const bendX = (R() - 0.5) * (kind === 'palm' ? 0.55 : 0.2), bendZ = (R() - 0.5) * (kind === 'palm' ? 0.55 : 0.2);
+  const bendX = (R() - 0.5) * (kind === 'palm' ? 0.55 : kind === 'pine' ? 0.7 : 0.2), bendZ = (R() - 0.5) * (kind === 'palm' ? 0.55 : kind === 'pine' ? 0.7 : 0.2);
   for(let i = 0; i < segs; i++){
     const len = H / segs, f0 = i / segs, f1 = (i + 1) / segs;
+    if(kind === 'pine' && i === Math.floor(segs / 2)){ dir = new THREE.Vector3(-bendX * 0.6, 1, -bendZ * 0.6).normalize(); }   // 소나무: 가운데서 한 번 꺾여 S자
     const prof = f => kind === 'baobab' ? (1.05 + Math.sin(f * Math.PI) * 0.25 - f * 0.45) : kind === 'palm' ? (1 - f * 0.35) : (1 - f * 0.55) * (f < 0.12 ? 1.25 - f * 2 : 1);
     const d = dir.clone().add(new THREE.Vector3(bendX * f0, 0, bendZ * f0)).normalize();
     const seg = limb(p, d, len, thick * prof(f0), thick * prof(f1), bark);
     if(kind === 'palm' && i % 2) seg.scale.set(1.06, 1, 1.06);
     (i < 2 ? G : sway).add(seg);
-    p = p.clone().add(d.clone().multiplyScalar(len)); dir = d;
+    p = p.clone().add(d.clone().multiplyScalar(len)); dir = d; trunkPts.push({p:p.clone(), f:f1});
   }
   const crown = p.clone();
   if(kind !== 'palm'){                              // 뿌리 몇 갈래
@@ -246,23 +345,49 @@ function build(t, look, seed){
   }
 
   if(kind === 'pine'){
-    const n = Math.max(3, Math.min(6, 2 + Math.ceil(lv / 2)));
-    for(let i = 0; i < n; i++){
-      const r = (1.25 - i * 0.18) * (0.8 + lv * 0.03), h = 0.95 - i * 0.05;
-      const geo = new THREE.ConeGeometry(r, h, 16, 4, true);
-      const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), base = new THREE.Color(leafCol[i % leafCol.length]), c = new THREE.Color(), white = new THREE.Color(0xF7FAFD);
-      for(let k = 0; k < pos.count; k++){
-        const x = pos.getX(k), y = pos.getY(k), z = pos.getZ(k), ang = Math.atan2(z, x), j = 1 + 0.14 * Math.sin(ang * 8 + i) * (0.5 - y / h);
-        pos.setXYZ(k, x * j, y, z * j);
-        const tt = (y / h + 0.5); c.copy(base).multiplyScalar(0.6 + tt * 0.5);
-        if(winter && tt > 0.25) c.lerp(white, Math.min(0.85, (tt - 0.25) * 1.3));
-        col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
-      }
-      geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-      const cone = shadowy(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({vertexColors:true, side:THREE.DoubleSide})), true, true);
-      cone.position.set(0, H * 0.45 + i * (H * 0.55 / n) + 0.3, 0); sway.add(cone);
-      for(let k = 0; k < 3; k++){ const a = R() * Math.PI * 2; tips.push(new THREE.Vector3(Math.cos(a) * r * 0.75, cone.position.y - h * 0.25, Math.sin(a) * r * 0.75)); }
+    /* 우리 소나무 — 줄기 위쪽 절반에서 가지가 옆으로 뻗고, 끝마다 납작한 솔잎 구름. 꼭대기에도 하나. 레벨이 오르면 가지가 늘어난다 */
+    const nb = Math.min(8, 3 + Math.floor(lv * 0.5));
+    const pads = [];
+    const upper = trunkPts.filter(q => q.f >= 0.5);
+    for(let i = 0; i < nb; i++){
+      const f = 0.55 + (i + 0.5) / nb * 0.38, tp = upper.reduce((b, q) => Math.abs(q.f - f) < Math.abs(b.f - f) ? q : b, upper[0]);
+      const a = i * 2.39996 + R() * 0.45;
+      const d = new THREE.Vector3(Math.cos(a), 0.06 + R() * 0.14, Math.sin(a)).normalize();       // 거의 옆으로
+      const len = (0.7 + R() * 0.45) * (1.18 - f * 0.55) * (0.85 + lv * 0.03);                  // 아래 가지가 더 길다
+      const start = tp.p.clone().add(new THREE.Vector3(0, -0.03, 0));
+      const mid = start.clone().add(d.clone().multiplyScalar(len * 0.6));
+      sway.add(limb(start, d, len * 0.6, thick * 0.34, thick * 0.22, bark));
+      const d2 = new THREE.Vector3(d.x, d.y + 0.3, d.z).normalize();                            // 끝은 살짝 위로
+      sway.add(limb(mid, d2, len * 0.45, thick * 0.22, thick * 0.1, bark));
+      const end = mid.clone().add(d2.clone().multiplyScalar(len * 0.45));
+      pads.push({p:end.clone().add(new THREE.Vector3(0, 0.05, 0)), r:(0.32 + R() * 0.1 + lv * 0.012) * (1.15 - f * 0.35)});
     }
+    pads.push({p:crown.clone().add(new THREE.Vector3(0, 0.06, 0)), r:0.3 + lv * 0.012});
+    const needle = new THREE.InstancedMesh(new THREE.ConeGeometry(0.012, 0.13, 3), lam(0xFFFFFF), pads.length * 34);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), cc = new THREE.Color(), dv = new THREE.Vector3();
+    let ni = 0;
+    pads.forEach((pd, k) => {
+      /* 구름 하나 = 납작한 덩어리 셋(가운데·양옆) */
+      /* 구름 하나 = 가운데 큰 덩어리 + 둘레 작은 덩어리 셋(옆으로 넓게, 아주 납작하게) */
+      const parts = [[0, 0, 1], [0.78, -0.02, 0.62], [0.72, 0.02, 0.58], [0.66, -0.03, 0.55]];
+      parts.forEach((pt, j) => {
+        const ang = k * 1.7 + j * 2.1;
+        const off = new THREE.Vector3(Math.cos(ang) * pt[0] * pd.r, pt[1], Math.sin(ang) * pt[0] * pd.r);
+        const rr = pd.r * pt[2], m = blob(rr, leafCol[(k + j) % leafCol.length], R, winter, 0.34);
+        m.position.copy(pd.p).add(off); m.rotation.y = R() * 6; sway.add(m);
+        canopy.push({p:m.position.clone(), r:rr, sq:0.34});
+      });
+      tips.push(pd.p.clone());
+      for(let n = 0; n < 34; n++){                    // 솔잎 다발 — 덩어리 겉에서 바깥으로 삐죽
+        dv.set(R() - 0.5, (R() - 0.3) * 0.5, R() - 0.5).normalize();
+        const at = pd.p.clone().add(new THREE.Vector3(dv.x * pd.r * 1.05, dv.y * pd.r * 0.5, dv.z * pd.r * 1.05));
+        q.setFromUnitVectors(UP(), dv.clone().add(new THREE.Vector3(0, 0.4, 0)).normalize());
+        m4.compose(at, q, one); needle.setMatrixAt(ni, m4);
+        if(needle.setColorAt) needle.setColorAt(ni, cc.setHex(leafCol[n % leafCol.length]).multiplyScalar(winter && dv.y > 0.1 ? 1.6 : 0.85 + R() * 0.3));
+        ni++;
+      }
+    });
+    needle.count = ni; needle.castShadow = true; sway.add(needle);
   } else if(kind === 'palm'){
     const n = 7 + Math.min(4, Math.floor(lv / 3));
     const leaflet = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.34, 0.07), lam(0xFFFFFF, {side:THREE.DoubleSide}), n * 22);
@@ -287,6 +412,7 @@ function build(t, look, seed){
     const nut = std(0x8A6A3A);
     for(let k = 0; k < 4; k++){ const m = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), nut); const a = k / 4 * 6.28; m.position.set(crown.x + Math.cos(a) * 0.12, crown.y - 0.1, crown.z + Math.sin(a) * 0.12); sway.add(m); }
     for(let k = 0; k < 6; k++){ const a = R() * Math.PI * 2; tips.push(crown.clone().add(new THREE.Vector3(Math.cos(a) * 0.32, -0.2, Math.sin(a) * 0.32))); }
+    canopy.push({p:crown.clone().add(new THREE.Vector3(0, -0.36, 0)), r:0.3, sq:1.1});   // 야자: 사진기가 왕관보다 아래에서 올려다보므로 잎 아래 줄기 둘레
   } else {
     /* 가지가 갈라진다(되풀이). 바오밥은 납작하게 퍼짐 */
     const flat = kind === 'baobab';
@@ -314,6 +440,7 @@ function build(t, look, seed){
       blobs.forEach(b => {
         const hex = leafCol[Math.floor(R() * leafCol.length)];
         const m = blob(b.r, hex, R, winter, flat ? 0.62 : 1);
+        canopy.push({p:b.p.clone(), r:b.r, sq:flat ? 0.62 : 1});
         if(kind === 'storytree') m.material = new THREE.MeshLambertMaterial({vertexColors:true, emissive:0x0E2233});
         m.position.copy(b.p); m.rotation.y = R() * 6; sway.add(m);
         for(let k = 0; k < 16; k++){
@@ -339,29 +466,67 @@ function build(t, look, seed){
     }
   }
 
-  /* 열매 */
+  /* 열매 — 잎 덩어리 겉면 바깥에, 둘레를 황금각으로 돌아가며(돌려 보면 어느 쪽에서나 보이게). 다른 덩어리 속이면 다시 고른다.
+     맨가지(겨울)·잎 덩어리가 없으면 가지 끝에 매단다 */
   const fr = [];
   const nF = +t.fruit || 0, nFog = +t.fog || 0, nGr = +t.group_fruit || 0; let sp = +t.sprout || 0;
   for(let i = 0; i < nF; i++) fr.push({k:'fruit', s:sp-- > 0});
   for(let i = 0; i < nFog; i++) fr.push({k:'fog', s:sp-- > 0});
   for(let i = 0; i < nGr; i++) fr.push({k:'group', s:false});
   const ftips = tips.length ? tips : [crown];
+  const fk = look.fruit || 'apple';
+  /* 나무 밖에서 가운데로 광선을 쏴 처음 닿는 잎 덩어리(타원체) 겉면 = 그 쪽에서 보이는 가장 바깥 자리 */
+  let cen = null;
+  function hull(d){
+    if(!cen) cen = canopy.reduce((v, c) => v.add(c.p.clone().multiplyScalar(c.r)), new THREE.Vector3()).multiplyScalar(1 / Math.max(1e-6, canopy.reduce((t, c) => t + c.r, 0)));
+    const O = cen.clone().add(d.clone().multiplyScalar(12)), v = d.clone().negate();
+    let best = Infinity, hitC = null;
+    canopy.forEach(c => {
+      const sy = c.sq || 1, ox = (O.x - c.p.x) / c.r, oy = (O.y - c.p.y) / (c.r * sy), oz = (O.z - c.p.z) / c.r;
+      const vx = v.x / c.r, vy = v.y / (c.r * sy), vz = v.z / c.r;
+      const A = vx * vx + vy * vy + vz * vz, B = 2 * (ox * vx + oy * vy + oz * vz), C = ox * ox + oy * oy + oz * oz - 1, D = B * B - 4 * A * C;
+      if(D < 0) return;
+      const t = (-B - Math.sqrt(D)) / (2 * A);
+      if(t > 0 && t < best){ best = t; hitC = c; }
+    });
+    if(!hitC) return null;
+    if(hitC.ghost) return hitC.p.clone().add(d.clone().setY(0).multiplyScalar(0.04)).add(new THREE.Vector3(0, -0.15, 0));   // 맨가지: 그 쪽 가장 바깥 가지 끝에 매달림
+    const P = O.add(v.multiplyScalar(best));
+    const margin = hitC.r * 0.18 + (kind === 'pine' ? 0.1 : 0.07);              // 덩어리 울퉁불퉁(+16%)·잎·솔잎 바깥
+    return P.add(d.clone().multiplyScalar(margin));
+  }
+  if(bare && !canopy.length) tips.forEach((tp, k) => { if(k % 2 === 0) canopy.push({p:tp.clone(), r:0.2, sq:1, ghost:true}); });
+  const placed = [];
   fr.slice(0, 30).forEach((f, i) => {
-    const base = ftips[(i * 3) % ftips.length];
-    const a = R() * Math.PI * 2, rr = kind === 'pine' ? 0.12 : bare ? 0.04 : 0.3 + R() * 0.18;
-    const pos = new THREE.Vector3(base.x + Math.cos(a) * rr, base.y - (bare ? 0.12 : 0.18 + R() * 0.22), base.z + Math.sin(a) * rr);
-    const g = new THREE.Group(); g.position.copy(pos);
-    if(f.k === 'fog'){
-      g.add(shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), std(0x6F84A0, {roughness:0.5})), true, false));
-      for(let k = 0; k < 3; k++){ const c = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), lam(0xE9EEF5)); c.position.set(-0.07 + k * 0.07, 0.09, 0.08); g.add(c); }
-    } else if(f.k === 'group'){
-      [[-0.07, 0, 0], [0.07, 0, 0], [0, 0.1, 0]].forEach(q => { const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 10), std(0xC9433A, {roughness:0.35})), true, false); m.position.set(q[0], q[1], q[2]); g.add(m); });
-    } else {
-      g.add(shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 14), std(0xD2413A, {roughness:0.28})), true, false));
-      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({color:0xFFD2CC})); hl.position.set(-0.05, 0.05, 0.1); g.add(hl);
+    let pos = null;
+    if(canopy.length){
+      for(let tr = 0; tr < 8 && !pos; tr++){
+        const a = (i + tr * 0.41) * 2.39996 + R() * 0.3, el = (kind === 'palm' ? -0.6 : -0.05) + ((i * 0.618 + tr * 0.27) % 1) * (kind === 'palm' ? 0.55 : 0.6);   // 옆 둘레를 고르게, 사진기가 위에서 보니 윗면 쪽으로
+        const d = new THREE.Vector3(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el));
+        const cand = hull(d);
+        if(!cand) continue;
+        if(placed.some(q => q.distanceTo(cand) < 0.22) && tr < 7) continue;
+        pos = cand;
+      }
     }
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.08, 4), lam(0x5A4630)); stem.position.y = 0.15; g.add(stem);
-    if(f.s){ const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 5), lam(0x8FD19A)); leaf.position.set(0.04, 0.22, 0); leaf.rotation.z = -0.6; g.add(leaf); }
+    if(!pos){ const base = ftips[(i * 3) % ftips.length], a = R() * Math.PI * 2; pos = new THREE.Vector3(base.x + Math.cos(a) * 0.05, base.y - 0.16, base.z + Math.sin(a) * 0.05); }
+    placed.push(pos);
+    let g;
+    if(f.k === 'fog'){
+      g = new THREE.Group();
+      g.add(shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), std(0x6F84A0, {roughness:0.5})), true, false));
+      for(let k = 0; k < 3; k++){ const c = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 8), lam(0xE9EEF5)); c.position.set(-0.07 + k * 0.07, 0.1, 0.08); g.add(c); }
+    } else if(f.k === 'group'){
+      g = new THREE.Group();
+      [[-0.09, -0.02, 0], [0.09, -0.02, 0], [0, 0.12, 0]].forEach(q => { const m = fruitMesh(fk, R); m.scale.setScalar(0.62); m.position.set(q[0], q[1], q[2]); g.add(m); });
+      const tag = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), std(0x1F7A80)); tag.scale.set(1.4, 0.4, 0.8); tag.position.set(0.04, 0.24, 0); g.add(tag);
+    } else {
+      g = fruitMesh(fk, R);
+    }
+    g.position.copy(pos);
+    g.rotation.y = Math.atan2(pos.x, pos.z) + (R() - 0.5) * 0.6;                         // 바깥을 보게
+    if(f.s){ const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 5), lam(0x8FD19A)); leaf.position.set(0.05, 0.24, 0); leaf.rotation.z = -0.6; g.add(leaf); }
+    g.userData.fruit = true;
     sway.add(g);
   });
 
@@ -443,7 +608,7 @@ function lights(scene){
 function fit(root, cam){
   const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3());
   const lo = Math.max(box.min.y, -1.4), hh = Math.max(box.max.y - lo, 2.6), ww = Math.max(size.x, size.z, 3);
-  return {lookY:lo + hh * 0.47, camY:lo + hh * 0.7, dist:Math.max(hh / (2 * Math.tan(cam.fov / 2 * Math.PI / 180)) * 1.1, ww * 1.22)};
+  return {lookY:lo + hh * 0.5, camY:lo + hh * 0.7, dist:Math.max(hh / (2 * Math.tan(cam.fov / 2 * Math.PI / 180)) * 1.22, ww * 1.22)};   // 11-13: 위쪽 여유 늘림(키 큰 소나무 꼭대기가 잘려서)
 }
 
 /* ── 화면 ── */
@@ -517,7 +682,7 @@ function mount(host, t, look, seed){
   loadThree().then(() => {
     if(!document.body.contains(host)) return;
     ensure(host);
-    const key = JSON.stringify([t.level, t.legacy_level, t.fruit, t.fog, t.group_fruit, t.sprout, t.flowers, look.tree, look.comp, look.season, seed]);
+    const key = JSON.stringify([t.level, t.legacy_level, t.fruit, t.fog, t.group_fruit, t.sprout, t.flowers, look.tree, look.comp, look.season, look.fruit, seed]);
     if(key !== S.key){
       if(S.root){ S.scene.remove(S.root); dispose(S.root); }
       const b = build(t, look, seed);
@@ -569,5 +734,45 @@ function shopThumbs(root){
 }
 function cheer(){ if(S.buddy && S.buddy.userData.cheer) S.buddy.userData.cheer(S.tm || 0); }
 function on3d(){ return !!(S.host && S.buddy && document.body.contains(S.host)); }
-QO.tree3d = {mount:mount, shopThumbs:shopThumbs, cheer:cheer, on:on3d, SIG:SIG};
+/* 시험용: 열매가 사진기에서 보이는 비율 — 둘레 8곳에서 각 열매 가운데로 광선, 처음 맞는 것이 그 열매면 보임 */
+function fruitVisibility(t, look, seed){
+  return loadThree().then(() => {
+    const b = build(t, look, seed || 'vis'), scene = new THREE.Scene(); scene.add(b.group); b.anim.forEach(f => f(0));
+    scene.updateMatrixWorld(true);
+    const cam = new THREE.PerspectiveCamera(34, 1, 0.1, 100), fz = fit(b.group, cam), ray = new THREE.Raycaster();
+    const fruits = []; b.group.traverse(o => { if(o.userData && o.userData.fruit) fruits.push(o); });
+    const owner = o => { while(o){ if(o.userData && o.userData.fruit) return o; o = o.parent; } return null; };
+    const solid = []; b.group.traverse(o => { if(o.isMesh || o.isInstancedMesh) solid.push(o); });
+    let seen = 0, tot = 0;
+    for(let v = 0; v < 8; v++){
+      const a = v / 8 * Math.PI * 2, eye = new THREE.Vector3(Math.sin(a) * fz.dist, fz.camY, Math.cos(a) * fz.dist);
+      fruits.forEach(fo => {
+        const c = new THREE.Vector3(); fo.getWorldPosition(c);
+        const toC = c.clone().sub(eye); if(toC.clone().normalize().dot(c.clone().setY(0).normalize()) > 0.35) return;   // 나무 뒤쪽 열매는 셈에서 뺌
+        tot++; ray.set(eye, toC.normalize());
+        const hit = ray.intersectObjects(solid, false)[0];
+        if(hit && owner(hit.object) === fo) seen++;
+      });
+    }
+    dispose(b.group);
+    const bx = new THREE.Box3().setFromObject(b.group);
+    return {fruits:fruits.length, checks:tot, visible:seen, ratio:tot ? seen / tot : 0, fit:fz, top:+bx.max.y.toFixed(2), bottom:+bx.min.y.toFixed(2)};
+  });
+}
+/* 시험용: 원하는 나무를 한 장 찍기(각도 a) */
+function snap(t, look, seed, a, w, h){
+  return loadThree().then(() => {
+    thumbOf('default');                                    // 찍는 판 준비
+    TH.renderer.setSize(w || 300, h || 280, false); TH.camera.aspect = (w || 300) / (h || 280); TH.camera.updateProjectionMatrix();
+    const b = build(t, Object.assign({buddy:false}, look), seed || 'snap'); TH.scene.add(b.group); b.anim.forEach(f => f(1.3));
+    const f = fit(b.group, TH.camera), an = a == null ? 0.55 : a;
+    TH.camera.position.set(Math.sin(an) * f.dist, f.camY, Math.cos(an) * f.dist); TH.camera.lookAt(0, f.lookY, 0);
+    TH.renderer.render(TH.scene, TH.camera);
+    const url = TH.renderer.domElement.toDataURL('image/png');
+    TH.scene.remove(b.group); dispose(b.group);
+    TH.renderer.setSize(220, 200, false); TH.camera.aspect = 220 / 200; TH.camera.updateProjectionMatrix();
+    return url;
+  });
+}
+QO.tree3d = {mount:mount, shopThumbs:shopThumbs, cheer:cheer, on:on3d, SIG:SIG, _vis:fruitVisibility, _snap:snap};
 })();

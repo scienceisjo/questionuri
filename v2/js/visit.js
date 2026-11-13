@@ -62,7 +62,7 @@ if(QO.mock && QO.mock.extend){
         const lv = db().legacy_level.find(l => l.user_id === x.id);
         const open = qs.filter(q => !q.is_anonymous && q.created_at >= s0);
         return {owner_number:x.number, owner_name:x.name, active_tree:x.active_tree || 'default', active_companion:x.active_companion || null,
-          level:Math.max(lv ? lv.level : 1, Math.min(f + 1, 10)), fruits:f, questions:open.length, water:open.reduce((a, q) => a + (q.water_count || 0), 0)};
+          level:Math.max(lv ? lv.level : 1, Math.min(f + 1, 10)), fruits:f, questions:open.length, water:open.reduce((a, q) => a + (q.water_count || 0), 0), active_fruit:x.active_fruit || 'apple'};
       });
     },
     visitFriend(num){

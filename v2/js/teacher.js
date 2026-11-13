@@ -1,6 +1,7 @@
-/* teacher.html 본체 — 열매 확인 · 수업 진행 · 모둠 · 단서 살피기 · 칠판 화면 (설계서 §5 · §3-2 · §3-3).
+/* teacher.html 본체 — 열매 확인 · 열린 열매 · 수업 진행 · 모둠 · 단서 살피기 · 칠판 화면 (설계서 §5 · §3-2 · §3-3).
    수업 진행 구역과 칠판 화면에는 학생 이름을 띄우지 않는다(전자칠판에 그대로 비칠 수 있다).
-   더한 데이터 함수: classLive(g, c) · classStuck(g, c) — 둘 다 표 읽기라 SQL 은 더 필요 없다. */
+   더한 데이터 함수: classLive(g, c) · classStuck(g, c) — 둘 다 표 읽기라 SQL 은 더 필요 없다.
+   classFruits(g, c) 는 진짜가 api.js 에, 흉내가 여기에 있다(열린 열매 탭). */
 (function(){
 'use strict';
 const QO = window.QO, cfg = QO.cfg, S = QO.state, K = QO.K, J = QO.journal, ui = QO.ui;
@@ -63,6 +64,23 @@ QO.mock.extend({
       .map(q => stuckRow(q, by.get(q.user_id), db.clues.filter(x => x.question_id === q.id && x.hidden_at == null).length)).sort(stuckSort);
   }
 });
+/* 열린 열매(진짜는 api.js classFruits) — 정렬은 진짜와 같게: 열린 때와 열매 뒤 고친 때(journal.edited_at) 중 늦은 것이 먼저 */
+const msOf = ts => { const n = ts ? Date.parse(ts) : NaN; return isNaN(n) ? 0 : n; };
+const editedAt = q => (q && q.journal && typeof q.journal === 'object' && q.journal.edited_at) || null;
+/* 고친 때가 지금 + 5분보다 뒤면(일지 JSON 에 잘못 들어간 값) 없는 것으로 본다 — 맨 위에 붙박이거나 「본 때」를 미래로 밀지 않게 */
+const SKEW = 5 * 60000;
+const editedMs = q => { const e = msOf(editedAt(q)); return e > Date.now() + SKEW ? 0 : e; };
+const fruitAt = q => Math.max(msOf(q.resolved_at), editedMs(q));
+const fruitSort = (a, b) => fruitAt(b) - fruitAt(a) || b.id - a.id;
+QO.mock.extend({
+  classFruits(g, c){
+    const h = QO.mock.h, db = QO.mock.db;
+    if(!h.isTeacher(h.me())) throw h.userErr('선생님만 할 수 있어요');
+    const by = new Map(db.profiles.filter(p => p.grade === Number(g) && p.class_no === Number(c)).map(p => [p.id, p]));
+    return db.questions.filter(q => by.has(q.user_id) && q.fruit_kind != null).map(q => { const p = by.get(q.user_id);
+      return Object.assign(h.pick(q, h.COLS), {user_id:q.user_id, student:{name:p.name || '', number:p.number != null ? p.number : null}}); }).sort(fruitSort);
+  }
+});
 /* 학생 성장 기록(SQL v2_09 growth_notes, 학생 growth.js 가 쓴다) — 선생님은 RLS(v2_growth_read)로 다 읽는다.
    이름·번호는 다른 목록처럼 classStudents(profiles)로 붙인다. 표가 아직 없으면 e.soon = true 로 던진다(화면은 안내 한 줄) */
 const growSoon = e => /PGRST202|PGRST205|42P01|42883|schema cache|does not exist/i.test(String((e && e.message) || '') + ' ' + String((e && e.code) || ''));
@@ -105,12 +123,15 @@ function growSeed(db, h){
 const T = {
   tRef:null, key:'', seq:0, inflight:0, reqs:{}, dirty:false,
   cutover:null, students:null,
-  pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null,
+  pending:null, detail:{}, dWait:{}, open:null, ret:null, bulk:null, quick:null,
   live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, ex:{no:'', yes:''}, pick:[], showOwner:{},
   groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{},
   day:null, clues:null, cluesWant:null,
   reading:null, rdPer:null, rdSrc:'',
-  grow:null, growOpen:false
+  grow:null, growOpen:false,
+  /* 바로 보기 — opened 열린 열매 목록, oOpen 펼친 질문, oKeys·pKeys 지난번에 받은 것(새로 들어온 줄 표시용), oNew·pNew 잠깐 표시할 줄,
+     oAt·pAt 마지막 자동 읽기 시각, held 확인 요청을 받아 두고 그리기를 미룬 상태, mine 이 화면에서 내가 연 열매 */
+  opened:null, oOpen:null, oKeys:null, oNew:new Set(), oAt:0, pKeys:null, pNew:new Set(), pAt:0, held:false, mine:new Set()
 };
 const clsKey = () => S.cls ? S.cls.grade + '-' + S.cls.class_no : '';
 const clsName = () => S.cls ? S.cls.grade + '학년 ' + S.cls.class_no + '반' : '';
@@ -120,25 +141,72 @@ function ensure(){
   if(T.tRef === S.teacher && T.key === key) return;
   const fresh = T.tRef !== S.teacher;
   T.tRef = S.teacher; T.key = key; T.seq++; T.reqs = {};
-  Object.assign(T, {students:null, pending:null, detail:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
-    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null});
+  Object.assign(T, {students:null, pending:null, detail:{}, dWait:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
+    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null,
+    opened:null, oOpen:null, oKeys:null, oNew:new Set(), oAt:0, pKeys:null, pNew:new Set(), pAt:0, held:false, mine:new Set()});
   if(fresh){ T.cutover = null; T.ex = {no:'', yes:''}; T.day = null; }
   if(!S.teacher || !S.cls) return;
-  loadPending(); loadGroups(); loadLive(); loadStudents();
+  loadPending(); loadGroups(); loadLive(); loadStudents(); loadOpened();
   if(!T.cutover) loadCutover();
 }
-/* 읽기 하나 — 반·사람이 바뀌었거나 더 새 요청이 있으면 결과를 버린다 */
-function load(name, work, done){
+/* 읽기 하나 — 반·사람이 바뀌었거나 더 새 요청이 있으면 결과를 버린다. quiet 면 실패해도 알리지 않는다(뒤에서 도는 자동 읽기) */
+function load(name, work, done, quiet){
   const my = T.seq, who = T.tRef, n = (T.reqs[name] = (T.reqs[name] || 0) + 1);
   T.inflight++;
   return Promise.resolve().then(work).then(r => {
     if(my === T.seq && who === S.teacher && T.reqs[name] === n) done(r);
     return r;
-  }, e => { if(my === T.seq && who === S.teacher) ui.fail(e); }).finally(() => { T.inflight--; });
+  }, e => { if(my === T.seq && who === S.teacher && !quiet) ui.fail(e); }).finally(() => { T.inflight--; });
 }
 const G = () => S.cls.grade, C = () => S.cls.class_no;
-function loadPending(){ return load('pending', () => QO.api.pendingFruits(G(), C()), r => { T.pending = r; if(T.open && !r.some(q => q.id === T.open)){ T.open = null; T.ret = null; } soft('fruits'); }); }
-function loadDetail(id){ return load('d' + id, () => QO.api.questionDetail(id), r => { T.detail[id] = r; soft('fruits'); }); }
+/* 확인 요청 — auto 는 15초·60초 자동 읽기. 바뀐 것이 없으면 아무것도 안 하고, 새로 들어온 줄은 잠깐 표시한다 */
+function loadPending(auto){ T.pAt = Date.now(); return load('pending', () => QO.api.pendingFruits(G(), C()), r => setPending(r, auto), auto); }
+function setPending(r, auto){
+  /* 빠르게 확인·CSV 표를 켜기 전에 떠난 자동 읽기가 늦게 왔으면 버린다 — 두 화면은 지금 목록에 기대고, 끝낼 때 다시 읽는다 */
+  if(auto && (T.quick || T.bulk)) return;
+  const was = T.pending;
+  auto = !!auto && !!was;                                   // 아직 한 번도 못 받았으면 보통 읽기처럼 바로 그린다
+  if(auto && JSON.stringify(was) === JSON.stringify(r)) return;
+  if(T.pKeys) r.forEach(q => { if(!T.pKeys.has(q.id)) T.pNew.add(q.id); });
+  T.pKeys = new Set(r.map(q => q.id));
+  /* 지난번과 바뀐(학생이 고쳐 다시 보낸·새로 들어온) 질문은 받아 둔 일지를 버린다. 펼쳐 둔 질문은 버리지 않고 아래에서 다시 읽는다 */
+  const old = was ? new Map(was.map(q => [q.id, JSON.stringify(q)])) : null;
+  let openChanged = false;
+  if(old) r.forEach(q => { if(old.get(q.id) === JSON.stringify(q)) return; if(q.id === T.open) openChanged = true; else delete T.detail[q.id]; });
+  const nowOpen = T.open ? r.find(q => q.id === T.open) : null;
+  T.pending = r;
+  /* 되돌리기 한 줄을 쓰는 중이면 그 질문이 목록에서 빠져도 그대로 둔다(보내면 서버가 「이미 확인한 질문」이라고 알려 준다) */
+  if(T.open && !nowOpen && !(auto && T.ret && T.ret.qid === T.open)){ T.open = null; T.ret = null; }
+  /* 펼쳐 둔 질문을 학생이 고쳐 다시 보냈으면 일지도 다시 읽는다(되돌리기를 쓰는 중이면 그만둘 때 읽는다) */
+  if(openChanged && T.open && !T.ret) loadDetail(T.open, auto);
+  if(auto) autoSoft('fruits'); else soft('fruits');
+}
+/* 열린 열매 — 바뀐 것이 없으면 그대로, 새로 열렸거나 열매 뒤 고친 줄은 잠깐 표시 */
+function loadOpened(auto){ T.oAt = Date.now(); return load('opened', () => QO.api.classFruits(G(), C()), r => setOpened(r, auto), auto); }
+function setOpened(r, auto){
+  const was = T.opened;
+  auto = !!auto && !!was;
+  if(auto && JSON.stringify(was) === JSON.stringify(r)) return;
+  const keys = new Map(r.map(q => [q.id, fruitAt(q)]));
+  if(T.oKeys) r.forEach(q => { const k = T.oKeys.get(q.id); if(k == null || keys.get(q.id) > k) T.oNew.add(q.id); });
+  T.oKeys = keys; T.opened = r;
+  if(T.oOpen != null && !r.some(q => q.id === T.oOpen)) T.oOpen = null;
+  if(auto) autoSoft('opened'); else soft('opened');
+}
+/* 자동 읽기 — 「빠르게 확인」·CSV 표는 목록 순서에 기대므로 읽지 않는다(끝낼 때 다시 읽는다) */
+function autoFruits(){ if(!S.teacher || !S.cls || T.bulk || T.quick) return Promise.resolve(); return loadPending(true); }
+function autoOpened(){ if(!S.teacher || !S.cls) return Promise.resolve(); return loadOpened(true); }
+/* 일지 하나 — dWait 는 읽는 중인 질문(그리는 쪽이 같은 일지를 겹쳐 부르지 않게). auto 면 자동 읽기처럼 다시 그린다.
+   받아 둔 것과 같으면 화면이 이미 그것을 보여 주고 있으니 다시 그리지 않는다(새 줄 표시·스크롤이 괜히 흔들리지 않게) */
+function loadDetail(id, auto){
+  const w = T.dWait; w[id] = (w[id] || 0) + 1;
+  return load('d' + id, () => QO.api.questionDetail(id), r => {
+    const same = !!T.detail[id] && JSON.stringify(T.detail[id]) === JSON.stringify(r);
+    T.detail[id] = r;
+    if(same) return;
+    if(auto) autoSoft('fruits'); else soft('fruits');
+  }).finally(() => { w[id]--; });
+}
 function loadStudents(){ return load('students', () => QO.api.classStudents(G(), C()), r => { T.students = r; soft('fruits'); soft('groups'); soft('clues'); }); }
 function loadGroups(){ return load('groups', () => QO.api.classGroups(G(), C()), r => { T.groups = r; soft('groups'); if(T.live && T.live.mode === 'group') soft('live'); boardRefresh(); }); }
 function loadLive(){ return load('live', () => QO.api.classLive(G(), C()), r => setLive(r, false)); }
@@ -154,10 +222,35 @@ function soft(tab){
   QO.tabs.paintBadges();
   if(QO.tabs.current() !== tab) return;
   if(typing()){ T.dirty = true; return; }
+  redraw(tab);
+}
+/* 다시 그리기 — 넓은 화면 오른쪽 일지 칸(.t-pane)에 같은 질문이 열려 있으면 읽던 자리(scrollTop)를 그대로 둔다 */
+function paneOf(){
+  const p = $('#body .t-pane'); if(!p) return null;
+  const d = p.querySelector('[data-detail],[data-odetail]');
+  return {el:p, id:d ? (d.dataset.detail ? 'f' + d.dataset.detail : 'o' + d.dataset.odetail) : ''};
+}
+function redraw(tab){
+  const a = paneOf(), top = a ? a.el.scrollTop : 0;
   QO.tabs.rerender(tab);
+  const b = a && top ? paneOf() : null;
+  if(b && b.id === a.id) b.el.scrollTop = top;
+}
+/* 좁은 화면에서 일지를 펼쳐 둔 채 읽는 중 — 목록이 그 위로 밀려 들어오지 않게 다시 그리기를 미룬다(접거나 새로 읽기를 누르면 그린다) */
+const narrowOpen = tab => !ui.wide() && (tab === 'fruits' ? T.open : tab === 'opened' ? T.oOpen : null) != null;
+/* 자동 읽기가 일으킨 다시 그리기 — 선생님이 쓰는 중이면 자료만 받아 두고 그리기는 미룬다(배지는 칠한다).
+   확인 요청 탭에서 되돌리기 한 줄을 쓰는 중(T.ret)·빠르게 확인(T.quick)·CSV 표(T.bulk)·좁은 화면에서 일지를 펼쳐 둔 동안은
+   그 일이 끝나 다시 그릴 때까지(T.held), 입력칸에 초점이 있거나 누르는 중이면 손을 뗀 뒤에(T.dirty) */
+function autoSoft(tab){
+  QO.tabs.paintBadges();
+  if(QO.tabs.current() !== tab) return;
+  if(tab === 'fruits' && (T.ret || T.quick || T.bulk)){ T.held = true; return; }
+  if(narrowOpen(tab)){ if(tab === 'fruits') T.held = true; return; }
+  if(typing() || pointerDown){ T.dirty = true; return; }
+  redraw(tab);
 }
 let pointerDown = false;
-function flushDirty(){ if(!T.dirty || pointerDown || typing()) return; T.dirty = false; QO.tabs.rerender(); }
+function flushDirty(){ if(!T.dirty || pointerDown || typing()) return; T.dirty = false; redraw(QO.tabs.current()); }
 
 /* 누르는 일 하나 — 버튼 잠금 + 한 번에 하나만 */
 let lock = false;
@@ -196,11 +289,13 @@ function cutoverNote(){
 }
 function renderFruits(root){
   ensure();
+  T.held = false;                                       // 지금 받아 둔 자료로 그린다
   if(!S.cls){ root.innerHTML = '<div class="empty">학생이 있는 반이 없어요.</div>'; return; }
   const list = T.pending;
+  if(list && T.open && !list.some(q => q.id === T.open)){ T.open = null; T.ret = null; }   // 그사이 다른 곳에서 확인된 질문
   let h = '<div class="t-bar"><span class="t-count">' + (list ? '확인 요청 ' + list.length + '개' : '확인 요청을 불러오는 중이에요') + '</span>' + cutoverNote() +
     (list && list.length ? '<button type="button" class="link" data-act="f-csv">CSV 내려받기</button>' +
-      '<label class="link t-up" for="t_fcsv">CSV 올리기</label><input type="file" id="t_fcsv" accept=".csv,text/csv" hidden>' +
+      '<label class="link t-up" for="t_fcsv">CSV 올리기</label>' +       // 파일 칸은 #body 밖에 하나만 있다(아래 fileInput)
       '<button type="button" class="link" data-act="f-quick">빠르게 확인</button>' : '') +
     '<button type="button" class="link" data-act="f-reload">새로 읽기</button></div>';
   if(!list){ root.innerHTML = h; return; }
@@ -208,9 +303,10 @@ function renderFruits(root){
   if(T.quick && list.length){ root.innerHTML = h + quickHTML(); return; }
   if(!list.length){ root.innerHTML = h + '<div class="card empty">확인을 기다리는 질문이 없어요.</div>' + growHTML() + demoBox(); return; }
   const wide = ui.wide(), open = list.find(q => q.id === T.open) || null;
-  if(open && !T.detail[open.id] && !T.reqs['d' + open.id]) loadDetail(open.id);
+  if(open && !T.detail[open.id] && !T.dWait[open.id]) loadDetail(open.id);
   let items = '';
   list.forEach(q => { items += (!wide && open === q) ? detailHTML(q) : itemHTML(q); });
+  T.pNew.clear();                                       // 새로 들어온 줄 표시는 한 번만
   if(wide) h += '<div class="t-split"><div class="t-list">' + items + '</div><div class="t-pane">' +
     (open ? detailHTML(open) : '<div class="t-ph">왼쪽에서 질문을 고르면 탐구 일지가 여기에 열려요.</div>') + '</div></div>';
   else h += '<div class="t-list">' + items + '</div>';
@@ -223,25 +319,30 @@ function itemHTML(q){
   if(w && w.cmp === 'quick') tags += '<span class="tag">답만 달기</span>';   // explore.js QUICK — 일지 칸 없이 답·출처만
   if(isLegacyReq(q)) tags += '<span class="tag t-old">옛 앱에서 마침</span>';
   if(J.hasAI(v)) tags += '<span class="tag t-ai">AI 사용</span>';
-  return '<button type="button" class="t-item' + (on ? ' sel' : '') + '" data-act="f-open" data-q="' + q.id + '" aria-expanded="' + on + '">' +
+  return '<button type="button" class="t-item' + (on ? ' sel' : '') + (T.pNew.has(q.id) ? ' t-new' : '') + '" data-act="f-open" data-q="' + q.id + '" aria-expanded="' + on + '">' +
     '<div class="qt">' + esc(v.text) + '</div><div class="meta"><span class="t-who">' + esc(st.name || '') + (st.number != null ? ' · ' + st.number + '번' : '') + '</span>' +
     '<span class="t-when">' + esc(ui.fmtTime(q.resolve_requested_at)) + '</span>' + tags + '</div></button>';
 }
 const row = (name, body) => '<div class="t-row"><div class="t-rl">' + name + '</div><div class="t-rv">' + body + '</div></div>';
 const EMPTY = '<span class="t-empty">비어 있어요</span>';
-function journalRows(v){
-  const d = v.d;
+const edTag = ts => ts ? '<span class="t-ed">고침 · ' + esc(ui.fmtTime(ts)) + '</span>' : '';
+/* 일지 칸 — v 는 J.view(q), q 는 질문 행 그대로(처음 쓴 질문·줄마다 고친 때는 journal 에서 바로 읽는다).
+   AI 답도 출처 하나로 친다(2026-11-13) — 「AI 사용」 표시만 하고 다른 출처·견주기를 따로 다그치지 않는다 */
+function journalRows(v, q){
+  const d = v.d, rj = q && q.journal && typeof q.journal === 'object' ? q.journal : {};
+  const lineEd = (k, i, x) => (x && x.edited_at) || (Array.isArray(rj[k]) && rj[k][i] && rj[k][i].edited_at) || null;
   let h = '';
+  if(rj.text_first) h += '<div class="t-first">처음 쓴 질문 · ' + esc(rj.text_first) + edTag(rj.text_edited_at) + '</div>';
   if(d.refine && d.refine.text) h += row('다듬기', esc(d.refine.text) + (v.notes.refine ? '<div class="t-note">선생님 글 · ' + esc(v.notes.refine) + '</div>' : ''));
   h += row('예상', d.predict ? '<ol class="t-pred">' + d.predict.map((p, i) => '<li><span class="t-k">' + (i ? '바뀐 생각' : '처음') + '</span>' + esc(p.text) +
-    (p.at ? '<span class="t-at">' + esc(ui.fmtTime(p.at)) + '</span>' : '') + '</li>').join('') + '</ol>' + (d.known ? '<div class="t-note">이미 알던 것 · ' + esc(d.known) + '</div>' : '') : EMPTY);
+    (p.at ? '<span class="t-at">' + esc(ui.fmtTime(p.at)) + '</span>' : '') + edTag(lineEd('predict', i, p)) + '</li>').join('') + '</ol>' + (d.known ? '<div class="t-note">이미 알던 것 · ' + esc(d.known) + '</div>' : '') : EMPTY);
   h += row('알아볼 방법', d.method ? '<b>' + esc(methodName(d.method.kind)) + '</b>' + (d.method.plan ? ' · ' + esc(d.method.plan) : '') : EMPTY);
   let f = EMPTY;
   if(d.find){
-    f = d.find.map(x => '<div class="t-src"><b>' + esc(x.src || '출처 없음') + '</b>' + (x.ai ? ' <span class="tag t-ai">AI</span>' : '') + (x.text ? '<div>' + esc(x.text) + '</div>' : '') + '</div>').join('');
-    if(d.same) f += '<div class="t-note">두 곳이 같은 말을 하나요? · ' + esc(d.same) + '</div>';
+    f = d.find.map((x, i) => '<div class="t-src"><b>' + esc(x.src || '출처 없음') + '</b>' + (x.ai ? ' <span class="tag t-ai">AI</span>' : '') + edTag(lineEd('find', i, x)) +
+      (x.text ? '<div>' + esc(x.text) + '</div>' : '') + '</div>').join('');
+    if(d.same && d.find.length >= 2) f += '<div class="t-note">두 곳이 같은 말을 하나요? · ' + esc(d.same) + '</div>';   // 한 곳만 남았으면 견줄 것이 없다
     if(d.aiCmp) f += '<div class="t-note">AI 답과 견주면 · ' + esc(d.aiCmp) + '</div>';
-    if(J.hasAI(v) && !J.findOK(v)) f += '<div class="t-warn">' + (d.find.some(x => !x.ai) ? '「AI 답과 견주기」가 비어 있어요.' : 'AI 말고 다른 출처가 없어요.') + '</div>';
   }
   h += row('찾기', f);
   const w = d.wrap;
@@ -265,11 +366,11 @@ function detailHTML(q){
   let h = '<div class="card t-detail" data-detail="' + id + '"><div class="t-dh"><div class="t-dtop"><div class="t-dq">' + esc(v.text) + '</div>' +
     (ui.wide() ? '' : '<button type="button" class="link t-fold1" data-act="f-open" data-q="' + id + '" aria-expanded="true">접기</button>') + '</div><div class="hint">' +
     [st.name ? esc(st.name) + (st.number != null ? ' · ' + st.number + '번' : '') : '', v.unit ? esc(v.unit) : '', Q.is_anonymous ? '익명으로 심음' : '', Q.resolve_requested_at ? '보낸 때 ' + esc(ui.fmtTime(Q.resolve_requested_at)) : '']
-      .filter(Boolean).join(' · ') + '</div>' + (v.original && v.original !== v.text ? '<div class="hint">처음 질문 · ' + esc(v.original) + '</div>' : '') + '</div>';
+      .filter(Boolean).join(' · ') + '</div>' + (v.original && v.original !== v.text ? '<div class="hint">다듬기 전 질문 · ' + esc(v.original) + '</div>' : '') + '</div>';
   const blank = !d.predict && !d.method && !d.find && !d.wrap;
   if(isLegacyReq(Q)) h += '<div class="rule">옛 앱에서 학생이 스스로 마친 질문이에요.' + (blank ? ' 일지 칸에 적힌 것이 없어요.' : '') + '</div>';
   if(v.notes.nudge) h += '<div class="t-note">지난번 되돌릴 때 쓴 글 · ' + esc(v.notes.nudge) + '</div>';
-  h += '<div class="t-rows">' + journalRows(v) + '</div>';
+  h += '<div class="t-rows">' + journalRows(v, Q) + '</div>';
   /* 발자국 칸 수 → 확인하면 들어갈 도토리 */
   const steps = K.STEPS.filter(s => (D.footprints || []).some(f => f.step === s.k));
   h += '<div class="t-prints">발자국 ' + steps.length + '칸' + (steps.length ? ' (' + steps.map(s => s.n).join(' · ') + ')' : '') + ' · 확인하면 도토리 ' + (steps.length + 5) + '개</div>';
@@ -297,30 +398,40 @@ function detailHTML(q){
   }
   return h + '</div>';
 }
-function retDefault(D){
-  const v = J.view(D.question), d = v.d;
+/* 되돌릴 칸 추천 — 아직 모름이거나 찾은 곳이 한 곳뿐이면 「찾기」, 아니면 「정리」.
+   (예전엔 AI 답만 있으면 찾기로 보냈다. 이제 AI 답도 출처 하나라서 곳 수만 본다) */
+function retStep(v){
+  const d = v.d;
   if(d.wrap && d.wrap.mode === 'unknown') return 'find';
-  if(!J.findOK(v) || (d.find || []).length < 2) return 'find';
+  if((d.find || []).length < 2) return 'find';
   return 'wrap';
 }
+function retDefault(D){ return retStep(J.view(D.question)); }
 /* 확인할 답 CSV(설계서 §5) — 일지 칸 전부와 「AI 사용」. 실명은 넣지 않는다(학생 번호만). 뒤 세 칸은 선생님이 적는 자리 */
 const CSV_HEAD = ['질문 번호', '학생 번호', '처음 질문', '다듬은 질문', '단원', '예상', '알아볼 방법', '찾기(출처: 알아낸 것)', '두 곳 비교', 'AI 답과 견주기',
   '내 예상은', '정리', '여기까지 알아냈어요', '막힌 곳', '왜 막혔나', '넓히기', 'AI 사용', '보낸 때', '결과(열매·안개 열매·되돌리기)', '되돌릴 칸', '학생에게 한 줄'];
+/* 한 줄의 앞쪽 칸(질문 번호 ~ 보낸 때) — CSV_HEAD 와 같은 순서. 올린 CSV 와 견줄 때도 이것을 쓴다 */
+function csvCells(q){
+  const v = J.view(q), d = v.d, w = d.wrap || {}, st = q.student || {};
+  return [q.id, st.number != null ? st.number : '', v.original, d.refine && d.refine.text ? d.refine.text : '', v.unit,
+    (d.predict || []).map((p, i) => (i ? '바뀐 생각: ' : '') + p.text).join(' / '),
+    d.method ? methodName(d.method.kind) + (d.method.plan ? ' · ' + d.method.plan : '') : '',
+    (d.find || []).map(f => (f.src || '') + (f.ai ? '(AI)' : '') + ': ' + (f.text || '')).join(' / '),
+    d.same || '', d.aiCmp || '', w.cmp === 'quick' ? '답만 달기' + (w.changedBy ? ' · 어디서: ' + w.changedBy : '') : w.cmp ? (CMP[w.cmp] || w.cmp) + (w.changedBy ? ' — ' + w.changedBy : '') : '',
+    w.mode === 'known' ? w.text || '' : '', w.mode === 'unknown' ? w.reached || '' : '', w.mode === 'unknown' ? w.stuckQ || '' : '', w.mode === 'unknown' ? w.why || '' : '',
+    d.extend ? (d.extend.kind === 'newq' ? '새 질문: ' : '생활과 잇기: ') + d.extend.text : '', J.hasAI(v) ? '예' : '',
+    q.resolve_requested_at ? ui.kstDay(q.resolve_requested_at) + ' ' + ui.kstHM(q.resolve_requested_at) : ''];
+}
 function csvOf(list){
   const cell = x => '"' + String(x == null ? '' : x).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
-  const rows = (list || []).map(q => {
-    const v = J.view(q), d = v.d, w = d.wrap || {}, st = q.student || {};
-    return [q.id, st.number != null ? st.number : '', v.original, d.refine && d.refine.text ? d.refine.text : '', v.unit,
-      (d.predict || []).map((p, i) => (i ? '바뀐 생각: ' : '') + p.text).join(' / '),
-      d.method ? methodName(d.method.kind) + (d.method.plan ? ' · ' + d.method.plan : '') : '',
-      (d.find || []).map(f => (f.src || '') + (f.ai ? '(AI)' : '') + ': ' + (f.text || '')).join(' / '),
-      d.same || '', d.aiCmp || '', w.cmp === 'quick' ? '답만 달기' + (w.changedBy ? ' · 어디서: ' + w.changedBy : '') : w.cmp ? (CMP[w.cmp] || w.cmp) + (w.changedBy ? ' — ' + w.changedBy : '') : '',
-      w.mode === 'known' ? w.text || '' : '', w.mode === 'unknown' ? w.reached || '' : '', w.mode === 'unknown' ? w.stuckQ || '' : '', w.mode === 'unknown' ? w.why || '' : '',
-      d.extend ? (d.extend.kind === 'newq' ? '새 질문: ' : '생활과 잇기: ') + d.extend.text : '', J.hasAI(v) ? '예' : '',
-      q.resolve_requested_at ? ui.kstDay(q.resolve_requested_at) + ' ' + ui.kstHM(q.resolve_requested_at) : '', '', '', ''];
-  });
+  const rows = (list || []).map(q => csvCells(q).concat(['', '', '']));
   return '\ufeff' + [CSV_HEAD].concat(rows).map(r => r.map(cell).join(',')).join('\r\n');
 }
+/* 학생이 쓴 칸(처음 질문 ~ 보낸 때) — 머리줄 이름으로 찾아 견준다. 칸 사이 빈칸·줄바꿈 차이는 같게 보고,
+   보낸 때는 숫자만 견준다(표 프로그램이 「09:05」를 「9:05」로 바꿔 저장해도 같은 때) */
+const CSV_MINE = CSV_HEAD.slice(CSV_HEAD.indexOf('처음 질문'), CSV_HEAD.indexOf('보낸 때') + 1);
+const csvNorm = (name, x) => { const s = String(x == null ? '' : x).replace(/\s+/g, ' ').trim();
+  return name === '보낸 때' ? (s.match(/\d+/g) || []).map(Number).join('-') : s; };
 function dropPending(id){
   if(T.pending) T.pending = T.pending.filter(q => q.id !== id);
   delete T.detail[id];
@@ -340,7 +451,7 @@ ACT['f-reload'] = () => { T.pending = null; T.detail = {}; QO.tabs.rerender('fru
 ACT['f-open'] = b => {
   const id = Number(b.dataset.q);
   T.open = T.open === id ? null : id; T.ret = null;
-  if(T.open && !T.detail[id]) loadDetail(id);
+  if(T.open) loadDetail(id);          // 펼칠 때마다 새로 읽는다 — 받아 둔 일지가 있으면 그것부터 그리고, 다 읽으면 다시 그린다
   if(T.open && !T.students) loadStudents();
   QO.tabs.rerender('fruits');
   if(T.open && !ui.wide()){ const el = $('.t-detail[data-detail="' + id + '"]'); if(el && el.scrollIntoView) el.scrollIntoView({block:'nearest'}); }
@@ -350,17 +461,20 @@ ACT['f-ok'] = async b => {
   const n = await act(b, () => QO.api.confirmFruit(id, kind));
   if(n === undefined) return;
   ui.toast(n > 0 ? (kind === 'fog' ? '안개 열매가 열렸어요. ' : '열매가 열렸어요. ') + '도토리 ' + n + '개가 들어갔어요' : '이미 확인한 질문이라 도토리는 더 들어가지 않았어요');
-  dropPending(id); loadPending();
+  T.mine.add(id);
+  dropPending(id); loadPending(); loadOpened();
 };
 ACT['f-ret'] = b => {
-  const id = Number(b.dataset.q), D = T.detail[id];
-  T.ret = T.ret && T.ret.qid === id ? null : {qid:id, step:D ? retDefault(D) : 'find', note:''};
+  const id = Number(b.dataset.q), D = T.detail[id], closing = !!(T.ret && T.ret.qid === id);
+  T.ret = closing ? null : {qid:id, step:D ? retDefault(D) : 'find', note:''};
   QO.tabs.rerender('fruits');
+  if(closing){ loadDetail(id); return; }     // 쓰는 동안 미뤄 둔 일지 다시 읽기(그만두기와 같게)
   const inp = $('#t_retNote'); if(inp) inp.focus();
 };
 ACT['f-ret-step'] = b => { if(!T.ret) return; T.ret.step = b.dataset.step; QO.tabs.rerender('fruits'); };
 ACT['f-ret-ex'] = b => { if(!T.ret) return; const x = RET_EX[Number(b.dataset.i)]; if(!x) return; T.ret.note = x.text; T.ret.step = x.step; QO.tabs.rerender('fruits'); };
-ACT['f-ret-cancel'] = () => { T.ret = null; QO.tabs.rerender('fruits'); };
+/* 그만두기 — 쓰는 동안 학생이 고쳤을 수 있어 그 일지를 다시 읽는다 */
+ACT['f-ret-cancel'] = () => { const qid = T.ret && T.ret.qid; T.ret = null; QO.tabs.rerender('fruits'); if(qid) loadDetail(qid); };
 ACT['f-ret-send'] = async b => {
   const R = T.ret, err = $('#t_retErr'); if(!R) return;
   const inp = $('#t_retNote'); R.note = inp ? inp.value : R.note;
@@ -371,7 +485,7 @@ ACT['f-ret-send'] = async b => {
   const r = await act(b, () => QO.api.returnFruit(R.qid, R.step, note), {errEl:err});
   if(r === undefined) return;
   ui.toast(r ? J.stepName(R.step) + ' 칸을 다시 열어 돌려보냈어요' : '이미 확인한 질문이에요');
-  dropPending(R.qid); loadPending();
+  dropPending(R.qid); loadPending(); loadOpened();
 };
 
 /* ═══════════ ① CSV 올리기 → 한 줄씩 보는 표 → 반영 ═══════════
@@ -407,20 +521,27 @@ function bulkCheck(r){
   }
   return '';
 }
-function bulkLoad(text, name){
+async function bulkLoad(text, name){
   const rows = parseCSV(text);
   if(!rows.length) throw QO.userError('빈 파일이에요');
   const head = rows[0].map(x => String(x).trim());
   const col = re => head.findIndex(h => re.test(h));
   const ci = col(/^질문\s*번호$/), cr = col(/^결과/), cs = col(/^되돌릴/), cn = col(/학생에게/), cm = col(/AI\s*메모|메모|선생님\s*확인/);
   if(ci < 0 || cr < 0) throw QO.userError('「CSV 내려받기」로 받은 파일이 아니에요(질문 번호·결과 칸이 없어요)');
+  /* 내려받은 뒤에 학생이 고쳤을 수 있어서 확인 요청부터 새로 받는다(못 받으면 표를 열지 않는다) */
+  const my = T.seq;
+  if(await loadPending() === undefined || my !== T.seq) return;
   const byId = new Map((T.pending || []).map(q => [q.id, q]));
+  /* 학생이 쓴 칸 — [이름, 지금 줄(csvCells)의 자리, 올린 CSV 의 자리]. 올린 파일에 없는 칸은 견주지 않는다 */
+  const mine = CSV_MINE.map(nm => [nm, CSV_HEAD.indexOf(nm), head.indexOf(nm)]).filter(c => c[2] >= 0);
+  const edited = (q, r) => { const now = csvCells(q); return mine.some(c => csvNorm(c[0], now[c[1]]) !== csvNorm(c[0], r[c[2]])); };
   const out = rows.slice(1).map(r => {
     const id = Number(String(r[ci] || '').trim()), memo = cm >= 0 ? String(r[cm] || '').trim() : '';
-    const x = {id:id, q:byId.get(id) || null, kind:KIND_OF(r[cr]), step:STEP_OF(cs >= 0 ? r[cs] : ''), note:cn >= 0 ? String(r[cn] || '').trim() : '', memo:memo, done:'', err:''};
-    if(x.kind === 'ret' && !x.step && x.q){ const D = T.detail[id]; x.step = D ? retDefault(D) : 'find'; }
+    const x = {id:id, q:byId.get(id) || null, kind:KIND_OF(r[cr]), step:STEP_OF(cs >= 0 ? r[cs] : ''), note:cn >= 0 ? String(r[cn] || '').trim() : '', memo:memo, done:'', err:'', changed:false};
+    if(x.kind === 'ret' && !x.step && x.q) x.step = retStep(J.view(x.q));
     x.err = bulkCheck(x);
-    x.on = !x.err && !!x.kind && x.kind !== 'skip' && !/확인/.test(memo);
+    x.changed = !!x.q && edited(x.q, r);
+    x.on = !x.err && !!x.kind && x.kind !== 'skip' && !/확인/.test(memo) && !x.changed;
     return x;
   }).filter(x => x.id);
   T.bulk = {name:name || '', rows:out, busy:false};
@@ -430,7 +551,7 @@ function bulkHTML(){
   const B = T.bulk, n = B.rows.filter(r => r.on && !r.done).length;
   const opt = (v, cur, label) => '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + label + '</option>';
   let h = '<div class="card t-bulk"><div class="t-bh"><b>올린 CSV 확인</b>' + (B.name ? ' <span class="hint">' + esc(B.name) + '</span>' : '') +
-    '<div class="hint">체크한 줄만 반영돼요. 「확인」 표시가 있거나 칸이 비거나 틀린 줄은 체크를 풀어 뒀어요. 반영하면 열매·도토리가 바로 들어가요.</div></div>' +
+    '<div class="hint">체크한 줄만 반영돼요. 「확인」 표시가 있거나, 칸이 비거나 틀렸거나, 내려받은 뒤 학생이 고친 줄은 체크를 풀어 뒀어요. 반영하면 열매·도토리가 바로 들어가요.</div></div>' +
     '<div class="t-btable">';
   B.rows.forEach((r, i) => {
     const v = r.q ? J.view(r.q) : null, st = r.q ? (r.q.student || {}) : {};
@@ -438,6 +559,7 @@ function bulkHTML(){
       '<label class="t-bchk"><input type="checkbox" data-bind="bk-on-' + i + '"' + (r.on ? ' checked' : '') + (r.done || (r.err && r.q === null) ? ' disabled' : '') + '></label>' +
       '<div class="t-bq"><div class="qt">' + (v ? esc(v.text) : '질문 ' + r.id) + '</div><div class="hint">' + (st.number != null ? st.number + '번' : '') + (st.name ? ' ' + esc(st.name) : '') + ' · 질문 ' + r.id + '</div>' +
       (r.memo ? '<div class="t-bmemo">AI 메모 · ' + esc(r.memo) + '</div>' : '') +
+      (r.changed && !r.done ? '<div class="t-bchg">내려받은 뒤 학생이 고쳤어요</div>' : '') +
       (r.done ? '<div class="t-bok">' + esc(r.done) + '</div>' : '') + (r.err ? '<div class="err">' + esc(r.err) + '</div>' : '') + '</div>' +
       '<div class="t-bset"><select class="inp" data-bind="bk-kind-' + i + '" aria-label="결과"' + (r.done ? ' disabled' : '') + '>' +
         opt('fruit', r.kind, '열매') + opt('fog', r.kind, '안개 열매') + opt('ret', r.kind, '되돌리기') + opt('skip', r.kind === '' || r.kind === '?' ? 'skip' : r.kind, '건너뛰기') + '</select>' +
@@ -454,18 +576,28 @@ function bulkBind(k, el){
   const m = /^bk-(on|kind|step|note)-(\d+)$/.exec(k); if(!m) return;
   const r = B.rows[Number(m[2])]; if(!r || r.done) return;
   if(m[1] === 'on') r.on = el.checked;
-  if(m[1] === 'kind'){ r.kind = el.value; if(r.kind === 'ret' && !r.step) r.step = 'find'; r.err = bulkCheck(r); r.on = !r.err && r.kind !== 'skip'; QO.tabs.rerender('fruits'); return; }
+  /* 학생이 고친 줄(r.changed)은 결과를 바꿔도 저절로 체크하지 않는다 — 선생님이 직접 체크해야 들어간다 */
+  if(m[1] === 'kind'){ r.kind = el.value; if(r.kind === 'ret' && !r.step) r.step = 'find'; r.err = bulkCheck(r); r.on = !r.err && r.kind !== 'skip' && !r.changed; QO.tabs.rerender('fruits'); return; }
   if(m[1] === 'step'){ r.step = el.value; r.err = bulkCheck(r); }
-  if(m[1] === 'note'){ r.note = el.value; const was = r.err; r.err = bulkCheck(r); if(!!was !== !!r.err || (!r.err && !r.on)){ if(!r.err) r.on = true; } }
+  if(m[1] === 'note'){ r.note = el.value; const was = r.err; r.err = bulkCheck(r); if(!!was !== !!r.err || (!r.err && !r.on)){ if(!r.err && !r.changed) r.on = true; } }
+  const cb = $('[data-bind="bk-on-' + m[2] + '"]'); if(cb && cb !== el) cb.checked = !!r.on;    // 저절로 바뀐 체크도 칸에 보이게
   const btn = $('[data-act="f-bulk-apply"]');
   if(btn){ const n = B.rows.filter(x => x.on && !x.done).length; btn.textContent = '체크한 ' + n + '개 반영하기'; btn.disabled = !n; }
 }
+/* CSV 파일 칸은 #body 밖(document.body)에 하나만 — 파일 고르는 창이 떠 있는 동안 자동 다시 그리기가 #body 를 새로 그려도
+   고른 파일이 아래 change 로 그대로 온다. 화면에는 label for="t_fcsv" 만 그린다 */
+(function fileInput(){
+  if(document.getElementById('t_fcsv') || !document.body) return;
+  const f = document.createElement('input');
+  f.type = 'file'; f.id = 't_fcsv'; f.accept = '.csv,text/csv'; f.hidden = true;
+  document.body.appendChild(f);
+})();
 document.addEventListener('change', e => {
   const t = e.target; if(!t || t.id !== 't_fcsv' || !t.files || !t.files[0]) return;
   const f = t.files[0]; t.value = '';
   f.text().then(x => bulkLoad(x, f.name)).catch(er => ui.fail(er));
 });
-ACT['f-bulk-cancel'] = () => { const had = T.bulk && T.bulk.rows.some(r => r.done); T.bulk = null; QO.tabs.rerender('fruits'); if(had) loadPending(); };
+ACT['f-bulk-cancel'] = () => { T.bulk = null; QO.tabs.rerender('fruits'); loadPending(); };   // 표를 보는 동안 자동 읽기를 쉬었으니 닫을 때 다시 읽는다
 ACT['f-bulk-apply'] = async b => {
   const B = T.bulk; if(!B || B.busy) return;
   const err = $('#t_bErr'); if(err) err.textContent = '';
@@ -477,7 +609,7 @@ ACT['f-bulk-apply'] = async b => {
     b.textContent = (ok + fail + 1) + ' / ' + todo.length + ' 반영하는 중…';
     try{
       if(r.kind === 'ret'){ const x = await QO.api.returnFruit(r.id, r.step, String(r.note).trim()); r.done = x ? J.stepName(r.step) + ' 칸을 다시 열어 돌려보냈어요' : '이미 확인한 질문이에요'; }
-      else { const n = await QO.api.confirmFruit(r.id, r.kind); acorn += n || 0; r.done = (r.kind === 'fog' ? '안개 열매' : '열매') + (n > 0 ? ' · 도토리 ' + n + '개' : ' · 이미 확인한 질문'); }
+      else { const n = await QO.api.confirmFruit(r.id, r.kind); acorn += n || 0; T.mine.add(r.id); r.done = (r.kind === 'fog' ? '안개 열매' : '열매') + (n > 0 ? ' · 도토리 ' + n + '개' : ' · 이미 확인한 질문'); }
       r.on = false; ok++;
     }catch(e){ r.err = ui.userMsg(e) || '반영하지 못했어요'; fail++; }
   }
@@ -485,6 +617,7 @@ ACT['f-bulk-apply'] = async b => {
   ui.toast(ok + '개 반영했어요' + (acorn ? ' · 도토리 ' + acorn + '개' : '') + (fail ? ' · ' + fail + '개는 못 했어요' : ''));
   T.pending = (T.pending || []).filter(q => !B.rows.some(r => r.done && r.id === q.id));
   QO.tabs.rerender('fruits');
+  if(ok) loadOpened();
 };
 
 /* ═══════════ ② 빠르게 확인 — 한 장씩, 키보드로 ═══════════ */
@@ -496,8 +629,8 @@ function quickHTML(){
   let h = '<div class="card t-quick" data-q="' + q.id + '"><div class="t-qh"><b>' + (Qk.i + 1) + ' / ' + list.length + '</b>' +
     '<span class="hint">' + (st.number != null ? st.number + '번 ' : '') + esc(st.name || '') + (v.unit ? ' · ' + esc(v.unit) : '') + '</span>' +
     '<button type="button" class="link" data-act="f-quick-off">그만</button></div>' +
-    '<div class="t-dq">' + esc(v.text) + '</div>' + (v.original && v.original !== v.text ? '<div class="hint">처음 질문 · ' + esc(v.original) + '</div>' : '') +
-    (J.hasAI(v) ? '<span class="tag t-ai">AI 사용</span>' : '') + '<div class="t-rows">' + journalRows(v) + '</div>' +
+    '<div class="t-dq">' + esc(v.text) + '</div>' + (v.original && v.original !== v.text ? '<div class="hint">다듬기 전 질문 · ' + esc(v.original) + '</div>' : '') +
+    (J.hasAI(v) ? '<span class="tag t-ai">AI 사용</span>' : '') + '<div class="t-rows">' + journalRows(v, q) + '</div>' +
     '<div class="t-acts t-qacts">' +
       '<button type="button" class="btn t-fruit' + (fogFirst ? ' line' : '') + '" data-act="f-q" data-kind="fruit"><kbd>1</kbd> 🍎 열매</button>' +
       '<button type="button" class="btn t-fogb' + (fogFirst ? '' : ' line') + '" data-act="f-q" data-kind="fog"><kbd>2</kbd> ' + ui.FOG_SVG + ' 안개 열매</button>' +
@@ -514,7 +647,7 @@ function quickHTML(){
   return h + '<div class="hint t-qhint">키보드: 1 열매 · 2 안개 열매 · 3 되돌리기 · → 건너뛰기 · ← 앞 · Esc 그만</div></div>';
 }
 ACT['f-quick'] = () => { T.quick = {i:0, ret:false, step:'find', note:''}; T.open = null; T.ret = null; QO.tabs.rerender('fruits'); };
-ACT['f-quick-off'] = () => { T.quick = null; QO.tabs.rerender('fruits'); };
+ACT['f-quick-off'] = () => { T.quick = null; QO.tabs.rerender('fruits'); loadPending(); };   // 한 장씩 보는 동안 쉬었던 자동 읽기 대신
 ACT['f-q-move'] = b => { const Qk = T.quick; if(!Qk) return; const n = (T.pending || []).length; Qk.i = Math.min(Math.max(0, Qk.i + Number(b.dataset.d)), Math.max(0, n - 1)); Qk.ret = false; Qk.note = ''; QO.tabs.rerender('fruits'); };
 ACT['f-q-step'] = b => { if(!T.quick) return; T.quick.step = b.dataset.step; QO.tabs.rerender('fruits'); const i = $('#t_qNote'); if(i) i.focus(); };
 ACT['f-q-retoff'] = () => { if(!T.quick) return; T.quick.ret = false; QO.tabs.rerender('fruits'); };
@@ -522,18 +655,23 @@ function quickDone(id){
   T.pending = (T.pending || []).filter(q => q.id !== id); delete T.detail[id];
   const Qk = T.quick; if(Qk){ Qk.ret = false; Qk.note = ''; if(!T.pending.length) T.quick = null; }
   QO.tabs.rerender('fruits');
+  if(!T.quick) loadPending();
+  loadOpened();
 }
+/* 단추가 가리키는 질문 = 화면에 보인 카드의 data-q(목록이 그사이 바뀌어도 엉뚱한 학생에게 가지 않게) */
+const quickQ = b => { const c = b && b.closest && b.closest('.t-quick'), id = c ? Number(c.dataset.q) : NaN; return (T.pending || []).find(q => q.id === id) || null; };
 ACT['f-q'] = async b => {
-  const Qk = T.quick, q = Qk && (T.pending || [])[Qk.i]; if(!q) return;
+  const Qk = T.quick, q = Qk && quickQ(b); if(!q) return;
   const kind = b.dataset.kind;
-  if(kind === 'ret'){ Qk.ret = true; const v = J.view(q); Qk.step = (v.d.wrap && v.d.wrap.mode === 'unknown') || !J.findOK(v) || (v.d.find || []).length < 2 ? 'find' : 'wrap'; QO.tabs.rerender('fruits'); const i = $('#t_qNote'); if(i) i.focus(); return; }
+  if(kind === 'ret'){ Qk.ret = true; Qk.step = retStep(J.view(q)); QO.tabs.rerender('fruits'); const i = $('#t_qNote'); if(i) i.focus(); return; }
   const n = await act(b, () => QO.api.confirmFruit(q.id, kind));
   if(n === undefined) return;
   ui.toast((kind === 'fog' ? '안개 열매' : '열매') + (n > 0 ? ' · 도토리 ' + n + '개' : ' · 이미 확인한 질문'));
+  T.mine.add(q.id);
   quickDone(q.id);
 };
 ACT['f-q-send'] = async b => {
-  const Qk = T.quick, q = Qk && (T.pending || [])[Qk.i]; if(!q) return;
+  const Qk = T.quick, q = Qk && quickQ(b); if(!q) return;
   const inp = $('#t_qNote'), err = $('#t_qErr'), note = String(inp ? inp.value : Qk.note || '').trim();
   if(err) err.textContent = '';
   if(note.length < 5){ if(err) err.textContent = '학생에게 보낼 한 줄을 적어 주세요.'; if(inp) inp.focus(); return; }
@@ -558,6 +696,75 @@ document.addEventListener('keydown', e => {
   else if(e.key === 'ArrowLeft') click('[data-act="f-q-move"][data-d="-1"]');
   else if(e.key === 'Escape') click(T.quick.ret ? '[data-act="f-q-retoff"]' : '[data-act="f-quick-off"]');
 });
+
+/* ═══════════ 열린 열매 — 그 반에서 열매·안개 열매가 열린 질문(보기만) ═══════════
+   최신(열린 때와 열매 뒤 고친 때 중 늦은 것) 먼저. 이 탭이 보이면 15초마다 조용히 다시 읽고, 다른 탭에서는 60초마다 배지만.
+   배지 = 이 탭을 마지막으로 본 뒤에 열렸거나 고친 열매. 본 때는 반마다 이 기기에 남긴다(못 남겨도 화면은 그대로 돈다) */
+const seenKey = () => 'qo2-t-oseen-' + (S.teacher ? S.teacher.id : '') + '-' + clsKey();
+const seenMem = {};
+/* 본 때는 지금 + 5분을 넘지 않는다. 남아 있는 값이 그보다 뒤면(고치기 전에 미래 값이 남은 기기) 없는 것으로 본다 */
+function oSeen(){
+  const k = seenKey(), lim = Date.now() + SKEW, ok = x => (x > 0 && x <= lim ? x : 0);
+  let v = ok(seenMem[k] || 0); try{ v = Math.max(v, ok(Number(localStorage.getItem(k)) || 0)); }catch(_){} return v;
+}
+function setSeen(at){ const k = seenKey(); at = Math.min(at || 0, Date.now() + SKEW); if(!at || at <= oSeen()) return; seenMem[k] = at; try{ localStorage.setItem(k, String(at)); }catch(_){} }
+const afterFruit = q => { const e = editedMs(q); return e > 0 && e > msOf(q.resolved_at); };
+const selfOnly = q => T.mine.has(q.id) && !afterFruit(q);       // 이 화면에서 내가 연 열매(그 뒤 고침 없음)는 배지에 세지 않는다
+function openedBadge(){ if(!T.opened || !T.opened.length) return false; const s = oSeen(); return T.opened.some(q => fruitAt(q) > s && !selfOnly(q)); }
+const fruitTag = q => q.fruit_kind === 'fog' ? '<span class="tag fog">' + ui.FOG_SVG + '안개 열매</span>' : '<span class="tag fruit">열매</span>';
+const oWho = q => { const st = q.student || {}; return esc(st.name || '') + (st.number != null ? ' · ' + st.number + '번' : ''); };
+const edLine = q => afterFruit(q) ? '<span class="t-edited">열매 뒤 고침 · ' + esc(ui.fmtTime(editedAt(q))) + '</span>' : '';
+function wrapPeek(v){
+  const w = v.d.wrap;
+  if(!w) return '<span class="t-empty">정리가 비어 있어요</span>';
+  if(w.mode === 'unknown') return '<b>여기까지</b> ' + esc(w.reached || '—');
+  return esc(w.text || '');
+}
+function oItemHTML(q){
+  const v = J.view(q), on = T.oOpen === q.id;
+  let tags = fruitTag(q);
+  if(q.fruit_source === 'legacy') tags += '<span class="tag t-old">옛 앱</span>';
+  if(J.hasAI(v)) tags += '<span class="tag t-ai">AI 사용</span>';
+  return '<button type="button" class="t-item t-oitem' + (on ? ' sel' : '') + (T.oNew.has(q.id) ? ' t-new' : '') + '" data-act="o-open" data-q="' + q.id + '" aria-expanded="' + on + '">' +
+    '<div class="qt">' + esc(v.text) + '</div><div class="t-osum">' + wrapPeek(v) + '</div>' +
+    '<div class="meta"><span class="t-who">' + oWho(q) + '</span><span class="t-when">' + (q.resolved_at ? '열린 때 ' + esc(ui.fmtTime(q.resolved_at)) : '') + '</span>' + tags + edLine(q) + '</div></button>';
+}
+function oDetailHTML(q){
+  const v = J.view(q), id = q.id;
+  return '<div class="card t-detail t-odetail" data-odetail="' + id + '"><div class="t-dh"><div class="t-dtop"><div class="t-dq">' + esc(v.text) + '</div>' +
+    (ui.wide() ? '' : '<button type="button" class="link t-fold1" data-act="o-open" data-q="' + id + '" aria-expanded="true">접기</button>') + '</div>' +
+    '<div class="t-otags">' + fruitTag(q) + (J.hasAI(v) ? '<span class="tag t-ai">AI 사용</span>' : '') + edLine(q) + '</div><div class="hint">' +
+    [oWho(q), v.unit ? esc(v.unit) : '', q.is_anonymous ? '익명으로 심음' : '', q.resolved_at ? '열린 때 ' + esc(ui.fmtTime(q.resolved_at)) : ''].filter(Boolean).join(' · ') + '</div>' +
+    (v.original && v.original !== v.text ? '<div class="hint">다듬기 전 질문 · ' + esc(v.original) + '</div>' : '') + '</div>' +
+    (v.legacyHarvest ? '<div class="rule">옛 앱에서 열린 열매라 일지 칸에 적힌 것이 없어요.</div>' : '') +
+    '<div class="t-rows">' + journalRows(v, q) + '</div></div>';
+}
+function renderOpened(root){
+  ensure();
+  if(!S.cls){ root.innerHTML = '<div class="empty">학생이 있는 반이 없어요.</div>'; return; }
+  const list = T.opened;
+  if(!list && !T.reqs.opened) loadOpened();
+  let h = '<div class="t-bar"><span class="t-count">' + (list ? '열린 열매 ' + list.length + '개' : '열린 열매를 불러오는 중이에요') + '</span>' +
+    '<button type="button" class="link" data-act="o-reload">새로 읽기</button></div>';
+  if(!list){ root.innerHTML = h; return; }
+  if(!list.length){ root.innerHTML = h + '<div class="card empty">아직 열린 열매가 없어요.</div>'; return; }
+  setSeen(Math.max.apply(null, list.map(fruitAt)));
+  const wide = ui.wide(), open = list.find(q => q.id === T.oOpen) || null;
+  let items = '';
+  list.forEach(q => { items += (!wide && open === q) ? oDetailHTML(q) : oItemHTML(q); });
+  T.oNew.clear();
+  if(wide) h += '<div class="t-split"><div class="t-list">' + items + '</div><div class="t-pane">' +
+    (open ? oDetailHTML(open) : '<div class="t-ph">왼쪽에서 질문을 고르면 탐구 일지가 여기에 열려요.</div>') + '</div></div>';
+  else h += '<div class="t-list">' + items + '</div>';
+  root.innerHTML = h;
+}
+ACT['o-open'] = b => {
+  const id = Number(b.dataset.q);
+  T.oOpen = T.oOpen === id ? null : id;
+  QO.tabs.rerender('opened');
+  if(T.oOpen && !ui.wide()){ const el = $('.t-odetail[data-odetail="' + id + '"]'); if(el && el.scrollIntoView) el.scrollIntoView({block:'nearest'}); }
+};
+ACT['o-reload'] = () => { T.opened = null; QO.tabs.rerender('opened'); loadOpened(); };
 
 /* ═══════════ 수업 진행(단서 시간 · 모둠 진행) ═══════════ */
 function setLive(row, local){
@@ -1256,7 +1463,10 @@ ACT['d-group'] = () => { const id = demoGroup(); ui.toast(id ? '모둠 일지가
 ACT['d-fruit'] = () => { const id = demoFruit(); ui.toast(id ? '확인 요청이 하나 왔어요' : '이 반에는 더 만들 시연 요청이 없어요'); if(id) loadPending(); };
 
 /* ═══════════ 구역 등록 · 이벤트 ═══════════ */
+/* 「열린 열매」는 「열매 확인」 바로 뒤에 — core.js 순서표는 다섯 탭만 알아서 여기서 끼운다(이미 있으면 그대로) */
+(function(o){ if(Array.isArray(o) && o.indexOf('opened') < 0) o.splice(o.indexOf('fruits') + 1, 0, 'opened'); })(QO.tabs.ORDER && QO.tabs.ORDER.teacher);
 QO.tabs.register({id:'fruits', label:'열매 확인', render:renderFruits, badge(){ return !!(T.pending && T.pending.length); }});
+QO.tabs.register({id:'opened', label:'열린 열매', render:renderOpened, badge:openedBadge});
 QO.tabs.register({id:'live', label:'수업 진행', render:renderLive, badge(){ return !!T.live; }});
 QO.tabs.register({id:'groups', label:'모둠', render:renderGroups, badge(){ return !!(T.groups && T.groups.some(g => g.inquiry && g.inquiry.status === 'wait')); }});
 QO.tabs.register({id:'clues', label:'단서 살피기', render:renderClues});
@@ -1314,8 +1524,17 @@ setInterval(() => {
   if((L && L.mode === 'clue') || (!L && bo)) loadToday();
   if(L && L.mode === 'group') loadGroups();
 }, 6000);
+/* 바로바로 — 「열린 열매」·「열매 확인」 탭이 보이면 15초마다 조용히 다시 읽는다. 다른 탭에 있을 때는 배지를 위해 60초마다 가볍게.
+   문서가 가려져 있으면 쉰다. 다시 그리기는 autoSoft 가 선생님이 쓰는 중인지 보고 정한다 */
+setInterval(() => {
+  if(!S.ready || !S.teacher || !S.cls || document.visibilityState !== 'visible') return;
+  ensure();
+  const cur = QO.tabs.current(), now = Date.now();
+  if(cur === 'opened' || now - T.oAt >= 60000) autoOpened();
+  if(cur === 'fruits' || now - T.pAt >= 60000) autoFruits();
+}, 15000);
 
-/* 캡처용(?mock=1 에서만): ?tcls=2-11 · ?tlive=clue:3 · ?tdemo=clue,clue,group,fruit · ?topen=104 · ?tret=1 · ?tgfold=1 · ?board=1 */
+/* 캡처용(?mock=1 에서만): ?tcls=2-11 · ?tlive=clue:3 · ?tdemo=clue,clue,group,fruit · ?topen=104 · ?tret=1 · ?tgfold=1 · ?topened=107 · ?board=1 */
 let captured = false;
 QO.bus.on('ready', ev => { if(ev && ev.page === 'teacher') captureSetup().catch(e => QO.err(e, 'capture')); });
 async function captureSetup(){
@@ -1331,7 +1550,8 @@ async function captureSetup(){
     setLive(r, true);
   }
   (P.get('tdemo') || '').split(',').forEach(d => { if(d === 'clue') demoClue(); if(d === 'group') demoGroup(); if(d === 'fruit') demoFruit(); });
-  await Promise.all([loadPending(), loadGroups(), loadToday(), loadStuck(), loadStudents()]);
+  await Promise.all([loadPending(), loadGroups(), loadToday(), loadStuck(), loadStudents(), loadOpened()]);
+  const oo = Number(P.get('topened')); if(oo) T.oOpen = oo;      // ?topened=107&tab=opened — 열린 열매 하나 펼쳐 두기
   const op = Number(P.get('topen'));
   if(op){ T.open = op; await loadDetail(op); if(P.get('tret') && T.detail[op]) T.ret = {qid:op, step:retDefault(T.detail[op]), note:''}; }
   if(P.get('tgfold')) T.gFold = true;
@@ -1341,7 +1561,8 @@ async function captureSetup(){
 }
 
 /* 시험에서 쓴다 */
-QO.teacherView = {T, idle, csvOf, growthCsv:growCsvOf, bulkLoad, parseCSV, demo:{clue:demoClue, group:demoGroup, fruit:demoFruit}, async refresh(){ await Promise.all([loadLive(), loadToday(), loadGroups(), loadPending()]); }};
+QO.teacherView = {T, idle, csvOf, growthCsv:growCsvOf, bulkLoad, parseCSV, demo:{clue:demoClue, group:demoGroup, fruit:demoFruit}, async refresh(){ await Promise.all([loadLive(), loadToday(), loadGroups(), loadPending()]); },
+  autoFruits, autoOpened, seenKey};   // autoFruits·autoOpened = 15초·60초 타이머가 부르는 조용한 다시 읽기
 
 /* ═══════════ 스스로 시험(teacher.html?mock=1&selftest=1) ═══════════ */
 if(!QO.selftest || cfg.page !== 'teacher') return;
@@ -1710,6 +1931,276 @@ add('선생님 · 학생 성장 기록(열매 확인 아래 접는 카드 · 이
   /* 반을 바꾸면 그 반 기록으로 */
   QO.app.setClass(2, 5); await TV.idle();
   await t.waitFor(() => t.$$('#t_grow .t-sgi[data-id]').length === 1 && t.$('#t_grow .t-sgi[data-id="3"]'));
+  await TV.idle();
+});
+add('선생님 · 열린 열매: 최신 먼저 · 열매 뒤 고침 · 펼치면 일지만(열매 주기 단추 없음) · AI 경고 없음', async t => {
+  const ago = m => new Date(Date.now() - m * 60000).toISOString();
+  const q107 = t.db.questions.find(q => q.id === 107), q106 = t.db.questions.find(q => q.id === 106);
+  /* 열매 뒤에 학생이 고친 예 — 서버(edit_journal·edit_question_text)가 찍는 칸을 흉내 DB 에 바로 넣는다 */
+  q107.journal.edited_at = ago(30);
+  q107.journal.find[0].edited_at = ago(30);
+  q107.journal.text_first = '우주는 끝이 있을까?'; q107.journal.text_edited_at = ago(40);
+  q106.journal.find[0].ai = true;                       // AI 답 하나뿐인 찾기 — 경고 없이 「AI 사용」만
+  QO.mock.save();
+  await to211(t, 'opened');
+  t.eq(QO.tabs.ids().slice(0, 2), ['fruits', 'opened'], '열매 확인 바로 뒤');
+  await t.waitFor(() => t.$$('#body [data-act="o-open"]').length === 3);
+  t.eq(t.$$('#body [data-act="o-open"]').map(b => b.dataset.q), ['107', '106', '109'], '최신 먼저(열매 뒤 고친 때도 셈)');
+  t.expect(/열린 열매 3개/.test(t.$('#body .t-count').textContent), '개수');
+  const it = id => t.$('#body [data-act="o-open"][data-q="' + id + '"]');
+  t.expect(/열매 뒤 고침/.test(it(107).textContent) && !/열매 뒤 고침/.test(it(106).textContent) && !/열매 뒤 고침/.test(it(109).textContent), '열매 뒤 고침은 고친 열매에만');
+  t.expect(it(107).querySelector('.tag.fog') && it(106).querySelector('.tag.fruit') && /가람 · 1번/.test(it(106).textContent), '안개 열매·열매·이름 번호');
+  t.expect(/여기까지/.test(it(107).querySelector('.t-osum').textContent) && /철가루가 자기장의 방향/.test(it(106).querySelector('.t-osum').textContent), '정리 미리 보기');
+  t.expect(it(106).querySelector('.tag.t-ai') && !it(107).querySelector('.tag.t-ai'), 'AI 사용 표시');
+  await t.click(it(107));
+  const det = await t.waitFor('#body .t-odetail[data-odetail="107"]');
+  const tx = det.textContent;
+  t.expect(tx.indexOf('교과서 160쪽') >= 0 && tx.indexOf('관측할 수 있는 우주 바깥') >= 0 && tx.indexOf('과학자도 아직 모름') >= 0, '일지 칸');
+  t.expect(tx.indexOf('처음 쓴 질문 · 우주는 끝이 있을까?') >= 0 && det.querySelectorAll('.t-ed').length === 2, '처음 쓴 질문 · 고친 줄에 「고침」');
+  t.expect(!t.$('#body [data-act="f-ok"]') && !t.$('#body [data-act="f-ret"]'), '열매 주기·되돌리기 단추 없음');
+  await t.click(it(106));
+  const d6 = (await t.waitFor('#body .t-odetail[data-odetail="106"]')).textContent;
+  t.expect(d6.indexOf('AI 말고 다른 출처가 없어요') < 0 && d6.indexOf('「AI 답과 견주기」') < 0 && !t.$('#body .t-warn'), 'AI 경고 없음');
+  await TV.idle();
+});
+add('선생님 · 열매를 주면 열린 열매에 바로 · 본 뒤에 고친 열매는 배지', async t => {
+  await to211(t, 'fruits');
+  await t.click(await t.waitFor('[data-act="f-open"][data-q="104"]'));
+  await t.click(await t.waitFor('.t-detail[data-detail="104"] [data-act="f-ok"][data-kind="fruit"]'));
+  await t.waitFor(() => TV.T.opened && TV.T.opened[0] && TV.T.opened[0].id === 104);   // 새로 읽기를 누르지 않아도
+  await TV.idle();
+  await t.click('#nav [data-t="opened"]');
+  await t.waitFor(() => { const b = t.$('#body [data-act="o-open"]'); return b && b.dataset.q === '104'; });
+  t.expect(/열린 열매 4개/.test(t.$('#body .t-count').textContent), '넷');
+  const dot = () => t.$('#nav [data-t="opened"] .dot');
+  await t.click('#nav [data-t="fruits"]');
+  t.expect(dot().hidden, '본 뒤라 배지 없음');
+  /* 다른 탭에 있는 동안 학생이 열매 뒤에 일지를 고침 → 60초 자동 읽기(여기선 직접 부름) → 배지 */
+  const q106 = t.db.questions.find(q => q.id === 106), at = new Date(Date.now() + 1000).toISOString();
+  q106.journal.edited_at = at; q106.journal.predict[0].edited_at = at;
+  await TV.autoOpened(); await TV.idle();
+  await t.waitFor(() => !dot().hidden);
+  await t.click('#nav [data-t="opened"]');
+  await t.waitFor(() => { const b = t.$('#body [data-act="o-open"]'); return b && b.dataset.q === '106'; });
+  const top = t.$('#body [data-act="o-open"][data-q="106"]');
+  t.expect(/열매 뒤 고침/.test(top.textContent) && top.classList.contains('t-new'), '고친 열매가 맨 위 · 잠깐 표시');
+  await t.click('#nav [data-t="live"]');
+  t.expect(dot().hidden, '보고 나면 배지 꺼짐');
+  await TV.idle();
+});
+add('선생님 · 확인 요청 자동 새로 읽기: 되돌리기 한 줄을 쓰는 중이면 그대로 · 끝나면 새 줄 표시', async t => {
+  t.db.questions.find(q => q.id === 104).journal.find.forEach(f => { f.ai = true; });   // AI 답만 둘
+  QO.mock.save();
+  await to211(t, 'fruits');
+  await t.click(await t.waitFor('[data-act="f-open"][data-q="104"]'));
+  const det = await t.waitFor('.t-detail[data-detail="104"] .t-acts');
+  const dt = det.closest('.t-detail').textContent;
+  t.expect(dt.indexOf('AI 말고 다른 출처가 없어요') < 0 && dt.indexOf('「AI 답과 견주기」') < 0 && !t.$('.t-warn') && t.$('[data-act="f-open"][data-q="104"] .tag.t-ai'), 'AI 경고 없음 · AI 사용 표시는 그대로');
+  await t.click('.t-detail[data-detail="104"] [data-act="f-ret"]');
+  const note = '교과서 말고 다른 곳에서 하나 더 찾아볼까요?';
+  const inp = await t.type(await t.waitFor('#t_retNote'), note);
+  t.expect(document.activeElement === inp, '쓰는 중');
+  t.eq(TV.demo.fruit(), 102, '그사이 학생이 확인 요청을 보냄');
+  await TV.autoFruits(); await TV.idle();
+  t.expect(TV.T.pending.some(q => q.id === 102), '자료는 받아 둠');
+  t.expect(t.$('#t_retNote') === inp && inp.value === note && TV.T.ret && TV.T.ret.note === note, '쓰던 한 줄 그대로');
+  t.expect(!t.$('[data-act="f-open"][data-q="102"]') && TV.T.held, '다시 그리기는 미룸');
+  inp.blur(); await t.wait(400);
+  t.expect(t.$('#t_retNote') === inp && !t.$('[data-act="f-open"][data-q="102"]'), '초점이 빠져도 되돌리기를 쓰는 동안은 그대로');
+  await t.click('[data-act="f-ret-cancel"]');
+  const nw = await t.waitFor('[data-act="f-open"][data-q="102"]');
+  t.expect(nw.classList.contains('t-new'), '새로 들어온 줄 표시');
+  /* 쓰는 중이 아니면 바로 그린다 */
+  t.db.questions.find(q => q.id === 161).resolve_requested_at = new Date().toISOString();
+  await TV.autoFruits(); await TV.idle();
+  await t.waitFor('[data-act="f-open"][data-q="161"].t-new');
+  t.expect(!t.$('[data-act="f-open"][data-q="102"]').classList.contains('t-new'), '표시는 한 번만');
+  await TV.idle();
+});
+/* ── 2026-11-13 검토 고침 시험(T1·T2·T4·T5·T6·T7) ── */
+add('선생님 · 빠르게 확인: 켜기 전에 떠난 자동 읽기는 버림 · 단추는 화면에 보인 카드의 질문에', async t => {
+  const pool = t.db.questions.filter(q => q.id !== 104 && q.fruit_kind == null && q.resolve_requested_at == null && t.db.profiles.some(p => p.id === q.user_id && p.grade === 2 && p.class_no === 11));
+  t.expect(pool.length >= 3, '시험 준비: 2-11 질문 셋 이상');
+  const now = Date.now();
+  pool.slice(0, 2).forEach((q, i) => { q.resolve_requested_at = new Date(now - (2 - i) * 60000).toISOString(); });
+  QO.mock.save();
+  await to211(t, 'fruits');
+  await t.waitFor('[data-act="f-quick"]'); await TV.idle();
+  /* 자동 읽기 응답을 붙잡아 두었다가 빠르게 확인을 켠 뒤에 돌려준다 */
+  const api = QO.mock.api, orig = api.pendingFruits; let go = null;
+  const gate = new Promise(r => { go = r; });
+  api.pendingFruits = async function(g, c){ await gate; return orig(g, c); };
+  try{
+    const late = TV.autoFruits();
+    await t.click('[data-act="f-quick"]');
+    await t.waitFor('.t-quick');
+    const ids = TV.T.pending.map(q => q.id);
+    pool[2].resolve_requested_at = new Date().toISOString();      // 그사이 하나 더 옴 — 늦은 응답에는 들어 있다
+    go(); await late; await TV.idle();
+    t.eq(TV.T.pending.map(q => q.id), ids, '늦게 온 자동 읽기는 버림');
+  }finally{ api.pendingFruits = orig; go(); }
+  const shown = () => Number(t.$('.t-quick').dataset.q);
+  const first = shown();
+  TV.T.pending = TV.T.pending.slice().reverse();                 // 목록만 바뀌고 화면은 아직 그대로인 때
+  t.expect(TV.T.pending[TV.T.quick.i].id !== first, '시험 준비: 목록 자리와 화면 카드가 다름');
+  await t.click('[data-act="f-q"][data-kind="fruit"]');
+  await t.waitFor(() => t.db.questions.find(q => q.id === first).fruit_kind === 'fruit');
+  t.expect(TV.T.pending.every(q => t.db.questions.find(x => x.id === q.id).fruit_kind == null), '다른 학생 질문에는 열매가 들어가지 않음');
+  await t.waitFor(() => t.$('.t-quick') && shown() !== first); await TV.idle();
+  const second = shown();
+  await t.click('[data-act="f-q"][data-kind="ret"]');
+  await t.waitFor('#t_qNote');
+  TV.T.pending = TV.T.pending.slice().reverse();
+  t.expect(TV.T.pending[TV.T.quick.i].id !== second, '시험 준비: 되돌리기도 목록 자리와 화면 카드가 다름');
+  const other = TV.T.pending.find(q => q.id !== second).id;
+  await t.type('#t_qNote', '다른 곳에서 하나 더 찾아볼까요?');
+  await t.click('[data-act="f-q-send"]');
+  await t.waitFor(() => t.db.questions.find(q => q.id === second).resolve_requested_at == null);
+  t.expect(t.db.questions.find(q => q.id === other).resolve_requested_at != null, '되돌리기도 화면에 보인 질문에만');
+  await t.click(await t.waitFor('[data-act="f-quick-off"]'));
+  await t.waitFor(() => !t.$('.t-quick'));
+  await TV.idle();
+});
+add('선생님 · 넓은 화면: 자동 다시 그리기에도 일지 칸 스크롤 그대로 · 펼친 질문을 학생이 고치면 일지 다시 읽기', async t => {
+  t.expect(QO.ui.wide(), '넓은 화면에서 도는 시험');
+  const st = document.createElement('style');
+  st.textContent = 'html.wide #body .t-pane{max-height:180px}';    // 일지 칸이 스크롤되게
+  document.head.appendChild(st);
+  try{
+    await to211(t, 'fruits');
+    await t.click(await t.waitFor('[data-act="f-open"][data-q="104"]'));
+    await t.waitFor('#body .t-pane .t-detail[data-detail="104"] .t-acts'); await TV.idle();
+    const pane = t.$('#body .t-pane');
+    t.expect(pane.scrollHeight - pane.clientHeight > 150, '시험 준비: 일지 칸이 스크롤됨');
+    pane.scrollTop = 120;
+    t.eq(TV.demo.fruit(), 102, '그사이 학생이 확인 요청을 보냄');
+    await TV.autoFruits(); await TV.idle();
+    await t.waitFor('[data-act="f-open"][data-q="102"]');
+    const p2 = t.$('#body .t-pane');
+    t.expect(p2 !== pane, '다시 그렸음');
+    t.expect(Math.abs(p2.scrollTop - 120) <= 2, '일지 칸 스크롤 그대로: ' + p2.scrollTop);
+    const q = t.db.questions.find(x => x.id === 104);
+    q.journal.wrap.text = '고친 정리: 빛은 1초에 약 30만 km, 소리는 약 340 m 를 간다.'; QO.mock.save();
+    await TV.autoFruits(); await TV.idle();
+    await t.waitFor(() => t.$('#body .t-pane').textContent.indexOf('고친 정리') >= 0);
+    t.expect(Math.abs(t.$('#body .t-pane').scrollTop - 120) <= 2, '일지를 다시 읽은 뒤에도 스크롤 그대로: ' + t.$('#body .t-pane').scrollTop);
+  }finally{ st.remove(); }
+  await TV.idle();
+});
+add('선생님 · 좁은 화면: 일지를 펼쳐 둔 동안은 자동 다시 그리기를 미룸(열린 열매·확인 요청)', async t => {
+  const wide = QO.ui.wide;
+  QO.ui.wide = () => false;
+  try{
+    await to211(t, 'opened');
+    await t.click(await t.waitFor('#body [data-act="o-open"][data-q="106"]'));
+    const det = await t.waitFor('#body .t-odetail[data-odetail="106"]'); await TV.idle();
+    const kids = () => t.$$('#body .t-list > *').map(e => e.dataset.odetail || e.dataset.q);
+    const k0 = kids();
+    t.expect(k0[0] === '106' && det.parentNode.classList.contains('t-list'), '시험 준비: 펼친 일지가 목록 맨 위에: ' + k0);
+    const q107 = t.db.questions.find(q => q.id === 107), at = new Date(Date.now() + 1000).toISOString();
+    q107.journal.edited_at = at; q107.journal.find[0].edited_at = at;     // 열매 뒤에 고쳐서 맨 위로 올라올 열매
+    await TV.autoOpened(); await TV.idle();
+    t.eq(TV.T.opened[0].id, 107, '자료는 받아 둠');
+    t.expect(det.isConnected && JSON.stringify(kids()) === JSON.stringify(k0), '펼쳐 둔 동안은 다시 그리지 않음');
+    await t.click(det.querySelector('.t-fold1'));
+    await t.waitFor('#body [data-act="o-open"][data-q="107"].t-new');
+    t.eq(kids()[0], '107', '접으면 받아 둔 자료로 그림');
+    await t.click('#nav [data-t="fruits"]');
+    await t.click(await t.waitFor('[data-act="f-open"][data-q="104"]'));
+    const fd = await t.waitFor('#body .t-detail[data-detail="104"] .t-acts'); await TV.idle();
+    t.eq(TV.demo.fruit(), 102, '그사이 학생이 확인 요청을 보냄');
+    await TV.autoFruits(); await TV.idle();
+    t.expect(TV.T.pending.some(q => q.id === 102) && TV.T.held, '자료는 받아 두고 그리기는 미룸');
+    t.expect(fd.isConnected && !t.$('[data-act="f-open"][data-q="102"]'), '펼친 일지 그대로');
+    await t.click(t.$('#body .t-detail[data-detail="104"] .t-fold1'));
+    await t.waitFor('[data-act="f-open"][data-q="102"].t-new');
+  }finally{ QO.ui.wide = wide; }
+  await TV.idle();
+});
+add('선생님 · 일지 다시 읽기: 펼칠 때마다 · 바뀐 질문의 받아 둔 일지는 버림 · 되돌리기 그만두면', async t => {
+  t.eq(TV.demo.fruit(), 102, '확인 요청 둘');
+  await to211(t, 'fruits');
+  const open = async id => { await t.click(await t.waitFor('[data-act="f-open"][data-q="' + id + '"]')); await t.waitFor('.t-detail[data-detail="' + id + '"] .t-acts'); await TV.idle(); };
+  const dtext = id => (t.$('.t-detail[data-detail="' + id + '"]') || {}).textContent || '';
+  const q104 = t.db.questions.find(x => x.id === 104);
+  await open(104);
+  /* ① 확인 요청 목록을 다시 읽지 않아도, 다시 펼치면 일지를 새로 읽는다 */
+  q104.journal.wrap.text = '다시 펼치면 보이는 정리'; QO.mock.save();
+  await t.click('[data-act="f-open"][data-q="104"]');
+  await t.waitFor(() => !t.$('.t-detail[data-detail="104"]'));
+  await t.click('[data-act="f-open"][data-q="104"]');
+  await t.waitFor(() => dtext(104).indexOf('다시 펼치면 보이는 정리') >= 0);
+  await TV.idle();
+  /* ② 펼치지 않은 질문이 바뀌면 받아 둔 일지는 버린다 */
+  await open(102);
+  t.expect(TV.T.detail[104], '시험 준비: 104 일지를 받아 둠');
+  q104.journal.wrap.text = '목록에서 바뀐 정리'; QO.mock.save();
+  await TV.autoFruits(); await TV.idle();
+  t.expect(!TV.T.detail[104], '바뀐 질문의 받아 둔 일지는 버림');
+  t.expect(TV.T.detail[102], '안 바뀐 질문은 그대로');
+  /* ③ 되돌리기를 쓰는 동안 바뀌면 그대로 두었다가, 그만두면 다시 읽는다 */
+  await open(104);
+  await t.click('.t-detail[data-detail="104"] [data-act="f-ret"]');
+  await t.type(await t.waitFor('#t_retNote'), '한 곳 더 찾아볼까요?');
+  q104.journal.wrap.text = '되돌리기 쓰는 중에 고친 정리'; QO.mock.save();
+  await TV.autoFruits(); await TV.idle();
+  t.expect(dtext(104).indexOf('되돌리기 쓰는 중에 고친 정리') < 0 && t.$('#t_retNote'), '쓰는 동안은 그대로');
+  await t.click('[data-act="f-ret-cancel"]');
+  await t.waitFor(() => dtext(104).indexOf('되돌리기 쓰는 중에 고친 정리') >= 0);
+  await TV.idle();
+});
+add('선생님 · CSV 올리기: 내려받은 뒤 학생이 고친 줄은 체크를 풀고 알림', async t => {
+  t.eq(TV.demo.fruit(), 102, '확인 요청 둘');
+  await to211(t, 'fruits');
+  await t.waitFor('[data-act="f-csv"]');
+  const cells = TV.parseCSV(TV.csvOf(await t.api.pendingFruits(2, 11)));
+  const H = cells[0], cr = H.findIndex(h => /^결과/.test(h)), si = H.indexOf('보낸 때'), fi = H.indexOf('처음 질문');
+  const body = cells.slice(1).map(r => { const x = r.slice(); x[cr] = Number(r[0]) === 102 ? '안개 열매' : '열매'; return x; });
+  /* 표 프로그램이 보낸 때 꼴을 바꾸거나 칸 끝에 빈칸이 붙어도 고친 것으로 보지 않는다 */
+  const r104 = body.find(r => Number(r[0]) === 104);
+  r104[si] = r104[si].replace(/-/g, '/').replace(/ 0(\d):/, ' $1:'); r104[fi] += '  ';
+  /* 내려받은 뒤 학생이 102 일지를 고침 */
+  const q102 = t.db.questions.find(q => q.id === 102);
+  q102.journal.wrap.reached += ' 그리고 습도계로 재 보았다.'; QO.mock.save();
+  const csv = [H].concat(body).map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  await TV.bulkLoad(csv, '시험.csv');
+  await t.waitFor('.t-bulk');
+  const B = TV.T.bulk, i2 = B.rows.findIndex(r => r.id === 102), i4 = B.rows.findIndex(r => r.id === 104);
+  const row = i => t.$('.t-brow[data-i="' + i + '"]'), chk = i => row(i).querySelector('input[type="checkbox"]').checked;
+  t.expect(!chk(i2) && /내려받은 뒤 학생이 고쳤어요/.test(row(i2).textContent), '고친 줄은 체크 풀고 알림');
+  t.expect(chk(i4) && !/학생이 고쳤어요/.test(row(i4).textContent), '안 고친 줄(보낸 때 꼴·빈칸만 다름)은 체크');
+  const sel = row(i2).querySelector('select[data-bind="bk-kind-' + i2 + '"]');
+  sel.value = 'fruit'; sel.dispatchEvent(new Event('change', {bubbles:true}));
+  await t.waitFor(() => row(i2).querySelector('select').value === 'fruit');
+  t.expect(!chk(i2), '결과를 바꿔도 저절로 체크되지 않음');
+  await t.click('[data-act="f-bulk-apply"]');
+  await t.waitFor(() => t.$$('.t-brow.done').length === 1);
+  t.eq([t.db.questions.find(q => q.id === 104).fruit_kind, t.db.questions.find(q => q.id === 102).fruit_kind], ['fruit', null], '체크한 줄만 반영');
+  await t.click('[data-act="f-bulk-cancel"]');
+  await t.waitFor(() => !t.$('.t-bulk'));
+  await TV.idle();
+});
+add('선생님 · 찾기가 한 곳뿐이면 「두 곳이 같은 말을 하나요?」 줄을 그리지 않음', async t => {
+  await to211(t, 'fruits');
+  await t.click(await t.waitFor('[data-act="f-open"][data-q="104"]'));
+  await t.waitFor('.t-detail[data-detail="104"] .t-acts'); await TV.idle();
+  t.expect(t.$('.t-detail[data-detail="104"]').textContent.indexOf('두 곳이 같은 말을 하나요?') >= 0, '두 곳이면 보임');
+  const q = t.db.questions.find(x => x.id === 104);
+  q.journal.find = q.journal.find.slice(0, 1); QO.mock.save();     // same 칸('같아요')은 남아 있다
+  await t.click('[data-act="f-open"][data-q="104"]');
+  await t.click(await t.waitFor('[data-act="f-open"][data-q="104"]'));
+  await t.waitFor(() => TV.T.detail[104] && TV.T.detail[104].question.journal.find.length === 1); await TV.idle();
+  t.expect(TV.T.detail[104].question.journal.same, '시험 준비: same 칸은 남아 있음');
+  t.expect(t.$('.t-detail[data-detail="104"] .t-acts') && t.$('.t-detail[data-detail="104"]').textContent.indexOf('두 곳이 같은 말을 하나요?') < 0, '한 곳이면 안 보임');
+  await TV.idle();
+});
+add('선생님 · 열린 열매: 미래로 찍힌 고친 때는 없는 것으로(고침 표시·본 때 밀기 없음)', async t => {
+  const q107 = t.db.questions.find(q => q.id === 107);
+  q107.journal.edited_at = new Date(Date.now() + 864e5).toISOString(); QO.mock.save();
+  await to211(t, 'opened');
+  await t.waitFor(() => t.$$('#body [data-act="o-open"]').length === 3);
+  t.expect(!/열매 뒤 고침/.test(t.$('#body [data-act="o-open"][data-q="107"]').textContent), '고침 표시 없음');
+  t.expect((Number(localStorage.getItem(TV.seenKey())) || 0) <= Date.now() + 5 * 60000, '본 때가 지금 + 5분을 넘지 않음');
   await TV.idle();
 });
 })();

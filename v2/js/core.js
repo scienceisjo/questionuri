@@ -169,7 +169,9 @@ function containedIn(a, b){ const A = grams(a), B = grams(b); if(A.size < 3) ret
 function junkWhy(v, others){   /* 같은 글자 반복 검사는 뺐다(2026-11-12, 30000K·3000000 같은 수가 막혀서) */
   const s = String(v || '').normalize('NFC').replace(/\s+/g, '');
   if(/^[ㄱ-ㅎㅏ-ㅣ\u1100-\u11FF]+$/.test(s) || /[ㅋㅎ\u110F\u1112]{2,}/.test(s)) return '자음·모음만 쓰지 말고 문장으로 적어 주세요.';   // ᄏ(첫소리 모양)도
-  for(const o of (others || [])){ if(o && containedIn(v, o) >= 0.6) return '앞에 쓴 글과 거의 같아요. 이 칸에 맞게 새로 적어 주세요.'; }
+  /* 앞 글 베끼기 — 예전엔 낱자 둘씩 60%만 겹쳐도 막아서(같은 주제 낱말을 쓰면 다 걸림) 너무 빡셌다(2026-11-13 사용자).
+     이제는 띄어쓰기·문장부호를 떼고 글자 열 개에 하나 넘게 바뀌지 않은, 거의 그대로 옮긴 글만 막는다 */
+  for(const o of (others || [])){ if(o && similar(v, o) >= 0.9) return '앞에 쓴 글을 거의 그대로 옮겼어요. 이 칸에 맞게 내 말로 적어 주세요.'; }
   return '';
 }
 const hasReason = v => /(왜냐하면|때문|니까|아서|어서|여서|해서|라서|거든|므로)/.test(String(v || ''));
@@ -196,7 +198,9 @@ function identity(g, c, num){
   return null;
 }
 const fakeEmail = (g, c, n) => 's' + Number(g) + '_' + Number(c) + '_' + Number(n) + '@' + cfg.domain;
-QO.check = {grams, containedIn, junkWhy, hasReason, similar, identity, fakeEmail};
+/* 같은 질문인가 — 띄어쓰기·문장부호·끝의 「요」만 다르면 같다. 심기·다듬기의 「비슷하면 막기(85%)」 대신(2026-11-13) */
+const sameQ = (a, b) => { const x = normQ(a); return x !== '' && x === normQ(b); };
+QO.check = {grams, containedIn, junkWhy, hasReason, similar, sameQ, identity, fakeEmail};
 
 /* ═══════════ 상수(시제품·설계서 기준) ═══════════ */
 QO.K = {
@@ -215,10 +219,10 @@ QO.K = {
           '코일 주위의 자기장', '전동기', '중단원 정리 ③', '연주 시차', '별의 밝기와 등급', '겉보기·절대 등급과 별의 색', '우리은하', '성운과 성단', '우주 팽창'],
   METHODS: [['exp', '실험·관찰'], ['book', '교과서·책'], ['web', '검색'], ['person', '사람에게 묻기'], ['ai', 'AI에게 묻기']],
   CLUE_KINDS: {
-    where: {n:'찾아볼 곳', d:'교과서 쪽수나 검색어', step:'find',   parts:['교과서 ', {ph:'쪽', w:60}, '쪽 · 검색어 ', {ph:'검색어', w:120}], any:true},
-    test:  {n:'해 볼 실험', d:'직접 해 볼 방법',     step:'method', parts:[{ph:'예) 전지를 반대로 끼워', w:190}, ' 보면 알 수 있을 것 같아요']},
-    me:    {n:'내 경험',   d:'내가 겪어 본 일',     step:'find',   parts:['나는 ', {ph:'예) 니트를 벗을 때', w:170}, ' 겪어 봤어요']},
-    ask:   {n:'되묻기',    d:'생각을 넓히는 물음',   step:'refine', parts:['그럼 ', {ph:'예) 여름', w:120}, '에는 어떨까요?']}
+    where: {n:'찾아볼 곳', d:'교과서 쪽수나 검색어', ex:'예) 교과서 118쪽 그림을 봐. 「대전열」로 찾아보면 나와.', step:'find',   parts:['교과서 ', {ph:'쪽', w:60}, '쪽 · 검색어 ', {ph:'검색어', w:120}], any:true},
+    test:  {n:'해 볼 실험', d:'직접 해 볼 방법',     ex:'예) 전지를 반대로 끼워 보면 알 수 있을 것 같아.', step:'method', parts:[{ph:'예) 전지를 반대로 끼워', w:190}, ' 보면 알 수 있을 것 같아요']},
+    me:    {n:'내 경험',   d:'내가 겪어 본 일',     ex:'예) 나는 겨울에 니트를 벗을 때 머리카락이 달라붙었어.', step:'find',   parts:['나는 ', {ph:'예) 니트를 벗을 때', w:170}, ' 겪어 봤어요']},
+    ask:   {n:'되묻기',    d:'생각을 넓히는 물음',   ex:'예) 그럼 여름에는 어떨까? 습기랑 관계가 있을까?', step:'refine', parts:['그럼 ', {ph:'예) 여름', w:120}, '에는 어떨까요?']}
   },
   STUCK_KIND: {find:'where', method:'test', predict:'me', wrap:'where', refine:'ask'},
   WHY_CHIPS: ['자료를 못 찾음', '출처끼리 말이 다름', '용어가 어려움', '실험을 할 수 없음', '과학자도 아직 모름'],
@@ -240,8 +244,49 @@ QO.K = {
     {k:'obs',    n:'관측소', cond:'모든 모둠 일지가 정리까지 간 날'},
     {k:'winter', n:'겨울 숲', cond:'우리 반 첫 모둠 열매가 열린 날'}
   ],
-  GROUP_KINDS: {predict:'예상', method:'알아볼 방법', find:'찾기', compare:'두 출처 비교', wrap:'정리', used:'내 칸이 정리 어디에 쓰였나', tell:'옆 모둠에 설명', heard:'옆 모둠에서 들은 것', extra:'찾기 ③ 다른 출처'}
+  GROUP_KINDS: {predict:'예상', method:'알아볼 방법', find:'찾기', compare:'두 출처 비교', wrap:'정리', used:'내 칸이 정리 어디에 쓰였나', tell:'옆 모둠에 설명', heard:'옆 모둠에서 들은 것', extra:'찾기 ③ 다른 출처'},
+  /* 열매 종류(2026-11-13, SQL v2_10 set_fruit 와 같은 목록) — 내 나무·친구 나무·숲 도트 그림이 같이 쓴다. c 몸 색, c2 무늬·반짝 색 */
+  FRUITS: [
+    {id:'apple',      n:'사과',     c:'#D2413A', c2:'#FF9C8A'},
+    {id:'cherry',     n:'체리',     c:'#A3172C', c2:'#F06A7C'},
+    {id:'grape',      n:'포도',     c:'#6A3D9A', c2:'#A989D2'},
+    {id:'watermelon', n:'수박',     c:'#3E8E3E', c2:'#1F5426'},
+    {id:'melon',      n:'메론',     c:'#B7CF86', c2:'#F1F5DF'},
+    {id:'chamoe',     n:'참외',     c:'#F2C230', c2:'#FFF6D2'},
+    {id:'mandarin',   n:'귤',       c:'#F28A24', c2:'#FFC27A'},
+    {id:'peach',      n:'복숭아',   c:'#F8B596', c2:'#E8616E'},
+    {id:'lemon',      n:'레몬',     c:'#F3D93A', c2:'#FFF6A8'},
+    {id:'blueberry',  n:'블루베리', c:'#3B4A8E', c2:'#8A9AD6'}
+  ]
 };
+QO.K.FRUIT = {}; QO.K.FRUITS.forEach(f => { QO.K.FRUIT[f.id] = f; });
+QO.K.fruitOf = id => QO.K.FRUIT[id] ? id : 'apple';
+
+/* 자유 단서(2026-11-13) — 빈칸 틀 대신 자기 말로. 서버 한도(add_clue) 5~80자, 「__」 금지 */
+QO.clueFree = {
+  max:80,
+  clean:v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim(),
+  why(v){
+    const t = QO.clueFree.clean(v), n = Array.from(t).length;
+    if(n < 5) return '다섯 글자 넘게 적어 주세요.';
+    if(n > QO.clueFree.max) return QO.clueFree.max + '자 안으로 줄여 주세요.';
+    if(/[ㅋㅎ\u110F\u1112]{2,}/.test(t) || /^[ㄱ-ㅎㅏ-ㅣ\u1100-\u11FF\s.!?~]+$/.test(t)) return '장난 글자는 보낼 수 없어요.';
+    if(t.indexOf('__') >= 0) return '「__」 표시는 지우고 보내 주세요.';
+    return '';
+  },
+  /* 글칸 HTML — attrs 에 data-q·data-tgk 같은 속성 문자열 */
+  html(kind, attrs, value){
+    const KD = QO.K.CLUE_KINDS[kind] || {};
+    const v = value == null ? '' : String(value);
+    return '<div class="cl-free-wrap"><textarea class="inp cl-free" rows="2" maxlength="' + QO.clueFree.max + '" ' + attrs +
+      ' placeholder="' + esc(KD.ex || '친구가 스스로 찾아갈 수 있게 적어요') + '" aria-label="' + esc((KD.n || '단서') + ' 단서 쓰기') + '" autocomplete="off">' + esc(v) + '</textarea>' +
+      '<div class="cl-free-foot"><span>정답을 바로 말하지 말고, 친구가 스스로 찾아갈 수 있게요.</span><b class="cl-count">' + Array.from(v).length + '/' + QO.clueFree.max + '</b></div></div>';
+  }
+};
+document.addEventListener('input', e => {
+  const t = e.target; if(!t || !t.classList || !t.classList.contains('cl-free')) return;
+  const c = t.parentNode && t.parentNode.querySelector('.cl-count'); if(c) c.textContent = Array.from(t.value).length + '/' + QO.clueFree.max;
+});
 
 /* 단서 종류 고르기(2026-11-13) — 「다른 종류로」를 눌러야만 바뀌던 것을 처음부터 넷을 다 보이고 하나를 고르게.
    o = {attr:'data-tr'|'data-tg', act:'kind', qid, cur(고른 것|null), used(이미 보낸 종류 배열), suggest(막힌 칸에 맞는 종류)} */
@@ -321,8 +366,11 @@ function journalView(q){
     unread:!!q.fb_unread, sprout:!!q.fruit_kind && !!d.extend
   };
 }
-function hasAI(v){ const d = v.d; return (d.method && d.method.kind === 'ai') || (d.find || []).some(f => f.ai); }
-function findOK(v){ const f = v.d.find || []; if(!f.length) return false; if(!hasAI(v)) return true; return f.some(x => !x.ai) && !!v.d.aiCmp; }
+function hasAI(v){ const d = v.d; return (d.method && d.method.kind === 'ai') || (d.find || []).some(f => f.ai) ||
+  (!!d.wrap && d.wrap.cmp === 'quick' && /^AI(\s·|$)/.test(String(d.wrap.changedBy || ''))); }   // 답만 달기에서 「어디서 = AI」도
+/* 찾기 칸이 찼나 — 2026-11-13 사용자 「AI 아닌 곳 한 군데는 꼭, 이거 여전히 꼭 해야 해?」 → AI 답도 출처 하나로 친다.
+   「AI가 한 답이에요」 체크는 선생님 화면 표시(AI 사용)로만 쓰고, 다른 출처·AI 답과 견주기는 더 이상 조건이 아니다 */
+function findOK(v){ return (v.d.find || []).length > 0; }
 function stepDone(v, k){
   const d = v.d;
   if(k === 'plant') return true;

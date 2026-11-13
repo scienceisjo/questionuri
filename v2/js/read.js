@@ -119,8 +119,9 @@ async function plant(btn){
   if(/~/.test(q)) return setErr('「~」 자리에 내 말을 넣어 질문을 마무리해요.', 'x_rdq');
   if(clen(q) < 5) return setErr('질문을 한 마디만 더 붙여 볼까요? 다섯 글자 넘게 적어요.', 'x_rdq');
   const jw = QO.check.junkWhy(q); if(jw) return setErr(jw, 'x_rdq');
-  const dup = (QO.state.questions || []).slice(0, 60).find(x => x && (QO.check.similar(q, x.text) >= 0.85 || (x.refined_text && QO.check.similar(q, x.refined_text) >= 0.85)));
-  if(dup) return setErr('비슷한 질문 「' + cut(dup.refined_text || dup.text, 24) + '」을 이미 심었어요. 다른 질문이면 조금 더 구체적으로 적어 주세요.', 'x_rdq');
+  /* 같은 질문만 막는다(띄어쓰기·문장부호·끝의 「요」만 다른 것). 예전 85% 비슷하면 막기는 너무 빡세서 뺌(2026-11-13, explore 심기와 같게) */
+  const dup = (QO.state.questions || []).slice(0, 60).find(x => x && (QO.check.sameQ(q, x.text) || (x.refined_text && QO.check.sameQ(q, x.refined_text))));
+  if(dup) return setErr('같은 질문 「' + cut(dup.refined_text || dup.text, 24) + '」을 이미 심었어요.', 'x_rdq');
   const read = {src:R.src, unit:unitOf(), kind:R.kind,
     loc:cut(val('loc'), LIM.loc), word:cut(val('word'), LIM.word),
     guess:R.kind === 3 ? cut(val('guess'), LIM.guess) : '',

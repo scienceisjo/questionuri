@@ -51,6 +51,16 @@
 .link.x-quiet{color:var(--sub);font-weight:600}
 .form > .link.x-quiet{align-self:flex-start;padding:0;min-height:44px}
 
+/* 펼친 예상·찾기 — 줄마다 고치기·지우기(2026-11-13 어디서나 고치기). 단추는 손가락 44px, 줄 사이는 옅은 선 */
+.val .x-line{padding:6px 0;border-top:1px solid var(--line)}
+.val .x-line:first-child{border-top:0;padding-top:0}
+.val .x-line-tools{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px;margin-top:-4px}
+.val .x-line-tools .link.x-mini{font-size:13px;padding:0;min-height:44px}
+.val .x-line-tools .link.x-red{color:#B23A31;font-weight:700}
+.val .x-delq{font-size:13px;color:var(--ink);font-weight:600}
+.val .x-edited{font-size:12px;color:var(--mute);margin-left:6px;white-space:nowrap}
+.x-links .x-soon{flex-basis:100%;margin:2px 0 0;font-size:13px}
+
 /* 친구 단서 — 옅은 청록 위 글자는 진하게(대비) */
 #sheet .cluebox .who{color:var(--sub)}
 .x-cluewait{font-size:13px;line-height:1.5;color:var(--sub);margin-top:6px}
