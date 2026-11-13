@@ -215,10 +215,10 @@ QO.K = {
           '코일 주위의 자기장', '전동기', '중단원 정리 ③', '연주 시차', '별의 밝기와 등급', '겉보기·절대 등급과 별의 색', '우리은하', '성운과 성단', '우주 팽창'],
   METHODS: [['exp', '실험·관찰'], ['book', '교과서·책'], ['web', '검색'], ['person', '사람에게 묻기'], ['ai', 'AI에게 묻기']],
   CLUE_KINDS: {
-    where: {n:'찾아볼 곳', step:'find',   parts:['교과서 ', {ph:'쪽', w:60}, '쪽 · 검색어 ', {ph:'검색어', w:120}], any:true},
-    test:  {n:'해 볼 실험', step:'method', parts:[{ph:'예) 전지를 반대로 끼워', w:190}, ' 보면 알 수 있을 것 같아요']},
-    me:    {n:'내 경험',   step:'find',   parts:['나는 ', {ph:'예) 니트를 벗을 때', w:170}, ' 겪어 봤어요']},
-    ask:   {n:'되묻기',    step:'refine', parts:['그럼 ', {ph:'예) 여름', w:120}, '에는 어떨까요?']}
+    where: {n:'찾아볼 곳', d:'교과서 쪽수나 검색어', step:'find',   parts:['교과서 ', {ph:'쪽', w:60}, '쪽 · 검색어 ', {ph:'검색어', w:120}], any:true},
+    test:  {n:'해 볼 실험', d:'직접 해 볼 방법',     step:'method', parts:[{ph:'예) 전지를 반대로 끼워', w:190}, ' 보면 알 수 있을 것 같아요']},
+    me:    {n:'내 경험',   d:'내가 겪어 본 일',     step:'find',   parts:['나는 ', {ph:'예) 니트를 벗을 때', w:170}, ' 겪어 봤어요']},
+    ask:   {n:'되묻기',    d:'생각을 넓히는 물음',   step:'refine', parts:['그럼 ', {ph:'예) 여름', w:120}, '에는 어떨까요?']}
   },
   STUCK_KIND: {find:'where', method:'test', predict:'me', wrap:'where', refine:'ask'},
   WHY_CHIPS: ['자료를 못 찾음', '출처끼리 말이 다름', '용어가 어려움', '실험을 할 수 없음', '과학자도 아직 모름'],
@@ -241,6 +241,20 @@ QO.K = {
     {k:'winter', n:'겨울 숲', cond:'우리 반 첫 모둠 열매가 열린 날'}
   ],
   GROUP_KINDS: {predict:'예상', method:'알아볼 방법', find:'찾기', compare:'두 출처 비교', wrap:'정리', used:'내 칸이 정리 어디에 쓰였나', tell:'옆 모둠에 설명', heard:'옆 모둠에서 들은 것', extra:'찾기 ③ 다른 출처'}
+};
+
+/* 단서 종류 고르기(2026-11-13) — 「다른 종류로」를 눌러야만 바뀌던 것을 처음부터 넷을 다 보이고 하나를 고르게.
+   o = {attr:'data-tr'|'data-tg', act:'kind', qid, cur(고른 것|null), used(이미 보낸 종류 배열), suggest(막힌 칸에 맞는 종류)} */
+QO.clueKindsHTML = function(o){
+  const used = new Set(o.used || []);
+  return '<div class="ck-pick" role="radiogroup" aria-label="단서 종류 고르기">' +
+    '<div class="ck-q">' + (o.cur ? '단서 종류' : '어떤 단서를 줄까요? 하나를 골라요') + '</div><div class="ck-row">' +
+    Object.keys(QO.K.CLUE_KINDS).map(k => {
+      const KD = QO.K.CLUE_KINDS[k], on = o.cur === k, done = used.has(k);
+      return '<button type="button" class="ck' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '"' + (done ? ' disabled' : '') +
+        ' ' + o.attr + '="' + o.act + '" data-q="' + o.qid + '" data-k="' + k + '"><b>' + esc(KD.n) + '</b><small>' + esc(done ? '이미 보냈어요' : KD.d) + '</small>' +
+        (o.suggest === k && !done ? '<i>막힌 칸에 맞아요</i>' : '') + '</button>';
+    }).join('') + '</div></div>';
 };
 
 /* ═══════════ 질문 한 행 → 일지 보기(옛 solve 와 새 journal 을 함께 읽는다, 설계서 §6-1) ═══════════ */
@@ -337,11 +351,13 @@ const S = QO.state = {
   me:null, subjects:[], trees:[],
   questions:[], marks:new Map(), footprints:[], cluesOnMine:[],
   live:null, tab:null, openQ:null, sheetOpen:false, ready:false,
-  teacher:null, classes:[], cls:null
+  teacher:null, classes:[], cls:null,
+  visit:null                    // 선생님 숲 방문(v2_08): {grade, class_no} — 학생 앱에 선생님 계정으로 들어왔을 때만
 };
 function resetState(){
-  Object.assign(S, {me:null, subjects:[], trees:[], questions:[], marks:new Map(), footprints:[], cluesOnMine:[], live:null, openQ:null, sheetOpen:false, ready:false, teacher:null, classes:[], cls:null});
+  Object.assign(S, {me:null, subjects:[], trees:[], questions:[], marks:new Map(), footprints:[], cluesOnMine:[], live:null, openQ:null, sheetOpen:false, ready:false, teacher:null, classes:[], cls:null, visit:null});
   QO.live.reset();
+  document.documentElement.classList.remove('visit');
 }
 
 /* 서버에서 다시 읽기 — 늦게 온 옛 응답이 새 값을 덮지 않게 */
@@ -420,9 +436,10 @@ QO.store = {
 const ORDER = {student:['explore', 'mat', 'together', 'tree', 'grow', 'forest'], teacher:['fruits', 'live', 'groups', 'clues', 'read']};
 const defs = {};
 let built = false;
+const VISIT_TABS = ['forest'];   // 선생님 숲 방문에서 보이는 탭
 function orderedIds(){
   const base = ORDER[cfg.page] || [];
-  return Object.keys(defs).sort((a, b) => {
+  return Object.keys(defs).filter(id => !S.visit || VISIT_TABS.indexOf(id) >= 0).sort((a, b) => {
     const ia = base.indexOf(a), ib = base.indexOf(b);
     return (ia < 0 ? 99 + (defs[a].order || 0) : ia) - (ib < 0 ? 99 + (defs[b].order || 0) : ib);
   });
@@ -545,7 +562,7 @@ QO.live = {
 };
 let lastFull = Date.now();
 document.addEventListener('visibilitychange', () => {
-  if(cfg.page !== 'student' || !S.ready) return;
+  if(cfg.page !== 'student' || !S.ready || S.visit) return;
   if(document.visibilityState === 'visible'){
     QO.live.start();
     if(Date.now() - lastFull > 60000){ lastFull = Date.now(); QO.store.reloadAll().catch(e => QO.err(e, 'reload')); }
@@ -587,14 +604,25 @@ function paintHeader(){
   const ac = $('#acorn'); if(ac) ac.textContent = me ? (me.seeds || 0) : 0;
   const mb = $('#meBtn');
   if(mb){
-    if(me){ const a = avatar(me.name, me.number); mb.textContent = a.ch; mb.style.background = a.bg; mb.style.color = a.fg; mb.title = (me.name || '') + ' · ' + me.grade + '-' + me.class_no; }
+    if(me && S.visit){ mb.textContent = '선'; mb.style.background = '#2F6B3F'; mb.style.color = '#fff'; mb.title = '선생님 · 반 바꾸기·로그아웃'; }
+    else if(me){ const a = avatar(me.name, me.number); mb.textContent = a.ch; mb.style.background = a.bg; mb.style.color = a.fg; mb.title = (me.name || '') + ' · ' + me.grade + '-' + me.class_no; }
     else { mb.textContent = '나'; mb.removeAttribute('style'); }
   }
+  /* 선생님 숲 방문: 도토리 대신 지금 보는 반 */
+  const vc = $('#visitCls');
+  if(vc){ vc.hidden = !S.visit; if(S.visit) vc.textContent = S.visit.grade != null ? S.visit.grade + '학년 ' + S.visit.class_no + '반 숲' : '반 고르기'; }
+  const acb = $('#acorn'); if(acb && acb.parentNode) acb.parentNode.hidden = !!S.visit;
   const mn = $('#mockName');
   if(mn && QO.mock){ const w = QO.mock.who(); mn.textContent = w ? w.label : '학생 고르기'; }
 }
 async function meMenu(){
   const me = S.me; if(!me) return;
+  if(S.visit){
+    const v = await dialog('<b>선생님 숲 방문</b><div class="hint" style="margin-top:4px">' + esc(S.visit.grade != null ? S.visit.grade + '학년 ' + S.visit.class_no + '반 숲을 보고 있어요.' : '반을 골라 주세요.') + ' 학생 화면에는 「선생님」으로 보여요.</div>',
+      [{label:'반 바꾸기', value:'cls', cls:'btn soft', key:'cls'}, {label:'로그아웃', value:'out', cls:'btn line', key:'out'}, {label:'닫기', value:false, cls:'btn', key:'ok'}]);
+    if(v === 'cls') visitPick(); else if(v === 'out') QO.app.signOut();
+    return;
+  }
   const v = await dialog('<b>' + esc(me.name || '') + '</b><div class="hint" style="margin-top:4px">' + esc(me.grade + '학년 ' + me.class_no + '반 ' + me.number + '번') + '</div>',
     [{label:'로그아웃', value:'out', cls:'btn line', key:'out'}, {label:'닫기', value:false, cls:'btn', key:'ok'}]);
   if(v === 'out') QO.app.signOut();
@@ -638,12 +666,20 @@ async function enterStudent(){
   catch(e){
     if(my !== enterSeq) return false;
     const m = userMsg(e);
+    /* 선생님 계정이면 숲 방문으로(학생 정보 줄이 없는 선생님) */
+    if(m && await tryVisit(my)) return true;
+    if(my !== enterSeq) return false;
     /* 학생 정보가 정말 없을 때만 로그아웃. 잠깐 끊긴 것이면 세션은 두고 다시 해 보기 */
     if(m){ try{ await QO.api.signOut(); }catch(_){} showLoginView(m); }
     else { QO.err(e, 'loadMe'); showLoginView('학생 정보를 불러오지 못했어요. 잠시 뒤 다시 해 주세요.', {retry:true}); }
     return false;
   }
   if(my !== enterSeq) return false;
+  /* 반이 비어 있는 계정 = 보통 선생님(가입할 때 이름만 있는 줄이 생긴다) → 숲 방문 */
+  if(S.me && (S.me.grade == null || S.me.class_no == null)){
+    if(await tryVisit(my)) return true;
+    if(my !== enterSeq) return false;
+  }
   /* 반이 질문과수원 2로 옮겨졌나(v2_cutover). 못 읽으면 막지 않는다 */
   let moved = true;
   try{ moved = !!(await QO.api.myCutover()); }catch(e){ if(my === enterSeq) QO.err(e, 'cutover'); moved = true; }
@@ -666,6 +702,65 @@ async function enterStudent(){
   paintHeader();
   QO.bus.emit('ready', {page:'student'});
   return true;
+}
+
+/* ═══════════ 선생님 숲 방문(v2_08) — 학생 앱에 선생님 계정으로 들어오면 반을 골라 그 반 숲만 ═══════════ */
+async function tryVisit(my){
+  let t = null;
+  try{ t = await QO.api.teacherMe(); }catch(_){ t = null; }
+  if(my !== enterSeq || !t) return false;
+  return enterVisit(t, my);
+}
+async function enterVisit(t, my){
+  S.teacher = t;
+  let list = [];
+  try{ list = (await QO.api.classList()) || []; }catch(e){ QO.err(e, 'visit:classes'); }
+  /* 질문과수원 2로 옮긴 반만(못 읽으면 전부) */
+  try{
+    const moved = new Set(((await QO.api.cutoverStatus()) || []).map(c => c.grade + '-' + c.class_no));
+    const f = list.filter(c => moved.has(c.grade + '-' + c.class_no));
+    if(f.length) list = f;
+  }catch(_){}
+  if(my !== enterSeq) return false;
+  S.classes = list;
+  let saved = null; try{ saved = (localStorage.getItem('qo2-visit-cls') || localStorage.getItem('qo2-t-cls') || '').split('-').map(Number); }catch(_){}
+  const pick = (saved && list.find(c => c.grade === saved[0] && c.class_no === saved[1])) || list.find(c => t.grade && c.grade === Number(t.grade)) || list[0] || null;
+  S.visit = pick ? {grade:pick.grade, class_no:pick.class_no} : {grade:null, class_no:null};
+  /* 숲 화면이 쓰는 「나」 — 번호가 없어서 내 나무·내 질문으로 잡히지 않는다 */
+  S.me = {id:t.auth_id, name:'선생님', grade:S.visit.grade, class_no:S.visit.class_no, number:null, seeds:0, teacher:true};
+  S.subjects = []; S.trees = []; S.questions = [];
+  document.documentElement.classList.add('visit');
+  $('#app').classList.remove('out', 'notyet');
+  const rt = $('#lgRetry'), le = $('#lgErr'); if(rt) rt.hidden = true; if(le) le.textContent = '';
+  S.ready = true; booted = true;
+  QO.tabs.build();
+  S.tab = null;
+  QO.tabs.show('forest');
+  paintHeader();
+  QO.bus.emit('ready', {page:'visit'});
+  if(!pick) toast('질문과수원 2로 옮긴 반이 아직 없어요.');
+  return true;
+}
+function setVisitClass(grade, class_no){
+  if(!S.visit) return;
+  S.visit = {grade:Number(grade), class_no:Number(class_no)};
+  if(S.me){ S.me.grade = S.visit.grade; S.me.class_no = S.visit.class_no; }
+  try{ localStorage.setItem('qo2-visit-cls', S.visit.grade + '-' + S.visit.class_no); }catch(_){}
+  paintHeader();
+  QO.bus.emit('ready', {page:'visit'});      // 숲·함께 걷기를 그 반으로 새로
+  QO.tabs.show('forest');
+}
+async function visitPick(){
+  if(!S.visit) return;
+  if(!S.classes.length){ toast('고를 반이 없어요.'); return; }
+  const v = await dialog('<b>어느 반 숲으로 갈까요?</b>',
+    S.classes.map(c => ({label:c.grade + '학년 ' + c.class_no + '반', value:c.grade + '-' + c.class_no, key:'v' + c.grade + '-' + c.class_no,
+      cls:'btn ' + (S.visit.grade === c.grade && S.visit.class_no === c.class_no ? '' : 'soft')})).concat([{label:'닫기', value:false, cls:'btn line', key:'x'}]));
+  if(!v) return;
+  const p = String(v).split('-').map(Number);
+  if(p[0] === S.visit.grade && p[1] === S.visit.class_no) return;
+  setVisitClass(p[0], p[1]);
+  toast(p[0] + '학년 ' + p[1] + '반 숲으로 왔어요.');
 }
 
 function paintClassPick(){
@@ -718,6 +813,19 @@ function bindStudentLogin(){
   };
   btn.addEventListener('click', go);
   onEnter($('#lgPw'), go);
+  /* 선생님 계정으로 들어가기(숲 둘러보기) */
+  const tl = $('#lgTeach'), tb = $('#lgTBox'), tg = $('#lgTBtn');
+  if(tl && tb) tl.addEventListener('click', () => { tb.hidden = !tb.hidden; tl.setAttribute('aria-expanded', String(!tb.hidden)); if(!tb.hidden){ const e = $('#lgEmail'); if(e) e.focus(); } });
+  if(tg){
+    const goT = async () => {
+      const r = await busy(tg, () => QO.api.signInTeacher($('#lgEmail').value.trim(), $('#lgTPw').value), {errEl:$('#lgTErr')});
+      if(r === undefined) return;
+      $('#lgTPw').value = '';
+      await QO.app.enter();
+    };
+    tg.addEventListener('click', goT);
+    onEnter($('#lgTPw'), goT);
+  }
 }
 function bindTeacherLogin(){
   const btn = $('#lgBtn'); if(!btn) return;
@@ -757,6 +865,7 @@ QO.app = {
     const no = $('#nyOut'); if(no) no.addEventListener('click', () => QO.app.signOut(true));
     const bb = $('#boardBtn'); if(bb) bb.addEventListener('click', openBoardFromButton);
     const ob = $('#tOut'); if(ob) ob.addEventListener('click', () => QO.app.signOut());
+    const vc = $('#visitCls'); if(vc) vc.addEventListener('click', visitPick);
     const gs = $('#tGrade'), cs = $('#tClass');
     if(gs) gs.addEventListener('change', () => { const g = Number(gs.value); const c = S.classes.find(x => x.grade === g); setClass(g, c ? c.class_no : 0); });
     if(cs) cs.addEventListener('change', () => setClass(gs.value, cs.value));
@@ -784,7 +893,7 @@ QO.app = {
   enter(){ return cfg.page === 'teacher' ? enterTeacher() : enterStudent(); },
   showLogin: showLoginView,
   async signOut(skipConfirm){
-    const student = cfg.page !== 'teacher';
+    const student = cfg.page !== 'teacher' && !S.visit;     // 선생님 숲 방문은 이 기기만(선생님 화면까지 다른 기기에서 끊기지 않게)
     if(!skipConfirm && !(await confirmBox(student ? '모든 기기에서 로그아웃할까요?' : '로그아웃할까요?', {ok:'로그아웃', cancel:'그대로'}))) return false;
     ++enterSeq;
     QO.live.stop();
@@ -795,6 +904,7 @@ QO.app = {
     return true;
   },
   setClass,
-  paintHeader
+  paintHeader,
+  setVisitClass, visitPick
 };
 })();

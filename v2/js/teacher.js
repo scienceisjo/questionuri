@@ -238,7 +238,7 @@ function detailHTML(q){
   const cl = D.clues || [];
   if(cl.length){
     h += '<div><div class="t-sub">받은 단서 ' + cl.length + '개</div>' + cl.map(c => '<div class="t-cl"><span class="tag clue">' + esc(kindName(c.kind)) + '</span> ' + esc(c.body) +
-      '<div class="hint">' + esc(who(c.author_id)) + ' · ' + esc(J.stepName(c.step)) + ' 칸 · ' + esc(ui.fmtTime(c.created_at)) +
+      '<div class="hint">' + esc(c.by_teacher ? '선생님' : who(c.author_id)) + ' · ' + esc(J.stepName(c.step)) + ' 칸 · ' + esc(ui.fmtTime(c.created_at)) +
       (c.thanked_at ? ' · 고마움 「' + esc(c.thanks_text || '') + '」' : '') + (c.hidden_at ? ' · 숨김' : '') + '</div></div>').join('') + '</div>';
   } else h += '<div class="hint">받은 단서는 없어요.</div>';
   const fogFirst = !!(d.wrap && d.wrap.mode === 'unknown');
@@ -956,7 +956,7 @@ function renderClues(root){
   h += '<div class="t-bar"><span class="t-count">단서 ' + list.length + '개' + (hid ? ' · 숨긴 단서 ' + hid + '개' : '') + '</span></div>';
   if(!list.length){ root.innerHTML = h + '<div class="card empty">이날 온 단서가 없어요.</div>' + demoBox(); return; }
   h += '<div class="t-clist">' + list.slice().reverse().map(c => {
-    const author = c.author_name ? c.author_name + '(' + c.author_number + '번)' : '보낸 사람 모름';
+    const author = c.by_teacher ? '선생님(숲 방문)' : c.author_name ? c.author_name + '(' + c.author_number + '번)' : '보낸 사람 모름';
     const ownerName = c.owner_name ? c.owner_name + '(' + c.owner_number + '번)' : '주인 모름';
     const owner = c.question_anonymous && !T.showOwner[c.id] ? '익명 질문 주인' : ownerName;
     return '<div class="card t-clue' + (c.hidden_at ? ' t-hid' : '') + '"><div class="t-ch"><span class="tag clue">' + esc(kindName(c.kind)) + '</span><span class="t-cs">' + esc(J.stepName(c.step)) + ' 칸</span>' +

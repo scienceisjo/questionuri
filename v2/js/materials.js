@@ -175,7 +175,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ closeView(); return; }
   if(e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && e.target && e.target.id === 'qm_inp'){ e.preventDefault(); const b = document.querySelector('#qm-view [data-qm="plant"]'); if(b) b.click(); }
 });
-QO.bus.on('ready', () => { M.list = null; M.uid = null; M.more = false; closeView(); setTimeout(() => load(true), 0); });   // 탭 점·?mat= 링크 때문에 바로 읽는다
+QO.bus.on('ready', e => { M.list = null; M.uid = null; M.more = false; closeView(); if(e && e.page === 'visit') return; setTimeout(() => load(true), 0); });   // 선생님 숲 방문엔 자료 탭이 없다   // 탭 점·?mat= 링크 때문에 바로 읽는다
 QO.bus.on('tab:show', id => { if(id === 'explore' || id === 'mat') load(false); if(id !== 'mat') closeView(); });
 
 const MAT_IC = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13h8"/></svg>';

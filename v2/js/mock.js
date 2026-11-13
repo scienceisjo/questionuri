@@ -8,7 +8,7 @@ const QO = window.QO, cfg = QO.cfg;
 const KEY = 'qo2-mock-v1', VER = 2;   // 2: 책 보며 심기 시연 자료(11-10)
 const WHO_KEY = 'qo2-mock-who-' + cfg.page;
 const COLS = QO.COLS.split(',').concat(QO.COLS.indexOf('teacher_answer') < 0 ? ['teacher_answer'] : []);
-const CLUE_COLS = QO.CLUE_COLS.split(',');
+const CLUE_COLS = QO.CLUE_COLS.split(',').concat(QO.CLUE_COLS.indexOf('by_teacher') < 0 ? ['by_teacher'] : []);   // v2_08 선생님 단서 표시
 const COUNTED = ['predict', 'method', 'find', 'wrap', 'extend'];
 const TEACHER_FB = ['teacher_nudge', 'teacher_stamp', 'teacher_solve_note', 'teacher_refine_note', 'teacher_answer'];
 let db = null, whoMem = null;
@@ -943,7 +943,7 @@ function loginAs(key){
   return u.uid;
 }
 function who(){ const id = me(); const u = id && Object.values(db.users).find(x => x.uid === id); return u ? {key:u.key, uid:u.uid, label:LABELS[u.key] || u.key} : null; }
-function picker(){ return (cfg.page === 'teacher' ? ['T'] : ['A', 'B', 'C', 'D', 'E']).map(k => ({key:k, label:LABELS[k]})); }
+function picker(){ return (cfg.page === 'teacher' ? ['T'] : ['A', 'B', 'C', 'D', 'E', 'T']).map(k => ({key:k, label:cfg.page !== 'teacher' && k === 'T' ? '선생님 (숲 둘러보기)' : LABELS[k]})); }
 Object.assign(M, {reset, save, loginAs, logout:() => setWho(null), who, picker, seed, LABELS, PEOPLE});
 
 db = load();

@@ -24,7 +24,7 @@
     <div class="login-art" aria-hidden="true">
       <svg width="96" height="80" viewBox="-48 -62 96 80"><ellipse cx="0" cy="14" rx="40" ry="6" fill="#E2E8D6"/><path d="M-5 14 Q-3 -6 -2 -16 L2 -16 Q3 -6 5 14 Z" fill="#8B6A4A"/><circle cx="0" cy="-30" r="22" fill="#5FA86D"/><circle cx="-18" cy="-22" r="14" fill="#6CB57A"/><circle cx="18" cy="-24" r="15" fill="#57A065"/><circle cx="-6" cy="-44" r="13" fill="#74BC80"/><circle cx="8" cy="-28" r="5" fill="#C9433A"/><circle cx="6.6" cy="-29.4" r="1.3" fill="#F19A93"/><circle cx="-12" cy="-20" r="5" fill="#6F84A0"/><path d="M-15 -19.6h6M-14 -17.6h4" stroke="#E9EEF5" stroke-width="1.2" stroke-linecap="round"/></svg>
     </div>
-    <h1>질문과수원</h1>
+    <h1><span class="hn-mark" role="img" aria-label="해누리중학교"></span>질문과수원</h1>
     <p class="lead">학년·반·번호와 비밀번호를 넣어요.</p>
     <div class="card">
       <div class="idrow">
@@ -38,13 +38,21 @@
       <button type="button" class="btn line wide" id="lgRetry" hidden>다시 해 보기</button>
     </div>
     <p class="hint">질문과수원에서 쓰던 비밀번호 그대로예요.</p>
+    <button type="button" class="lg-tlink" id="lgTeach" aria-expanded="false" aria-controls="lgTBox">선생님 계정으로 들어가기</button>
+    <div class="card lg-tbox" id="lgTBox" hidden>
+      <p class="hint" style="margin-bottom:8px">반을 골라 우리 반 숲을 걷고 학생 질문에 단서를 줄 수 있어요.</p>
+      <label class="fld">이메일<input class="inp" id="lgEmail" type="email" autocomplete="username"></label>
+      <label class="fld">비밀번호<input class="inp" id="lgTPw" type="password" autocomplete="current-password"></label>
+      <button type="button" class="btn wide" id="lgTBtn">선생님으로 들어가기</button>
+      <div class="err" id="lgTErr" role="alert"></div>
+    </div>
     <div class="demo" id="lgMock" hidden><div class="h">시연 모드 · 학생 고르기</div><div class="chips"></div></div>
   </section>
   <section class="login ny" id="notyet" aria-label="우리 반 안내">
     <div class="login-art" aria-hidden="true">
       <svg width="96" height="80" viewBox="-48 -62 96 80"><ellipse cx="0" cy="14" rx="40" ry="6" fill="#E2E8D6"/><path d="M-5 14 Q-3 -6 -2 -16 L2 -16 Q3 -6 5 14 Z" fill="#8B6A4A"/><circle cx="0" cy="-30" r="22" fill="#5FA86D"/><circle cx="-18" cy="-22" r="14" fill="#6CB57A"/><circle cx="18" cy="-24" r="15" fill="#57A065"/><circle cx="-6" cy="-44" r="13" fill="#74BC80"/></svg>
     </div>
-    <h1>질문과수원</h1>
+    <h1><span class="hn-mark" role="img" aria-label="해누리중학교"></span>질문과수원</h1>
     <p class="lead">우리 반은 아직 질문과수원 1을 써요.</p>
     <div class="card">
       <p class="ny-t">선생님이 우리 반을 옮기면 여기서 이어서 쓸 수 있어요. 그때까지는 쓰던 곳에서 탐구해요.</p>
@@ -53,7 +61,8 @@
     </div>
   </section>
   <header class="top">
-    <h1>질문과수원</h1>
+    <h1><span class="hn-mark" role="img" aria-label="해누리중학교"></span>질문과수원</h1>
+    <button type="button" class="visit-cls" id="visitCls" hidden aria-label="반 바꾸기"></button>
     <div class="acorn" title="도토리">🌰 <span id="acorn">0</span></div>
     <button type="button" class="me" id="meBtn" aria-label="내 정보">나</button>
   </header>
@@ -66,6 +75,7 @@
 <script src="js/core.js"></script>
 <script src="js/api.js"></script>
 <script src="js/mock.js"></script>
+<script src="js/visit.js"></script>
 <script src="js/selftest.js"></script>
 <script src="js/ime.js"></script>
 <script src="js/nopaste.js"></script>

@@ -36,6 +36,19 @@ async function cols(cl){
   await ansProbe;
   return COLS;
 }
+/* 선생님 단서 표시 칸(v2_08 clues.by_teacher) — 있을 때만 같이 읽는다(SQL 전에 올려도 안 깨지게) */
+let clueProbe = null, clueColsNow = CLUE_COLS;
+async function clueCols(cl){
+  if(clueColsNow !== CLUE_COLS) return clueColsNow;
+  if(clueProbe === null){
+    clueProbe = cl.from('clues').select('by_teacher').limit(1).then(r => {
+      if(!r.error){ clueColsNow = CLUE_COLS + ',by_teacher'; QO.CLUE_COLS = clueColsNow; }
+      else if(!/by_teacher|42703|column/i.test((r.error.message || '') + (r.error.code || ''))) clueProbe = null;
+    }, () => { clueProbe = null; });
+  }
+  await clueProbe;
+  return clueColsNow;
+}
 async function client(){
   if(sb) return sb;
   if(!sbP) sbP = loadLib().then(() => { sb = window.supabase.createClient(cfg.url, cfg.key); return sb; }).catch(e => { sbP = null; throw e; });
@@ -203,8 +216,8 @@ const A = QO.apiReal = {
   },
   async loadCluesOnMine(qids){
     qids = (qids || []).filter(x => x != null); if(!qids.length) return [];
-    const cl = await client(), out = [];
-    for(const ch of chunks(qids, 100)) out.push.apply(out, await pages(() => cl.from('clues').select(CLUE_COLS + ',snapshot_md5').in('question_id', ch).is('hidden_at', null).order('id')));
+    const cl = await client(), out = [], cc = await clueCols(cl);
+    for(const ch of chunks(qids, 100)) out.push.apply(out, await pages(() => cl.from('clues').select(cc + ',snapshot_md5').in('question_id', ch).is('hidden_at', null).order('id')));
     return out;
   },
   async markFbSeen(qid){

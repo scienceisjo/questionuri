@@ -131,22 +131,26 @@ function kindList(f){
   const used = new Set(sentOn(f.id).map(c => c.kind));
   return [first].concat(KIND_ORDER.filter(k => k !== first)).filter(k => !used.has(k));
 }
-function curKind(f){ const ks = kindList(f), k = T.kind[f.id]; return ks.indexOf(k) >= 0 ? k : (ks[0] || null); }
+/* 단서 종류는 학생이 직접 고른다(2026-11-13: 「다른 종류로」를 몰라 늘 첫 종류만 보낼까 봐) — 고르기 전엔 null */
+function curKind(f){ const ks = kindList(f), k = T.kind[f.id]; return ks.indexOf(k) >= 0 ? k : null; }
 function curiousBtn(qid){
   return T.curious.indexOf(Number(qid)) >= 0 ? '<button type="button" class="link" disabled>💧 물을 줬어요</button>'
     : '<button type="button" class="link" data-tg="curious" data-q="' + qid + '">💧 물 주기</button>';
 }
 const clueKey = (ctx, qid, kind) => 'c:' + ctx + ':' + qid + ':' + kind;
 function clueFormHTML(f, ctx){
-  const kind = curKind(f), qid = Number(f.id);
-  if(!kind) return '<div class="hint tg-lock">이 질문에는 단서 종류 넷을 모두 보냈어요.</div>';
-  const KD = K.CLUE_KINDS[kind];
-  let h = '<div class="lbl tg-lbl">정답 말고, 찾아갈 길을 알려 줘요 · ' + esc(KD.n) + '</div><div class="tpl">' +
-    KD.parts.map((p, i) => typeof p === 'string' ? '<span>' + esc(p) + '</span>'
-      : '<input data-i="' + i + '" data-tgk="c:' + ctx + ':' + qid + ':' + kind + ':' + i + '" placeholder="' + esc(p.ph) + '" aria-label="' + esc(p.ph) + '" style="max-width:' + p.w + 'px" maxlength="24" autocomplete="off">').join('') + '</div>';
-  h += '<div class="row" style="margin-top:10px"><button type="button" class="btn teal" style="flex:1" data-tg="clue-send" data-q="' + qid + '" data-kind="' + kind + '" data-ctx="' + ctx + '">보내기</button></div>' + msgDiv(clueKey(ctx, qid, kind));
-  h += '<div class="row tg-acts">' + (kindList(f).length > 1 ? '<button type="button" class="link teal" data-tg="clue-kind" data-q="' + qid + '">다른 종류로</button>' : '<span></span>') +
-    curiousBtn(qid) + '</div>';
+  const qid = Number(f.id);
+  if(!kindList(f).length) return '<div class="hint tg-lock">이 질문에는 단서 종류 넷을 모두 보냈어요.</div>';
+  const kind = curKind(f), KD = kind ? K.CLUE_KINDS[kind] : null;
+  let h = '<div class="lbl tg-lbl">정답 말고, 찾아갈 길을 알려 줘요' + (KD ? ' · ' + esc(KD.n) : '') + '</div>' +
+    QO.clueKindsHTML({attr:'data-tg', act:'clue-kind', qid:qid, cur:kind, used:sentOn(qid).map(c => c.kind), suggest:K.STUCK_KIND[f.flag_step] || null});
+  if(KD){
+    h += '<div class="tpl">' +
+      KD.parts.map((p, i) => typeof p === 'string' ? '<span>' + esc(p) + '</span>'
+        : '<input data-i="' + i + '" data-tgk="c:' + ctx + ':' + qid + ':' + kind + ':' + i + '" placeholder="' + esc(p.ph) + '" aria-label="' + esc(p.ph) + '" style="max-width:' + p.w + 'px" maxlength="24" autocomplete="off">').join('') + '</div>';
+    h += '<div class="row" style="margin-top:10px"><button type="button" class="btn teal" style="flex:1" data-tg="clue-send" data-q="' + qid + '" data-kind="' + kind + '" data-ctx="' + ctx + '">보내기</button></div>' + msgDiv(clueKey(ctx, qid, kind));
+  }
+  h += '<div class="row tg-acts"><span></span>' + curiousBtn(qid) + '</div>';
   return h;
 }
 /* 단서 시간 카드(ctx 'live') — 이름은 보이지 않는다 */
@@ -810,7 +814,7 @@ document.addEventListener('click', e => {
   switch(a){
     case 'reload': T.errs = {}; reload(); break;
     case 'more-sent': T.moreSent = !T.moreSent; rr(); break;
-    case 'clue-kind': { const f = findFriend(q); if(!f) break; const ks = kindList(f), cur = curKind(f); T.kind[q] = ks[(ks.indexOf(cur) + 1) % ks.length]; rr(); focusSoon('.tg-fq[data-q="' + q + '"] .tpl input'); break; }
+    case 'clue-kind': { const f = findFriend(q), k = b.dataset.k; if(!f || kindList(f).indexOf(k) < 0) break; T.kind[q] = k; rr(); focusSoon('.tg-fq[data-q="' + q + '"] .tpl input'); break; }
     case 'clue-send': sendClue(b); break;
     case 'curious': markCurious(b, q); break;
     case 'row': T.openRow = T.openRow === b.dataset.k ? null : b.dataset.k; rr(); break;
@@ -865,7 +869,8 @@ if(QO.selftest){
     t.eq(t.$$('.tg-fq').length, 0, '단서 시간 밖에는 친구 질문 카드가 없음');
     t.expect(t.$('.tg-news') && t.$('.tg-group'), '모둠 일지와 소식');
     mkLive(t, 'clue', 2); await QO.live.refresh();
-    await t.waitFor(() => t.$$('.tg-fq[data-ctx="live"] .tpl').length === 2);
+    await t.waitFor(() => t.$$('.tg-fq[data-ctx="live"] .ck-pick').length === 2);
+    t.eq(t.$$('.tg-fq[data-ctx="live"] .tpl').length, 0, '종류를 고르기 전엔 빈칸 없음');
     const qid = +t.$$('.tg-fq[data-ctx="live"]')[0].dataset.q;
     await t.click('.tg-fq[data-q="' + qid + '"] [data-tg="curious"]');
     await t.waitFor(() => t.db.curious_marks.some(m => m.question_id === qid && m.user_id === 'u-A'));
@@ -873,18 +878,21 @@ if(QO.selftest){
     t.eq(t.db.clues.filter(c => c.author_id === 'u-A').length, 1, '나도 궁금해요는 단서가 아님');
     await t.loginAs('A');
     await go(t);
-    await t.waitFor(() => t.$('.tg-fq[data-q="' + qid + '"] .tpl') && !t.$('.tg-fq[data-q="' + qid + '"] [data-tg="curious"]'));
+    await t.waitFor(() => t.$('.tg-fq[data-q="' + qid + '"] .ck-pick') && !t.$('.tg-fq[data-q="' + qid + '"] [data-tg="curious"]'));
   });
   add('함께 · 단서 — 빈칸·장난 글자는 못 보냄 · 안내는 다시 그려도 남음', async t => {
     mkLive(t, 'clue', 2); await QO.live.refresh();
     await go(t);
+    await t.waitFor('.tg-fq[data-q="131"] .ck-pick');
+    t.eq(t.$$('.tg-fq[data-q="131"] .ck').length, 4, '종류 넷이 처음부터 보임');
+    t.expect(txt(t, '.tg-fq[data-q="131"] .ck[data-k="where"]').indexOf('막힌 칸에 맞아요') >= 0, '찾기에서 막힘 → 찾아볼 곳에 표시');
+    await t.click('.tg-fq[data-q="131"] .ck[data-k="where"]');
     await t.waitFor('.tg-fq[data-q="131"] .tpl input');
-    t.expect(txt(t, '.tg-fq[data-q="131"] .tg-lbl').indexOf('찾아볼 곳') >= 0, '찾기에서 막힘 → 찾아볼 곳');
     await t.click('.tg-fq[data-q="131"] [data-tg="clue-send"]');
     await t.waitFor(() => txt(t, '.tg-fq[data-q="131"] .err') === '쪽수나 검색어 중 하나는 적어 주세요.');
     QO.tabs.rerender('together');
     t.eq(txt(t, '.tg-fq[data-q="131"] .err'), '쪽수나 검색어 중 하나는 적어 주세요.', '다시 그려도 안내');
-    await t.click('.tg-fq[data-q="131"] [data-tg="clue-kind"]');
+    await t.click('.tg-fq[data-q="131"] .ck[data-k="test"]');
     await t.waitFor(() => txt(t, '.tg-fq[data-q="131"] .tg-lbl').indexOf('해 볼 실험') >= 0);
     await t.click('.tg-fq[data-q="131"] [data-tg="clue-send"]');
     await t.waitFor(() => txt(t, '.tg-fq[data-q="131"] .err') === '빈칸을 채워 주세요.');
@@ -892,7 +900,7 @@ if(QO.selftest){
     await t.click('.tg-fq[data-q="131"] [data-tg="clue-send"]');
     await t.waitFor(() => txt(t, '.tg-fq[data-q="131"] .err') === '장난 글자는 보낼 수 없어요.');
     t.eq(t.db.clues.filter(c => c.question_id === 131).length, 0, '아직 안 보냄');
-    for(let i = 0; i < 3; i++) await t.click('.tg-fq[data-q="131"] [data-tg="clue-kind"]');
+    await t.click('.tg-fq[data-q="131"] .ck[data-k="where"]');
     await t.waitFor(() => txt(t, '.tg-fq[data-q="131"] .tg-lbl').indexOf('찾아볼 곳') >= 0);
     await t.type('.tg-fq[data-q="131"] .tpl input[data-i="3"]', '코일 자기장');
     await t.click('.tg-fq[data-q="131"] [data-tg="clue-send"]');
@@ -904,6 +912,8 @@ if(QO.selftest){
   add('함께 · 단서 — 같은 질문 같은 종류는 한 번', async t => {
     mkLive(t, 'clue', 2); await QO.live.refresh();
     await go(t);
+    await t.waitFor('.tg-fq[data-q="141"] .ck-pick');
+    await t.click('.tg-fq[data-q="141"] .ck[data-k="where"]');
     await t.waitFor('.tg-fq[data-q="141"] .tpl input');
     await t.type('.tg-fq[data-q="141"] .tpl input[data-i="3"]', '별의 색 온도');
     await t.api.addClue(141, 'where', '교과서 150쪽');          // 다른 기기에서 먼저 보냄
@@ -911,7 +921,7 @@ if(QO.selftest){
     await t.waitFor(() => txt(t, '.tg-fq[data-q="141"] .err') === '이 질문에는 같은 종류의 단서를 이미 보냈어요');
     t.eq(t.db.clues.filter(c => c.question_id === 141 && c.author_id === 'u-A').length, 1, '하나만 남음');
     await QO.together.reload();
-    await t.waitFor(() => t.$('.tg-fq[data-q="141"] .sent') && !t.$('.tg-fq[data-ctx="live"] .tpl'));
+    await t.waitFor(() => t.$('.tg-fq[data-q="141"] .sent') && !t.$('.tg-fq[data-ctx="live"] .ck-pick'));
     await t.rejects(t.api.addClue(141, 'where', '검색어 별의 온도와 색'), '이 질문에는 같은 종류의 단서를 이미 보냈어요');
   });
   add('함께 · 단서 시간 — 단계 띠 · 남은 시간 · 한 사람 하나 · 끝', async t => {
@@ -929,13 +939,16 @@ if(QO.selftest){
     t.eq(t.$$('.tg-fq[data-ctx="live"]').map(c => +c.dataset.q).sort(), [131, 141], '막힌 질문 둘');
     const order = t.$$('.tg-fq[data-ctx="live"]').map(c => +c.dataset.q);
     await setStage(row, 2);
-    await t.waitFor(() => t.$$('.tg-fq[data-ctx="live"] .tpl').length === 2);
+    await t.waitFor(() => t.$$('.tg-fq[data-ctx="live"] .ck-pick').length === 2);
     t.eq(t.$$('.tg-fq[data-ctx="live"]').map(c => +c.dataset.q), order, '모둠 이야기 때 읽은 두 질문 그대로');
-    const card = t.$$('.tg-fq[data-ctx="live"]')[0], qid = +card.dataset.q;
+    const qid = +t.$$('.tg-fq[data-ctx="live"]')[0].dataset.q;
+    await t.click('.tg-fq[data-q="' + qid + '"] .ck[data-k="where"]');
+    await t.waitFor('.tg-fq[data-q="' + qid + '"] .tpl input[data-i="1"]');
+    const card = t.$('.tg-fq[data-q="' + qid + '"]');
     await t.type(card.querySelector('.tpl input[data-i="1"]'), '118');
     await t.click(card.querySelector('[data-tg="clue-send"]'));
     await t.waitFor(() => t.db.clues.some(c => c.author_id === 'u-A' && c.question_id === qid && c.body === '교과서 118쪽'));
-    await t.waitFor(() => t.$$('.tg-fq[data-ctx="live"] .tpl').length === 0 && t.$('.tg-lock'));
+    await t.waitFor(() => t.$$('.tg-fq[data-ctx="live"] .ck-pick').length === 0 && t.$('.tg-lock'));
     t.eq(t.$$('.tg-fq[data-ctx="live"]').map(c => +c.dataset.q), order, '보낸 뒤에도 카드 자리 그대로');
     await setStage(row, 3);
     await t.waitFor(() => txt(t, '.tg-stage li.on') === '칠판에서 함께 읽기');

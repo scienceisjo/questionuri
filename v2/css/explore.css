@@ -93,9 +93,8 @@ html.wide .app.split .x-plant .unitpick{flex-basis:100%}
 .rc-a{background:var(--leaf-l);color:var(--ink);border-radius:8px;padding:3px 8px;font-weight:600}
 .rc-g{font-size:12.5px;font-weight:800;color:var(--leaf-d);margin:12px 0 2px;letter-spacing:.02em}
 
-/* 끝까지 탐구 / 답만 달기 · 친구에게 SOS(2026-11-12) */
+/* 친구에게 SOS(2026-11-12) — 끝까지 탐구 상자 안 나무 아래 */
 .x-paths{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
-.x-paths .seg{background:var(--card);border:1px solid var(--line)}
 .x-sosbtn{align-self:flex-start;min-height:40px;padding:6px 14px;border-radius:99px;border:1.5px solid var(--clue);color:var(--clue-d);background:#fff;font-size:14px;font-weight:800}
 .x-sos{border-radius:12px;padding:10px 12px;background:var(--clue-l);font-size:13.5px;line-height:1.5}
 .x-sos.on{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--clue-d);font-weight:700}
@@ -103,5 +102,122 @@ html.wide .app.split .x-plant .unitpick{flex-basis:100%}
 .x-sos.ask .row{margin-top:8px;gap:8px}
 .x-quick{margin:4px 0 14px}
 .x-quick textarea.inp{min-height:80px}
+
+/* ── 끝까지 탐구 / 답만 달기 — 테두리 있는 두 상자 + 가운데 「또는」(2026-11-13) ──
+   끝까지 탐구 = 앱 녹색, 답만 달기 = 베이지. 상자 속은 흰 바탕(연두 바탕 위 회색 글씨를 피함) */
+.x-routes{margin:0 0 14px}
+.x-route{border-radius:16px;background:var(--card);overflow:hidden}
+.x-rfull{border:1.5px solid #A8CDB1}
+.x-rfull.on{border:2px solid var(--leaf)}
+.x-rquick{border:1.5px solid #D9CEB7}
+.x-rquick.on{border:2px solid #A88F5E}
+.x-route-h{display:flex;align-items:center;gap:10px;width:100%;min-height:58px;padding:10px 14px;text-align:left}
+.x-rfull .x-route-h{background:#F3F9F2}
+.x-rfull.on .x-route-h{background:var(--leaf-l)}
+.x-rquick .x-route-h{background:#FAF7F0}
+.x-rquick.on .x-route-h{background:#F4EEE1}
+.x-route-h[aria-pressed="true"]{cursor:default}
+.x-route-h:focus-visible{outline-offset:-4px}   /* 상자(overflow:hidden) 밖으로 나가면 초점 테두리가 잘림 */
+.x-route-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.x-route-t b{font-size:15.5px;font-weight:800;line-height:1.35}
+.x-rfull .x-route-t b{color:var(--leaf-d)}
+.x-rquick .x-route-t b{color:#5E4A26}
+.x-route-t small{font-size:12.5px;font-weight:600;line-height:1.4;color:var(--sub);margin-top:1px}
+.x-route-n{flex:none;font-size:12.5px;font-weight:800;color:var(--leaf-d);white-space:nowrap}
+.x-radio{flex:none;position:relative;width:20px;height:20px;border-radius:50%;border:2px solid currentColor;background:#fff}
+.x-rfull .x-radio{color:var(--leaf)}
+.x-rquick .x-radio{color:#A88F5E}
+.x-route-h[aria-pressed="true"] .x-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:currentColor}
+.x-route-b{padding:12px 14px 4px;border-top:1px solid #D5E6D6}
+.x-rquick .x-route-b{border-top-color:#E9E0CC}
+.x-route-b > .step:last-child{padding-bottom:8px}
+.x-or{display:flex;align-items:center;gap:12px;margin:10px 4px;font-size:13.5px;font-weight:800;color:var(--sub)}
+.x-or::before,.x-or::after{content:"";flex:1;border-top:1.5px solid #C5CCBB}
+@media (max-width:480px){ .x-route-b{padding:12px 10px 4px} .x-route-h{padding:10px 12px} }
+
+/* ── 단계 나무(2026-11-13) — 아래에서 위로 일곱 잎 ── */
+.xt{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 12px}
+.xt-svg{display:block;width:100%;max-width:272px;height:auto;overflow:visible}
+.xt-side{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0}
+html.wide .xt{flex-direction:row;align-items:center;gap:20px}
+html.wide .xt-svg{flex:0 0 auto;width:300px;max-width:none}
+html.wide .xt-side{flex:1}
+.xt-next{background:#FFF7E3;border:1.5px solid #EBC46A;border-radius:12px;padding:9px 12px;line-height:1.45}
+.xt-next b{display:block;font-size:12.5px;font-weight:800;color:#7A5A12}
+button.xt-next{display:block;width:100%;text-align:left;font-size:14px;cursor:pointer}
+button.xt-next:hover{background:#FFF1CF}
+.xt-goto{display:inline-block;margin-top:6px;font-size:13px;font-weight:800;color:#7A5A12;text-decoration:underline;text-underline-offset:3px}
+.xt-what{display:block;font-size:16px;font-weight:800;color:var(--ink)}
+.xt-why{display:block;font-size:13px;color:var(--sub);margin-top:2px}
+.xt-key{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;font-weight:700;color:var(--sub)}
+.xt-key i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px;box-sizing:border-box}
+.xt-key .k-done{background:var(--leaf)}
+.xt-key .k-cur{background:#F2B544;border:1.5px solid #B97A12}
+.xt-key .k-todo{background:#fff;border:1.5px solid #A9B2A3}
+.xt-key .k-skip{background:#fff;border:1.5px dashed #6F7C73}
+.xt-tip{font-size:12.5px;line-height:1.5;color:var(--sub)}
+.xt-ground{fill:#E9E4D6}
+.xt-root{fill:none;stroke:#B9A88E;stroke-width:2;stroke-linecap:round}
+.xt-trunk{fill:#E3DCCF}
+.xt-trunk.g{fill:#8B6B4A}
+.xt-br{fill:none;stroke:#E3DCCF;stroke-width:3.5;stroke-linecap:round}
+.xt-br.g{stroke:#8B6B4A}
+.xt-br.sk{stroke:#CDBFA8;stroke-dasharray:3 4}
+.xt-node{cursor:pointer;outline:none}
+.xt-hit{fill:transparent}
+.xt-focus{fill:none;stroke:none}
+.xt-node:focus-visible .xt-focus{stroke:var(--leaf-d);stroke-width:2.5}
+.xt-leaf{stroke-width:2;transition:filter .15s}
+.xt-node:hover .xt-leaf{filter:brightness(1.06)}
+.st-done .xt-leaf{fill:var(--leaf);stroke:var(--leaf-d)}
+.st-cur .xt-leaf{fill:#F2B544;stroke:#B97A12}
+.st-todo .xt-leaf{fill:#fff;stroke:#A9B2A3}
+.st-skip .xt-leaf{fill:#fff;stroke:#6F7C73;stroke-dasharray:3.5 3}
+.xt-node.open .xt-leaf{stroke:var(--clue);stroke-width:2.6}
+.xt-chk{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.xt-num{font-size:12px;font-weight:800;fill:var(--sub)}
+.st-cur .xt-num{fill:#5A3D05}
+.xt-lb{font-size:14px;font-weight:700;fill:var(--ink)}
+.st-cur .xt-lb{font-weight:800}
+.st-todo .xt-lb,.st-skip .xt-lb{fill:var(--sub)}
+.xt-sub{font-size:11.5px;font-weight:800;fill:var(--sub)}
+.xt-sub.s-cur{fill:#8A5A00}
+.xt-sub.s-done{fill:var(--clue-d)}
+.xt-pulse{fill:#F2B544;transform-box:fill-box;transform-origin:center;animation:xtPulse 1.8s ease-in-out infinite}
+@keyframes xtPulse{0%,100%{transform:scale(.85);opacity:.45}50%{transform:scale(1.3);opacity:0}}
+.xt-fb{fill:var(--fruit);stroke:#fff;stroke-width:1.5}
+/* 일지 칸 번호·이름도 누르면 열린다 */
+#sheet .step .ic[data-xa],#sheet .step .nm[data-xa]{cursor:pointer}
+
+/* ── 안 읽은 선생님 피드백 — 「피드백 읽었어요」를 누를 때까지 부드럽게 깜빡(2026-11-13) ── */
+@keyframes xFb{0%,100%{box-shadow:inset 0 0 0 1.5px #E9B8B2,0 0 0 0 rgba(201,67,58,0)}50%{box-shadow:inset 0 0 0 2px #C9433A,0 0 0 5px rgba(201,67,58,.16)}}
+@keyframes xFbCard{0%,100%{box-shadow:inset 0 0 0 1.5px #E9B8B2,0 0 0 0 rgba(201,67,58,0);background:var(--card)}50%{box-shadow:inset 0 0 0 2px #C9433A,0 0 0 4px rgba(201,67,58,.14);background:#FFF6F4}}
+#sheet .tchbox.x-new{animation:xFb 1.6s ease-in-out infinite}
+.x-list .qcard.x-unread{animation:xFbCard 1.6s ease-in-out infinite}
+.x-list .qcard.x-unread:not(.sel){border-color:transparent}
+.x-fbwrap{margin-top:2px}
+.x-fbtop{margin:0 0 12px}
+.x-fbtop .lbl{margin-bottom:2px}
+.x-fbcheck{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:8px;padding:6px 14px 6px 10px;border:1.5px solid var(--fruit);border-radius:10px;background:#fff;color:#9C3029;font-size:14px;font-weight:800}
+.x-fbcheck .x-cb{position:relative;flex:none;width:20px;height:20px;border:2px solid currentColor;border-radius:5px;background:#fff}
+.x-fbcheck.on .x-cb{background:var(--fruit);border-color:var(--fruit)}
+.x-fbcheck.on .x-cb::after{content:"";position:absolute;left:5px;top:1px;width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.x-fbwrap .err:empty{display:none}
+@media (prefers-reduced-motion:reduce){
+  #sheet .tchbox.x-new,.x-list .qcard.x-unread{animation:none;box-shadow:inset 0 0 0 2.5px #C9433A}
+  .xt-pulse{animation:none;opacity:.35;transform:scale(1.15)}
+}
+
+/* ── 탐구 탭 글자 대비(2026-11-13, 사용자 「배경이 약간 연두색인데 글자가 회색이라 잘 안 보여」) ──
+   탐구 목록(.x-list)과 일지(#sheet) 안에서만 회색 두 단계를 한 단계씩 진하게.
+   --mute #66706A → #4E5A51 : 바탕 #F4F5EF 에서 4.68 → 6.59, 연두 #E6F2E5 에서 4.45 → 6.26
+   --sub  #4E5A51 → #3D4A41 : 바탕 #F4F5EF 에서 6.59 → 8.50, 연두 #E6F2E5 에서 6.26 → 8.07 */
+.x-list,#sheet{--mute:#4E5A51;--sub:#3D4A41}
+.x-list .inp::placeholder,#sheet .inp::placeholder{color:#69736C;opacity:1}   /* 입력칸 #FAFBF7 에서 4.73 */
+
+/* 다듬기 점검 「선택」 표시 */
+.rc-opt{display:inline-block;margin-left:6px;padding:0 7px;border-radius:99px;border:1px solid var(--line);background:#fff;font-size:11.5px;font-weight:800;line-height:1.6;color:var(--sub);vertical-align:1px}
+/* 선생님이 보낸 단서 */
+#sheet .cluebox.by-t .h{color:#9C3029}
 .tr-pin .tr-pin-t{display:block;font-weight:700;text-align:left;word-break:keep-all}
 .tr-pin small{display:block;font-size:11.5px;opacity:.8}

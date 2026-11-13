@@ -32,7 +32,8 @@ const OLD = '<span class="xlegacy">옛 과수원에서 쓴 글</span>';
 const REFINE = [
   {g:'구체적인가', t:'무엇을 알고 싶은지 분명한가', how:'이거, 그거 대신 무엇인지 이름을 쓰고, 어떤 실험이나 장면에서 본 건지 적어요.'},
   {g:'구체적인가', t:'너무 넓거나 모호하지 않은가', how:'한 번에 다 묻지 말고 가장 궁금한 한 가지로 좁혀요.'},
-  {g:'구체적인가', t:'배운 개념이 들어 있는가', how:'이번 단원에서 배운 낱말을 하나 넣어 봐요. 어디서 답을 찾을지도 보여요.'},
+  /* 선택(2026-11-13, 사용자 「배운 개념이 꼭 포함되어야 하는 것은 아니다 — 애들의 호기심은 다양하니까」). 이 점검으로 막는 곳은 없다 */
+  {g:'구체적인가', t:'배운 개념이 들어 있는가', opt:true, how:'이번 단원에서 배운 낱말이 들어가면 어디서 답을 찾을지 보여요. 하지만 꼭 넣어야 하는 건 아니에요. 궁금한 건 사람마다 달라요.'},
   {g:'구체적인가', t:'네·아니요로 끝나지 않는가', how:'네·아니요로 끝나면 왜, 어떻게를 붙여서 이유나 과정을 묻게 해요.'},
   {g:'알아볼 수 있는가', t:'답을 찾을 방법이 떠오르는가', how:'실험, 관찰, 교과서·자료 중 어디서 알아볼지 떠올려 봐요. 견줄 것이나 바꿔 볼 조건을 넣으면 방법이 잘 보여요.'}
 ];
@@ -287,10 +288,11 @@ function unitOptions(){
 function tagHTML(v){
   if(v.d.returned && !v.returnedFixed) return '<span class="tag tch">되돌아옴</span>';
   if(v.refineAsk) return '<span class="tag tch">선생님 글</span>';
-  if(v.status === 'wait') return '<span class="tag wait">선생님이 읽는 중</span>';
-  if(v.status === 'fruit') return '<span class="tag fruit">🍎 열매' + (v.sprout ? ' 🌱' : '') + '</span>';
-  if(v.status === 'fog') return '<span class="tag fog">' + ui.FOG_SVG + '안개 열매</span>';
-  if(v.unread) return '<span class="tag tch">선생님 글</span>';
+  const fb = v.unread ? '<span class="tag tch">새 피드백</span>' : '';   // 안 읽은 선생님 글(「피드백 읽었어요」를 누를 때까지)
+  if(v.status === 'wait') return fb + '<span class="tag wait">선생님이 읽는 중</span>';
+  if(v.status === 'fruit') return fb + '<span class="tag fruit">🍎 열매' + (v.sprout ? ' 🌱' : '') + '</span>';
+  if(v.status === 'fog') return fb + '<span class="tag fog">' + ui.FOG_SVG + '안개 열매</span>';
+  if(fb) return fb;
   if(v.openClues.length) return '<span class="tag clue">단서 ' + v.openClues.length + '</span>';
   if(v.d.flag) return '<span class="tag flag">막힘 표시</span>';
   if(v.newToday && !v.prints && !v.done.refine) return '<span class="tag new">새 질문</span>';
@@ -304,14 +306,14 @@ function cardHTML(v, wide){
     dots += '<i' + (c ? ' class="' + c + '"' : '') + '></i>';
   });
   const next = v.legacyHarvest ? '옛 기록' : v.status === 'open' ? v.prints + '/5칸 · 다음: ' + nextName(v) : v.prints + '/5칸';
-  return '<button type="button" class="qcard' + (wide && S.openQ === v.id ? ' sel' : '') + '" data-xa="open" data-id="' + v.id + '">' +
+  return '<button type="button" class="qcard' + (wide && S.openQ === v.id ? ' sel' : '') + (v.unread ? ' x-unread' : '') + '" data-xa="open" data-id="' + v.id + '">' +
     '<div class="qt">' + esc(v.text) + '</div><div class="meta"><div class="dots" aria-hidden="true">' + dots + '</div><span class="next">' + esc(next) + '</span>' +
     ((QO.store.question(v.id) || {}).phase === 'after' ? '<span class="x-ph">닫기 질문</span>' : '') + (QO.pick ? QO.pick.tag(v.id) : '') + tagHTML(v) + '</div></button>';
 }
 function listHTML(L){
   const wide = ui.wide();
   const aft = X.phase === 'after';
-  let h = '<div class="card x-plant"><div class="x-phase" role="group" aria-label="언제 생긴 질문인가요?">' +
+  let h = '<div class="x-list"><div class="card x-plant"><div class="x-phase" role="group" aria-label="언제 생긴 질문인가요?">' +
     '<button type="button" data-xa="phase" data-ph="before" aria-pressed="' + !aft + '">수업 열기</button><button type="button" data-xa="phase" data-ph="after" aria-pressed="' + aft + '">수업 닫기</button></div>' +
     '<div class="row"><input class="inp" id="x_plant" placeholder="' + PH_HINT[X.phase] + '" maxlength="200" autocomplete="off" aria-label="궁금한 것">' +
     '<button type="button" class="btn" data-xa="plant">심기</button></div>' +
@@ -324,8 +326,11 @@ function listHTML(L){
   h += '<div class="sec">열매 맺은 질문 <span class="n">' + L.done.length + '</span></div>';
   if(!L.done.length) h += '<div class="empty">끝까지 탐구한 질문이 여기에 모여요.</div>';
   else if(X.showDone){ L.done.forEach(v => { h += cardHTML(v, wide); }); h += '<button type="button" class="fold" data-xa="fold">접기</button>'; }
-  else h += '<button type="button" class="fold" data-xa="fold" aria-expanded="false">열매 ' + L.done.filter(v => v.status === 'fruit').length + ' · 안개 열매 ' + L.done.filter(v => v.status === 'fog').length + ' — 펼쳐 보기</button>';
-  return h;
+  else {
+    L.done.filter(v => v.unread).forEach(v => { h += cardHTML(v, wide); });   // 안 읽은 피드백이 온 열매는 접혀 있어도 보이게
+    h += '<button type="button" class="fold" data-xa="fold" aria-expanded="false">열매 ' + L.done.filter(v => v.status === 'fruit').length + ' · 안개 열매 ' + L.done.filter(v => v.status === 'fog').length + ' — 펼쳐 보기</button>';
+  }
+  return h + '</div>';
 }
 
 /* ═══════════ 탐구 일지 시트 ═══════════ */
@@ -358,33 +363,51 @@ function findLines(v, noOld){
 }
 const plain = html => String(html).split('<br>')[0].replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
-function teacherBox(v, k){
+/* 선생님 글 상자. 안 읽은 피드백(fb_unread)이면 상자가 깜빡이고(x-new), 피드백이 있는 칸 하나(fs)에 「피드백 읽었어요」 단추를 둔다.
+   (2026-11-13, 사용자 「애들이 내 피드백을 안 읽을 거 같아서 — 읽지 않으면 깜빡깜빡, 읽었음 체크는 학생이 직접」 → 열기만 해서는 읽음이 아니다) */
+function teacherBox(v, k, fs){
+  const nw = v.unread ? ' x-new' : '';
+  const box = (cls, title, text) => '<div class="tchbox' + (cls ? ' ' + cls : '') + nw + '"><b>' + title + '</b>' + esc(text) + '</div>';
   let h = '';
-  if(k === 'plant' && v.answer) h += '<div class="tchbox ans"><b>선생님의 답변</b>' + esc(v.answer) + '</div>';
-  if(k === 'plant' && v.stamp) h += '<div class="tchbox done"><b>선생님 도장</b>' + esc(v.stamp) + '</div>';
+  if(k === 'plant' && v.answer) h += box('ans', '선생님의 답변', v.answer);
+  if(k === 'plant' && v.stamp) h += box('done', '선생님 도장', v.stamp);
   if(k === 'refine' && v.tch){
-    if(v.refineAsk) h += '<div class="tchbox"><b>선생님 글</b>' + esc(v.tch) + '</div>';
-    else if(v.answered) h += '<div class="tchbox done"><b>선생님 글 → 내가 고친 것</b>' + esc(v.tch) + '</div>';
-    else h += '<div class="tchbox"><b>선생님 글</b>' + esc(v.tch) + '</div>';
-    if(v.tch2) h += '<div class="tchbox' + (v.refineAsk ? '' : ' done') + '"><b>선생님 글</b>' + esc(v.tch2) + '</div>';
+    if(v.refineAsk) h += box('', '선생님 글', v.tch);
+    else if(v.answered) h += box('done', '선생님 글 → 내가 고친 것', v.tch);
+    else h += box('', '선생님 글', v.tch);
+    if(v.tch2) h += box(v.refineAsk ? '' : 'done', '선생님 글', v.tch2);
   }
-  if(k === 'wrap' && v.pastNudge) h += '<div class="tchbox done"><b>지난번 선생님 글</b>' + esc(v.pastNudge) + '</div>';
+  if(k === 'wrap' && v.pastNudge) h += box('done', '지난번 선생님 글', v.pastNudge);
   const r = v.d.returned;
-  if(r && (r.step === k || (r.step === 'plant' && k === 'refine')))
-    h += '<div class="tchbox' + (v.returnedFixed ? ' done' : '') + '"><b>선생님이 이 칸을 다시 보자고 했어요</b>' + esc(r.note) + '</div>';
-  if(k === 'wrap' && v.solveNote) h += '<div class="tchbox"><b>선생님 글</b>' + esc(v.solveNote) + '</div>';
+  if(r && (r.step === k || (r.step === 'plant' && k === 'refine'))) h += box(v.returnedFixed ? 'done' : '', '선생님이 이 칸을 다시 보자고 했어요', r.note);
+  if(k === 'wrap' && v.solveNote) h += box('', '선생님 글', v.solveNote);
+  if(h && v.unread && fs === k) h = '<div class="x-fbwrap">' + h + fbCheckHTML() + '</div>';
   return h;
 }
+/* 안 읽은 선생님 글이 어느 칸에 있나 — 새로 온 글일 만한 칸부터. 글이 없으면 null */
+function fbStep(v){
+  const inSteps = k => K.STEPS.some(st => st.k === k);
+  if(v.d.returned && inSteps(v.rk)) return v.rk;
+  if(v.tch && !v.answered) return 'refine';
+  if(v.solveNote) return 'wrap';
+  if(v.answer || v.stamp) return 'plant';
+  if(v.tch) return 'refine';
+  if(v.pastNudge) return 'wrap';
+  return null;
+}
+const fbCheckHTML = () => '<button type="button" class="x-fbcheck" data-xa="fbSeen" aria-pressed="false"><span class="x-cb" aria-hidden="true"></span>피드백 읽었어요</button>' + errDiv('fb');
+/* 받은 단서 — 선생님이 보낸 단서(c.by_teacher, 새 서버 칸이라 없을 수도 있음)는 「선생님 단서」 */
+const clueWho = c => c && c.by_teacher === true ? '선생님 단서' : '친구 단서';
 function clueBoxHTML(v, c){
-  const kn = (K.CLUE_KINDS[c.kind] || {}).n || '단서';
-  let h = '<div class="cluebox" id="x_clue_' + c.id + '"><div class="h">친구 단서 · ' + esc(kn) + '</div><div class="t">' + esc(c.body) + '</div>' +
+  const kn = (K.CLUE_KINDS[c.kind] || {}).n || '단서', who = clueWho(c);
+  let h = '<div class="cluebox' + (c.by_teacher === true ? ' by-t' : '') + '" id="x_clue_' + c.id + '"><div class="h">' + who + ' · ' + esc(kn) + '</div><div class="t">' + esc(c.body) + '</div>' +
     '<div class="who">' + esc(ui.fmtTime(c.created_at)) + ' · 정답이 아니라 찾아갈 길이에요</div>';
   if(v.thankable(c)){
     if(X.thx[c.id] === 'yes'){
       h += '<div class="ask"><div class="q">무엇 덕분이었는지 한 줄로 알려 줘요</div><div class="tpl">덕분에 <input id="x_thx_' + c.id + '" maxlength="40" placeholder="__했어요" autocomplete="off" aria-label="덕분에"></div>' +
         '<div class="row"><button type="button" class="btn line sm" data-xa="thxBack" data-cid="' + c.id + '">그만두기</button><button type="button" class="btn teal sm" style="flex:1" data-xa="thxSend" data-cid="' + c.id + '">꽃 보내기</button></div>' + errDiv('thx' + c.id) + '</div>';
     } else {
-      h += '<div class="ask"><div class="q">친구 단서가 도움이 됐나요?</div><div class="row"><button type="button" class="btn line sm" style="flex:1" data-xa="thxNo" data-cid="' + c.id + '">아니요</button>' +
+      h += '<div class="ask"><div class="q">' + who + '가 도움이 됐나요?</div><div class="row"><button type="button" class="btn line sm" style="flex:1" data-xa="thxNo" data-cid="' + c.id + '">아니요</button>' +
         '<button type="button" class="btn teal sm" style="flex:2" data-xa="thxYes" data-cid="' + c.id + '">덕분에 한 걸음 갔어요</button></div>' + errDiv('thx' + c.id) + '</div>';
     }
   } else h += '<div class="x-cluewait">고마움은 이 단서를 보고 그 칸을 적거나 고친 뒤에 보낼 수 있어요.</div>';
@@ -393,7 +416,7 @@ function clueBoxHTML(v, c){
 const cluesHTML = (v, k) => v.openClues.filter(c => c.step === k).map(c => clueBoxHTML(v, c)).join('');
 function cluesLater(v, k){
   const n = v.openClues.filter(c => c.step === k).length;
-  return n ? '<div class="x-cluewait x-later">친구 단서 ' + n + '개가 와 있어요. 이 칸을 쓸 차례가 되면 보여요.</div>' : '';
+  return n ? '<div class="x-cluewait x-later">단서 ' + n + '개가 와 있어요. 이 칸을 쓸 차례가 되면 보여요.</div>' : '';
 }
 function flagAskHTML(k){
   return '<div class="ask"><div class="q">어디까지 해 봤어요? (안 써도 돼요)</div><input class="inp" id="x_tried" placeholder="여기까지 해 봤는데 __에서 막혔어요" autocomplete="off" maxlength="200">' +
@@ -434,7 +457,7 @@ function stepBody(v, st, dn, isCur){
     const ex = refineEx(v);
     f += '<div class="hint">왜 ~일까? 는 좋은 질문이에요. 다듬기는 질문을 바꾸는 게 아니라 더 분명하게 만드는 거예요. 걸리는 것 하나만 고쳐도 돼요.</div>' +
       REFINE.map((c, i) => (i === 0 || REFINE[i - 1].g !== c.g ? '<div class="rc-g">' + esc(c.g) + '</div>' : '') +
-        '<div class="rc"><label class="chk"><input type="checkbox" id="x_rc' + i + '">' + esc(c.t) + '</label>' +
+        '<div class="rc"><label class="chk"><input type="checkbox" id="x_rc' + i + '">' + esc(c.t) + (c.opt ? '<span class="rc-opt">선택</span>' : '') + '</label>' +
         '<div class="rc-how">' + esc(c.how) + '</div>' +
         '<details class="rc-ex"><summary>예시 보기</summary><div class="rc-pair"><span class="rc-b">' + esc(ex[i][0]) + '</span><span class="rc-arrow" aria-label="다듬으면">→</span><span class="rc-a">' + esc(ex[i][1]) + '</span></div></details></div>').join('') +
       '<textarea class="inp" id="x_refine" rows="2" placeholder="더 분명하게 고쳐 써 봐요">' + esc(d.refine.text || v.original) + '</textarea>' +
@@ -485,8 +508,8 @@ function stepBody(v, st, dn, isCur){
         '<div class="lbl" style="margin:10px 0 6px">여기서 막혔어요 (질문 꼴로)</div><input class="inp" id="x_stuckq" placeholder="__는 왜 __일까?" autocomplete="off" maxlength="200" value="' + esc(w.mode === 'unknown' ? (w.stuckQ || '') : '') + '">' +
         '<div class="lbl" style="margin:10px 0 6px">왜 막혔나요?</div>' + chipsHTML('x_why', 'why', K.WHY_CHIPS.map(c => [c, c]), fget('why', w.mode === 'unknown' ? (w.why || '') : ''));
     } else {
-      f += '<div class="hint">「아직 모름」은 두 곳 이상에서 찾아보거나 친구 단서를 받은 뒤에 고를 수 있어요. 한 곳 더 찾아보거나 찾기 칸에 막힘 표시를 세워 봐요.</div>';
-      if(d.flag) f += '<div class="flagbox">막힘 표시를 세워 두었어요. 친구 단서가 오면 고를 수 있어요.</div>';
+      f += '<div class="hint">「아직 모름」은 두 곳 이상에서 찾아보거나 단서를 받은 뒤에 고를 수 있어요. 한 곳 더 찾아보거나 찾기 칸에 막힘 표시를 세워 봐요.</div>';
+      if(d.flag) f += '<div class="flagbox">막힘 표시를 세워 두었어요. 단서가 오면 고를 수 있어요.</div>';
       else if(X.flagFor === 'find') f += flagAskHTML('find');
       else f += '<button type="button" class="link teal" data-xa="flagOpen" data-k="find">찾기에서 막혔어요</button>';
     }
@@ -511,6 +534,133 @@ function stepBody(v, st, dn, isCur){
   }
   return f;
 }
+/* 일지 칸 하나 — 번호 동그라미와 칸 이름을 눌러도 그 칸이 열린다(나무 마디와 같은 일, data-xa="node") */
+function stepHTML(v, st, fs){
+  const k = st.k, i = K.STEPS.indexOf(st), dn = v.done[k];
+  const isCur = X.edit === k || (!X.edit && k === v.cur);
+  let h = '<div class="step ' + (isCur ? 'cur' : (dn ? 'done' : '')) + '" id="x_st_' + k + '"><div class="ic" data-xa="node" data-k="' + k + '" data-from="list">' + (dn && !isCur ? '✓' : (i + 1)) + '</div><div class="bx">' +
+    '<div class="nm" data-xa="node" data-k="' + k + '" data-from="list">' + esc(st.n) + '<span>' + esc(st.s) + '</span></div>';
+  h += teacherBox(v, k, fs);
+  if(isCur) h += cluesHTML(v, k);                 // 단서는 입력칸 위
+  h += stepBody(v, st, dn, isCur);
+  if(k === 'find' && QO.read && !v.legacyHarvest) h += QO.read.findHTML(v.id);   // 모르는 낱말의 찾은 뜻(read.js)
+  if(!isCur) h += dn ? cluesHTML(v, k) : cluesLater(v, k);   // 아직 안 간 칸은 개수만(처음 생각이 끌려가지 않게)
+  if(v.d.flag && v.d.flag.step === k) h += '<div class="flagbox">친구에게 SOS를 보냈어요' + (v.d.flag.tried ? ' — 「' + esc(v.d.flag.tried) + '」' : '') + '. 우리 반 숲 깃발과 단서 시간에 친구들이 볼 수 있어요.' +
+    (v.status === 'open' ? ' <button type="button" class="link teal x-mini" data-xa="unflag">표시 내리기</button>' : '') + '</div>';
+  return h + '</div></div>';
+}
+
+/* ═══════════ 단계 나무(2026-11-13) ═══════════
+   사용자 「심기 다듬기 예상 알아볼 방법 찾기 정리 넓히기 — 아래에서부터 위로 자라는 나무처럼, 하나씩 눌러서 해결, 다음에 뭘 해야 하는지 알 수 있게」.
+   뿌리 쪽 씨앗(심기)에서 줄기를 따라 위로 잎이 하나씩 붙는다. 끝난 칸 = 진한 잎+체크, 지금 = 노란 잎(은은하게 깜빡), 아직 = 연한 윤곽, 건너뛴 다듬기 = 점선.
+   줄기는 지금 칸 높이까지만 진하게 칠해 「여기까지 자랐다」를 보인다. 잎을 누르면 그 칸이 열린다(끝난 칸은 펼치기 → 고치기). */
+const TREE = {
+  plant:  {x:150, y:204, c:true},
+  refine: {x:96,  y:178, from:188},
+  predict:{x:204, y:150, from:160},
+  method: {x:96,  y:122, from:132},
+  find:   {x:204, y:94,  from:104},
+  wrap:   {x:96,  y:66,  from:76},
+  extend: {x:150, y:36,  c:true}
+};
+const TREE_TOP = 40, TREE_BASE = 220;
+const LEAF = 'M-16 0C-10-12 8-13 17 0C8 13-10 12-16 0Z';      // 오른쪽을 가리키는 잎(가운데가 0,0)
+const ST_WORD = {done:'끝남', cur:'지금 할 차례', todo:'아직', skip:'건너뜀'};
+function nodeState(v, k){
+  if(k === 'plant') return 'done';
+  if(v.status === 'open' && k === v.cur) return 'cur';
+  if(k === 'extend' && (v.status === 'fruit' || v.status === 'fog') && !v.done.extend) return 'cur';   // 열매 뒤 「다음에 할 일: 넓히기」와 같은 잎
+  if(k === 'refine') return v.d.refine.text ? 'done' : 'skip';   // 안 했거나 「그대로 갈래요」 — 선택 칸
+  return v.done[k] ? 'done' : 'todo';
+}
+function nextHTML(v){
+  if(v.status === 'wait') return '<b>지금은</b><span class="xt-what">선생님이 읽는 중</span><span class="xt-why">선생님이 읽는 동안에는 쓴 칸을 볼 수만 있어요.' + (v.done.extend ? '' : ' 넓히기는 지금 해도 돼요.') + '</span>';
+  if(v.status === 'fruit' || v.status === 'fog')
+    return v.done.extend ? '<b>다 했어요</b><span class="xt-what">넓히기까지 마쳤어요</span>' : '<b>다음에 할 일</b><span class="xt-what">넓히기</span><span class="xt-why">해도 되고 안 해도 돼요. 하면 열매에 새싹이 달려요.</span>';
+  const k = v.cur, st = K.STEPS.find(s => s.k === k) || {};
+  const what = k === 'wrap' ? (v.done.wrap ? '정리 다시 보고 선생님께 보내기' : '정리하고 선생님께 보내기') : stepName(k);
+  const why = v.refineAsk ? '선생님 글을 보고 질문을 고쳐요.' : (v.d.returned && !v.returnedFixed) ? '선생님이 이 칸을 다시 보자고 했어요.' : (st.s || '');
+  return '<b>다음에 할 일</b><span class="xt-what">' + esc(what) + '</span>' + (why ? '<span class="xt-why">' + esc(why) + '</span>' : '');
+}
+function treeHTML(v, fs){
+  const ks = K.STEPS.map(s => s.k).filter(k => TREE[k]);
+  const sts = {}; ks.forEach(k => { sts[k] = nodeState(v, k); });
+  /* 줄기는 끝났거나 지금인 가장 높은 마디까지 진하게 */
+  let topY = TREE_BASE;
+  ks.forEach(k => { if(sts[k] === 'done' || sts[k] === 'cur'){ const p = TREE[k]; topY = Math.min(topY, p.c ? (k === 'extend' ? TREE_TOP : p.y) : p.from); } });
+  const w = y => 2 + 3.2 * (y - TREE_TOP) / (TREE_BASE - TREE_TOP);   // 줄기 반폭(위로 갈수록 가늘게)
+  const trunk = (y0, y1) => 'M' + (150 - w(y0)).toFixed(1) + ' ' + y0 + 'L' + (150 - w(y1)).toFixed(1) + ' ' + y1 + 'L' + (150 + w(y1)).toFixed(1) + ' ' + y1 + 'L' + (150 + w(y0)).toFixed(1) + ' ' + y0 + 'Z';
+  let s = '<svg class="xt-svg" viewBox="0 0 300 236" role="group" aria-label="탐구 단계 나무. 잎을 누르면 그 칸이 열려요.">' +
+    '<ellipse class="xt-ground" cx="150" cy="222" rx="84" ry="8"/>' +
+    '<path class="xt-root" d="M150 221c-8 5-18 8-32 9M150 221c7 5 16 8 28 9M150 222c0 5-2 9-5 12"/>' +
+    '<path class="xt-trunk" d="' + trunk(TREE_BASE, TREE_TOP) + '"/>' +
+    (topY < TREE_BASE ? '<path class="xt-trunk g" d="' + trunk(TREE_BASE, topY) + '"/>' : '');
+  /* 가지 */
+  ks.forEach(k => {
+    const p = TREE[k]; if(p.c) return;
+    const g = sts[k] === 'done' || sts[k] === 'cur';
+    s += '<path class="xt-br' + (g ? ' g' : '') + (sts[k] === 'skip' ? ' sk' : '') + '" d="M150 ' + p.from + 'Q' + ((150 + p.x) / 2) + ' ' + (p.from - 2) + ' ' + (p.x > 150 ? p.x - 13 : p.x + 13) + ' ' + (p.y + 5) + '"/>';   // 잎자루 쪽 끝까지
+  });
+  /* 마디(잎) */
+  ks.forEach((k, i) => {
+    const p = TREE[k], st = sts[k], name = stepName(k), right = p.c || p.x > 150;
+    const rot = p.c ? -90 : (p.x > 150 ? -22 : -158);
+    const lx = p.c ? p.x + 24 : (right ? p.x + 24 : p.x - 24), anchor = right ? 'start' : 'end';
+    const open = X.edit === k && st !== 'cur';
+    const sub = st === 'cur' ? '지금' : st === 'skip' ? '건너뜀' : open ? '여는 중' : '';
+    const fb = fs === k;
+    const label = name + ' · ' + ST_WORD[st] + (fb ? ' · 안 읽은 선생님 글' : '') + '. 눌러서 열기';
+    s += '<g class="xt-node st-' + st + (open ? ' open' : '') + '" id="x_tn_' + k + '" data-xa="node" data-k="' + k + '" role="button" tabindex="0" aria-label="' + esc(label) + '">' +
+      '<circle class="xt-hit" cx="' + p.x + '" cy="' + p.y + '" r="22"/>' +
+      '<circle class="xt-focus" cx="' + p.x + '" cy="' + p.y + '" r="21"/>' +
+      (st === 'cur' ? '<circle class="xt-pulse" cx="' + p.x + '" cy="' + p.y + '" r="17"/>' : '') +
+      (k === 'plant' ? '<circle class="xt-leaf" cx="' + p.x + '" cy="' + p.y + '" r="13"/>'
+        : '<path class="xt-leaf" d="' + LEAF + '" transform="translate(' + p.x + ' ' + p.y + ') rotate(' + rot + ')"/>') +
+      (st === 'done' ? '<path class="xt-chk" d="M' + (p.x - 6) + ' ' + p.y + 'l4 4.5 8-9"/>'
+        : '<text class="xt-num" x="' + p.x + '" y="' + (p.y + 4.5) + '" text-anchor="middle">' + (i + 1) + '</text>') +
+      (fb ? '<circle class="xt-fb" cx="' + (p.x + 13) + '" cy="' + (p.y - 12) + '" r="5"/>' : '') +
+      '<text class="xt-lb" x="' + lx + '" y="' + (p.y + 5) + '" text-anchor="' + anchor + '">' + esc(name) + '</text>' +
+      (sub ? '<text class="xt-sub s-' + st + '" x="' + lx + '" y="' + (p.y + 22) + '" text-anchor="' + anchor + '">' + sub + '</text>' : '') +
+      '</g>';
+  });
+  s += '</svg>';
+  const key = '<div class="xt-key" aria-hidden="true"><span><i class="k-done"></i>끝남</span><span><i class="k-cur"></i>지금</span><span><i class="k-todo"></i>아직</span><span><i class="k-skip"></i>건너뜀</span></div>';
+  /* 「다음에 할 일」 상자도 누르면 그 칸으로(처음 열면 나무가 보이게 맨 위에서 시작하므로) */
+  const go = ks.find(k => sts[k] === 'cur');
+  const next = go ? '<button type="button" class="xt-next xt-go" data-xa="node" data-k="' + go + '">' + nextHTML(v) + '<span class="xt-goto" aria-hidden="true">이 칸 열기</span></button>'
+    : '<div class="xt-next">' + nextHTML(v) + '</div>';
+  return '<div class="xt">' + s + '<div class="xt-side">' + next + key +
+    '<div class="xt-tip">' + (v.status === 'open' ? '잎을 누르면 그 칸이 열려요. 끝난 칸도 다시 열어 고칠 수 있어요.' : '잎을 누르면 그 칸에 쓴 것을 볼 수 있어요.') + '</div></div></div>';
+}
+/* 나무 마디·번호·칸 이름을 눌렀을 때 — 기존 펼치기(peek)·고치기(edit) 흐름을 그대로 쓴다.
+   선생님께 보낸 뒤(wait)·열매·안개 열매는 보기만(넓히기는 원래처럼 보낸 뒤에도 쓸 수 있음 — stepBody 「넓혀 보기」와 같게).
+   키보드로 눌렀으면(kbd) 열린 칸의 첫 입력칸·단추로 초점을 옮긴다 */
+function nodeGo(k, fromList, kbd){
+  const v = curV(); if(!v || !K.STEPS.some(st => st.k === k)) return;
+  const open = v.status === 'open' && !v.legacyHarvest;
+  const skipRef = k === 'refine' && !v.d.refine.text;
+  let to = k;
+  X.flagFor = null;
+  if(k === 'plant'){ X.peek = null; }
+  else if(open && k === v.cur){ if(X.edit && X.edit !== k){ X.edit = null; X.f = {}; } X.peek = null; }
+  else if(X.edit === k){ /* 이미 열려 있음 */ }
+  else if(open && skipRef){ X.edit = 'refine'; X.peek = null; X.f = {}; delete X.msg.refine; }    // 건너뛴 다듬기로 돌아가기
+  else if(v.done[k]){ X.edit = null; X.f = {}; X.peek = fromList && X.peek === k ? null : k; }   // 펼치기 → 그 안에 고치기
+  else if(k === 'extend' && v.status !== 'open'){ X.edit = 'extend'; X.peek = null; X.f = {}; }
+  else if(open){ ui.toast('앞 칸부터 차례로 채워요. 지금은 「' + nextName(v) + '」 차례예요.'); to = v.cur; X.edit = null; X.peek = null; }
+  else { ui.toast('이 칸은 비어 있어요.'); }
+  X.focusTo = kbd ? 'x_st_' + to : null;
+  paint({scroll:'x_st_' + to});
+  X.focusTo = null;
+}
+
+function routeHead(v, m, on){
+  const full = m === 'full';
+  return '<button type="button" class="x-route-h" data-xa="qmode" data-m="' + m + '" aria-pressed="' + on + '">' +
+    '<span class="x-radio" aria-hidden="true"></span><span class="x-route-t"><b>' + (full ? '끝까지 탐구' : '답만 달기') + '</b>' +
+    '<small>' + (full ? '예상부터 정리까지 칸을 하나씩 채워요' : '알아낸 답과 어디서 알았는지만 적어 선생님께 보내요') + '</small></span>' +
+    (full ? '<span class="x-route-n">' + v.prints + '/5칸</span>' : '') + '</button>';
+}
 function sheetHTML(row){
   const v = V(row);
   const stWord = {wait:' · 선생님이 읽는 중', fruit:' · 열매', fog:' · 안개 열매'}[v.status] || '';
@@ -524,24 +674,25 @@ function sheetHTML(row){
   if(!v.unit && !v.legacyHarvest) h += '<div class="x-unitset"><label class="unitpick">단원 <select id="x_setunit" aria-label="단원 고르기"><option value="">아직 안 골랐어요</option>' +
     UNITS.map(u => '<option value="' + esc(u) + '">' + esc(u) + '</option>').join('') + '</select></label>' + errDiv('unit') + '</div>';
   const paths = v.status === 'open' && !v.legacyHarvest;
-  if(paths) h += pathsHTML(v);                          // 끝까지 탐구 / 답만 달기 · 친구에게 SOS
   const quick = paths && X.qmode[v.id] === QUICK;
-  const steps = v.legacyHarvest ? K.STEPS.filter(st => st.k === 'plant' || st.k === 'extend') : quick ? K.STEPS.filter(st => st.k === 'plant') : K.STEPS;
-  steps.forEach(st => {
-    const k = st.k, i = K.STEPS.indexOf(st), dn = v.done[k];
-    const isCur = X.edit === k || (!X.edit && k === v.cur);
-    h += '<div class="step ' + (isCur ? 'cur' : (dn ? 'done' : '')) + '" id="x_st_' + k + '"><div class="ic">' + (dn && !isCur ? '✓' : (i + 1)) + '</div><div class="bx">' +
-      '<div class="nm">' + esc(st.n) + '<span>' + esc(st.s) + '</span></div>';
-    h += teacherBox(v, k);
-    if(isCur) h += cluesHTML(v, k);                 // 친구 단서는 입력칸 위
-    h += stepBody(v, st, dn, isCur);
-    if(k === 'find' && QO.read && !v.legacyHarvest) h += QO.read.findHTML(v.id);   // 모르는 낱말의 찾은 뜻(read.js)
-    if(!isCur) h += dn ? cluesHTML(v, k) : cluesLater(v, k);   // 아직 안 간 칸은 개수만(처음 생각이 끌려가지 않게)
-    if(v.d.flag && v.d.flag.step === k) h += '<div class="flagbox">친구에게 SOS를 보냈어요' + (v.d.flag.tried ? ' — 「' + esc(v.d.flag.tried) + '」' : '') + '. 우리 반 숲 깃발과 단서 시간에 친구들이 볼 수 있어요.' +
-      (v.status === 'open' ? ' <button type="button" class="link teal x-mini" data-xa="unflag">표시 내리기</button>' : '') + '</div>';
-    h += '</div></div>';
-  });
-  if(quick) h += quickHTML(v);
+  const fs = v.unread ? fbStep(v) : null;              // 안 읽은 선생님 글이 있는 칸
+  const pick = ks => K.STEPS.filter(st => ks.indexOf(st.k) >= 0);
+  const steps = v.legacyHarvest ? pick(['plant', 'extend']) : quick ? pick(['plant']) : K.STEPS;
+  /* 그 칸이 안 보이는 때(답만 달기 등)는 선생님 글을 맨 위에 */
+  if(fs && !steps.some(st => st.k === fs)) h += '<div class="x-fbtop"><div class="lbl">' + esc(stepName(fs)) + ' 칸에 온 선생님 글</div>' + teacherBox(v, fs, fs) + '</div>';
+  const stepsHTML = steps.map(st => stepHTML(v, st, fs)).join('');
+  if(paths){
+    /* 끝까지 탐구 / 답만 달기 — 테두리 있는 두 상자 사이에 「또는」(2026-11-13, 사용자 「잘 구분이 안 되어서 구분선 명확히」) */
+    h += '<div class="x-routes" role="group" aria-label="어떻게 해결할까요?">' +
+      '<section class="x-route x-rfull' + (quick ? '' : ' on') + '">' + routeHead(v, 'full', !quick) +
+        (quick ? '' : '<div class="x-route-b">' + treeHTML(v, fs) + sosHTML(v) + stepsHTML + '</div>') + '</section>' +
+      '<div class="x-or" role="separator"><span>또는</span></div>' +
+      '<section class="x-route x-rquick' + (quick ? ' on' : '') + '">' + routeHead(v, 'quick', quick) +
+        (quick ? '<div class="x-route-b">' + stepsHTML + quickHTML(v) + '</div>' : '') + '</section></div>';
+  } else {
+    if(!v.legacyHarvest) h += treeHTML(v, fs);
+    h += stepsHTML;
+  }
   if(QO.photos) h += QO.photos.html(v);              // 사진(photos.js)
   if(v.legacyHarvest) h += '<div class="statusbar fruit">🍎 옛 과수원에서 거둔 열매예요. 그때는 일지 칸 없이 거뒀어요.' + (v.sprout ? ' 넓히기까지 해서 열매에 새싹 🌱이 달렸어요.' : '') + '</div>';
   else if(v.status === 'wait') h += '<div class="statusbar wait">선생님께 보냈어요. 선생님이 읽고 나면 열매가 열려요.</div>';
@@ -557,7 +708,20 @@ function setOpen(id){
   if(S.openQ !== id){ resetForm(); if(X.guideFor != null && X.guideFor !== id) markGuide(); }
   S.openQ = id;
 }
-/* 선생님 글을 연 질문은 읽음으로 */
+/* 읽음 표시(QO.api.markFbSeen) — 학생이 「피드백 읽었어요」를 누를 때, 또는 읽을 글이 없는 표시를 지울 때만 */
+async function fbSeen(btn){
+  const v = curV(); if(!v || !v.unread || X.seenBusy.has(v.id)) return;
+  const id = v.id;
+  btn.setAttribute('aria-pressed', 'true'); btn.classList.add('on');
+  X.seenBusy.add(id);
+  let r;
+  try{ r = await run(btn, 'fb', async () => { await QO.api.markFbSeen(id); if(QO.store.question(id)) QO.store.upsertQuestion({id, fb_unread:false}); return true; }); }
+  finally{ X.seenBusy.delete(id); }
+  if(!r) return;
+  delete X.msg.fb;
+  paint();
+  ui.toast('피드백을 읽었다고 표시했어요.');
+}
 function seenFb(row){
   if(!row || !row.fb_unread || X.seenBusy.has(row.id)) return;
   const id = row.id;
@@ -584,6 +748,7 @@ function restoreDrafts(el, qid){
     if(v){ f.value = v; n++; }
   });
   if(n && X.restoredFor !== qid){ X.restoredFor = qid; ui.toast('지난번에 쓰던 글을 되살렸어요. 이어서 써 봐요.'); }
+  return n;
 }
 /* 스스로 시험은 시험마다 흉내 DB 를 새로 깔므로 쓰던 글도 비운다(앞 시험 글이 되살아나지 않게) */
 QO.bus.on('ready', () => {
@@ -603,16 +768,27 @@ function paintSheet(o){
   if(!wide && !el.classList.contains('show') && !o.force) return;
   const row = curRow();
   if(!row){ if(wide) ui.sheet.placeholder(); return; }
-  const keep = grab(el);
+  /* 같은 질문을 다시 그릴 때만 쓰던 글·포커스를 남긴다(다른 질문을 열면 앞 질문 글이 같은 id 칸에 옮겨 붙던 것) */
+  const shown = el.querySelector('.sh-top');
+  const keep = shown && shown.dataset.qid === String(row.id) ? grab(el) : null;
   if(o.scroll && keep) keep.scroll = null;
   el.innerHTML = sheetHTML(row);
   put(el, keep);
-  restoreDrafts(el, row.id);                            // 이 기기에 남겨 둔 쓰던 글
-  seenFb(row);
+  const restored = restoreDrafts(el, row.id);           // 이 기기에 남겨 둔 쓰던 글
+  /* 열기만 해서는 읽음이 아니다 — 「피드백 읽었어요」를 눌러야(fbSeen). 읽을 글이 하나도 안 남은 표시만 조용히 지운다 */
+  if(row.fb_unread && !fbStep(V(row))) seenFb(row);
+  /* 나무 잎을 키보드로 눌렀으면 열린 칸의 첫 입력칸·단추로 초점 */
+  if(X.focusTo){
+    const st = document.getElementById(X.focusTo); X.focusTo = null;
+    const f = st ? Array.from(st.querySelectorAll('.bx button, .bx textarea, .bx input, .bx select, .bx summary')).find(x => !x.disabled && x.getClientRects().length) : null;
+    if(f) try{ f.focus({preventScroll:true}); }catch(_){}
+  }
   if(o.scroll){
     const v = V(row);
     let target = null, center = false;
     if(typeof o.scroll === 'string'){ target = document.getElementById(o.scroll); center = true; }
+    /* 처음 열 때는 맨 위(나무와 「다음에 할 일」)에서 시작한다. 안 읽은 선생님 글이 있으면 그 상자가 보이게, 되살린 쓰던 글이 있으면 지금 칸으로 */
+    else if(o.first && !restored){ const fw = el.querySelector('.x-fbwrap, .x-fbtop'); target = fw ? (fw.closest('.step') || fw) : null; }   // 칸 이름까지 보이게
     else if(X.edit || v.cur) target = document.getElementById('x_st_' + (X.edit || v.cur));
     else if(o.toStatus) target = el.querySelector('.statusbar');
     if(target) setTimeout(() => scrollInto(target, center, !center), 30);
@@ -640,8 +816,8 @@ function open(id){
   if(!QO.store.question(id)) return false;
   setOpen(id);
   if(QO.tabs.current() !== 'explore') QO.tabs.show('explore');
-  if(ui.wide()) paint({scroll:true});
-  else { paintSheet({force:true, scroll:true}); ui.sheet.open(); }
+  if(ui.wide()) paint({scroll:true, first:true});
+  else { paintSheet({force:true, scroll:true, first:true}); ui.sheet.open(); }
   return true;
 }
 
@@ -886,20 +1062,18 @@ async function raiseFlag(btn){
   paint();
   ui.toast('친구에게 SOS를 보냈어요. 우리 반 숲에 깃발이 섰어요.');
 }
-/* ── 끝까지 탐구 / 답만 달기 · 친구에게 SOS(일지 맨 위) ── */
-function pathsHTML(v){
-  const q = X.qmode[v.id] === QUICK, d = v.d;
-  let h = '<div class="x-paths"><div class="seg" role="group" aria-label="어떻게 해결할까요?">' +
-    '<button type="button" data-xa="qmode" data-m="full" aria-pressed="' + !q + '"' + (q ? '' : ' class="on"') + '>끝까지 탐구</button>' +
-    '<button type="button" data-xa="qmode" data-m="quick" aria-pressed="' + q + '"' + (q ? ' class="on"' : '') + '>답만 달기</button></div>';
-  if(d.flag) h += '<div class="x-sos on"><span>친구에게 SOS를 보냈어요. 우리 반 숲 깃발 숲에 깃발이 섰어요.</span><button type="button" class="link teal x-mini" data-xa="unflag">SOS 내리기</button></div>';
+/* ── 친구에게 SOS(끝까지 탐구 상자 안, 나무 아래) — 지금 하고 있는 칸에 막힘 표시 ── */
+function sosHTML(v){
+  const d = v.d;
+  let h = '<div class="x-paths">';
+  if(d.flag) h += '<div class="x-sos on"><span>친구에게 SOS를 보냈어요. 우리 반 숲에 깃발이 섰어요.</span><button type="button" class="link teal x-mini" data-xa="unflag">SOS 내리기</button></div>';
   else if(X.sosFor === v.id) h += '<div class="x-sos ask"><input class="inp" id="x_sos" maxlength="200" autocomplete="off" placeholder="어디서 막혔는지 한 줄 (안 써도 돼요)">' +
     '<div class="row"><button type="button" class="btn line sm" data-xa="sosCancel">그만</button><button type="button" class="btn teal sm" style="flex:1" data-xa="sosSend">SOS 보내기</button></div>' + errDiv('sos') + '</div>';
   else h += '<button type="button" class="x-sosbtn" data-xa="sosOpen">친구에게 SOS</button>';
   return h + '</div>';
 }
 function quickHTML(v){
-  return '<div class="card x-quick"><div class="lbl">알아낸 답</div>' +
+  return '<div class="x-quick"><div class="lbl">알아낸 답</div>' +
     '<textarea class="inp" id="x_qans" rows="3" maxlength="1000" placeholder="알아낸 답을 내 말로 한두 문장"></textarea>' +
     '<div class="lbl" style="margin:12px 0 6px">어디서 알았어요?</div>' + chipsHTML('x_qsrc', 'qsrc', QSRC.map(s => [s, s]), fget('qsrc', '')) +
     '<input class="inp" id="x_qsrcd" style="margin-top:8px" maxlength="80" autocomplete="off" placeholder="자세히 (안 써도 돼요) 예: 교과서 120쪽">' +
@@ -954,7 +1128,8 @@ async function thxSend(btn){
   if(r === undefined) return;
   delete X.thx[cid]; delete X.msg[key];
   paint();
-  ui.toast('🌸 친구에게 고마움을 보냈어요.');
+  const c = v.clues.find(x => Number(x.id) === cid);
+  ui.toast(c && c.by_teacher === true ? '🌸 선생님께 고마움을 보냈어요.' : '🌸 친구에게 고마움을 보냈어요.');
 }
 async function thxNo(btn){
   const v = curV(); if(!v) return;
@@ -994,14 +1169,23 @@ const ACT = {
   flag:raiseFlag, unflag:lowerFlag,
   thxYes:b => { X.thx[b.dataset.cid] = 'yes'; paint(); focusId('x_thx_' + b.dataset.cid); },
   thxBack:b => { delete X.thx[b.dataset.cid]; paint(); },
-  thxNo, thxSend
+  thxNo, thxSend,
+  fbSeen, node:(b, e) => nodeGo(b.dataset.k, b.dataset.from === 'list', b.tagName === 'BUTTON' && !!e && e.detail === 0)   // 「다음에 할 일」 단추를 키보드로 눌렀을 때(detail 0)
 };
+/* 나무 마디는 SVG 라서 Enter·Space 를 직접 받는다 */
+document.addEventListener('keydown', e => {
+  if((e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') || e.repeat || e.isComposing) return;
+  const g = e.target && e.target.closest && e.target.closest('[data-xa="node"][role="button"]');
+  if(!g || !g.closest('#app')) return;
+  e.preventDefault();
+  try{ nodeGo(g.dataset.k, false, true); }catch(err){ QO.err(err, 'explore:node'); }
+});
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-xa]');
   if(!b || !b.closest('#app')) return;
   const fn = ACT[b.dataset.xa]; if(!fn) return;
   e.preventDefault();
-  Promise.resolve().then(() => fn(b)).catch(err => QO.err(err, 'explore:' + b.dataset.xa));
+  Promise.resolve().then(() => fn(b, e)).catch(err => QO.err(err, 'explore:' + b.dataset.xa));
 });
 document.addEventListener('change', e => {
   const t = e.target; if(!t || !t.id) return;
@@ -1038,6 +1222,7 @@ QO.bus.on('sheet:close', () => { if(X.guideFor != null) markGuide(); setOpen(nul
 QO.tabs.register({
   id:'explore', label:'탐구', icon:ui.icons.explore, split:true,
   render,
+  badge(){ return (S.questions || []).some(q => q && q.fb_unread); },     // 안 읽은 선생님 피드백
   onShow(){ if(S.ready && Date.now() - X.nowAt > 60000) loadNowUnit(); },
   onHide(){ if(!ui.wide()) setOpen(null); }
 });
@@ -1298,6 +1483,8 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.expect(q$('#x_st_refine.cur'), '다듬기가 지금 칸');
     t.expect(q$('#x_st_refine .tchbox').textContent.indexOf('어떤 별을') >= 0, '선생님 글');
     t.expect(!q$('[data-xa="refineSkip"]'), '그대로 갈래요가 없음');
+    t.eq(dbq(t, 108).fb_unread, true, '열기만 해서는 안 읽음');
+    await t.click('#x_st_refine [data-xa="fbSeen"]');
     await t.waitFor(() => dbq(t, 108).fb_unread === false);
     await t.type('#x_refine', '별은 왜 반짝거릴까?');
     await t.click('[data-xa="refine"]');
@@ -1441,6 +1628,105 @@ if(QO.selftest && QO.cfg.page === 'student'){
     t.eq(kids.filter(x => x.journal && x.journal.flag).map(x => x.text), ['정류자는 어떻게 반 바퀴마다 전류의 방향을 바꿀까?'], '막힘 표시 선 막힌 곳 질문은 하나');
     t.expect(kids.some(x => x.id === kid.id), '옛 막힌 곳 질문은 지우지 않음');
     await t.waitFor(() => dbq(t, 101).resolve_requested_at);
+  });
+
+  add('탐구 · 선생님 피드백은 「피드백 읽었어요」를 눌러야 읽음(열기만 하면 깜빡임 그대로)', async t => {
+    await t.click('#nav [data-t="explore"]');
+    await t.waitFor(() => t.$$('#body .qcard.x-unread').some(b => b.dataset.id === '108'));
+    t.expect(QO.tabs.get('explore').badge() === true, '탭 점(안 읽은 피드백)');
+    await openQ(t, 108);
+    const wrap = await t.waitFor('#x_st_refine .x-fbwrap');
+    t.expect(wrap.querySelector('.tchbox.x-new') && wrap.textContent.indexOf('어떤 별을') >= 0, '피드백 상자가 깜빡임');
+    t.eq(t.$$('#sheet [data-xa="fbSeen"]').length, 1, '읽었어요 단추는 하나');
+    t.expect(q$('#x_tn_refine .xt-fb'), '나무 잎에도 빨간 점');
+    await t.wait(300);
+    t.eq(dbq(t, 108).fb_unread, true, '열어도 안 읽음');
+    await t.click('#sheet [data-xa="fbSeen"]');
+    await t.waitFor(() => dbq(t, 108).fb_unread === false);
+    await t.waitFor(() => !q$('#sheet .x-new') && !q$('#sheet [data-xa="fbSeen"]'));
+    t.expect(q$('#x_st_refine .tchbox').textContent.indexOf('어떤 별을') >= 0, '읽은 뒤에도 선생님 글은 그대로');
+    await t.waitFor(() => { const c = t.$$('#body .qcard').find(b => b.dataset.id === '108'); return c && !c.classList.contains('x-unread'); });
+    t.expect(QO.tabs.get('explore').badge() === false, '탭 점 꺼짐');
+    /* 답만 달기로 바꿔서 그 칸이 안 보여도 선생님 글과 단추는 맨 위에 */
+    await t.loginAs('B');
+    await openQ(t, 122);
+    await t.click('#sheet [data-xa="qmode"][data-m="quick"]');
+    await t.waitFor(() => q$('#sheet .x-fbtop [data-xa="fbSeen"]') && q$('#sheet .x-fbtop').textContent.indexOf('한 곳뿐') >= 0);
+    t.eq(dbq(t, 122).fb_unread, true, '122 도 아직 안 읽음');
+  });
+
+  add('탐구 · 단계 나무(아래에서 위로 일곱 잎·다음에 할 일·잎을 눌러 칸 열기)', async t => {
+    const fire = (sel, key) => { const g = q$(sel); if(!g) throw new Error('잎이 없어요: ' + sel);
+      g.dispatchEvent(key ? new KeyboardEvent('keydown', {key:'Enter', bubbles:true}) : new MouseEvent('click', {bubbles:true})); };
+    const stOf = n => ((n.getAttribute('class') || '').match(/st-(\w+)/) || [])[1];
+    await openQ(t, 102);
+    await t.waitFor('#sheet .x-rfull .xt-svg');
+    await t.wait(80);
+    t.expect(q$('#sheet .xt-next').getBoundingClientRect().top < q$('#x_body').getBoundingClientRect().bottom && q$('#x_body').scrollTop === 0, '처음 열면 나무·다음에 할 일이 보이게 맨 위');
+    const nodes = t.$$('#sheet .xt-node');
+    t.eq(nodes.map(n => n.dataset.k), K.STEPS.map(s => s.k), '일곱 잎, 심기부터');
+    const ys = nodes.map(n => Number(n.querySelector('.xt-hit').getAttribute('cy')));
+    t.expect(ys.every((y, i) => !i || y < ys[i - 1]), '아래에서 위로: ' + ys.join(','));
+    t.eq(nodes.map(stOf), ['done', 'skip', 'done', 'done', 'cur', 'todo', 'todo'], '끝남·건너뜀·지금·아직');
+    t.expect(/찾기/.test(q$('#sheet .xt-next').textContent), '다음에 할 일: 찾기');
+    t.expect(nodes.every(n => n.getAttribute('role') === 'button' && n.getAttribute('tabindex') === '0'), '키보드로도 누름');
+    fire('#x_tn_refine');
+    await t.waitFor('#x_st_refine.cur #x_refine');           // 건너뛴 다듬기로 돌아가기
+    t.expect(q$('#x_tn_refine').classList.contains('open'), '여는 중 표시');
+    fire('#x_tn_find', true);
+    await t.waitFor('#x_st_find.cur #x_fsrc');
+    t.expect(q$('#x_st_find').contains(document.activeElement), '키보드로 열면 그 칸으로 초점');
+    t.eq([q$('#sheet button.xt-next').dataset.k], ['find'], '다음에 할 일 상자도 단추');
+    fire('#x_tn_predict', true);
+    await t.waitFor('#x_st_predict [data-xa="edit"][data-k="predict"]');   // 끝난 칸은 펼치기 → 그 안에 고치기
+    await t.click('#x_st_method .nm');                           // 칸 이름을 눌러도 열림
+    await t.waitFor('#x_st_method [data-xa="edit"][data-k="method"]');
+    await t.click('#x_st_method [data-xa="edit"][data-k="method"]');
+    await t.waitFor('#x_st_method.cur #x_mkind');
+    fire('#x_tn_wrap');                                          // 아직 차례가 아닌 칸 → 지금 칸으로
+    await t.waitFor(() => q$('#x_st_find.cur') && !q$('#x_st_wrap.cur'));
+    /* 「그대로 갈래요」로 건너뛴 다듬기도 잎으로 다시 연다 */
+    await setup(t, 101, [{refine:''}]);
+    await openQ(t, 101);
+    await t.waitFor(() => q$('#x_tn_refine') && stOf(q$('#x_tn_refine')) === 'skip' && stOf(q$('#x_tn_predict')) === 'cur');
+    fire('#x_tn_refine');
+    await t.waitFor('#x_st_refine.cur #x_refine');
+    /* 답만 달기에서는 나무가 접힘 */
+    await t.click('#sheet [data-xa="qmode"][data-m="quick"]');
+    await t.waitFor(() => q$('#x_qans') && !q$('#sheet .xt-svg'));
+    await t.click('#sheet [data-xa="qmode"][data-m="full"]');
+    await t.waitFor('#sheet .xt-svg');
+    /* 선생님께 보낸 질문은 보기만 */
+    await openQ(t, 104);
+    await t.waitFor('#sheet .xt-svg');
+    t.expect(!q$('#sheet .xt-node.st-cur') && !q$('#sheet .x-routes'), '보낸 뒤엔 지금 칸·길 고르기 없음');
+    t.expect(/선생님이 읽는 중/.test(q$('#sheet .xt-next').textContent), '다음에 할 일 대신 읽는 중');
+    fire('#x_tn_predict');
+    await t.waitFor('#x_st_predict .val');
+    t.expect(!q$('#x_st_predict [data-xa="edit"]'), '고치기 없음');
+    if(!VV(104).done.extend){                                     // 넓히기는 보낸 뒤에도(「넓혀 보기」와 같게)
+      fire('#x_tn_extend');
+      await t.waitFor('#x_st_extend.cur #x_extend');
+    }
+    /* 안개 열매 — 넓히기가 「지금」 잎, 다음에 할 일 상자를 누르면 넓히기 칸 */
+    await openQ(t, 107);
+    await t.waitFor(() => q$('#x_tn_extend') && stOf(q$('#x_tn_extend')) === 'cur');
+    await t.click('#sheet button.xt-next[data-k="extend"]');
+    await t.waitFor('#x_st_extend.cur #x_extend');
+  });
+
+  add('탐구 · 선생님 단서 머리글 · 「배운 개념」 점검은 선택', async t => {
+    const now = Date.now(), iso = d => new Date(now + d).toISOString();
+    const row = {id:-7, text:'정전기는 왜 겨울에 잘 생길까?', journal:{predict:[{text:'건조해서 그런 것 같다. 왜냐하면 겨울엔 건조하니까.'}], method:{kind:'book', plan:''}}};
+    const c1 = {id:91, step:'find', kind:'where', body:'교과서 112쪽', created_at:iso(-60000), by_teacher:true};
+    const c2 = {id:92, step:'find', kind:'where', body:'교과서 113쪽', created_at:iso(-60000)};
+    const v = view(row, {find:{first_at:iso(-1000), last_at:iso(-1000), text_md5:'z'}}, [c1, c2]);
+    const h1 = clueBoxHTML(v, c1), h2 = clueBoxHTML(v, c2);
+    t.expect(h1.indexOf('선생님 단서 · 찾아볼 곳') >= 0 && h1.indexOf('선생님 단서가 도움이 됐나요?') >= 0, '선생님 단서');
+    t.expect(h2.indexOf('친구 단서 · 찾아볼 곳') >= 0 && h2.indexOf('친구 단서가 도움이 됐나요?') >= 0, '친구 단서는 그대로');
+    t.expect(cluesLater(view(row, {}, [c1]), 'find').indexOf('단서 1개') >= 0, '아직 안 간 칸 — 「단서 n개」');
+    const r = REFINE.find(x => x.t === '배운 개념이 들어 있는가');
+    t.expect(r && r.opt && /꼭 넣어야 하는 건 아니에요/.test(r.how), '배운 개념은 선택');
   });
 }
 })();
