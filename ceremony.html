@@ -325,10 +325,12 @@ function nomsOf(a){
   /* 순서 섞기(수상자가 늘 첫째로 보이지 않게) — 같은 반은 같은 순서 */
   return L.map((x, i) => ({x, k:(x.name.charCodeAt(0) * 7 + i * 13) % 17})).sort((p, q) => p.k - q.k).map(p => p.x);
 }
+/* ?only=fun,think — 이 상들만 시상(2026-11-15, 공개수업 도입에서 두 상만). 없으면 전부 */
+const ONLY = (new URLSearchParams(location.search).get('only') || '').split(',').map(x => x.trim()).filter(Boolean);
 function start(ci){
   cls = resolveClass(data.classes[ci]);
   const by = {}; cls.awards.forEach(a => { by[a.key] = a; });
-  const list = ORDER.map(k => by[k]).filter(a => a && String(a.name || '').trim());
+  const list = ORDER.map(k => by[k]).filter(a => a && String(a.name || '').trim() && (!ONLY.length || ONLY.indexOf(a.key) >= 0));
   slides = [{t:'open'}, {t:'mc'}];
   list.forEach((a, i) => {
     slides.push({t:'cat', a, last:i === list.length - 1});
