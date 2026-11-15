@@ -160,6 +160,7 @@ footer#app-credit{margin-top:30px;color:rgba(231,215,184,.6);font-size:12px}
 /* 도장 3개 찍기(칭찬도장판) */
 .stampbtn{position:absolute;right:3vw;bottom:9vh;z-index:6;border:2px solid #D4AF37;background:rgba(20,16,8,.6);color:#F5E6B8;font-weight:800;font-size:clamp(15px,1.5vw,20px);padding:12px 22px;border-radius:99px;cursor:pointer}
 .stampbtn:disabled{opacity:.6;cursor:default}
+.stamplink{position:absolute;right:3vw;bottom:calc(9vh - 34px);z-index:6;color:#F5E6B8;font-size:clamp(13px,1.1vw,16px);text-decoration:underline}
 .stampfx{position:absolute;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .stampfx svg{width:min(42vw,420px);height:auto;animation:stampin .55s cubic-bezier(.2,1.4,.4,1) both;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
 .stampfx.out svg{animation:stampout .6s ease-in both}
@@ -446,7 +447,15 @@ function home(){ stopFx(); stopDrum(); musStop(); $('mus').classList.remove('on'
    같은 상(태그 「질문 어워즈 2026-11 · 상 · 학년-반-번호」)에 살아 있는 도장이 있으면 다시 안 찍는다 ── */
 const STAMP_CAT = {kong:'responsible', how:'inquiry', think:'inquiry', fun:'communicate', life:'concept', miss:'analysis', deep:'inquiry', month:'communicate'};
 let SB_STAMP = null;
-function sbStamp(){ if(!SB_STAMP && window.supabase) SB_STAMP = window.supabase.createClient(SB_URL, SB_KEY); return SB_STAMP; }
+/* 누를 때마다 새로 연결 — 다른 탭(선생님 화면)에서 로그인을 바꿨으면 그 로그인을 읽는다 */
+function sbStamp(){ if(window.supabase) SB_STAMP = window.supabase.createClient(SB_URL, SB_KEY); return SB_STAMP; }
+/* 선생님 로그인 화면 — 시상식과 같은 주소라 여기서 로그인하면 시상식도 그 계정을 쓴다 */
+function stampLoginLink(btn){
+  if(!btn || !btn.parentNode || btn.parentNode.querySelector('.stamplink')) return;
+  const l = document.createElement('a'); l.className = 'stamplink'; l.href = 'v2/teacher.html'; l.target = '_blank'; l.rel = 'noopener';
+  l.textContent = '선생님 화면 열어 로그인하기'; l.addEventListener('click', e => e.stopPropagation());
+  btn.parentNode.appendChild(l);
+}
 function stampSVG(){
   return '<svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="88" fill="none" stroke="#D7263D" stroke-width="10"/>' +
     '<circle cx="100" cy="100" r="72" fill="none" stroke="#D7263D" stroke-width="3"/>' +
@@ -467,7 +476,16 @@ async function giveStamps(btn, a, w){
   btn.disabled = true; say('찍는 중…');
   try{
     const ss = await sb.auth.getSession();
-    if(!ss || !ss.data || !ss.data.session){ say('선생님 로그인이 필요해요'); btn.disabled = false; return; }
+    if(!ss || !ss.data || !ss.data.session){ say('선생님 로그인이 필요해요 · 로그인 뒤 다시 누르기'); stampLoginLink(btn); btn.disabled = false; return; }
+    /* 같은 주소의 학생 앱에서 학생 계정으로 로그인했으면 그 로그인이 남는다 — 도장판은 선생님 계정만 넣을 수 있다(obs_teacher_own) */
+    const it = await sb.rpc('is_teacher');
+    if(!it.error && it.data !== true){
+      const me = await sb.from('profiles').select('grade,class_no,number').eq('id', ss.data.session.user.id).maybeSingle();
+      const m = me && me.data;
+      say(m && m.number != null ? '지금 학생 계정(' + m.grade + '-' + m.class_no + ' ' + m.number + '번)으로 로그인돼 있어요 · 선생님 계정으로 다시 로그인한 뒤 누르기'
+        : '이 계정은 선생님으로 등록돼 있지 않아요 · 선생님 계정으로 로그인한 뒤 누르기');
+      stampLoginLink(btn); btn.disabled = false; return;
+    }
     const pr = await sb.from('profiles').select('id,class_no,number').eq('grade', cls.grade).eq('class_no', cls.class).eq('number', Number(w.n)).limit(1);
     const p = pr.data && pr.data[0];
     if(pr.error || !p){ say('학생을 찾지 못했어요'); btn.disabled = false; return; }
@@ -481,7 +499,11 @@ async function giveStamps(btn, a, w){
     const row = {student_id:p.id, school_year:now.getFullYear(), semester:(mm >= 3 && mm <= 7) ? 1 : 2, class_no_snap:p.class_no || null, number_snap:p.number || null,
       category:STAMP_CAT[a.key] || 'inquiry', behavior:Array.from(beh).slice(0, 300).join(''), lesson_note:tag, observed_on:d};
     const ins = await sb.from('observations').insert([row, row, row]).select('id');
-    if(ins.error || !ins.data || ins.data.length < 3){ say('도장을 찍지 못했어요' + (ins.error ? ' · ' + (ins.error.message || '') : '')); btn.disabled = false; return; }
+    if(ins.error || !ins.data || ins.data.length < 3){
+      const rls = ins.error && /row-level security|42501/i.test(String(ins.error.message || '') + ' ' + String(ins.error.code || ''));
+      say(rls ? '선생님 계정으로 로그인해야 도장을 찍을 수 있어요' : '도장을 찍지 못했어요' + (ins.error ? ' · ' + (ins.error.message || '') : ''));
+      if(rls) stampLoginLink(btn); btn.disabled = false; return;
+    }
     stampFx(); say('도장 3개 찍었어요');
   }catch(e){ say('도장을 찍지 못했어요'); btn.disabled = false; }
 }
