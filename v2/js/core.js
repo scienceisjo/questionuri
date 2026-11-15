@@ -481,7 +481,7 @@ QO.store = {
 };
 
 /* ═══════════ 탭 등록부 ═══════════ */
-const ORDER = {student:['explore', 'mat', 'together', 'tree', 'grow', 'forest'], teacher:['fruits', 'live', 'groups', 'clues', 'read']};
+const ORDER = {student:['explore', 'mat', 'together', 'tree', 'grow', 'pace', 'forest'], teacher:['fruits', 'live', 'groups', 'clues', 'read']};
 const defs = {};
 let built = false;
 const VISIT_TABS = ['forest'];   // 선생님 숲 방문에서 보이는 탭

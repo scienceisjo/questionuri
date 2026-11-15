@@ -107,6 +107,25 @@ QO.mock.extend({
       .map(n => growRow(h.pick(n, ['id', 'user_id', 'frame', 'parts', 'body', 'created_at']), h.prof(n.user_id))).sort(growSort);
   }
 });
+/* AI와 내 속도로 기록(SQL v2_13 pace_logs, 학생 pace.js 가 쓴다) — 선생님은 RLS(v2_pace_read)로 다 읽는다 */
+QO.api.classPaceLogs = async function(g, c){
+  const st = await QO.apiReal.classStudents(g, c);
+  const by = new Map(st.map(s => [s.id, s])), cl = await sb();
+  let d;
+  try{
+    d = await rows(cl.from('pace_logs').select('id,user_id,question_text,explain,verdict,ai_note,revised,tail,updated_at').eq('school_year', ui.schoolYear()).eq('grade', g).eq('class_no', c)
+      .order('updated_at', {ascending:false}).limit(1000));
+  }catch(e){ if(growSoon(e)) e.soon = true; throw e; }
+  return d.map(n => growRow(n, by.get(n.user_id)));
+};
+QO.mock.extend({
+  classPaceLogs(g, c){
+    const h = QO.mock.h, db = QO.mock.db, me = h.me(), all = h.isTeacher(me), y = h.schoolYear();
+    return (db.pace_logs || []).filter(n => (all || n.user_id === me) && n.school_year === y && n.grade === Number(g) && n.class_no === Number(c))
+      .map(n => growRow(h.pick(n, ['id', 'user_id', 'question_text', 'explain', 'verdict', 'ai_note', 'revised', 'tail', 'updated_at']), h.prof(n.user_id)))
+      .sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+  }
+});
 /* 시연용 몇 줄 — 흉내 DB 에 성장 기록 표가 아직 없을 때 한 번(학생 화면에서 쓰면 그 표를 그대로 쓴다) */
 function growSeed(db, h){
   const y = h.schoolYear(), ago = hrs => new Date(Date.now() - hrs * 36e5).toISOString();
@@ -128,7 +147,7 @@ const T = {
   groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{},
   day:null, clues:null, cluesWant:null,
   reading:null, rdPer:null, rdSrc:'',
-  grow:null, growOpen:false,
+  grow:null, pace:null, growOpen:false,
   /* 바로 보기 — opened 열린 열매 목록, oOpen 펼친 질문, oKeys·pKeys 지난번에 받은 것(새로 들어온 줄 표시용), oNew·pNew 잠깐 표시할 줄,
      oAt·pAt 마지막 자동 읽기 시각, held 확인 요청을 받아 두고 그리기를 미룬 상태, mine 이 화면에서 내가 연 열매 */
   opened:null, oOpen:null, oKeys:null, oNew:new Set(), oAt:0, pKeys:null, pNew:new Set(), pAt:0, held:false, mine:new Set()
@@ -142,7 +161,7 @@ function ensure(){
   const fresh = T.tRef !== S.teacher;
   T.tRef = S.teacher; T.key = key; T.seq++; T.reqs = {};
   Object.assign(T, {students:null, pending:null, detail:{}, dWait:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
-    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null,
+    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null, pace:null,
     opened:null, oOpen:null, oKeys:null, oNew:new Set(), oAt:0, pKeys:null, pNew:new Set(), pAt:0, held:false, mine:new Set()});
   if(fresh){ T.cutover = null; T.ex = {no:'', yes:''}; T.day = null; }
   if(!S.teacher || !S.cls) return;
@@ -301,7 +320,7 @@ function renderFruits(root){
   if(!list){ root.innerHTML = h; return; }
   if(T.bulk){ root.innerHTML = h + bulkHTML(); return; }
   if(T.quick && list.length){ root.innerHTML = h + quickHTML(); return; }
-  if(!list.length){ root.innerHTML = h + '<div class="card empty">확인을 기다리는 질문이 없어요.</div>' + growHTML() + demoBox(); return; }
+  if(!list.length){ root.innerHTML = h + '<div class="card empty">확인을 기다리는 질문이 없어요.</div>' + growHTML() + paceHTML() + demoBox(); return; }
   const wide = ui.wide(), open = list.find(q => q.id === T.open) || null;
   if(open && !T.detail[open.id] && !T.dWait[open.id]) loadDetail(open.id);
   let items = '';
@@ -310,7 +329,7 @@ function renderFruits(root){
   if(wide) h += '<div class="t-split"><div class="t-list">' + items + '</div><div class="t-pane">' +
     (open ? detailHTML(open) : '<div class="t-ph">왼쪽에서 질문을 고르면 탐구 일지가 여기에 열려요.</div>') + '</div></div>';
   else h += '<div class="t-list">' + items + '</div>';
-  root.innerHTML = h + growHTML() + demoBox();
+  root.innerHTML = h + growHTML() + paceHTML() + demoBox();
 }
 function itemHTML(q){
   const v = J.view(q), w = v.d.wrap, st = q.student || {}, on = T.open === q.id;
@@ -1347,6 +1366,39 @@ function growHTML(){
       '<div class="t-sgit">' + esc(n.body) + '</div></div>';
   }).join('') + '</div></div>';
 }
+/* ═══════════ AI와 내 속도로 기록(v2_13) — 학생 성장 기록 아래 접는 카드 ═══════════ */
+const PACE_V = {good:'잘 설명함', fix:'조금 고치면 됨', redo:'다시 알아보기'};
+function loadPace(){
+  return load('pace', () => QO.api.classPaceLogs(G(), C()).catch(e => { if(e && (e.soon || growSoon(e))) return {soon:true}; throw e; }), r => { T.pace = r; soft('fruits'); });
+}
+function paceHTML(){
+  growCss();
+  const open = !!T.paceOpen, list = Array.isArray(T.pace) ? T.pace : null;
+  if(open && !T.pace && !T.reqs.pace) loadPace();
+  const chev = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  let h = '<div class="t-sg"><button type="button" class="fold t-sgh" data-act="pc-fold" aria-expanded="' + open + '" aria-controls="t_pace"><span>AI와 내 속도로 기록</span>' +
+    (list ? '<span class="n">' + list.length + '</span>' : '') + chev + '</button>';
+  if(!open) return h + '</div>';
+  h += '<div class="card t-sgb" id="t_pace">';
+  const reload = '<button type="button" class="link" data-act="pc-reload">새로 읽기</button>';
+  if(T.pace && T.pace.soon) return h + '<div class="hint">AI와 내 속도로 기록은 v2_13 SQL 을 실행한 뒤에 볼 수 있어요.</div></div></div>';
+  if(!list) return h + '<div class="t-sgbar"><span class="hint">기록을 불러오는 중이에요.</span>' + reload + '</div></div></div>';
+  const cnt = k => list.filter(n => n.verdict === k).length;
+  h += '<div class="t-sgbar"><span class="hint">' + esc(clsName()) + ' · 잘 설명함 ' + cnt('good') + ' · 조금 고치면 됨 ' + cnt('fix') + ' · 다시 알아보기 ' + cnt('redo') + ' · 최신순</span>' + reload + '</div>';
+  if(!list.length) return h + '<div class="t-sgi hint">아직 남긴 기록이 없어요.</div></div></div>';
+  return h + list.map(n => {
+    const st = n.student || {};
+    return '<div class="t-sgi" data-id="' + n.id + '"><div class="t-sgih"><span class="t-sgiw">' + esc((st.number != null ? st.number + '번 ' : '') + (st.name || '이름 모름')) + '</span>' +
+      (n.verdict ? '<span class="tag">' + esc(PACE_V[n.verdict] || n.verdict) + '</span>' : '<span class="tag">평가 전</span>') + '<span class="t-at">' + esc(growWhen(n.updated_at)) + '</span></div>' +
+      '<div class="t-sgit"><b>질문</b> ' + esc(n.question_text) + '</div>' +
+      '<div class="t-sgit"><b>내 말로</b> ' + esc(n.explain) + '</div>' +
+      (n.ai_note ? '<div class="t-sgit"><b>AI가 짚은 것</b> ' + esc(n.ai_note) + '</div>' : '') +
+      (n.revised ? '<div class="t-sgit"><b>고친 설명</b> ' + esc(n.revised) + '</div>' : '') +
+      (n.tail ? '<div class="t-sgit"><b>꼬리 질문</b> ' + esc(n.tail) + '</div>' : '') + '</div>';
+  }).join('') + '</div></div>';
+}
+ACT['pc-fold'] = () => { T.paceOpen = !T.paceOpen; QO.tabs.rerender('fruits'); };
+ACT['pc-reload'] = () => { T.pace = null; loadPace(); QO.tabs.rerender('fruits'); };
 function growCsvOf(list){
   const cell = x => '"' + String(x == null ? '' : x).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
   const rows = (list || []).map(n => [n.student && n.student.number != null ? n.student.number : '', GROW_FRAME[n.frame] || n.frame, n.body, ui.kstDay(n.created_at) + ' ' + ui.kstHM(n.created_at)]);

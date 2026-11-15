@@ -1,0 +1,38 @@
+/* AI와 내 속도로(pace.js) */
+.pc-root{display:flex;flex-direction:column;gap:14px}
+.pc-hero{display:flex;gap:14px;align-items:flex-start;padding:18px;border-radius:var(--r);background:linear-gradient(180deg,#F4F8EE,#fff);border:1px solid var(--line)}
+.pc-ic{flex:none;width:46px;height:46px;border-radius:14px;background:var(--leaf-l);color:var(--leaf-d);display:flex;align-items:center;justify-content:center}
+.pc-hero h1{font-size:20px;font-weight:800;margin:2px 0 6px;letter-spacing:-.01em}
+.pc-hero p{font-size:15px;line-height:1.55;color:var(--sub);word-break:keep-all;margin:0}
+.pc-rules{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pc-rules span{font-size:13px;font-weight:700;padding:6px 11px;border-radius:99px;background:#fff;border:1.5px solid var(--line);color:var(--leaf-d)}
+.pc-cols>div{display:flex;flex-direction:column;gap:14px}
+.pc-step{display:flex;flex-direction:column;gap:10px}
+.pc-sh{display:flex;align-items:center;gap:10px}
+.pc-sh h2{font-size:17px;font-weight:800;margin:0}
+.pc-n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--leaf);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.pc-sub{margin:-2px 0 0}
+.pc-qs{display:flex;flex-direction:column;gap:6px}
+.pc-q{display:flex;align-items:center;gap:8px;text-align:left;min-height:46px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-size:15px;line-height:1.45;word-break:keep-all}
+.pc-q.on{border-color:var(--leaf);background:var(--leaf-l);font-weight:700}
+.pc-star{flex:none;font-size:12px;font-weight:800;color:#B7791F;background:#FFF6DD;border-radius:99px;padding:3px 8px}
+.pc-pr{font-size:13.5px;line-height:1.55;background:#F7F8F4;color:var(--sub);resize:vertical}
+.pc-vs .chip.on{border-color:var(--leaf);background:var(--leaf-l);color:var(--leaf-d)}
+.pc-ok{color:var(--leaf-d);font-weight:700}
+.pc-check h2,.pc-logs h2{font-size:16px;font-weight:800;margin:0 0 8px}
+.pc-check ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.pc-check li{font-size:15px;padding-left:28px;position:relative}
+.pc-check li::before{content:'';position:absolute;left:0;top:2px;width:18px;height:18px;border-radius:5px;border:2px solid var(--line)}
+.pc-log{border-top:1px solid var(--line)}
+.pc-log:first-of-type{border-top:0}
+.pc-logh{display:flex;align-items:center;gap:8px;width:100%;text-align:left;min-height:46px;padding:8px 0;font-size:15px;background:none}
+.pc-logq{flex:1;word-break:keep-all}
+.pc-v{flex:none;font-size:12.5px;font-weight:800;padding:4px 9px;border-radius:99px;background:#F1F3EE;color:var(--sub)}
+.pc-v.v-good{background:var(--leaf-l);color:var(--leaf-d)}
+.pc-v.v-fix{background:#FFF6DD;color:#9A6A0B}
+.pc-v.v-redo{background:#FDECEA;color:#B23A2E}
+.pc-logb{padding:0 0 10px}
+.pc-logb p{font-size:14.5px;line-height:1.6;margin:2px 0 8px;word-break:keep-all;white-space:pre-wrap}
+
+/* 아래 탭 줄(좁은 화면)에서 긴 이름은 두 줄로 */
+#nav [data-t="pace"] span{white-space:normal;max-width:4.6em;line-height:1.12;text-align:center;word-break:keep-all}

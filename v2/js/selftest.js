@@ -129,7 +129,7 @@ add('뼈대 · 탭 여섯 전환', async t => {
     t.expect(document.querySelector('#nav [data-t="' + id + '"]').classList.contains('on'), id + ' 단추 표시');
     t.expect(document.getElementById('body').children.length > 0, id + ' 화면이 비었어요');
   }
-  t.eq(QO.tabs.ids(), ['explore', 'mat', 'together', 'tree', 'grow', 'forest'], '탭 순서');
+  t.eq(QO.tabs.ids(), ['explore', 'mat', 'together', 'tree', 'grow', 'pace', 'forest'], '탭 순서');
 });
 add('뼈대 · 학생 로그인 화면(틀린 비밀번호 → 맞는 비밀번호)', async t => {
   await QO.app.signOut(true);
