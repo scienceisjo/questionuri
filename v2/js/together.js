@@ -205,6 +205,7 @@ async function markCurious(btn, qid){
   if(ok === undefined || my !== T) return;
   if(ok === false){ ui.toast('이 질문에는 표시할 수 없어요.'); return; }
   if(T.curious.indexOf(qid) < 0) T.curious.push(qid);
+  T.gwGave = T.gwGave || {}; T.gwGave[qid] = true;
   const got = await QO.acorn('water', qid);
   rr(); ui.toast('친구 질문에 물을 줬어요' + (got ? ' · 🌰 +' + got : '') + '.');
 }
@@ -708,7 +709,26 @@ function loadNbIds(){
   })().then(m => { if(my === T){ T.nbIds = m; rr(); } }, e => { if(my === T){ T.nbIds = {}; QO.err(e, 'nb ids'); rr(); } })
     .finally(() => { my.nbIdsLoading = false; });
 }
+/* v2_14 class_group_water — 질문 id·받은 물 수까지. SQL 을 아직 안 돌렸으면 예전처럼(글로 id 찾기 · 수 없음) */
+function loadGw(){
+  if(T.gwatLoading) return; T.gwatLoading = true;
+  const my = T;
+  Promise.resolve().then(() => QO.api.classGroupWater()).then(r => { if(my === T){ T.gwat = r || []; rr(); } },
+    e => { if(my === T){ T.gwat = 'soon'; if(!/PGRST202|42883|does not exist|schema cache/i.test(String(e && e.message || e))) QO.err(e, 'class_group_water'); rr(); } })
+    .finally(() => { my.gwatLoading = false; });
+}
 function waterHTML(){
+  if(T.gwat === undefined) loadGw();
+  if(Array.isArray(T.gwat)){
+    const L = T.gwat.filter(x => !x.mine && normT(x.question_text));
+    if(!L.length) return (T.g && T.g.group) ? '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card"><div class="hint">다른 모둠이 질문을 올리면 여기에 보여요.</div></div>' : '';
+    return '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card tg-water"><div class="hint">마음에 드는 질문에 💧 물을 줘요. 질문 하나에 한 번씩.</div>' +
+      L.map(x => {
+        const n = Number(x.water_count || 0) + (x.question_id && T.curious.indexOf(Number(x.question_id)) >= 0 && T.gwGave && T.gwGave[x.question_id] ? 1 : 0);
+        return '<div class="tg-wq"><div class="tg-wqt"><b>' + esc(x.group_name || (x.group_no + '모둠')) + '</b> ' + esc(x.question_text) + '</div>' +
+          '<span class="tg-wn">💧 ' + n + '</span>' + (x.question_id ? curiousBtn(x.question_id) : '') + '</div>';
+      }).join('') + '</div>';
+  }
   const list = (T.nb || []).filter(n => normT(n.question_text));
   if(!list.length) return (T.g && T.g.group) ? '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card"><div class="hint">다른 모둠이 질문을 올리면 여기에 보여요.</div></div>' : '';
   if(T.nbIds == null) loadNbIds();
@@ -719,6 +739,25 @@ function waterHTML(){
         (qid ? curiousBtn(qid) : T.nbIds ? '<span class="hint">물 주기는 숲 탭 친구 나무에서</span>' : '<span class="hint">불러오는 중</span>') + '</div>';
     }).join('') + '</div>';
 }
+QO.api.classGroupWater = async function(){
+  const c = await QO.sbClient();
+  const r = await c.rpc('class_group_water');
+  if(r.error){ const e = new Error(r.error.message || String(r.error)); e.code = r.error.code; throw e; }
+  return r.data || [];
+};
+if(QO.mock && QO.mock.extend) QO.mock.extend({
+  classGroupWater(){
+    const h = QO.mock.h, db = QO.mock.db, me = h.me(), p = h.prof(me); if(!p) return [];
+    const y = h.schoolYear(), mine = new Set(db.group_members.filter(m => m.user_id === me).map(m => m.group_id));
+    return db.groups.filter(g => g.school_year === y && g.grade === p.grade && g.class_no === p.class_no).sort((a, b) => a.group_no - b.group_no).map(g => {
+      const inq = db.group_inquiries.filter(i => i.group_id === g.id).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || b.id - a.id)[0];
+      if(!inq) return null;
+      const q = db.questions.find(x => x.id === inq.question_id);
+      if(q && q.is_anonymous) return null;
+      return {group_no:g.group_no, group_name:g.name, question_id:inq.question_id || null, question_text:inq.question_text, water_count:q ? (q.water_count || (q.watered_by || []).length || 0) : 0, mine:mine.has(g.id)};
+    }).filter(Boolean);
+  }
+});
 function pageHTML(){
   const L = QO.state.live, clue = !!(L && L.mode === 'clue');
   const errs = Object.keys(T.errs).length ? '<div class="card tg-loaderr"><div class="hint">불러오지 못한 것이 있어요.</div><button type="button" class="link teal" data-tg="reload">다시 불러오기</button></div>' : '';

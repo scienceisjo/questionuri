@@ -107,6 +107,18 @@ QO.mock.extend({
       .map(n => growRow(h.pick(n, ['id', 'user_id', 'frame', 'parts', 'body', 'created_at']), h.prof(n.user_id))).sort(growSort);
   }
 });
+/* 모둠 질문 · 💧 수(2026-11-15, 수업 마무리 「우리 반 질문, 이렇게 자랐다」) — 선생님은 questions 를 읽을 수 있어 새 SQL 없음 */
+QO.api.questionsWater = async function(ids){
+  if(!ids || !ids.length) return [];
+  const cl = await sb();
+  return rows(cl.from('questions').select('id,text,refined_text,water_count').in('id', ids));
+};
+QO.mock.extend({
+  questionsWater(ids){
+    const db = QO.mock.db, want = new Set((ids || []).map(Number));
+    return db.questions.filter(q => want.has(q.id)).map(q => ({id:q.id, text:q.text, refined_text:q.refined_text || null, water_count:q.water_count || (q.watered_by || []).length || 0}));
+  }
+});
 /* AI와 내 속도로 기록(SQL v2_13 pace_logs, 학생 pace.js 가 쓴다) — 선생님은 RLS(v2_pace_read)로 다 읽는다 */
 QO.api.classPaceLogs = async function(g, c){
   const st = await QO.apiReal.classStudents(g, c);
@@ -147,7 +159,7 @@ const T = {
   groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{},
   day:null, clues:null, cluesWant:null,
   reading:null, rdPer:null, rdSrc:'',
-  grow:null, pace:null, growOpen:false,
+  grow:null, pace:null, gw:null, growOpen:false,
   /* 바로 보기 — opened 열린 열매 목록, oOpen 펼친 질문, oKeys·pKeys 지난번에 받은 것(새로 들어온 줄 표시용), oNew·pNew 잠깐 표시할 줄,
      oAt·pAt 마지막 자동 읽기 시각, held 확인 요청을 받아 두고 그리기를 미룬 상태, mine 이 화면에서 내가 연 열매 */
   opened:null, oOpen:null, oKeys:null, oNew:new Set(), oAt:0, pKeys:null, pNew:new Set(), pAt:0, held:false, mine:new Set()
@@ -161,7 +173,7 @@ function ensure(){
   const fresh = T.tRef !== S.teacher;
   T.tRef = S.teacher; T.key = key; T.seq++; T.reqs = {};
   Object.assign(T, {students:null, pending:null, detail:{}, dWait:{}, open:null, ret:null, bulk:null, quick:null, live:null, staleLive:null, ended:null, stuck:null, today:null, demoQ:null, pick:[], showOwner:{},
-    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null, pace:null,
+    groups:null, gFold:null, gDraft:null, gRet:null, gOpen:{}, clues:null, cluesWant:null, reading:null, rdSrc:'', grow:null, pace:null, gw:null,
     opened:null, oOpen:null, oKeys:null, oNew:new Set(), oAt:0, pKeys:null, pNew:new Set(), pAt:0, held:false, mine:new Set()});
   if(fresh){ T.cutover = null; T.ex = {no:'', yes:''}; T.day = null; }
   if(!S.teacher || !S.cls) return;
@@ -869,6 +881,48 @@ function cluePanel(L, st){
   }
   return h;
 }
+/* ═══════════ 모둠 질문 · 💧 수 — 수업 진행 맨 위(빔으로 띄우기) ═══════════ */
+function loadWater(){
+  const ids = (T.groups || []).map(g => g.inquiry && g.inquiry.question_id).filter(Boolean).map(Number);
+  return load('gw', () => QO.api.questionsWater(ids), r => { const m = {}; (r || []).forEach(q => { m[q.id] = q; }); T.gw = m; soft('live'); });
+}
+function waterCss(){
+  if(document.getElementById('t-water-css')) return;
+  const st = document.createElement('style'); st.id = 't-water-css';
+  st.textContent = '.t-wc{margin-bottom:16px}.t-wch{display:flex;align-items:center;gap:10px;margin-bottom:6px}.t-wch h2{font-size:20px;font-weight:800;margin:0}.t-wch .link{margin-left:auto}' +
+    '.t-wr{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:12px 4px;border-top:1px solid var(--line)}.t-wr:first-of-type{border-top:0}' +
+    '.t-wg{font-weight:800;color:var(--leaf-d);font-size:16px}.t-wq{font-size:18px;line-height:1.45;word-break:keep-all}.t-wq small{display:block;font-size:14px;color:var(--mute);margin-top:3px}' +
+    '.t-wn{font-size:22px;font-weight:800;color:#1F6FB2;white-space:nowrap}.t-wr.top{background:#EEF6FF;border-radius:12px}.t-wr.top .t-wn::after{content:" · 1등";font-size:14px;color:#1F6FB2}';
+  document.head.appendChild(st);
+}
+/* 캡처용(?mock=1&twdemo=1): 지금 반 모둠 넷에 모둠 질문과 물 수를 넣어 둔다 */
+function twDemo(){
+  if(T.twSeeded || !QO.cfg.mock || new URLSearchParams(location.search).get('twdemo') !== '1' || !S.cls) return;
+  T.twSeeded = true;
+  const db = QO.mock.db, gs = db.groups.filter(g => g.grade === G() && g.class_no === C()).sort((a, b) => a.group_no - b.group_no).slice(0, 4);
+  const qs = db.questions.filter(q => { const p = db.profiles.find(x => x.id === q.user_id); return p && p.grade === G() && p.class_no === C(); });
+  const W = [5, 9, 3, 6], tpl = db.group_inquiries[0] || {};
+  gs.forEach((g, i) => { const q = qs[i]; if(!q) return; q.water_count = W[i];
+    db.group_inquiries.push(Object.assign({}, tpl, {id:9900 + i, group_id:g.id, question_id:q.id, question_text:q.text, status:'open', created_at:new Date().toISOString()})); });
+}
+function waterCardHTML(){
+  waterCss(); twDemo();
+  if(!T.groups){ if(!T.reqs.groups && !T.reqs.gwg) load('gwg', () => QO.api.classGroups(G(), C()), r => { T.groups = r; soft('live'); soft('groups'); }); return ''; }
+  const gs = T.groups.filter(g => g.inquiry && (g.inquiry.question_id || String(g.inquiry.question_text || '').trim()));
+  if(!gs.length) return '';
+  if(!T.gw && !T.reqs.gw) loadWater();
+  const W = T.gw || {};
+  const list = gs.map(g => { const q = g.inquiry.question_id ? (W[Number(g.inquiry.question_id)] || {}) : {}; return {g, q, n:Number(q.water_count || 0), none:!g.inquiry.question_id}; }).sort((a, b) => b.n - a.n || a.g.group.group_no - b.g.group.group_no);
+  const max = list.length ? list[0].n : 0;
+  return '<div class="card t-wc"><div class="t-wch"><h2>우리 반 모둠 질문 · 💧</h2><span class="hint">물을 많이 받은 순</span><button type="button" class="link" data-act="gw-reload">새로 읽기</button></div>' +
+    list.map(x => {
+      const orig = x.q.text ? String(x.q.text).trim() : '', ref = x.q.refined_text ? String(x.q.refined_text).trim() : '';
+      const main = ref || x.g.inquiry.question_text || orig;
+      return '<div class="t-wr' + (max > 0 && x.n === max ? ' top' : '') + '"><span class="t-wg">' + esc(gName(x.g)) + '</span><div class="t-wq">' + esc(main) +
+        (ref && orig && ref !== orig ? '<small>다듬기 전 · ' + esc(orig) + '</small>' : '') + '</div><span class="t-wn">💧 ' + (x.none ? '–' : T.gw ? x.n : '…') + '</span></div>';
+    }).join('') + '</div>';
+}
+ACT['gw-reload'] = () => { T.gw = null; T.groups = null; QO.tabs.rerender('live'); };
 function renderLive(root){
   ensure();
   if(!S.cls){ root.innerHTML = '<div class="empty">학생이 있는 반이 없어요.</div>'; return; }
@@ -878,7 +932,7 @@ function renderLive(root){
     if(T.ended) h += '<div class="card t-ended"><b>' + (T.ended.mode === 'clue' ? '단서 시간이 끝났어요 · 보낸 단서 ' + T.ended.sent + '개' : '모둠 진행을 끝냈어요') + '</b></div>';
     if(T.staleLive) h += '<div class="card t-stale"><div><b>지난 ' + esc(modeName(T.staleLive.mode)) + '이 켜져 있어요</b><div class="hint">' + esc(ui.fmtTime(T.staleLive.created_at)) +
       '에 시작한 진행이에요. 학생 화면에는 보이지 않아요.</div></div><button type="button" class="btn line sm" data-act="l-stop-stale">끝내기</button></div>';
-    root.innerHTML = h + '<div class="cols t-modes">' + modeCard('clue') + modeCard('group') + '</div>' + worldCard() + demoBox();
+    root.innerHTML = waterCardHTML() + h + '<div class="cols t-modes">' + modeCard('clue') + modeCard('group') + '</div>' + worldCard() + demoBox();
     return;
   }
   const ST = stagesOf(L), st = Math.max(0, Math.min(L.stage || 0, ST.length - 1)), last = st >= ST.length - 1, left = QO.live.left(L);
@@ -890,7 +944,7 @@ function renderLive(root){
     '<button type="button" class="btn line" data-act="l-board">칠판 화면</button>' + (last ? '' : '<button type="button" class="btn line" data-act="l-stop">끝내기</button>') + '</div>';
   if(L.teacher_id != null && S.teacher && L.teacher_id !== S.teacher.id) h += '<div class="hint t-pad">다른 선생님이 시작한 진행이에요.</div>';
   h += L.mode === 'clue' ? cluePanel(L, st) : '<div class="sec">모둠별 진행</div>' + progressHTML();
-  root.innerHTML = h + worldCard() + demoBox();
+  root.innerHTML = waterCardHTML() + h + worldCard() + demoBox();
 }
 
 /* ═══════════ 함께 걷기 — 우리 반 숲에서 같은 반 친구가 서로 보이게(v2_04) ═══════════ */
