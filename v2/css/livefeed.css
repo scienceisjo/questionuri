@@ -1,0 +1,60 @@
+/* 실시간 올라온 글(livefeed.js) — 선생님 숲 방문에서만. 전자칠판에서 뒤에서도 읽히게 글자는 크게, 꾸밈은 줄 하나로 */
+
+/* 넓은 화면: 숲 오른쪽에 칸 하나를 더 만든다(지도는 줄어들 뿐 가려지지 않음) */
+html.wide .app.lf-on{grid-template-columns:96px minmax(0,1fr) minmax(320px,26vw)}
+html.wide .app.lf-on .lf{display:flex;position:static;grid-column:3;grid-row:2;border-left:1px solid var(--line);min-height:0}
+
+.lf{display:none;flex-direction:column;background:var(--card)}
+.lf[hidden]{display:none !important}
+/* 좁은 화면: 아래에서 올라오는 판 */
+html:not(.wide) .lf{display:flex;position:absolute;left:0;right:0;bottom:0;max-height:70%;z-index:40;border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(22,32,25,.16)}
+
+.lf-top{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.lf-top > div{flex:1;min-width:0}
+.lf-top b{display:block;font-size:18px;color:var(--ink)}
+.lf-top span{display:block;font-size:13px;color:var(--mute);margin-top:2px;line-height:1.45}
+.lf-x{min-height:44px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:700;color:var(--sub);background:var(--bg)}
+.lf-msg{padding:18px 16px;font-size:15px;color:var(--sub);line-height:1.6}
+.lf-list{flex:1;overflow-y:auto;padding:10px 12px 18px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
+
+.lf-card{display:flex;flex-direction:column;gap:4px;text-align:left;width:100%;padding:11px 13px 12px 15px;border:1px solid var(--line);border-left:5px solid var(--deco);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer}
+.lf-card:hover{background:#FAFBF7}
+.lf-card.on{outline:3px solid var(--leaf);outline-offset:1px}
+.lf-h{display:flex;align-items:baseline;gap:8px;font-size:14px}
+.lf-h b{flex:1;min-width:0;color:var(--ink)}
+.lf-h time{font-size:13px;color:var(--mute);white-space:nowrap}
+.lf-q{font-size:16px;font-weight:700;line-height:1.45}
+.lf-d{font-size:15px;color:var(--sub);line-height:1.5}
+.k-plant{border-left-color:var(--leaf)}
+.k-step{border-left-color:#8A9A8E}
+.k-send{border-left-color:var(--wait)}
+.k-sos{border-left-color:var(--clue)}
+.k-clue{border-left-color:var(--fog)}
+/* 새로 온 카드 — 옅은 바탕이 잠깐 머물다 사라짐 */
+.lf-card.lf-new{animation:lfNew 4s ease-out 1}
+@keyframes lfNew{0%,35%{background:#FFF4CF;border-color:#E8C766}100%{background:#fff}}
+@media (prefers-reduced-motion:reduce){ .lf-card.lf-new{animation:none;background:#FFF8E1} }
+
+/* 「올라온 글」 단추(접었을 때·좁은 화면) */
+.lf-pill{position:absolute;right:16px;bottom:96px;z-index:35;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 16px;border-radius:24px;background:var(--ink);color:#fff;font-size:15px;font-weight:800;box-shadow:0 4px 14px rgba(22,32,25,.24)}
+html.wide .lf-pill{top:84px;bottom:auto;right:22px}
+.lf-pill b{min-width:26px;height:26px;padding:0 7px;border-radius:13px;background:#FFE08A;color:var(--ink);font-size:14px;display:flex;align-items:center;justify-content:center}
+.lf-pill[hidden]{display:none}
+
+/* 크게 보기 — 다 같이 보는 화면. 이름은 없다 */
+.lf-spot{position:absolute;inset:0;z-index:80;background:#18231C;color:#fff;display:flex;flex-direction:column;padding:clamp(16px,3vw,48px)}
+.lf-spot[hidden]{display:none}
+.lfs-top{display:flex;align-items:center;gap:14px;font-size:clamp(15px,1.4vw,22px);color:#B8C7BC}
+.lfs-k{font-weight:800;color:#fff;padding-left:12px;border-left:6px solid #8A9A8E}
+.lf-spot.k-plant .lfs-k{border-left-color:#7CC48A}
+.lf-spot.k-send .lfs-k{border-left-color:#E0A54A}
+.lf-spot.k-sos .lfs-k{border-left-color:#4FB8BE}
+.lf-spot.k-clue .lfs-k{border-left-color:#9DB2CF}
+.lfs-u{color:#B8C7BC}
+.lfs-x{margin-left:auto;min-height:48px;padding:0 18px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:clamp(15px,1.3vw,20px);font-weight:700}
+.lfs-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:clamp(14px,2.4vh,32px);min-height:0;overflow-y:auto;max-width:1400px;width:100%;margin:0 auto}
+.lfs-q{font-size:clamp(26px,3.4vw,58px);font-weight:800;line-height:1.35;word-break:keep-all}
+.lfs-d{font-size:clamp(20px,2.4vw,40px);line-height:1.55;color:#E3EEE6;background:rgba(255,255,255,.07);border-radius:16px;padding:clamp(14px,2vw,30px);word-break:keep-all;white-space:pre-wrap}
+.lfs-nav{display:flex;align-items:center;justify-content:center;gap:18px;font-size:clamp(14px,1.2vw,19px);color:#B8C7BC}
+.lfs-nav button{min-height:48px;padding:0 20px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:clamp(15px,1.3vw,20px);font-weight:700}
+.lfs-nav button:disabled{opacity:.35}

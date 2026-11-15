@@ -1848,7 +1848,7 @@ if(QO.selftest && QO.cfg.page === 'student'){
     await t.click('#x_st_find [data-xa="delAsk"][data-i="1"]');
     await t.click('#x_st_find [data-xa="delLine"][data-i="1"]');
     await t.waitFor(() => dbq(t, 107).journal.find.length === 1);
-    await t.waitFor(() => !q$('#x_st_find [data-xa="delLine"]') && q$('#x_st_find .val'));
+    await t.waitFor(() => VV(107).d.find.length === 1 && !q$('#x_st_find [data-xa="delLine"]') && t.$$('#x_st_find .x-line-t').length === 1);   // 지운 뒤 다시 그린 화면
     t.expect(q$('#x_st_find').textContent.indexOf('두 곳 비교') < 0, '한 곳뿐이면 두 곳 비교 숨김');
     await t.click('#x_st_wrap .sumline');
     await t.click('#x_st_wrap [data-xa="edit"][data-k="wrap"]');
