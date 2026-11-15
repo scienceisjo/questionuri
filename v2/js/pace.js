@@ -111,16 +111,21 @@ function render(root){
     '<div class="lbl">AI 평가 결과</div><div class="chips pc-vs" role="group" aria-label="AI 평가 결과">' +
       VERDICT.map(v => '<button type="button" class="chip' + (PS.verdict === v[0] ? ' on' : '') + '" data-pc="v" data-v="' + v[0] + '" aria-pressed="' + (PS.verdict === v[0]) + '">' + v[1] + '</button>').join('') + '</div>' +
     '<div class="lbl">AI가 짚은 것 한 줄 (안 써도 돼요)</div><input class="inp" id="pc_note" data-pcin="note" maxlength="300" autocomplete="off" placeholder="예) 각도의 단위가 빠졌다고 함" value="' + esc(PS.note) + '">');
-  const s5 = step(5, '고쳐 쓰기', 'AI가 짚은 곳을 자료에서 확인하고, 내 설명을 고쳐 써요. 그리고 모둠원에게 다시 설명해요.',
-    '<textarea class="inp" id="pc_rev" data-pcin="revised" data-tgk="" rows="5" maxlength="1200" placeholder="고친 설명(교과서 밖이라고 했으면 자료 한 곳에서 꼭 확인)">' + esc(PS.revised) + '</textarea>' +
-    '<div class="lbl">6. 꼬리 질문 하나 (해도 되고 안 해도 돼요)</div>' +
-    '<input class="inp" id="pc_tail" data-pcin="tail" data-tgk="" maxlength="300" autocomplete="off" placeholder="찾은 답에서 새로 궁금해진 것 · 예) 그럼 시리우스와 태양을 같은 거리에 두면?" value="' + esc(PS.tail) + '">' +
+  /* AI 평가에 따라 5번 안내가 바뀐다: 잘 설명함 → 고칠 곳 없음, 바로 6번 / 조금 고치면 됨·다시 알아보기 → 고쳐 쓰고 6번 */
+  const guide5 = PS.verdict === 'good' ? '<p class="pc-go ok">「잘 설명함」 · 고칠 곳이 없으면 바로 6번 꼬리 질문으로 가요.</p>'
+    : (PS.verdict === 'fix' || PS.verdict === 'redo') ? '<p class="pc-go fix">「' + esc(vName(PS.verdict)) + '」 · 여기서 고쳐 쓰고, 모둠원에게 다시 설명한 뒤 6번으로 가요.</p>'
+    : '<p class="hint">4번에서 AI 평가 결과를 고르면 무엇을 할지 알려 줘요.</p>';
+  const s5 = step(5, '고쳐 쓰기', 'AI가 짚은 곳을 자료에서 확인하고, 내 설명을 바로잡아요.',
+    guide5 +
+    '<textarea class="inp" id="pc_rev" data-pcin="revised" data-tgk="" rows="5" maxlength="1200" placeholder="고친 설명(교과서 밖이라고 했으면 자료 한 곳에서 꼭 확인)">' + esc(PS.revised) + '</textarea>');
+  const s6 = step(6, '꼬리 질문 만들기', '정리한 답에서 새로 궁금해진 것 하나. 답에서 다음 질문으로 이어 가요. 해도 되고 안 해도 돼요.',
+    '<input class="inp" id="pc_tail" data-pcin="tail" data-tgk="" maxlength="300" autocomplete="off" placeholder="예) 그럼 시리우스와 태양을 같은 거리에 두면 어느 쪽이 더 밝을까?" value="' + esc(PS.tail) + '">' +
     '<div class="err" id="pc_err" role="alert">' + esc(PS.err) + '</div>' +
     '<button type="button" class="btn wide" data-pc="save">저장하기</button>' + (PS.saved ? '<p class="hint pc-ok">' + esc(PS.saved) + '</p>' : ''));
-  const check = '<section class="card pc-check"><h2>모둠 체크리스트</h2><ul><li>모둠원 모두 말로 설명했다</li><li>AI에게 평가받았다</li><li>고쳐서 다시 설명했다</li><li>받은 답에서 꼬리 질문 하나 만들었다(선택)</li></ul></section>';
+  const check = '<section class="card pc-check"><h2>모둠 체크리스트</h2><ul><li>모둠원 모두 말로 설명했다</li><li>AI에게 평가받았다</li><li>고쳐서 다시 설명했다</li><li>정리한 답에서 꼬리 질문 하나 만들었다(선택)</li></ul></section>';
   const logs = '<section class="card pc-logs"><h2>내 기록</h2>' + logsHTML() + '</section>';
-  root.innerHTML = '<div class="pc-root">' + head + (U.wide() ? '<div class="cols pc-cols"><div>' + s1 + s2 + s3 + '</div><div>' + s4 + s5 + check + logs + '</div></div>'
-    : s1 + s2 + s3 + s4 + s5 + check + logs) + '</div>';
+  root.innerHTML = '<div class="pc-root">' + head + (U.wide() ? '<div class="cols pc-cols"><div>' + s1 + s2 + s3 + '</div><div>' + s4 + s5 + s6 + check + logs + '</div></div>'
+    : s1 + s2 + s3 + s4 + s5 + s6 + check + logs) + '</div>';
   if(PS.logs == null && !PS.soon && !PS.loadErr) loadLogs();
   if(fk){ const el = root.querySelector('[data-pcin="' + fk.k + '"]'); if(el){ try{ el.focus({preventScroll:true}); el.setSelectionRange(fk.s, fk.e); }catch(_){} } }
 }

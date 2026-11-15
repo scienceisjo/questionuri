@@ -36,3 +36,6 @@
 
 /* 아래 탭 줄(좁은 화면)에서 긴 이름은 두 줄로 */
 #nav [data-t="pace"] span{white-space:normal;max-width:4.6em;line-height:1.12;text-align:center;word-break:keep-all}
+.pc-go{margin:0;font-size:14.5px;font-weight:700;padding:10px 12px;border-radius:10px;word-break:keep-all}
+.pc-go.ok{background:var(--leaf-l);color:var(--leaf-d)}
+.pc-go.fix{background:#FFF6DD;color:#9A6A0B}
