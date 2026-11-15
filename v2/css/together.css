@@ -62,3 +62,10 @@
 .tg-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--clue);margin:7px 5px}
 .tg-news .e svg{width:18px;height:18px;margin-top:2px}
 .tg-sentlist .link{padding-bottom:0}
+
+/* 다른 모둠 질문에 물 주기 */
+.tg-water{display:flex;flex-direction:column;gap:2px}
+.tg-wq{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.tg-wq:first-of-type{border-top:0}
+.tg-wqt{flex:1;font-size:15px;line-height:1.5;word-break:keep-all}
+.tg-wqt b{color:var(--leaf-d);margin-right:4px}

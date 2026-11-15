@@ -692,17 +692,44 @@ function tglive(){
 }
 
 /* ═══════════ 그리기 ═══════════ */
+/* 다른 모둠 질문에 물 주기(2026-11-15, 사용자 「모둠 대표가 질문을 올린 뒤 함께 탭에서 다른 모둠 질문에 물주기」).
+   neighbor_inquiries 는 질문 id 를 주지 않아서, 반 친구 질문(classmate_questions, 200개씩 두 번)에서 같은 글을 찾아 id 를 붙인다.
+   못 찾으면 물 주기 대신 「숲 탭 친구 나무에서」 안내. 물 주기 자체는 기존 mark_curious(질문 하나에 한 번) 그대로 */
+const normT = x => String(x == null ? '' : x).replace(/\s+/g, ' ').trim();
+function loadNbIds(){
+  if(T.nbIdsLoading) return; T.nbIdsLoading = true;
+  const my = T;
+  (async () => {
+    const map = {};
+    const put = rows => (rows || []).forEach(q => { [q.refined_text, q.text, q.body].forEach(t => { const k = normT(t); if(k && map[k] == null) map[k] = Number(q.id); }); });
+    let rows = await QO.api.classmateQuestions(200, null); put(rows);
+    if(rows && rows.length >= 200){ const last = rows[rows.length - 1]; rows = await QO.api.classmateQuestions(200, last.id); put(rows); }
+    return map;
+  })().then(m => { if(my === T){ T.nbIds = m; rr(); } }, e => { if(my === T){ T.nbIds = {}; QO.err(e, 'nb ids'); rr(); } })
+    .finally(() => { my.nbIdsLoading = false; });
+}
+function waterHTML(){
+  const list = (T.nb || []).filter(n => normT(n.question_text));
+  if(!list.length) return (T.g && T.g.group) ? '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card"><div class="hint">다른 모둠이 질문을 올리면 여기에 보여요.</div></div>' : '';
+  if(T.nbIds == null) loadNbIds();
+  return '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card tg-water"><div class="hint">마음에 드는 질문에 💧 물을 줘요. 질문 하나에 한 번씩.</div>' +
+    list.map(n => {
+      const qid = T.nbIds ? T.nbIds[normT(n.question_text)] : null;
+      return '<div class="tg-wq"><div class="tg-wqt"><b>' + esc(n.group_name || (n.group_no + '모둠')) + '</b> ' + esc(n.question_text) + '</div>' +
+        (qid ? curiousBtn(qid) : T.nbIds ? '<span class="hint">물 주기는 숲 탭 친구 나무에서</span>' : '<span class="hint">불러오는 중</span>') + '</div>';
+    }).join('') + '</div>';
+}
 function pageHTML(){
   const L = QO.state.live, clue = !!(L && L.mode === 'clue');
   const errs = Object.keys(T.errs).length ? '<div class="card tg-loaderr"><div class="hint">불러오지 못한 것이 있어요.</div><button type="button" class="link teal" data-tg="reload">다시 불러오기</button></div>' : '';
   const top = errs + (clue ? clueLiveHTML(L) : T.clueEnded ? endedHTML() : '');
-  const group = groupHTML(), nb = neighborHTML(), news = newsHTML(), sent = sentHTML();
+  const group = groupHTML(), water = clue ? '' : waterHTML(), nb = neighborHTML(), news = newsHTML(), sent = sentHTML();
   if(ui.wide()){
     /* 단서 시간이면 왼쪽 친구 질문 · 오른쪽 모둠 일지와 소식 / 아니면 왼쪽 모둠 일지 · 오른쪽 소식 */
-    const left = clue ? top : top + group + nb, right = clue ? group + nb + news + sent : news + sent;
+    const left = clue ? top : top + group + water + nb, right = clue ? group + nb + news + sent : news + sent;
     return '<div class="cols"><div>' + left + '</div><div>' + right + '</div></div>' + demoHTML();
   }
-  return top + group + nb + news + sent + demoHTML();
+  return top + group + water + nb + news + sent + demoHTML();
 }
 function render(root){
   if(!ensure()){ root.innerHTML = ''; return; }
