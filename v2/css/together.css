@@ -70,3 +70,7 @@
 .tg-wqt{flex:1;font-size:15px;line-height:1.5;word-break:keep-all}
 .tg-wqt b{color:var(--leaf-d);margin-right:4px}
 .tg-wn{font-weight:800;color:#1F6FB2;white-space:nowrap}
+/* 모둠 물 3개(11-15) */
+.tg-whead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;font-size:.92em;color:var(--sub,#555);margin-bottom:6px}
+.tg-wleft{font-weight:800;color:#1f6fb2;background:#e8f2fb;border-radius:99px;padding:3px 10px;white-space:nowrap}
+.tg-wleft.none{color:#888;background:#eee}

@@ -717,28 +717,59 @@ function loadGw(){
     e => { if(my === T){ T.gwat = 'soon'; if(!/PGRST202|42883|does not exist|schema cache/i.test(String(e && e.message || e))) QO.err(e, 'class_group_water'); rr(); } })
     .finally(() => { my.gwatLoading = false; });
 }
+/* 모둠 물(11-15 사용자 「물 주기는 모둠별로 3개까지 · 우리 모둠도 궁금한 질문이어야 함」).
+   v2_14 group_water: 모둠원 누가 줘도 모둠 물 하나, 모둠마다 3개까지. 서버가 막고, 화면은 남은 수만 보여 준다 */
+const GW_MAX = 3;
+async function groupWater(btn, qid){
+  const my = T;
+  const r = await ui.busy(btn, () => QO.api.groupWater(qid));
+  if(r === undefined){ if(my === T){ T.gwat = undefined; rr(); } return; }
+  if(my !== T) return;
+  if(r === 'ok'){
+    if(T.curious.indexOf(qid) < 0) T.curious.push(qid);
+    const got = await QO.acorn('water', qid);
+    ui.toast('우리 모둠 물을 줬어요' + (got ? ' · 🌰 +' + got : '') + '.');
+  } else ui.toast('우리 모둠이 이미 물을 준 질문이에요.');
+  T.gwat = undefined; rr();
+}
+function gwRow(x, btn){
+  return '<div class="tg-wq"><div class="tg-wqt"><b>' + esc(x.group_name || (x.group_no + '모둠')) + '</b> ' + esc(x.question_text) + '</div>' +
+    '<span class="tg-wn">💧 ' + Number(x.water_count || 0) + '</span>' + btn + '</div>';
+}
 function waterHTML(){
   if(T.gwat === undefined) loadGw();
   if(Array.isArray(T.gwat)){
     const L = T.gwat.filter(x => !x.mine && normT(x.question_text));
     if(!L.length) return (T.g && T.g.group) ? '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card"><div class="hint">다른 모둠이 질문을 올리면 여기에 보여요.</div></div>' : '';
-    return '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card tg-water"><div class="hint">마음에 드는 질문에 💧 물을 줘요. 질문 하나에 한 번씩.</div>' +
+    const inG = !!(T.g && T.g.group) || T.gwat.some(x => x.mine), used = Math.min(GW_MAX, Number((T.gwat[0] || {}).our_used || 0)), left = GW_MAX - used;
+    const head = inG
+      ? '<div class="tg-whead"><span>우리 모둠도 궁금한 질문에만 줘요. 모둠이 같이 정해서 <b>3개까지</b>.</span><span class="tg-wleft' + (left ? '' : ' none') + '">우리 모둠 물 ' + left + ' / ' + GW_MAX + '</span></div>'
+      : '<div class="hint">물은 모둠마다 3개까지 줘요. 모둠에 들어가면 줄 수 있어요.</div>';
+    return '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card tg-water">' + head +
       L.map(x => {
-        const n = Number(x.water_count || 0) + (x.question_id && T.curious.indexOf(Number(x.question_id)) >= 0 && T.gwGave && T.gwGave[x.question_id] ? 1 : 0);
-        return '<div class="tg-wq"><div class="tg-wqt"><b>' + esc(x.group_name || (x.group_no + '모둠')) + '</b> ' + esc(x.question_text) + '</div>' +
-          '<span class="tg-wn">💧 ' + n + '</span>' + (x.question_id ? curiousBtn(x.question_id) : '') + '</div>';
+        const btn = !x.question_id || !inG ? ''
+          : x.we_watered ? '<button type="button" class="link" disabled>💧 우리 모둠이 줬어요</button>'
+          : left ? '<button type="button" class="link" data-tg="gwater" data-q="' + x.question_id + '">💧 물 주기</button>'
+          : '<button type="button" class="link" disabled>물 3개 다 썼어요</button>';
+        return gwRow(x, btn);
       }).join('') + '</div>';
   }
   const list = (T.nb || []).filter(n => normT(n.question_text));
   if(!list.length) return (T.g && T.g.group) ? '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card"><div class="hint">다른 모둠이 질문을 올리면 여기에 보여요.</div></div>' : '';
   if(T.nbIds == null) loadNbIds();
-  return '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card tg-water"><div class="hint">마음에 드는 질문에 💧 물을 줘요. 질문 하나에 한 번씩.</div>' +
+  return '<div class="sec">다른 모둠 질문에 물 주기</div><div class="card tg-water"><div class="hint">우리 모둠도 궁금한 질문에만 줘요. 모둠이 같이 정해서 3개까지.</div>' +
     list.map(n => {
       const qid = T.nbIds ? T.nbIds[normT(n.question_text)] : null;
       return '<div class="tg-wq"><div class="tg-wqt"><b>' + esc(n.group_name || (n.group_no + '모둠')) + '</b> ' + esc(n.question_text) + '</div>' +
         (qid ? curiousBtn(qid) : T.nbIds ? '<span class="hint">물 주기는 숲 탭 친구 나무에서</span>' : '<span class="hint">불러오는 중</span>') + '</div>';
     }).join('') + '</div>';
 }
+QO.api.groupWater = async function(qid){
+  const c = await QO.sbClient();
+  const r = await c.rpc('group_water', {p_qid:qid});
+  if(r.error){ const e = new Error(r.error.message || String(r.error)); e.code = r.error.code; throw e; }
+  return r.data;
+};
 QO.api.classGroupWater = async function(){
   const c = await QO.sbClient();
   const r = await c.rpc('class_group_water');
@@ -749,15 +780,43 @@ if(QO.mock && QO.mock.extend) QO.mock.extend({
   classGroupWater(){
     const h = QO.mock.h, db = QO.mock.db, me = h.me(), p = h.prof(me); if(!p) return [];
     const y = h.schoolYear(), mine = new Set(db.group_members.filter(m => m.user_id === me).map(m => m.group_id));
+    const st = mockGw(), used = st.myG ? st.cur.filter(c => c.g !== st.myG && st.marked(c.q)).length : 0;
     return db.groups.filter(g => g.school_year === y && g.grade === p.grade && g.class_no === p.class_no).sort((a, b) => a.group_no - b.group_no).map(g => {
       const inq = db.group_inquiries.filter(i => i.group_id === g.id).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || b.id - a.id)[0];
       if(!inq) return null;
       const q = db.questions.find(x => x.id === inq.question_id);
       if(q && q.is_anonymous) return null;
-      return {group_no:g.group_no, group_name:g.name, question_id:inq.question_id || null, question_text:inq.question_text, water_count:q ? (q.water_count || (q.watered_by || []).length || 0) : 0, mine:mine.has(g.id)};
+      return {group_no:g.group_no, group_name:g.name, question_id:inq.question_id || null, question_text:inq.question_text, water_count:q ? (q.water_count || (q.watered_by || []).length || 0) : 0, mine:mine.has(g.id),
+        we_watered:!!(inq.question_id && st.myG && st.marked(inq.question_id)), our_used:used};
     }).filter(Boolean);
+  },
+  groupWater(qid){
+    const st = mockGw(), id = Number(qid);
+    if(!st.myG) throw QO.mock.h.userErr('모둠에 들어 있어야 물을 줄 수 있어요');
+    const t = st.cur.find(c => c.q === id);
+    if(!t) throw QO.mock.h.userErr('다른 모둠의 모둠 질문에만 물을 줄 수 있어요');
+    if(t.g === st.myG) throw QO.mock.h.userErr('우리 모둠 질문에는 물을 줄 수 없어요');
+    if(st.marked(id)) return 'already';
+    if(st.cur.filter(c => c.g !== st.myG && st.marked(c.q)).length >= GW_MAX) throw QO.mock.h.userErr('우리 모둠 물은 3개까지예요');
+    const h = QO.mock.h, me = h.me(), q = h.qById(id);
+    if(!q || q.user_id === me || !h.sameClass(me, q.user_id)) throw h.userErr('이 질문에는 물을 줄 수 없어요');
+    QO.mock.db.curious_marks.push({question_id:q.id, user_id:me, created_at:h.nowISO()});
+    const by = q.watered_by || []; if(by.indexOf(me) < 0){ q.watered_by = by.concat([me]); q.water_count = q.watered_by.length; }
+    return 'ok';
   }
 });
+/* 가짜 서버용: 내 모둠·우리 반 모둠별 지금 질문·우리 모둠이 물 준 질문 */
+function mockGw(){
+  const h = QO.mock.h, db = QO.mock.db, me = h.me(), p = h.prof(me), y = h.schoolYear();
+  const gs = p ? db.groups.filter(g => g.school_year === y && g.grade === p.grade && g.class_no === p.class_no) : [];
+  const myG = (gs.filter(g => db.group_members.some(m => m.group_id === g.id && m.user_id === me)).sort((a, b) => b.id - a.id)[0] || {}).id || null;
+  const cur = gs.map(g => {
+    const inq = db.group_inquiries.filter(i => i.group_id === g.id && i.question_id).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || b.id - a.id)[0];
+    return inq ? {g:g.id, q:Number(inq.question_id)} : null;
+  }).filter(Boolean);
+  const mates = myG ? db.group_members.filter(m => m.group_id === myG).map(m => m.user_id) : [];
+  return {myG, cur, marked:q => db.curious_marks.some(c => c.question_id === q && mates.indexOf(c.user_id) >= 0)};
+}
 function pageHTML(){
   const L = QO.state.live, clue = !!(L && L.mode === 'clue');
   const errs = Object.keys(T.errs).length ? '<div class="card tg-loaderr"><div class="hint">불러오지 못한 것이 있어요.</div><button type="button" class="link teal" data-tg="reload">다시 불러오기</button></div>' : '';
@@ -865,6 +924,7 @@ document.addEventListener('click', e => {
     case 'clue-kind': { const f = findFriend(q), k = b.dataset.k; if(!f || kindList(f).indexOf(k) < 0) break; T.kind[q] = k; rr(); focusSoon('.tg-fq[data-q="' + q + '"] .cl-free'); break; }
     case 'clue-send': sendClue(b); break;
     case 'curious': markCurious(b, q); break;
+    case 'gwater': groupWater(b, q); break;
     case 'row': T.openRow = T.openRow === b.dataset.k ? null : b.dataset.k; rr(); break;
     case 'mchip': {
       const key = 'g' + b.dataset.step, arr = T.chips[key] || (T.chips[key] = []), m = b.dataset.m, i = arr.indexOf(m);
