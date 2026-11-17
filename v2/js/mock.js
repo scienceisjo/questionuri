@@ -653,6 +653,19 @@ def('startGroupInquiry', function(groupId, questionId, text, why){   // start_gr
   buildSteps(inq.id, mem);
   return inq.id;
 });
+def('editGroupQuestion', function(inqId, text){            // edit_group_question(v2_15)
+  const id = me(); if(!id) throw userErr('로그인이 필요해요');
+  const inq = db.group_inquiries.find(i => i.id === Number(inqId));
+  if(!inq) throw userErr('모둠 질문을 찾을 수 없어요');
+  if(!(isTeacher(id) || db.group_members.some(m => m.group_id === inq.group_id && m.user_id === id))) throw userErr('우리 모둠 질문만 고칠 수 있어요');
+  const t = String(text == null ? '' : text).trim().replace(/\s+/g, ' ');
+  if(clen(t) < 5) throw userErr('질문을 다섯 글자 넘게 적어 주세요');
+  if(clen(t) > 150) throw userErr('150자 안으로 줄여 주세요');
+  if(t === inq.question_text) return {id:inq.id, question_text:inq.question_text, question_orig:inq.question_orig || null, question_edited_at:inq.question_edited_at || null, changed:false};
+  if(inq.question_orig == null) inq.question_orig = inq.question_text;
+  inq.question_text = t; inq.question_edited_at = nowISO();
+  return {id:inq.id, question_text:t, question_orig:inq.question_orig, question_edited_at:inq.question_edited_at, changed:true};
+});
 def('saveGroupStep', function(stepId, body, src){        // save_group_step
   const id = me(), st = db.group_steps.find(s => s.id === Number(stepId));
   if(!st) throw userErr('칸을 찾을 수 없어요');

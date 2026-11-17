@@ -314,7 +314,8 @@ const TREE_PAL = {
   baobab:   {ol:'#3A4E1E', lo:'#5E7A2C', mid:'#7C9C3A', hi:'#A6C45C'},
   storytree:{ol:'#26365C', lo:'#3D5A9A', mid:'#5A7CC6', hi:'#93B4EC', fr:'#F2D25A', fh:'#FFF6C2'},
   palm:     {ol:'#2B5A2A', lo:'#3C7A36', mid:'#55A04A', hi:'#7CC46A', fr:'#7A4E26', fh:'#B07A44'},
-  pine:     {ol:'#1F4A3C', lo:'#2B6450', mid:'#3A7F64', hi:'#56A080'}
+  pine:     {ol:'#1D4630', lo:'#2B6043', mid:'#3A7B53', hi:'#55966A'},
+  fir:      {ol:'#1F4A3C', lo:'#2B6450', mid:'#3A7F64', hi:'#56A080'}    // 겨울 숲 장식 침엽수(학생 소나무와 따로)
 };
 const FRUIT_AT = [[-6, -2], [6, -6], [9, 2], [-3, 4], [1, -11], [-9, -7], [11, -3], [-1, -2]];
 function trunk(pb, fx, fy, tw, h){
@@ -342,7 +343,7 @@ function pineInto(pb, fx, fy, s, P, snow){
     }
   }
 }
-function palmInto(pb, fx, fy, s, P, fruits){
+function palmInto(pb, fx, fy, s, P, fruits, fk){
   const h = Math.round(26 * s);
   for(let k = 0; k <= h; k++){
     const t = k / h, x = Math.round(fx + 4 * s * t * t), y = fy - k;
@@ -356,16 +357,71 @@ function palmInto(pb, fx, fy, s, P, fruits){
   });
   C.push([tx, ty, 4 * s]);
   blob(pb, C, P);
-  for(let i = 0; i < Math.min(fruits, 3); i++){ const cx = Math.round(tx - 2 + i * 2.5), cy = Math.round(ty + 3); pb.r(cx, cy, 2, 2, c32(P.fr)); pb.p(cx, cy, c32(P.fh)); }
+  for(let i = 0; i < Math.min(fruits, 4); i++){ const cx = Math.round(tx - 3 + i * 2.6), cy = Math.round(ty + 3 + (i % 2)); fruitPx(pb, cx, cy, fk, false); }
 }
-function treeSpr(type, lv, fruits, snow){
+/* 열매 한 알(도트) — 학생이 고른 열매 종류(QO.K.FRUITS)의 색·모양. big 이면 조금 크게 */
+function fruitPx(pb0, x, y, fk, big){
+  /* 먼저 모양을 모으고, 둘레에 짙은 테두리 한 줄 — 초록 잎 위의 수박·메론도 보이게 */
+  const px = new Map();
+  const pb = {p:(a, b, c) => { px.set(Math.round(a) + ',' + Math.round(b), c); }, r:(a, b, w, h, c) => { for(let j = 0; j < h; j++) for(let i = 0; i < w; i++) px.set((a + i) + ',' + (b + j), c); }};
+  fruitShapePx(pb, x, y, fk, big);
+  const ol = c32('#2A1A12');
+  px.forEach((c, k) => { const q = k.split(',').map(Number); [[1,0],[-1,0],[0,1],[0,-1]].forEach(d => { const kk = (q[0] + d[0]) + ',' + (q[1] + d[1]); if(!px.has(kk)) pb0.p(q[0] + d[0], q[1] + d[1], ol); }); });
+  px.forEach((c, k) => { const q = k.split(',').map(Number); pb0.p(q[0], q[1], c); });
+}
+function fruitShapePx(pb, x, y, fk, big){
+  const F = (QO.K.FRUIT && QO.K.FRUIT[fk]) || {id:'apple', c:'#D2413A', c2:'#FF9C8A'};
+  const c = c32(F.c), c2 = c32(F.c2), dk = c32(shade(F.c, .62)), lf = c32('#3E8A3E');
+  switch(F.id){
+    case 'cherry': pb.r(x - 1, y + 1, 2, 2, c); pb.r(x + 2, y + 1, 2, 2, c); pb.p(x - 1, y + 1, c2); pb.p(x + 2, y + 1, c2); pb.p(x, y, lf); pb.p(x + 1, y - 1, lf); pb.p(x + 2, y, lf); return;
+    case 'grape': case 'blueberry': pb.r(x - 1, y, 3, 1, c); pb.r(x - 1, y + 1, 3, 1, dk); pb.p(x, y + 2, c); if(big){ pb.p(x - 2, y, c); pb.p(x + 2, y, c); } pb.p(x - 1, y, c2); return;
+    case 'watermelon': case 'melon': case 'chamoe': case 'lemon': {
+      const w = big ? 4 : 3; pb.r(x - 1, y, w, 2 + (big ? 1 : 0), c); pb.p(x, y, c2); if(F.id !== 'lemon') pb.p(x + 1, y + 1, F.id === 'watermelon' ? dk : c2); return;
+    }
+    default:
+      if(big){ pb.r(x - 1, y - 1, 3, 3, c); pb.p(x - 1, y - 1, c2); pb.p(x + 1, y + 1, dk); if(F.id === 'apple' || F.id === 'peach' || F.id === 'mandarin') pb.p(x, y - 2, lf); }
+      else{ pb.r(x, y, 2, 2, c); pb.p(x, y, c2); }
+  }
+}
+/* 학생 소나무(우리 소나무) — 붉은 줄기가 S자로 휘고, 옆으로 뻗은 가지 끝에 납작한 솔잎 구름이 층층이 */
+function redPineInto(pb, fx, fy, s, P, snow, fruits, fk, lv){
+  const th = Math.round(24 * s + 6), tw = s > .8 ? 4 : 3, ol = c32('#4A2416');
+  const xAt = k => Math.round(fx + Math.sin(k / th * Math.PI * 1.2) * 2.2 * s);       // 줄기 휨
+  for(let k = 0; k < th; k++){
+    const x0 = xAt(k) - Math.floor(tw / 2), y = fy - 1 - k;
+    pb.p(x0 - 1, y, ol); pb.p(x0 + tw, y, ol);
+    for(let i = 0; i < tw; i++) pb.p(x0 + i, y, c32(i === 0 ? '#C8784C' : i === tw - 1 ? '#7A3E26' : (k % 5 === 2 ? '#8A4A2E' : '#A85A38')));
+  }
+  const top = fy - th;
+  const PADS = [[-8, 0.38, 8], [8, 0.52, 7.5], [-5, 0.68, 7], [6, 0.8, 6], [-2, 0.92, 5.5], [1, 1.02, 5]];
+  const n = Math.max(3, Math.min(6, 2 + Math.ceil(lv / 2.5)));
+  const pads = PADS.slice(0, n).map(q => [fx + q[0] * s * 1.15, fy - th * q[1] - 2, q[2] * s * 1.15]);
+  pads.forEach(pd => {                                                                   // 가지
+    const sx = xAt(Math.round(fy - pd[1])), dir = pd[0] > sx ? 1 : -1;
+    for(let x = sx; x !== Math.round(pd[0]); x += dir) pb.p(x, Math.round(pd[1] + 2 - Math.abs(x - sx) * 0.15), c32('#8A4A2E'));
+  });
+  pads.forEach(pd => {                                                                   // 솔잎 구름(납작한 원 몇 개)
+    const w = pd[2], C = [];
+    for(let i = -2; i <= 2; i++) C.push([pd[0] + i * w * 0.36, pd[1] + Math.abs(i) * 0.5, w * 0.42]);
+    blob(pb, C, P);
+    if(snow) for(let x = Math.round(pd[0] - w * 0.8); x <= pd[0] + w * 0.8; x++){ for(let y = Math.round(pd[1] - w * 0.5); y < pd[1]; y++){ if(pb.a(x, y) === 255 && pb.a(x, y - 1) < 255){ pb.p(x, y, c32('#FFFFFF')); pb.p(x, y + 1, c32('#F4FAFD')); break; } } }
+  });
+  for(let i = 0; i < fruits; i++){                                                       // 열매 — 구름 아래쪽 가장자리
+    const pd = pads[i % pads.length], side = (i % 2 ? 1 : -1) * (0.25 + (Math.floor(i / pads.length) % 3) * 0.25);
+    fruitPx(pb, Math.round(pd[0] + side * pd[2]), Math.round(pd[1] + pd[2] * 0.25), fk, s > .85);
+  }
+  return top;
+}
+function treeSpr(type, lv, fruits, snow, fk){
   type = TREE_PAL[type] ? type : 'default';
   lv = Math.max(1, Math.min(10, lv | 0)); fruits = Math.max(0, Math.min(8, fruits | 0));
-  return spr('tree|' + type + '|' + lv + '|' + fruits + '|' + (snow ? 1 : 0), 44, 56, 22, 54, pb => {
+  fk = (QO.K.fruitOf ? QO.K.fruitOf(fk) : 'apple');
+  return spr('tree|' + type + '|' + lv + '|' + fruits + '|' + (snow ? 1 : 0) + '|' + fk, 44, 56, 22, 54, pb => {
     const fx = 22, fy = 54, s = 0.5 + 0.055 * lv, P = TREE_PAL[type];
     shadow(pb, fx, fy - 1, Math.round(8 + 6 * s), 3);
-    if(type === 'pine'){ pineInto(pb, fx, fy, s, P, snow); return; }
-    if(type === 'palm'){ palmInto(pb, fx, fy, s, P, fruits); return; }
+    if(type === 'fir'){ pineInto(pb, fx, fy, s, P, snow); return; }
+    if(type === 'pine'){ redPineInto(pb, fx, fy, s, P, snow, fruits, fk, lv); return; }
+    if(type === 'palm'){ palmInto(pb, fx, fy, s, P, fruits, fk); return; }
     const th = Math.round(5 + 7 * s), tw = type === 'baobab' ? Math.round(6 + 6 * s) : (s > .8 ? 6 : 4);
     trunk(pb, fx, fy, tw, th + 4);
     const cy = fy - th - Math.round(9 * s);
@@ -376,11 +432,10 @@ function treeSpr(type, lv, fruits, snow){
     if(type === 'cherry' || type === 'maple'){
       for(let i = 0; i < 10; i++){ const a = hash(i, lv, 101) * 6.28, r = hash(i, lv, 102) * 9 * s; pb.p(fx + Math.cos(a) * r, cy + Math.sin(a) * r, c32(P.hi)); }
     }
-    if(P.fr) FRUIT_AT.slice(0, fruits).forEach(f => {
+    if(type !== 'border') FRUIT_AT.slice(0, fruits).forEach(f => {                       // 고른 열매(모든 나무 종류)
       const x = Math.round(fx + f[0] * s), y = Math.round(cy + f[1] * s);
       if(pb.a(x, y) < 255 || pb.a(x + 1, y + 1) < 255) return;
-      if(s > .85){ pb.r(x - 1, y - 1, 3, 3, c32(P.fr)); pb.p(x - 1, y - 1, c32(P.fh)); pb.p(x + 1, y + 1, c32(shade(P.fr, .7))); }
-      else{ pb.r(x, y, 2, 2, c32(P.fr)); pb.p(x, y, c32(P.fh)); }
+      fruitPx(pb, x, y, fk, s > .85);
     });
   });
 }
@@ -894,11 +949,11 @@ function buildWorld(seen, trees){
 
   /* 가장자리 숲 */
   for(let x = 0; x < MW; x += 2){
-    if(x >= 34) one(x, 0, treeSpr('pine', 7 + (hash(x, 0, 140) * 3 | 0), 0, true)), one(x + 1, 0, treeSpr('pine', 6 + (hash(x, 1, 141) * 3 | 0), 0, true));
+    if(x >= 34) one(x, 0, treeSpr('fir', 7 + (hash(x, 0, 140) * 3 | 0), 0, true)), one(x + 1, 0, treeSpr('fir', 6 + (hash(x, 1, 141) * 3 | 0), 0, true));
     else tree2(x, -1, treeSpr('border', 7 + (hash(x, 0, 142) * 4 | 0), 0));
     tree2(x, 38, treeSpr('border', 7 + (hash(x, 9, 143) * 4 | 0), 0));
   }
-  for(let y = 1; y < MH - 1; y += 2){ tree2(0, y - 1, treeSpr('border', 7 + (hash(0, y, 144) * 4 | 0), 0)); tree2(46, y - 1, treeSpr(y < 12 ? 'pine' : 'border', 7 + (hash(1, y, 145) * 4 | 0), 0, y < 12)); }
+  for(let y = 1; y < MH - 1; y += 2){ tree2(0, y - 1, treeSpr('border', 7 + (hash(0, y, 144) * 4 | 0), 0)); tree2(46, y - 1, treeSpr(y < 12 ? 'fir' : 'border', 7 + (hash(1, y, 145) * 4 | 0), 0, y < 12)); }
 
   /* 언덕 · 관측소 */
   for(let y = 1; y <= 7; y++){ one(17, y, bushSpr(0)); one(30, y, bushSpr(y % 3 === 0 ? 1 : 0)); }
@@ -922,7 +977,7 @@ function buildWorld(seen, trees){
   scatter(31, 1, 34, 7, .28, 172);
 
   /* 겨울 숲 */
-  [[37, 2], [39, 1], [43, 2], [37, 6], [44, 6], [42, 8], [38, 9], [44, 9], [36, 4]].forEach((p, i) => one(p[0], p[1], treeSpr('pine', 6 + (i % 4), 0, true)));
+  [[37, 2], [39, 1], [43, 2], [37, 6], [44, 6], [42, 8], [38, 9], [44, 9], [36, 4]].forEach((p, i) => one(p[0], p[1], treeSpr('fir', 6 + (i % 4), 0, true)));
   one(39, 5, bushSpr(2)); one(43, 4, bushSpr(2));
   one(41, 5, snowmanSpr(), seen.winter ? {k:'text', title:'겨울 숲', body:'눈사람이 서 있어요. ' + placeText('winter', true).body} : null);
   if(!seen.winter){ const wa = {k:'place', p:'winter'}; one(40, 11, crystalSpr(), wa); one(41, 11, crystalSpr(), wa); }
@@ -1011,7 +1066,7 @@ function buildWorld(seen, trees){
   (trees || []).forEach(t => {
     const p = plotAt(t.n); if(!p) return;
     const a = {k:'tree', n:t.n, me:!!t.me, name:t.name};
-    tree2(p[0], p[1], treeSpr(t.type, t.level, t.fruits), a, {plate:t.name, plateMe:!!t.me, plateN:t.n});
+    tree2(p[0], p[1], treeSpr(t.type, t.level, t.fruits, false, t.fruit), a, {plate:t.name, plateMe:!!t.me, plateN:t.n});
   });
   scatter(11, 20, 36, 20, .14, 184);
   scatter(11, 22, 36, 36, .05, 186);
@@ -1125,7 +1180,7 @@ function fit(){
   }else if(W.off){ W.off.width = W.off.height = 1; }
   W.ctx.imageSmoothingEnabled = false;
 }
-function sigOf(d){ return JSON.stringify([d.seen || {}, (d.trees || []).map(t => [t.n, t.name, t.type, t.level, t.fruits, t.me ? 1 : 0])]); }
+function sigOf(d){ return JSON.stringify([d.seen || {}, (d.trees || []).map(t => [t.n, t.name, t.type, t.level, t.fruits, t.fruit || '', t.me ? 1 : 0])]); }
 function rebuild(){
   const d = W.data, seen = d.seen || {};
   W.world = buildWorld(seen, d.trees);

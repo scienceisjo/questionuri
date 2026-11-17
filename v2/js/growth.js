@@ -1,7 +1,7 @@
 /* 나의 성장 — 따로 탭(2026-11-11, 사용자 「나의 성장이 중요한 요소니까 탭 하나로」). 예전엔 「내 나무」 탭 오른쪽 아래 카드.
    2026-11-13 꾸밈 + 「나의 성장 기록」(SQL v2_09 growth_notes). 글만 늘어놓던 모양을 카드·그림으로 바꿨다.
    · 맨 위 장면: 새싹에서 자라는 줄기, 지금까지 지나온 탐구 칸(심기~넓히기)이 마디마다 잎으로 — 한 줄 요약
-   · 나의 성장 기록: 빈칸 틀 넷(생각이 바뀐 것·질문이 달라진 것·내가 잘한 것·다음에 해 볼 것) 중 하나를 골라
+   · 나의 성장 기록: 빈칸 틀 넷(생각이 바뀐 것·질문이 달라진 것·근거로 확인한 것·다음에 해 볼 것) 중 하나를 골라(11-17 「내가 잘한 것」→「근거로 확인한 것」)
      한 문장을 완성한다. 틀 옆에 내 기록에서 뽑은 실마리. 저장한 기록은 날짜와 함께 줄로(내 글은 지울 수 있음)
    · 내 질문이 어떻게 달라졌나: 처음 심은 질문 → 최근에 심은 질문(연구수업 「내 질문 돌아보기」와 이어짐)
    · 다듬기 전과 뒤(최근 여섯) · 다듬지 않고 간 질문의 까닭(v2_09 journal.refine_skip)
@@ -28,6 +28,7 @@ const IC = {
   change:   SV + '<path d="M4 8h12l-3.5-3.5"/><path d="M20 16H8l3.5 3.5"/></svg>',
   question: SV + '<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.5L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/><path d="M9.7 9.6a2.4 2.4 0 0 1 4.6.9c0 1.6-2.3 2-2.3 3.4"/><path d="M12 16.6h.01"/></svg>',
   proud:    SV + '<circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.4l2.6 2.6 5-5.4"/></svg>',
+  check:    SV + '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/><path d="M8 10.6l1.8 1.8 3.4-3.6"/></svg>',
   next:     SV + '<path d="M4 12h14"/><path d="M13 6.5l5.5 5.5-5.5 5.5"/></svg>',
   write:    SV + '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
   path:     SV + '<circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="6" r="2.4"/><path d="M8.2 16.8C13 15.6 11 8.6 15.8 7.2"/></svg>',
@@ -128,7 +129,12 @@ const FRAMES = [
   {k:'question', n:'질문이 달라진 것', d:'예전 질문과 요즘 질문', parts:[
     {k:'before', lead:'예전 내 질문은', trail:'했는데,', ph:'예) 낱말 뜻을 묻곤'},
     {k:'now', lead:'요즘은', trail:'해요.', ph:'예) 왜 그런지 까닭을 묻곤'}]},
-  {k:'proud', n:'내가 잘한 것', d:'잘한 것과 그 까닭', parts:[
+  {k:'check', n:'근거로 확인한 것', d:'무엇을 어디서 확인했나', parts:[
+    {k:'what', lead:'내가 확인한 것은', j:['이에요', '예요'], jd:'(이)에요', trail:'', dot:true, ph:'예) 겨울에 정전기가 잘 생기는 까닭'},
+    {k:'where', lead:'확인한 곳은', j:['이에요', '예요'], jd:'(이)에요', trail:'', dot:true, ph:'예) 교과서 118쪽과 AI 답'},
+    {k:'learn', lead:'그래서', trail:'', dot:true, ph:'예) 공기가 마르면 전하가 잘 안 빠져나간다는 걸 알았어요'}]},
+  /* 옛 틀 — 고르는 칸에는 안 나오고, 예전에 남긴 기록을 보일 때만 쓴다 */
+  {k:'proud', n:'내가 잘한 것', d:'잘한 것과 그 까닭', old:true, parts:[
     {k:'what', lead:'이번에 내가 잘한 것은', j:['이에요', '예요'], jd:'(이)에요', trail:'', dot:true, ph:'예) 출처를 두 곳에서 찾은 것'},
     {k:'why', lead:'왜냐하면', trail:'', dot:true, ph:'예) 두 곳 말이 달라서 더 알아봤거든요'}]},
   {k:'next', n:'다음에 해 볼 것', d:'다음에 해 보고 싶은 것', parts:[
@@ -175,6 +181,12 @@ function cluesFor(fk, qs){
       out.push({lb:'처음 심은 질문 · ' + mdK(t[0].created_at), t:shown(t[0])});
       out.push({lb:'최근에 심은 질문 · ' + mdK(t[t.length - 1].created_at), t:shown(t[t.length - 1])});
     }
+  } else if(fk === 'check'){
+    /* 찾기 칸에 남긴 것(어디서 · 무엇) — 최근 것부터 둘 */
+    views.filter(x => (x.v.d.find || []).length).sort(newest).slice(0, 2).forEach(x => {
+      const f = x.v.d.find[x.v.d.find.length - 1];
+      out.push({lb:'찾은 곳 · ' + (f.src || (f.ai ? 'AI' : '')), t:f.text, from:shown(x.q)});
+    });
   } else if(fk === 'proud'){
     const cl = id => (QO.store && QO.store.cluesOf ? QO.store.cluesOf(id) : []).length;
     const pick = views.slice().sort(newest).map(x => ({x, why:cl(x.q.id) ? '단서를 받은 질문' : x.q.fruit_kind === 'fruit' ? '열매가 된 질문' : x.q.fruit_kind === 'fog' ? '안개 열매가 된 질문' : x.v.d.wrap ? '정리까지 간 질문' : ''}))
@@ -211,7 +223,7 @@ function writeHTML(qs){
   }
   h += '<p class="hint gw-lead">요즘 내가 어떻게 자랐는지 한 문장으로 남겨요. 틀을 하나 고르면 빈칸이 열려요.</p>';
   const f = FR(GS.frame);
-  h += '<div class="gw-grid"><div class="gw-main"><div class="gw-frames" role="group" aria-label="성장 기록 틀 고르기">' + FRAMES.map(x => {
+  h += '<div class="gw-grid"><div class="gw-main"><div class="gw-frames" role="group" aria-label="성장 기록 틀 고르기">' + FRAMES.filter(x => !x.old).map(x => {
     const on = !!f && f.k === x.k;
     return '<button type="button" class="gw-f f-' + x.k + (on ? ' on' : '') + '" data-gr="frame" data-f="' + x.k + '" aria-pressed="' + on + '">' +
       '<span class="gw-fi">' + IC[x.k] + '</span><b>' + esc(x.n) + '</b><small>' + esc(x.d) + '</small></button>';
@@ -551,6 +563,7 @@ add('나의 성장 기록 · 틀 고르기 → 실마리 → 막힘 → 저장 �
   await t.waitFor('#body [data-gr="frame"]');
   t.expect(t.$('#body .gw-empty'), '처음엔 빈 상태');
   t.eq(t.$$('#body [data-gr="frame"]').length, 4, '틀 넷');
+  t.expect(t.$$('#body [data-gr="frame"]').some(b => /근거로 확인한 것/.test(b.textContent)) && !t.$$('#body [data-gr="frame"]').some(b => /내가 잘한 것/.test(b.textContent)), '셋째 틀 = 근거로 확인한 것');
   await t.click('#body [data-gr="frame"][data-f="question"]');
   const a = await t.waitFor('#body [data-grin="question:before"]');
   t.eq(t.$('#body [data-gr="frame"][data-f="question"]').getAttribute('aria-pressed'), 'true', '고른 틀');
@@ -588,6 +601,8 @@ add('나의 성장 기록 · 문장 잇기(조사)·흉내 규칙(하루 5개·�
   t.eq(S('change', {before:'자석의 힘', now:'자기장.'}), '처음에는 자석의 힘이라고 생각했는데, 지금은 자기장이라고 생각해요.', '이라고 · 끝 문장부호 떼기');
   t.eq(S('proud', {what:'출처를 두 곳에서 찾은 것', why:'두 곳 말이 달라서 더 알아봤거든요'}), '이번에 내가 잘한 것은 출처를 두 곳에서 찾은 것이에요. 왜냐하면 두 곳 말이 달라서 더 알아봤거든요.', '이에요 · 마침표');
   t.eq(S('proud', {what:'실험 계획 세우기', why:'처음 해 봤으니까!'}), '이번에 내가 잘한 것은 실험 계획 세우기예요. 왜냐하면 처음 해 봤으니까!', '예요 · 이미 있는 문장부호');
+  t.eq(S('check', {what:'겨울에 정전기가 잘 생기는 까닭', where:'교과서 118쪽과 AI 답', learn:'공기가 마르면 전하가 잘 안 빠져나간다는 걸 알았어요'}),
+    '내가 확인한 것은 겨울에 정전기가 잘 생기는 까닭이에요. 확인한 곳은 교과서 118쪽과 AI 답이에요. 그래서 공기가 마르면 전하가 잘 안 빠져나간다는 걸 알았어요.', '근거로 확인한 것');
   t.eq(S('next', {what:'코일 실험'}), '다음에는 코일 실험을 해 보고 싶어요.', '을');
   t.eq(S('next', {what:'두 출처 비교'}), '다음에는 두 출처 비교를 해 보고 싶어요.', '를');
   t.eq(S('next', {what:'LED'}), '다음에는 LED을(를) 해 보고 싶어요.', '한글이 아니면 괄호 꼴');

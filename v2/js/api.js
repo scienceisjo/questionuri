@@ -313,6 +313,7 @@ const A = QO.apiReal = {
   },
   /* SQL 에 아직 없다(sql_gaps: neighbor_inquiries) — 같은 반 다른 모둠의 지금 모둠 질문 */
   async neighborInquiries(){ return (await rpc('neighbor_inquiries')) || []; },
+  editGroupQuestion(inqId, text){ return rpc('edit_group_question', {p_inquiry:inqId, p_text:text}); },   // v2_15 모둠 질문 고치기
   startGroupInquiry(groupId, questionId, text, why){ return rpc('start_group_inquiry', {p_group:groupId, p_question:questionId == null ? null : questionId, p_text:text == null ? null : text, p_why:why == null ? null : why}); },
   saveGroupStep(stepId, body, src){ return rpc('save_group_step', {p_step:stepId, p_body:body, p_src:src == null ? null : src}); },
   pickTeller(inqId){ return rpc('pick_teller', {p_inquiry:inqId}); },

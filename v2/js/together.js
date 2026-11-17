@@ -417,7 +417,15 @@ function groupHTML(){
   if(!inq || (inq.status === 'fruit' && T.newPick)) return head + (gl ? bandHTML(gl, []) : '') + pickHTML() + '</div>';
   const rows = rowsOf();
   let h = head + (gl ? bandHTML(gl, rows) : '');
-  h += '<div class="tg-gq">' + esc(inq.question_text) + '</div>' + (inq.why ? '<div class="hint tg-why">고른 까닭: ' + esc(inq.why) + '</div>' : '');
+  if(T.gqEdit === inq.id){
+    h += '<div class="tg-gqedit"><label class="lbl tg-lbl" for="tg-gqin">모둠 질문 고치기</label>' +
+      '<textarea class="inp tg-gqin" id="tg-gqin" data-tgk="gq:' + inq.id + '" rows="2" maxlength="150" autocomplete="off"></textarea>' +
+      '<div class="row" style="margin-top:8px"><button type="button" class="btn line" data-tg="gq-cancel">그만두기</button><button type="button" class="btn" style="flex:1" data-tg="gq-save">고친 질문 저장</button></div>' + msgDiv('gq', 'tg-gqerr') + '</div>';
+  } else {
+    h += '<div class="tg-gqrow"><div class="tg-gq">' + esc(inq.question_text) + '</div><button type="button" class="btn line sm tg-gqbtn" data-tg="gq-edit">질문 고치기</button></div>';
+    if(inq.question_edited_at && inq.question_orig && inq.question_orig !== inq.question_text) h += '<div class="hint tg-why">처음 고른 질문: ' + esc(inq.question_orig) + '</div>';
+  }
+  h += (inq.why ? '<div class="hint tg-why">고른 까닭: ' + esc(inq.why) + '</div>' : '');
   if(inq.status === 'returned') h += '<div class="tchbox"><b>선생님 글</b>' + esc(inq.teacher_note || '선생님이 일지를 되돌려 보냈어요.') + '</div><div class="hint tg-why">칸을 고친 뒤 다시 선생님께 보내요.</div>';
   rows.forEach(r => { h += rowHTML(r); });
   const wrapDone = (g.steps || []).some(s => s.kind === 'wrap' && s.done_at);
@@ -543,6 +551,27 @@ async function pickTeller(btn){
   await getGroup();
   repaint(true);
   ui.toast(who ? ga(nameOf(who)) + ' 뽑혔어요.' : '뽑을 모둠원이 없어요.');
+}
+/* 모둠 질문 고치기(v2_15) — 언제든(보낸 뒤·열매 뒤에도). 처음 질문은 서버가 따로 남긴다 */
+async function saveGroupQuestion(btn){
+  const inq = T.g.inquiry; if(!inq) return;
+  const ta = document.querySelector('.tg-root .tg-gqin'), err = document.querySelector('.tg-root .tg-gqerr'), text = String(ta ? ta.value : '').replace(/\s+/g, ' ').trim();
+  say('gq', err, '');
+  const n = Array.from(text).length;
+  const bad = n < 5 ? '질문을 다섯 글자 넘게 적어 주세요.' : n > 150 ? '150자 안으로 줄여 주세요.' : QO.check.junkWhy(text);
+  if(bad){ say('gq', err, bad); if(ta) ta.focus(); return; }
+  if(text === inq.question_text){ T.gqEdit = null; dropDrafts('gq:'); rr(); return; }
+  const my = T;
+  let soon = false;
+  const r = await ui.busy(btn, () => QO.api.editGroupQuestion(inq.id, text).catch(e => {
+    if(/edit_group_question|PGRST202|schema cache/i.test(String((e && e.message) || e))){ soon = true; return null; } throw e; }), {errEl:err});
+  if(my !== T) return;
+  if(soon){ say('gq', err, '모둠 질문 고치기는 선생님이 준비를 마치면 쓸 수 있어요.'); return; }
+  if(r === undefined || !r){ say('gq', null, err ? err.textContent : ''); return; }
+  Object.assign(inq, {question_text:r.question_text, question_orig:r.question_orig, question_edited_at:r.question_edited_at});
+  T.gqEdit = null; dropDrafts('gq:'); say('gq', null, '');
+  rr(); ui.toast('모둠 질문을 고쳤어요.');
+  if(await getGroup()) rr();
 }
 async function sendGroup(btn){
   const inq = T.g.inquiry; if(!inq) return;
@@ -945,6 +974,9 @@ document.addEventListener('click', e => {
     case 'pick-more': T.morePick = true; rr(); break;
     case 'pick-start': startInquiry(b); break;
     case 'new-pick': T.newPick = true; T.pick = null; rr(); break;
+    case 'gq-edit': { const inq = T.g && T.g.inquiry; if(!inq) break; T.gqEdit = inq.id; T.drafts['gq:' + inq.id] = inq.question_text; delete T.msg.gq; rr(); focusSoon('.tg-gqin'); break; }
+    case 'gq-cancel': T.gqEdit = null; dropDrafts('gq:'); delete T.msg.gq; rr(); break;
+    case 'gq-save': saveGroupQuestion(b); break;
     case 'tell-pick': pickTeller(b); break;
     case 'send-group': sendGroup(b); break;
     case 'nb-row': { const id = Number(b.dataset.inq); T.nbOpen = T.nbOpen === id ? null : id; rr(); break; }
@@ -1066,6 +1098,42 @@ if(QO.selftest){
     row.active = false; await QO.live.refresh();
     await t.waitFor(() => t.$('.tg-ended') && txt(t, '.tg-ended').indexOf('보낸 단서 1개') >= 0);
     t.eq(t.$$('.tg-fq').length, 0, '끝나면 입력 잠김');
+  });
+  add('함께 · 모둠 질문 고치기 — 고른 뒤에도·보낸 뒤에도, 처음 질문은 따로 보임', async t => {
+    await t.loginAs('C');
+    await go(t);
+    await t.waitFor('[data-tg="pick-q"]');
+    await t.click('[data-tg="pick-q"][data-q="141"]');
+    await t.click('[data-tg="pick-why"][data-w="tool"]');
+    await t.click('[data-tg="pick-why"][data-w="all"]');
+    await t.click('[data-tg="pick-start"]');
+    await t.waitFor('[data-tg="gq-edit"]');
+    const inq = t.db.group_inquiries.find(i => i.group_id === 12), first = inq.question_text;
+    await t.click('[data-tg="gq-edit"]');
+    await t.waitFor('.tg-gqin');
+    t.eq(t.$('.tg-gqin').value, first, '고치기 칸에 지금 질문이 들어 있음');
+    await t.type('.tg-gqin', '짧아');
+    await t.click('[data-tg="gq-save"]');
+    await t.waitFor(() => txt(t, '.tg-gqerr') === '질문을 다섯 글자 넘게 적어 주세요.');
+    await t.click('[data-tg="gq-cancel"]');
+    await t.waitFor(() => !t.$('.tg-gqin') && txt(t, '.tg-gq') === first);
+    await t.click('[data-tg="gq-edit"]');
+    await t.waitFor('.tg-gqin');
+    await t.type('.tg-gqin', '별의 표면 온도가 높을수록 파랗게 보일까?');
+    await t.click('[data-tg="gq-save"]');
+    await t.waitFor(() => t.db.group_inquiries.find(i => i.id === inq.id).question_text === '별의 표면 온도가 높을수록 파랗게 보일까?');
+    await t.waitFor(() => !t.$('.tg-gqin') && txt(t, '.tg-gq') === '별의 표면 온도가 높을수록 파랗게 보일까?');
+    t.expect(txt(t, '.tg-group').indexOf('처음 고른 질문: ' + first) >= 0, '처음 질문이 따로 보임');
+    t.eq(t.db.group_inquiries.find(i => i.id === inq.id).question_orig, first, '처음 질문 남김');
+    /* 선생님께 보낸 뒤에도 고칠 수 있음 */
+    t.db.group_inquiries.find(i => i.id === inq.id).status = 'wait';
+    await QO.together.reload();
+    await t.waitFor('[data-tg="gq-edit"]');
+    await t.click('[data-tg="gq-edit"]');
+    await t.type('.tg-gqin', '별의 표면 온도와 색은 어떤 관계일까?');
+    await t.click('[data-tg="gq-save"]');
+    await t.waitFor(() => t.db.group_inquiries.find(i => i.id === inq.id).question_text === '별의 표면 온도와 색은 어떤 관계일까?');
+    t.eq(t.db.group_inquiries.find(i => i.id === inq.id).question_orig, first, '두 번 고쳐도 처음 질문은 그대로');
   });
   add('함께 · 모둠 질문 고르기 → 맡은 칸만 입력', async t => {
     await t.loginAs('C');

@@ -365,6 +365,10 @@ function journalRows(v, q){
   let h = '';
   if(rj.text_first) h += '<div class="t-first">처음 쓴 질문 · ' + esc(rj.text_first) + edTag(rj.text_edited_at) + '</div>';
   if(d.refine && d.refine.text) h += row('다듬기', esc(d.refine.text) + (v.notes.refine ? '<div class="t-note">선생님 글 · ' + esc(v.notes.refine) + '</div>' : ''));
+  else if(rj.refine_skip && rj.refine_skip.reason){   // 다듬지 않기(v2_09) — 학생이 체크한 것과 이유
+    const sk = rj.refine_skip, ch = Array.isArray(sk.checks) ? sk.checks : [];
+    h += row('다듬기', '<span class="t-k">다듬지 않음</span> ' + esc(sk.reason) + (ch.length ? '<div class="t-note">갖췄다고 체크한 것 · ' + esc(ch.join(' · ')) + '</div>' : ''));
+  }
   h += row('예상', d.predict ? '<ol class="t-pred">' + d.predict.map((p, i) => '<li><span class="t-k">' + (i ? '바뀐 생각' : '처음') + '</span>' + esc(p.text) +
     (p.at ? '<span class="t-at">' + esc(ui.fmtTime(p.at)) + '</span>' : '') + edTag(lineEd('predict', i, p)) + '</li>').join('') + '</ol>' + (d.known ? '<div class="t-note">이미 알던 것 · ' + esc(d.known) + '</div>' : '') : EMPTY);
   h += row('알아볼 방법', d.method ? '<b>' + esc(methodName(d.method.kind)) + '</b>' + (d.method.plan ? ' · ' + esc(d.method.plan) : '') : EMPTY);
@@ -847,7 +851,7 @@ function progressHTML(){
   if(!T.groups) return '<div class="card empty">모둠을 불러오는 중이에요.</div>';
   if(!T.groups.length) return '<div class="card empty">이 반에는 모둠이 없어요. 모둠 구역에서 편성해 주세요.</div>';
   return '<div class="card t-prog">' + T.groups.map(g => '<div class="t-pr"><div class="t-prn">' + esc(gName(g)) + '</div><div class="t-prb"><div class="t-prq">' +
-    (g.inquiry ? esc(g.inquiry.question_text) : '<span class="t-empty">질문 고르는 중</span>') + ' ' + gStatus(g.inquiry) + '</div><div class="t-cells">' + cellsHTML(g) + '</div></div></div>').join('') + '</div>';
+    (g.inquiry ? esc(g.inquiry.question_text) + (g.inquiry.question_edited_at && g.inquiry.question_orig && g.inquiry.question_orig !== g.inquiry.question_text ? ' <small class="t-gqedit" title="' + esc('처음 고른 질문: ' + g.inquiry.question_orig) + '">고침 · 처음: ' + esc(g.inquiry.question_orig) + '</small>' : '') : '<span class="t-empty">질문 고르는 중</span>') + ' ' + gStatus(g.inquiry) + '</div><div class="t-cells">' + cellsHTML(g) + '</div></div></div>').join('') + '</div>';
 }
 function clueLine(c, pickable){
   const on = T.pick.indexOf(c.id) >= 0;
@@ -1380,7 +1384,7 @@ ACT['rd-reload'] = () => { T.reading = null; loadReading(); QO.tabs.rerender('re
 /* ═══════════ 학생 성장 기록(v2_09) — 열매 확인 아래 접는 카드 ═══════════
    학생이 「나의 성장」 탭에서 빈칸 틀로 완성한 한 문장. 지금 고른 반 · 올해 · 최신순.
    CSV 는 열매 확인 CSV 처럼 실명 없이 학생 번호만(AI 에 그대로 넣어도 되게). 새 탭을 만들지 않고 이 구역 아래에 둔다 */
-const GROW_FRAME = {change:'생각이 바뀐 것', question:'질문이 달라진 것', proud:'내가 잘한 것', next:'다음에 해 볼 것'};
+const GROW_FRAME = {change:'생각이 바뀐 것', question:'질문이 달라진 것', check:'근거로 확인한 것', proud:'내가 잘한 것', next:'다음에 해 볼 것'};
 const growWhen = ts => ui.kstDay(ts).slice(5).replace('-', '/') + ' ' + ui.kstHM(ts);
 function loadGrow(){
   return load('grow', () => QO.api.classGrowthNotes(G(), C()).catch(e => { if(e && (e.soon || growSoon(e))) return {soon:true}; throw e; }), r => { T.grow = r; soft('fruits'); });
@@ -1394,7 +1398,7 @@ function growCss(){      // teacher.css 는 이 작업 범위 밖이라 이 구�
     '.t-sgbar{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px}.t-sgbar .hint{flex:1 1 240px}' +
     '.t-sgi{padding:11px 0;border-top:1px solid var(--line)}.t-sgih{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12.5px;color:var(--sub)}' +
     '.t-sgiw{font-weight:800;color:var(--ink);font-size:13.5px}.t-sgih .t-at{margin-left:auto;color:var(--mute)}.t-sgit{font-size:15px;line-height:1.55;margin-top:4px;word-break:keep-all}' +
-    '.t-sgi .tag.f-change{color:var(--clue-d)}.t-sgi .tag.f-question{color:var(--leaf-d)}.t-sgi .tag.f-proud{color:var(--wait)}.t-sgi .tag.f-next{color:#3F5574}' +
+    '.t-sgi .tag.f-change{color:var(--clue-d)}.t-sgi .tag.f-question{color:var(--leaf-d)}.t-sgi .tag.f-proud,.t-sgi .tag.f-check{color:var(--wait)}.t-sgi .tag.f-next{color:#3F5574}' +
     '@media (prefers-reduced-motion:reduce){.t-sgh svg{transition:none}}';
   document.head.appendChild(st);
 }

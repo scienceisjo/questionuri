@@ -74,3 +74,10 @@
 .tg-whead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;font-size:.92em;color:var(--sub,#555);margin-bottom:6px}
 .tg-wleft{font-weight:800;color:#1f6fb2;background:#e8f2fb;border-radius:99px;padding:3px 10px;white-space:nowrap}
 .tg-wleft.none{color:#888;background:#eee}
+
+/* 모둠 질문 고치기(2026-11-17) */
+.tg-gqrow{display:flex;align-items:flex-start;gap:8px}
+.tg-gqrow .tg-gq{flex:1;min-width:0}
+.tg-gqbtn{flex:none;min-height:40px;white-space:nowrap}
+.tg-gqedit{margin:4px 0 6px}
+.tg-gqin{width:100%;min-height:60px;resize:vertical;font-size:16px;line-height:1.5}
