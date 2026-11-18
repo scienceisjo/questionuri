@@ -6882,9 +6882,29 @@ function procDetailHTML(q){
     pr.steps.map(x => '<div class="st' + (x.done ? '' : ' off') + '"><span class="k">' + x.label + '</span><span class="v">' + (x.text ? esc(x.text) : '—') + '</span></div>').join('') +
     '</details>';
 }
-/* 📥 탐구 과정 전체 CSV — 질문 하나 = 한 줄, AI 에게 질문 유형·무물보 후보 분석을 맡길 때 쓴다 */
-function exportProcessCSV(){
+/* 모둠 · 모둠 질문(질문과수원 2 함께 탭) — 2026-11-18 사용자 「csv에 그것까지 담기게」.
+   질문 쓴 학생이 들어 있는 올해 모둠 번호와, 그 모둠의 가장 최근 「함께 풀 질문」. 못 읽으면 빈칸으로 두고 CSV 는 그대로 받는다 */
+async function procGroupMap(){
+  const m = {};
+  try {
+    const g = await sb.from('groups').select('id,grade,class_no,group_no,name,school_year');
+    if (g.error || !g.data || !g.data.length) return m;
+    const yr = Math.max(...g.data.map(x => Number(x.school_year) || 0));
+    const gs = g.data.filter(x => (Number(x.school_year) || 0) === yr), byId = {};
+    gs.forEach(x => byId[x.id] = x);
+    const ids = gs.map(x => x.id);
+    const mem = await sb.from('group_members').select('group_id,user_id').in('group_id', ids);
+    const inq = await sb.from('group_inquiries').select('id,group_id,question_text').in('group_id', ids).order('id', {ascending:false});
+    const latest = {};
+    ((inq && inq.data) || []).forEach(i => { if (!(i.group_id in latest)) latest[i.group_id] = i.question_text || ''; });
+    ((mem && mem.data) || []).forEach(r => { const x = byId[r.group_id]; if (x) m[r.user_id] = {no:x.group_no, q:latest[r.group_id] || ''}; });
+  } catch (e) { console.warn('[모둠 CSV]', e); }
+  return m;
+}
+/* 📥 탐구 과정 전체 CSV — 질문 하나 = 한 줄, AI 에게 질문 유형·무물보 후보 분석을 맡길 때 쓴다(맨 뒤 두 칸 = 모둠 · 모둠 질문) */
+async function exportProcessCSV(){
   if (!filteredQuestions.length) { alert('내보낼 질문이 없어요. 필터를 확인하세요.'); return; }
+  const gm = await procGroupMap();
   const withNames = !!($('procCsvNames') && $('procCsvNames').checked);
   const pm = {}; allProfiles.forEach(p => pm[p.id] = p);
   const brByQ = {}; allBranches.forEach(b => { brByQ[b.question_id] = (brByQ[b.question_id] || 0) + 1; });
@@ -6892,7 +6912,7 @@ function exportProcessCSV(){
   if (withNames) head.push('이름');
   head.push('작성일','마지막저장','단원','수업전후','익명','부모질문id','질문','다듬은질문','탐구방식',
     '예상','알아볼방법','찾기','AI사용','출처수','AI미리본횟수','정리','넓히기','막힘표시칸','채운칸(5칸중)','해결정도',
-    '해결','열매종류','확인요청','선생님도장','선생님되묻기','다듬기피드백','해결피드백','물','꼬리질문','아직모르는것','자가체크근거','선생님답변');
+    '해결','열매종류','확인요청','선생님도장','선생님되묻기','다듬기피드백','해결피드백','물','꼬리질문','아직모르는것','자가체크근거','선생님답변','모둠','모둠질문');
   const rows = [head];
   filteredQuestions.forEach(q => {
     const p = pm[q.user_id] || {}, pr = qProcess(q), st = k => pr.steps.find(x => x.key === k).text;
@@ -6902,7 +6922,8 @@ function exportProcessCSV(){
       q.text || '', q.refined_text || '', pr.how,
       st('predict'), st('method'), st('find'), pr.ai ? 'Y' : '', pr.srcN, pr.peeked || '', st('wrap'), st('extend'), pr.flag, pr.n, qLevel(q, pr),
       q.resolved ? 'Y' : '', q.fruit_kind || '', q.resolve_requested_at ? 'Y' : '', q.teacher_stamp || '', q.teacher_nudge || '', q.teacher_refine_note || '', q.teacher_solve_note || '',
-      q.water_count || 0, brByQ[q.id] || 0, q.still_wondering || '', scText(q), q.teacher_answer || '');
+      q.water_count || 0, brByQ[q.id] || 0, q.still_wondering || '', scText(q), q.teacher_answer || '',
+      gm[q.user_id] ? gm[q.user_id].no : '', gm[q.user_id] ? gm[q.user_id].q : '');
     rows.push(r);
   });
   downloadCSV(`${SCHOOL_SHORT}_탐구과정_${withNames ? '이름포함' : '번호만'}_${today()}.csv`, rows);
